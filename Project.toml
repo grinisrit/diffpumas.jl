@@ -1,0 +1,25 @@
+name = "DiffPumas"
+uuid = "b2257c3e-0f2b-464b-8aa8-308d82d5db5b"
+authors = ["Roland Grinis <roland.grinis@example.com>"]
+version = "0.1.0"
+
+[deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
+PlotlyJS = "f0f68f2c-4968-5e81-91da-67840de0976a"
+TetGen = "c5d3f3f7-f850-59f6-8a2e-ffc6dc1317ea"
+TriangleIntersect = "dcd768d6-4344-5c62-a673-42b3679449b0"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
+
+[compat]
+ArgParse = "1.2.0"
+PlotlyBase = "0.8.22"
+PlotlyJS = "0.18.17"
+TetGen = "2"
+Zygote = "0.7"
+ZygoteRules = "0.2.7"
+julia = "1.11"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
