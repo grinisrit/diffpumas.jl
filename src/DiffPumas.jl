@@ -72,10 +72,12 @@ export Point, Ray, Triangle, Intersection, intersect
 include("Constants.jl")
 include("Types.jl")
 include("Materials.jl")
+include("DEDXLoader.jl")
 include("Physics.jl")
 include("Transport.jl")
 include("Context.jl")
 include("GaisserFlux.jl")
+include("Straggling.jl")
 include("Loader.jl")
 include("Geometry.jl")
 include("Plotting.jl")
@@ -84,10 +86,12 @@ include("Plotting.jl")
 using .Constants
 using .Types
 using .Materials
+using .DEDXLoader
 using .Physics
 using .Transport
 using .Context
 using .GaisserFlux
+using .Straggling
 using .Loader
 using .Geometry
 using .Plotting
@@ -121,6 +125,9 @@ export electronic_stopping_power, electronic_density_effect
 export elastic_dcs, elastic_path, electronic_dcs
 export dcs_bremsstrahlung_ssr, dcs_pair_production_ssr, dcs_photonuclear_drss
 
+# Export DEDXLoader
+export DEDXData, load_dedx_file, find_dedx_file, PUMAS_MATERIALS_PATH
+
 # Export Physics
 export PhysicsSettings, PhysicsTables, MaterialTable
 export create_physics, create_energy_grid, get_material_index
@@ -143,6 +150,12 @@ export parse_mdf, print_physics_summary
 
 # Export GaisserFlux
 export flux_gaisser, flux_gccly, charge_fraction, cos_theta_star
+
+# Export Straggling
+export fluctuate_energy_loss, sample_del_event, sample_ehs_event
+export compute_del_cross_section, compute_ehs_mean_free_path
+export rotate_direction, box_muller_randn, sample_scattering_angle
+export sample_soft_scattering
 
 # Export Geometry
 export TwoLayerGeometry, create_geometry_context

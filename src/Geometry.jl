@@ -16,6 +16,7 @@ using ..Materials
 using ..Transport
 using ..Context
 using ..GaisserFlux: flux_gccly  # Use flux model from GaisserFlux module
+using ..Straggling
 using LinearAlgebra
 using Zygote
 using ChainRulesCore
@@ -77,47 +78,145 @@ function locals_air_at_altitude(altitude::T) where T<:Real
 end
 
 """
-    transport_backward_step(physics, state, material, density, step_distance)
+    transport_backward_step_full(physics, state, material, density, step_distance, rng;
+                                 mode=:straggled, scattering=true)
 
-Perform a single backward transport step.
-In backward mode, particle moves OPPOSITE to its direction vector.
-The energy INCREASES as we go backward (particle gains energy).
+Perform a single backward transport step with full physics:
+- Landau/Vavilov energy straggling
+- Discrete energy loss (DEL) events
+- Elastic hard scattering (EHS)
+- Soft multiple scattering
+
+This matches the PUMAS implementation for accurate muon transport.
+
+# Arguments
+- `physics`: Physics tables
+- `state`: Current particle state
+- `material`: Material index
+- `density`: Material density in kg/m³
+- `step_distance`: Step distance in m
+- `rng`: Random number generator
+- `mode`: Energy loss mode (:csda, :mixed, :straggled)
+- `scattering`: Enable scattering (default: true)
+
+# Returns
+- `new_state`: Updated particle state
+- `event`: Transport event that occurred (if any)
 """
-function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
-                                  material::Int, density::T, 
-                                  step_distance::T) where T<:Real
+function transport_backward_step_full(physics::PhysicsTables{T}, state::State{T},
+                                       material::Int, density::T, 
+                                       step_distance::T,
+                                       rng::AbstractRNG;
+                                       mode::Symbol = :straggled,
+                                       scattering::Bool = true) where T<:Real
     
     ki = state.energy
     mass = physics.mass
     
     # Grammage for this step
-    grammage_step = step_distance * density
+    dX = step_distance * density
     
-    # In backward mode, we ADD to the range (particle gains energy going backward)
-    # Get current range
-    Xi = property_range(physics, ENERGY_LOSS_CSDA, material, ki)
+    # Get initial CSDA total grammage (range)
+    mode_enum = ENERGY_LOSS_CSDA
+    Xi = property_range(physics, mode_enum, material, ki)
     
-    # Final range (larger since going backward = gaining energy)
-    Xf = Xi + grammage_step
+    # Backward: Xtot increases
+    Xtot = Xi + dX
     
-    # Get final (higher) energy
-    kf = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, material, Xf)
+    # Apply energy fluctuation based on mode
+    kf::T = ki
+    ratio::T = one(T)
+    event = EVENT_NONE
     
-    # Proper time update (in units of length, comparable to ctau)
-    # proper_time = distance / (beta * gamma)
+    if mode == :straggled && ki > T(0.001)
+        # Use Landau/Vavilov fluctuation from Straggling module
+        kf, ratio = fluctuate_energy_loss(physics, material, ki, dX, Xi, rng; backward=true)
+        kf = max(kf, ki)  # Energy must increase in backward mode
+    elseif mode == :mixed && ki > T(0.001)
+        # Mixed mode: 80% CSDA + fluctuation
+        kf_csda = property_kinetic_energy(physics, mode_enum, material, Xtot)
+        dk_csda = kf_csda - ki
+        
+        # Small fluctuation around CSDA
+        Omega = property_straggling(physics, material, ki)
+        sigma = sqrt(max(Omega * dX * T(0.2), zero(T)))
+        
+        if sigma > zero(T) && dk_csda > zero(T)
+            u = box_muller_randn(rng)
+            while abs(u) > T(3.0)
+                u = box_muller_randn(rng)
+            end
+            dk = dk_csda + sigma * u
+            kf = ki + max(dk, zero(T))
+            ratio = dk / dk_csda
+        else
+            kf = kf_csda
+        end
+    else
+        # Pure CSDA
+        kf = property_kinetic_energy(physics, mode_enum, material, Xtot)
+    end
+    
+    # Check for discrete events (DEL) below 100 GeV
+    if mode == :straggled && ki < T(100.0)
+        del_occurred, X_del, k_del = sample_del_event(
+            physics, material, ki, kf, dX, Xi, ratio, rng; backward=true
+        )
+        
+        if del_occurred && k_del > ki
+            # DEL event occurred - update final energy and grammage
+            kf = k_del
+            dX = X_del
+            event = EVENT_VERTEX_BREMSSTRAHLUNG  # Most common DEL
+        end
+    end
+    
+    # Check for elastic hard scattering (EHS) below 100 GeV
+    new_direction = state.direction
+    
+    if scattering && mode == :straggled && ki < T(100.0)
+        ehs_occurred, X_ehs, k_ehs = sample_ehs_event(
+            physics, material, ki, kf, dX, Xi, ratio, rng; backward=true
+        )
+        
+        if ehs_occurred && k_ehs > ki
+            # EHS event - sample scattering angle and rotate direction
+            mu = sample_scattering_angle(physics, material, k_ehs, rng)
+            new_direction = rotate_direction(state.direction, mu, rng)
+            
+            # Update energy at scattering point
+            if X_ehs < dX
+                kf = k_ehs
+                dX = X_ehs
+            end
+            event = EVENT_VERTEX_COULOMB
+        end
+    end
+    
+    # Apply soft multiple scattering (Highland formula) below 100 GeV
+    if scattering && ki < T(100.0) && event != EVENT_VERTEX_COULOMB
+        mu_soft = sample_soft_scattering(physics, material, ki, dX, rng)
+        if mu_soft > zero(T)
+            new_direction = rotate_direction(state.direction, mu_soft, rng)
+        end
+    end
+    
+    # Recompute step distance from actual grammage
+    actual_step = dX / density
+    
+    # Proper time update
     gamma_i = one(T) + ki / mass
     gamma_f = one(T) + kf / mass
     gamma_avg = (gamma_i + gamma_f) / 2
-    beta_avg = sqrt(one(T) - one(T) / gamma_avg^2)
-    proper_time_step = step_distance / (beta_avg * gamma_avg)
+    beta_avg = sqrt(max(one(T) - one(T) / gamma_avg^2, T(1e-12)))
+    proper_time_step = actual_step / (beta_avg * gamma_avg)
     
     # Position update - BACKWARD mode means moving OPPOSITE to direction
-    new_position = state.position - step_distance * state.direction
+    new_position = state.position - actual_step * state.direction
     
     # Weight update for backward MC
-    # dE/dx ratio for importance sampling
-    dedx_i = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, ki)
-    dedx_f = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, kf)
+    dedx_i = property_stopping_power(physics, mode_enum, material, ki)
+    dedx_f = property_stopping_power(physics, mode_enum, material, kf)
     weight_factor = dedx_f / dedx_i
     
     # Decay weight
@@ -129,31 +228,153 @@ function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
     new_state = State{T}(
         state.charge,
         kf,
-        state.distance + step_distance,
-        state.grammage + grammage_step,
+        state.distance + actual_step,
+        state.grammage + dX,
         state.time + proper_time_step,
         new_weight,
         new_position,
-        state.direction,
+        new_direction,
         state.decayed
     )
     
-    return new_state
+    return new_state, event
 end
 
 """
-    transport_backward_through_geometry(physics, geometry, initial_state, energy_threshold)
+    transport_backward_step(physics, state, material, density, step_distance; rng=nothing, straggling=false)
+
+Perform a single backward transport step.
+In backward mode, particle moves OPPOSITE to its direction vector.
+The energy INCREASES as we go backward (particle gains energy).
+
+Uses pure CSDA for high energies (>10 GeV) where fluctuations are small relative to energy.
+Uses mixed/straggled mode for lower energies where stochastic effects matter.
+
+IMPORTANT: The Monte Carlo weight is ALWAYS computed from CSDA tables, even when
+straggling is applied. This matches PUMAS's handling of the weight Jacobian.
+"""
+function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
+                                  material::Int, density::T, 
+                                  step_distance::T;
+                                  rng::Union{AbstractRNG, Nothing} = nothing,
+                                  straggling::Bool = false) where T<:Real
+    
+    ki = state.energy
+    mass = physics.mass
+    grammage_step = step_distance * density
+    
+    # Get initial CSDA range
+    Xi = property_range(physics, ENERGY_LOSS_CSDA, material, ki)
+    Xf_csda = Xi + grammage_step
+    
+    # CSDA energy for this step (used for weight computation)
+    kf_csda = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, material, Xf_csda)
+    
+    # Actual final energy (may differ due to straggling)
+    kf = kf_csda
+    
+    if rng !== nothing && straggling && ki < T(100.0)
+        # Apply straggling for lower energies using Landau-like fluctuation
+        Omega_i = property_straggling(physics, material, ki)
+        Omega_f = property_straggling(physics, material, kf_csda)
+        
+        # Variance for this step
+        dk_var = T(0.5) * grammage_step * (Omega_i + Omega_f)
+        
+        if dk_var > zero(T)
+            dk_sigma = sqrt(dk_var)
+            dk_expected = kf_csda - ki
+            
+            # Landau-like: for dk >> sigma, use truncated Gaussian
+            # for dk ~ sigma, use mixed model
+            if dk_expected > T(3) * dk_sigma
+                # Truncated Gaussian regime
+                u = box_muller_randn(rng)
+                while abs(u) > T(3)
+                    u = box_muller_randn(rng)
+                end
+                # Scale by 1/1.015387 to match PUMAS normalization
+                u = u / T(1.015387)
+                kf = kf_csda + u * dk_sigma
+            elseif dk_expected > T(1.7320508) * dk_sigma
+                # Uniform regime
+                u = T(1.7320508) * (one(T) - T(2) * rand(rng))
+                kf = kf_csda + u * dk_sigma
+            else
+                # Small step: use modified uniform
+                dk32 = T(3) * dk_var
+                dk02 = dk_expected * dk_expected
+                a = one(T) - (dk32 - dk02) / (dk32 + T(3) * dk02)
+                
+                if rand(rng) <= a
+                    b = T(0.5) * (dk32 + T(3) * dk02) / max(dk_expected, T(1e-12))
+                    kf = ki + b * rand(rng)
+                else
+                    kf = ki
+                end
+            end
+            
+            # Ensure energy increases in backward mode
+            kf = max(kf, ki)
+        end
+    end
+    
+    # Kinematic calculations using CSDA energies for proper averaging
+    gamma_i = one(T) + ki / mass
+    gamma_csda = one(T) + kf_csda / mass  # Use CSDA energy for kinematics
+    gamma_avg = (gamma_i + gamma_csda) / 2
+    beta_avg = sqrt(max(one(T) - one(T) / gamma_avg^2, T(1e-12)))
+    
+    # Proper time step (in rest frame of particle)
+    proper_time_step = step_distance / (beta_avg * gamma_avg)
+    
+    # Position update - BACKWARD mode means moving OPPOSITE to direction
+    new_position = state.position - step_distance * state.direction
+    
+    # Weight update for backward MC
+    # CRITICAL: Use CSDA energies for the Jacobian, NOT fluctuated energies
+    # This matches PUMAS's handling in step_fluctuate
+    dedx_i = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, ki)
+    dedx_csda = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, kf_csda)
+    weight_factor = dedx_csda / dedx_i
+    
+    # Decay weight (using CSDA proper time)
+    decay_factor = exp(-proper_time_step / physics.ctau)
+    
+    new_weight = state.weight * weight_factor * decay_factor
+    
+    return State{T}(
+        state.charge, kf, state.distance + step_distance,
+        state.grammage + grammage_step, state.time + proper_time_step,
+        new_weight, new_position, state.direction, state.decayed
+    )
+end
+
+"""
+    transport_backward_through_geometry(physics, geometry, initial_state, energy_threshold; rng=nothing, straggling=false, scattering=false)
 
 Transport particle backward through the two-layer geometry.
 Particle starts at z=0 and travels upward (opposite to downward direction).
+
+# Arguments
+- `physics`: Physics tables
+- `geometry`: Two-layer geometry definition
+- `initial_state`: Starting particle state at detector
+- `energy_threshold`: Maximum energy threshold
+- `rng`: Random number generator for straggling
+- `straggling`: Enable energy straggling (default: false)
+- `scattering`: Enable full scattering (default: false)
 """
 function transport_backward_through_geometry(physics::PhysicsTables{T}, 
                                              geometry::TwoLayerGeometry{T},
                                              initial_state::State{T},
-                                             energy_threshold::T) where T<:Real
+                                             energy_threshold::T;
+                                             rng::Union{AbstractRNG, Nothing} = nothing,
+                                             straggling::Bool = false,
+                                             scattering::Bool = false) where T<:Real
     
     state = initial_state
-    max_steps = 10000
+    max_steps = 100000  # Increased for higher accuracy with scattering
     
     for step in 1:max_steps
         z = state.position[3]
@@ -195,6 +416,14 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
                 # Moving down or horizontal - shouldn't happen in proper backward MC
                 step_to_boundary = T(1.0)
             end
+            
+            # Adaptive step based on energy and density
+            # Limit grammage per step to ~5% of CSDA range for accuracy
+            Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
+            max_grammage_step = T(0.05) * Xi
+            max_geometric_step = max_grammage_step / density
+            
+            step_size = min(step_to_boundary + T(1e-6), max_geometric_step)
         else
             # In air layer
             material = geometry.air_material
@@ -206,21 +435,45 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             else
                 step_to_boundary = T(1.0)
             end
+            
+            # Adaptive step size for non-uniform atmosphere
+            # Use smaller steps where density changes rapidly
+            h = T(12e3)  # Scale height
+            uz_abs = max(abs(uz_motion), T(0.01))
+            
+            # Limit step to ~1% density change
+            altitude_step = T(0.01) * h / uz_abs
+            
+            # Also limit by CSDA range fraction
+            Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
+            max_grammage_step = T(0.1) * Xi  # Can use larger fraction in air
+            max_geometric_step = max_grammage_step / max(density, T(1e-6))
+            
+            step_size = min(step_to_boundary + T(1e-6), altitude_step, max_geometric_step)
         end
         
-        # Limit step size
-        step_size = min(step_to_boundary + T(1e-6), T(100.0))
+        # Apply overall limits
+        step_size = min(step_size, T(1000.0))  # Max 1 km per step
         step_size = max(step_size, T(STEP_MIN))
         
-        # Perform backward transport step
-        state = transport_backward_step(physics, state, material, density, step_size)
+        # Perform backward transport step with optional straggling and scattering
+        if scattering && rng !== nothing
+            # Use full physics model with DEL and scattering
+            state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
+                                                    mode=straggling ? :straggled : :csda,
+                                                    scattering=true)
+        else
+            # Use simpler model without scattering
+            state = transport_backward_step(physics, state, material, density, step_size;
+                                            rng=rng, straggling=straggling)
+        end
     end
     
     return state
 end
 
 """
-    compute_flux_single(physics, geometry, energy_final, elevation, charge)
+    compute_flux_single(physics, geometry, energy_final, elevation, charge; rng=nothing, straggling=false, scattering=false)
 
 Compute flux contribution from a single backward MC particle.
 """
@@ -228,7 +481,10 @@ function compute_flux_single(physics::PhysicsTables{T},
                              geometry::TwoLayerGeometry{T},
                              energy_final::T,
                              elevation::T,
-                             charge::T) where T<:Real
+                             charge::T;
+                             rng::Union{AbstractRNG, Nothing} = nothing,
+                             straggling::Bool = false,
+                             scattering::Bool = false) where T<:Real
     
     # Convert elevation to direction (pointing downward into rock)
     # elevation = 0 means horizontal, elevation = 90 means vertical (straight down)
@@ -253,8 +509,9 @@ function compute_flux_single(physics::PhysicsTables{T},
     # Energy threshold (very high for backward MC)
     energy_threshold = T(1e12)
     
-    # Transport backward through geometry
-    final_state = transport_backward_through_geometry(physics, geometry, state, energy_threshold)
+    # Transport backward through geometry with optional straggling and scattering
+    final_state = transport_backward_through_geometry(physics, geometry, state, energy_threshold;
+                                                      rng=rng, straggling=straggling, scattering=scattering)
     
     # Check if reached primary altitude
     if final_state.position[3] >= PRIMARY_ALTITUDE - T(1.0)
@@ -262,6 +519,14 @@ function compute_flux_single(physics::PhysicsTables{T},
         # In backward MC, the "incoming" direction at primary altitude
         # is opposite to what we traced
         cos_theta_final = -final_state.direction[3]
+        
+        # Clamp to valid range - particles that scattered too much
+        # to be downward-going contribute zero flux
+        cos_theta_final = clamp(cos_theta_final, zero(T), one(T))
+        
+        if cos_theta_final <= zero(T)
+            return zero(T)
+        end
         
         # Compute flux contribution
         flux = flux_gccly(cos_theta_final, final_state.energy, charge)
@@ -272,9 +537,21 @@ function compute_flux_single(physics::PhysicsTables{T},
 end
 
 """
-    compute_flux(physics, rock_density, rock_thickness, elevation, energy_min, energy_max; n_samples)
+    compute_flux(physics, rock_density, rock_thickness, elevation, energy_min, energy_max; n_samples, seed, straggling, scattering)
 
 Compute integrated muon flux using backward Monte Carlo.
+
+# Arguments
+- `physics`: Physics tables
+- `rock_density`: Rock density in kg/m³
+- `rock_thickness`: Rock thickness in m
+- `elevation`: Elevation angle in degrees (90 = vertical, 0 = horizontal)
+- `energy_min`: Minimum energy in GeV
+- `energy_max`: Maximum energy in GeV
+- `n_samples`: Number of MC samples (default: 1000)
+- `seed`: Random seed (default: 42)
+- `straggling`: Enable energy straggling (default: true)
+- `scattering`: Enable full scattering model (default: true)
 """
 function compute_flux(physics::PhysicsTables{T}, 
                       rock_density::T,
@@ -283,7 +560,9 @@ function compute_flux(physics::PhysicsTables{T},
                       energy_min::T,
                       energy_max::T;
                       n_samples::Int = 1000,
-                      seed::Int = 42) where T<:Real
+                      seed::Int = 42,
+                      straggling::Bool = true,
+                      scattering::Bool = true) where T<:Real
     
     rng = Random.MersenneTwister(seed)
     
@@ -321,8 +600,9 @@ function compute_flux(physics::PhysicsTables{T},
         charge = rand(rng) > 0.5 ? one(T) : -one(T)
         wf *= T(2)  # Account for charge sampling
         
-        # Compute contribution
-        wi = wf * compute_flux_single(physics, geometry, kf, elevation, charge)
+        # Compute contribution with optional straggling and scattering
+        wi = wf * compute_flux_single(physics, geometry, kf, elevation, charge;
+                                      rng=rng, straggling=straggling, scattering=scattering)
         
         w_sum += wi
         w2_sum += wi * wi
@@ -400,7 +680,9 @@ function run_backward_mc(physics::PhysicsTables{T};
                          energy_max::Union{T, Nothing} = nothing,
                          n_samples::Int = 10000,
                          compute_gradient::Bool = false,
-                         seed::Int = 42) where T<:Real
+                         seed::Int = 42,
+                         straggling::Bool = true,
+                         scattering::Bool = true) where T<:Real
     
     if energy_max === nothing
         energy_max = energy_min
@@ -412,10 +694,12 @@ function run_backward_mc(physics::PhysicsTables{T};
     @info "  Elevation: $(elevation)°"
     @info "  Energy range: $(energy_min) - $(energy_max) GeV"
     @info "  Samples: $(n_samples)"
+    @info "  Straggling: $(straggling), Scattering: $(scattering)"
     
     # Compute flux
     flux = compute_flux(physics, rock_density, rock_thickness, elevation,
-                        energy_min, energy_max; n_samples=n_samples, seed=seed)
+                        energy_min, energy_max; n_samples=n_samples, seed=seed,
+                        straggling=straggling, scattering=scattering)
     
     # Estimate error
     sigma = rock_thickness > 0 ? flux / sqrt(T(n_samples)) : zero(T)

@@ -20,9 +20,10 @@ import Printf: @sprintf
 """
     compute_cell_values_from_source(mesh, source_point)
 
-Compute cell values based on distance from source point.
-Cells at the source (x=0) have value 0,
-cells further away have larger values (close to 1).
+Compute cell values based on proximity to the opposite side (x=1).
+Only cells adjacent to the opposite side have non-zero values.
+Cells touching or very close to x=1 get value 1.0,
+cells further away get smaller values, and cells far from x=1 get 0.0.
 """
 function compute_cell_values_from_source(mesh::RawTetGenIO{Float64}, source_point::Point)
     n_tets = size(mesh.tetrahedronlist, 2)
@@ -30,8 +31,9 @@ function compute_cell_values_from_source(mesh::RawTetGenIO{Float64}, source_poin
     n_points = size(points, 2)
     cell_values = zeros(Float64, n_tets)
     
-    # Threshold for considering a cell "at the source" (very close to x=0)
-    source_threshold = 1e-6
+    # Threshold for considering a cell "adjacent" to the opposite side (x=1)
+    # Only cells with at least one vertex close to x=1 will have non-zero values
+    opposite_threshold = 0.1  # Cells within 0.1 units of x=1 are considered adjacent
     
     for i in 1:n_tets
         tet = mesh.tetrahedronlist[:, i] .+ 1  # Convert to 1-indexed
@@ -39,22 +41,25 @@ function compute_cell_values_from_source(mesh::RawTetGenIO{Float64}, source_poin
         
         # Check bounds
         if all([v1, v2, v3, v4] .<= n_points) && all([v1, v2, v3, v4] .>= 1)
-            # Compute tetrahedron center
-            center = [
-                (points[1, v1] + points[1, v2] + points[1, v3] + points[1, v4]) / 4,
-                (points[2, v1] + points[2, v2] + points[2, v3] + points[2, v4]) / 4,
-                (points[3, v1] + points[3, v2] + points[3, v3] + points[3, v4]) / 4
+            # Get x-coordinates of all vertices
+            x_coords = [
+                points[1, v1],
+                points[1, v2],
+                points[1, v3],
+                points[1, v4]
             ]
             
-            # Use x-coordinate to determine value (since source is at x=0)
-            # Cells at source (x < threshold) have value 0
-            # Value increases linearly from 0 to 1 for x > threshold
-            x_coord = center[1]
-            if x_coord <= source_threshold
-                cell_values[i] = 0.0
+            # Find the maximum x-coordinate (closest to x=1)
+            max_x = maximum(x_coords)
+            
+            # Only assign non-zero value if the cell is adjacent to the opposite side
+            if max_x >= (1.0 - opposite_threshold)
+                # Value increases as we get closer to x=1
+                # Cells at x=1 get value 1.0, cells at (1-threshold) get value 0.0
+                # Linear interpolation
+                cell_values[i] = clamp((max_x - (1.0 - opposite_threshold)) / opposite_threshold, 0.0, 1.0)
             else
-                # Normalize: map [source_threshold, 1.0] to [0.0, 1.0]
-                cell_values[i] = clamp((x_coord - source_threshold) / (1.0 - source_threshold), 0.0, 1.0)
+                cell_values[i] = 0.0
             end
         end
     end
@@ -553,7 +558,7 @@ function parse_commandline()
         "--output", "-o"
             help = "Output file for the plot (HTML format)"
             arg_type = String
-            default = "trajectories_plot.html"
+            default = "examples/data/no_physics_cube_mc.html"
         "--seed", "-s"
             help = "Random seed for reproducibility"
             arg_type = Int
@@ -613,11 +618,11 @@ function main(args = nothing)
     start_point = Point(0.0, 0.5, 0.5)
     println("Starting point: ($(start_point.x), $(start_point.y), $(start_point.z))\n")
     
-    # Create cell values based on distance from source
-    # Cells closer to source (x=0) have smaller values, cells further (x=1) have larger values
+    # Create cell values - only cells adjacent to opposite side (x=1) have non-zero values
     cell_values = compute_cell_values_from_source(mesh, start_point)
-    println("Assigned distance-based values to $n_tets cells (range: [$(minimum(cell_values)), $(maximum(cell_values))])\n")
-    println("  (Values increase from ~0 at x=0 to ~1 at x=1)\n")
+    n_nonzero = count(x -> x > 0, cell_values)
+    println("Assigned values to $n_tets cells (range: [$(minimum(cell_values)), $(maximum(cell_values))])\n")
+    println("  Non-zero cells: $n_nonzero (only cells adjacent to opposite side x=1)\n")
     
     println("Simulating $N trajectories...")
     

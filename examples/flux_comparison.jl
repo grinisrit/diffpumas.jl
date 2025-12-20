@@ -12,21 +12,6 @@ The plot uses zenith angle θ (angle from vertical):
 - θ = 0°  → vertical (muons from directly above)
 - θ = 90° → horizontal (muons from horizon)
 
-Geometry:
-                    PRIMARY_ALTITUDE (1000m)
-    ════════════════════════════════════════════════════════
-                         |
-                    AIR LAYER
-                         |
-    ──────────────────────────────────────── z = rock_thickness
-                         |
-                    ROCK LAYER
-                         |      ╱ muon at zenith angle θ
-                         |    ╱
-                         |  ╱
-                         |╱θ
-    ─────────────────────●─────────────────── z = 0 (Detector)
-
 Usage:
     julia --project=. examples/flux_comparison.jl [OPTIONS]
 
@@ -193,6 +178,7 @@ end
     compute_julia_flux_grid(physics, thicknesses, zeniths)
 
 Compute Julia flux values for a grid of parameters.
+Enables both straggling and scattering for best match with PUMAS C.
 """
 function compute_julia_flux_grid(physics, 
                                   thicknesses::Vector{Float64}, 
@@ -213,8 +199,10 @@ function compute_julia_flux_grid(physics,
             elevation = zenith_to_elevation(zenith)
             @info "[$n_done/$n_total] Running Julia: thickness=$thickness m, θ=$(zenith)°"
             
+            # Enable straggling and scattering for best PUMAS match
             flux = compute_flux(physics, 2650.0, thickness, elevation, 
-                               energy_min, energy_max; n_samples=n_samples)
+                               energy_min, energy_max; n_samples=n_samples,
+                               straggling=true, scattering=true)
             sigma = thickness > 0 ? flux / sqrt(n_samples) : 0.0
             
             results[(thickness, zenith)] = (flux, sigma)
@@ -429,7 +417,7 @@ function main()
     
     # Set default output path if not provided
     if output_path === nothing
-        output_path = joinpath(@__DIR__, "data", "flux_comparison_3d.html")
+        output_path = joinpath(@__DIR__, "data", "flux_comparison.html")
     end
     
     println("=" ^ 60)

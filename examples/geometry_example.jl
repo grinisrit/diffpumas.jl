@@ -9,6 +9,8 @@ This example demonstrates:
 
 Equivalent to the C example: pumas/examples/pumas/geometry.c
 
+Geometry:
+
                     PRIMARY_ALTITUDE (1000m)
     ════════════════════════════════════════════════════════
                          |

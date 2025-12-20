@@ -60,13 +60,26 @@ on the zenith angle in a non-trivial way due to Earth's curvature.
 Effective cos(θ*) for flux calculation.
 """
 function cos_theta_star(cos_theta::T) where T<:Real
-    # Volkova parameterization coefficients
-    p = (T(0.102573), T(-0.068287), T(0.958633), T(0.0407253), T(0.817285))
+    # Clamp cos_theta to valid range [0, 1]
+    # Negative values (upward-going) can occur due to scattering
+    # and should return minimal flux contribution
+    ct = clamp(cos_theta, zero(T), one(T))
     
-    cs2 = (cos_theta^2 + p[1]^2 + 
-           p[2] * abs(cos_theta)^p[3] + 
-           p[4] * abs(cos_theta)^p[5]) / 
-          (one(T) + p[1]^2 + p[2] + p[4])
+    if ct <= zero(T)
+        return zero(T)
+    end
+    
+    # Volkova parameterization coefficients
+    # Note: Using tuple (p0, p1, p2, p3, p4) matching C array indices
+    p0, p1, p2, p3, p4 = T(0.102573), T(-0.068287), T(0.958633), T(0.0407253), T(0.817285)
+    
+    # Exact match to C implementation:
+    # cs2 = (cos_theta^2 + p[0]^2 + p[1]*pow(cos_theta, p[2]) + p[3]*pow(cos_theta, p[4])) / 
+    #       (1 + p[0]^2 + p[1] + p[3])
+    cs2 = (ct^2 + p0^2 + 
+           p1 * ct^p2 + 
+           p3 * ct^p4) / 
+          (one(T) + p0^2 + p1 + p3)
     
     return cs2 > zero(T) ? sqrt(cs2) : zero(T)
 end
