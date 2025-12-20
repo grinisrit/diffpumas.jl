@@ -20,4 +20,4 @@ venv
 *.code-workspace
 
 # pumas
-*/*.pumas
+examples/data/*.pumas

@@ -239,7 +239,6 @@ function create_comparison_plot(c_results::Dict, julia_results::Dict,
     # Create matrices for surface plots
     c_flux = zeros(n_z, n_t)
     julia_flux = zeros(n_z, n_t)
-    ratio = zeros(n_z, n_t)
     
     for (i, zen) in enumerate(zeniths)
         for (j, thick) in enumerate(thicknesses)
@@ -249,7 +248,6 @@ function create_comparison_plot(c_results::Dict, julia_results::Dict,
             
             c_flux[i, j] = c_f > 0 ? log10(c_f) : NaN
             julia_flux[i, j] = j_f > 0 ? log10(j_f) : NaN
-            ratio[i, j] = (c_f > 0 && j_f > 0) ? j_f / c_f : NaN
         end
     end
     
@@ -287,27 +285,7 @@ function create_comparison_plot(c_results::Dict, julia_results::Dict,
     
     plot_flux = Plot([trace_c, trace_julia], layout_flux)
     
-    # Create ratio heatmap
-    trace_ratio = heatmap(
-        x = thicknesses,
-        y = zeniths,
-        z = ratio,
-        colorscale = "RdBu",
-        zmid = 1.0,
-        colorbar = attr(title = "Julia/C Ratio")
-    )
-    
-    layout_ratio = Layout(
-        title = "Flux Ratio: DiffPumas / PUMAS",
-        xaxis = attr(title = "Rock Thickness (m)"),
-        yaxis = attr(title = "Zenith Angle θ (°)"),
-        width = 800,
-        height = 600
-    )
-    
-    plot_ratio = Plot(trace_ratio, layout_ratio)
-    
-    return plot_flux, plot_ratio
+    return plot_flux
 end
 
 """
@@ -385,6 +363,7 @@ end
 function parse_commandline()
     n_samples = 10000
     recompute = false
+    output_path = nothing  # Default will be set in main()
     
     if "--help" in ARGS || "-h" in ARGS
         println("""
@@ -396,11 +375,15 @@ function parse_commandline()
         Options:
             --recompute          Force recomputation of C results (default: use cached)
             --samples N, -n N    Number of Monte Carlo samples per point (default: 10000)
+            --output PATH, -o PATH
+                                Output path for 3D plot HTML file
+                                (default: examples/data/flux_comparison_3d.html)
             --help, -h           Show this help message
         
         Examples:
             julia --project=. examples/flux_comparison.jl
             julia --project=. examples/flux_comparison.jl --samples 50000
+            julia --project=. examples/flux_comparison.jl --output my_plot.html
             julia --project=. examples/flux_comparison.jl --recompute --samples 20000
         """)
         exit(0)
@@ -419,20 +402,35 @@ function parse_commandline()
             else
                 error("--samples requires a value")
             end
+        elseif arg == "--output" || arg == "-o"
+            if i + 1 <= length(ARGS)
+                output_path = ARGS[i + 1]
+                i += 2
+            else
+                error("--output requires a path")
+            end
         elseif startswith(arg, "--samples=")
             n_samples = parse(Int, split(arg, "=")[2])
+            i += 1
+        elseif startswith(arg, "--output=")
+            output_path = split(arg, "=", limit=2)[2]
             i += 1
         else
             error("Unknown argument: $arg (use --help for usage)")
         end
     end
     
-    return n_samples, recompute
+    return n_samples, recompute, output_path
 end
 
 function main()
     # Parse command line
-    n_samples, recompute = parse_commandline()
+    n_samples, recompute, output_path = parse_commandline()
+    
+    # Set default output path if not provided
+    if output_path === nothing
+        output_path = joinpath(@__DIR__, "data", "flux_comparison_3d.html")
+    end
     
     println("=" ^ 60)
     println(" DiffPumas Flux Comparison - C vs Julia")
@@ -445,6 +443,7 @@ function main()
         println("Mode: Use cached C results where available")
     end
     println("Monte Carlo samples: $n_samples")
+    println("Output plot: $output_path")
     println()
     
     # Check for C executable
@@ -498,30 +497,22 @@ function main()
     # Print comparison table
     create_comparison_table(c_results, julia_results)
     
-    # Create plots
+    # Create plot
     println()
-    println("Creating interactive plots...")
-    plot_flux, plot_ratio = create_comparison_plot(c_results, julia_results, 
-                                                    thicknesses, zeniths)
+    println("Creating interactive 3D plot...")
+    plot_flux = create_comparison_plot(c_results, julia_results, 
+                                       thicknesses, zeniths)
     
-    # Save plots as HTML
-    html_flux = joinpath(@__DIR__, "data", "flux_comparison_3d.html")
-    html_ratio = joinpath(@__DIR__, "data", "flux_ratio_heatmap.html")
-    
-    open(html_flux, "w") do io
+    # Save plot as HTML
+    mkpath(dirname(output_path))
+    open(output_path, "w") do io
         PlotlyJS.savefig(io, plot_flux, format="html")
     end
-    @info "Saved 3D flux plot to: $html_flux"
+    @info "Saved 3D flux plot to: $output_path"
     
-    open(html_ratio, "w") do io
-        PlotlyJS.savefig(io, plot_ratio, format="html")
-    end
-    @info "Saved ratio heatmap to: $html_ratio"
-    
-    # Display plots (in interactive environment)
+    # Display plot (in interactive environment)
     try
         display(plot_flux)
-        display(plot_ratio)
     catch
         # Not in interactive environment
     end
@@ -533,8 +524,7 @@ function main()
     println("Done!")
     println()
     println("View results:")
-    println("  3D comparison: $html_flux")
-    println("  Ratio heatmap: $html_ratio")
+    println("  3D comparison: $output_path")
     println()
     
     return 0
