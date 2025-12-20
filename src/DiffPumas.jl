@@ -66,7 +66,10 @@ using TetGen
 export tetrahedralize, RawTetGenIO, facetlist!
 
 using TriangleIntersect
-export Point, Ray, Triangle, Intersection, intersect
+import TriangleIntersect: intersect
+export Point, Ray, Triangle, Intersection
+# Note: intersect is imported but not exported to avoid conflict with Base.intersect
+# Users should use TriangleIntersect.intersect or import it explicitly
 
 # Include submodules in dependency order
 include("Constants.jl")

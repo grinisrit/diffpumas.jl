@@ -21,7 +21,8 @@ Options:
 """
 
 using DiffPumas
-using DiffPumas.Physics: print_physics_summary, get_material_index
+using DiffPumas.Physics: get_material_index
+using DiffPumas.Loader: print_physics_summary
 using DiffPumas.GaisserFlux: flux_gccly, flux_gaisser
 using DiffPumas.Geometry: run_backward_mc, compute_flux
 using PlotlyJS

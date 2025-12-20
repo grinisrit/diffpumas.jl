@@ -10,6 +10,7 @@ This example demonstrates:
 """
 
 using DiffPumas
+using DiffPumas.TriangleIntersect: intersect
 using Random
 using LinearAlgebra
 using Statistics

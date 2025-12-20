@@ -56,7 +56,8 @@ Examples:
 """
 
 using DiffPumas
-using DiffPumas.Physics: print_physics_summary, get_material_index
+using DiffPumas.Physics: get_material_index
+using DiffPumas.Loader: print_physics_summary
 using DiffPumas.Geometry: run_backward_mc, compute_flux_gradient, compute_flux_differentiable
 using ArgParse
 using Zygote

@@ -153,7 +153,10 @@ end
     compute_del_cross_section(physics, material, kinetic)
 
 Compute the total cross-section for discrete energy loss events.
-Uses the radiative stopping power to estimate the hard event cross-section.
+Based on PUMAS del_cross_section() - uses tabulated values from radiative processes.
+
+The cross-section represents the probability per unit grammage of a hard
+(discrete) radiative event: bremsstrahlung, pair production, or photonuclear.
 
 Returns cross-section in m²/kg.
 """
@@ -163,41 +166,53 @@ function compute_del_cross_section(physics::PhysicsTables{T}, material::Int,
         return zero(T)
     end
     
-    # Get the tabulated cross-section (interpolated)
-    # This is computed from the radiative components
     table = physics.tables[material]
     
-    # Get radiative stopping powers
+    # Use tabulated cross-section if available
+    xs = interpolate_table(kinetic, table.energies, table.cross_section)
+    
+    if xs > zero(T)
+        return xs
+    end
+    
+    # Fallback: compute from radiative stopping powers
+    # This matches PUMAS's approach: σ_DEL = (dE/dX)_rad / <ν * K>
+    # where <ν * K> is the average energy transfer per interaction
     brems = interpolate_table(kinetic, table.energies, table.bremsstrahlung)
     pair = interpolate_table(kinetic, table.energies, table.pair_production)
     photo = interpolate_table(kinetic, table.energies, table.photonuclear)
     
     radiative = brems + pair + photo
-    
-    # Cross-section from σ ≈ (dE/dx)_rad / (ε * K) where ε is cutoff
-    # Using cutoff ~0.05 as in PUMAS
     cutoff = physics.settings.cutoff
     
-    # The cross-section scales as radiative/(cutoff * K)
-    # but with a lower limit to avoid numerical issues
     if radiative > zero(T) && kinetic > T(0.001)
-        sigma = radiative / (cutoff * kinetic)
-        return min(sigma, T(1e-3))  # Cap to avoid unrealistic values
-    else
-        return zero(T)
+        # For DEL, the average energy loss is ~cutoff * K
+        # So σ ≈ (dE/dX)_rad / (cutoff * K)
+        # But we need to account for the fact that hard events transfer more energy
+        # Use alpha = 2 for BMC approximation (1/ν^α distribution)
+        avg_nu = cutoff * log(one(T) / cutoff) / (one(T) - cutoff)
+        sigma = radiative / (avg_nu * kinetic + T(1e-12))
+        return sigma
     end
+    
+        return zero(T)
 end
 
 """
     sample_del_event(physics, material, ki, kf, dX, Xtot, ratio, rng; backward=false)
 
-Sample whether a discrete energy loss event occurs during the step.
+Sample whether a discrete energy loss event (DEL) occurs during the step.
 Based on PUMAS's DEL sampling in step_fluctuate.
+
+In backward MC, DEL events give large energy BOOSTS (the particle gains energy 
+when traced backward through a hard radiative event). This is crucial for 
+high zenith angles where hard events matter more.
 
 # Returns
 - `occurred`: Whether a DEL event occurred
 - `X_del`: Grammage at which event occurred (if any)
 - `k_del`: Energy at which event occurred (if any)
+- `process`: Which process (0=none, 1=brems, 2=pair, 3=photo)
 """
 function sample_del_event(physics::PhysicsTables{T}, material::Int,
                           ki::T, kf::T, dX::T, Xtot::T, ratio::T,
@@ -208,42 +223,96 @@ function sample_del_event(physics::PhysicsTables{T}, material::Int,
     mode = ENERGY_LOSS_CSDA
     
     # Get maximum cross-section over the step
-    xs_del = compute_del_cross_section(physics, material, ki)
+    xs_del_i = compute_del_cross_section(physics, material, ki)
     xs_del_f = compute_del_cross_section(physics, material, kf)
-    xs_del = max(xs_del, xs_del_f)
+    xs_del = max(xs_del_i, xs_del_f)
     
     if xs_del <= zero(T)
-        return false, zero(T), zero(T)
+        return false, zero(T), zero(T), 0
     end
     
     # Sample interaction length (exponential distribution)
     zeta = rand(rng)
-    if zeta <= zero(T) || zeta >= one(T)
-        return false, zero(T), zero(T)
+    if zeta <= T(1e-12) || zeta >= one(T) - T(1e-12)
+        return false, zero(T), zero(T), 0
     end
     
     X_del = -log(zeta) / xs_del
     
     if X_del >= dX
-        return false, zero(T), zero(T)
+        return false, zero(T), zero(T), 0
     end
     
-    # Get energy at the interaction point
+    # Get energy at the interaction point (CSDA propagation to X_del)
     k_h = property_kinetic_energy(physics, mode, material, Xtot - sgn * X_del)
-    k_del = ki - sgn * ratio * abs(ki - k_h)
     
-    if k_del <= zero(T)
-        return false, zero(T), zero(T)
+    # Energy at interaction using fluctuation ratio
+    k_at_del = ki - sgn * ratio * abs(ki - k_h)
+    
+    if k_at_del <= zero(T)
+        return false, zero(T), zero(T), 0
     end
     
-    # Acceptance probability
-    r = compute_del_cross_section(physics, material, k_del) / xs_del
+    # Acceptance/rejection based on cross-section at actual energy
+    r = compute_del_cross_section(physics, material, k_at_del) / xs_del
     
     if rand(rng) > r
-        return false, zero(T), zero(T)
+        return false, zero(T), zero(T), 0
     end
     
-    return true, X_del, k_del
+    # DEL occurred! Now sample the energy transfer
+    # In backward mode: particle GAINS energy from the DEL
+    # Energy transfer fraction ν is sampled from dσ/dν ∝ 1/ν^α with α = BMC_ALPHA = 2
+    cutoff = physics.settings.cutoff
+    
+    # Sample ν from power law: P(ν) ∝ ν^(-α) for ν ∈ [cutoff, 1]
+    # CDF: F(ν) = (ν^(1-α) - cutoff^(1-α)) / (1 - cutoff^(1-α))
+    # Inverse: ν = [u * (1 - cutoff^(1-α)) + cutoff^(1-α)]^(1/(1-α))
+    alpha = T(BMC_ALPHA)
+    u = rand(rng)
+    
+    if abs(alpha - one(T)) < T(1e-6)
+        # α ≈ 1: use log distribution
+        nu = cutoff * exp(u * log(one(T) / cutoff))
+    else
+        # General power law
+        cutoff_term = cutoff^(one(T) - alpha)
+        nu = (u * (one(T) - cutoff_term) + cutoff_term)^(one(T) / (one(T) - alpha))
+    end
+    
+    nu = clamp(nu, cutoff, one(T))
+    
+    # In backward mode, the energy AFTER the DEL is higher
+    # k_del = k_at_del / (1 - ν) for forward; k_del = k_at_del * (1 + ν/(1-ν)) for backward
+    if backward
+        # Particle gains energy: k_del > k_at_del
+        # The fractional energy loss ν in forward mode means energy boost in backward
+        k_del = k_at_del / (one(T) - nu)
+    else
+        # Particle loses energy: k_del < k_at_del
+        k_del = k_at_del * (one(T) - nu)
+    end
+    
+    # Determine which process based on relative cross-sections
+    table = physics.tables[material]
+    brems = interpolate_table(k_at_del, table.energies, table.bremsstrahlung)
+    pair = interpolate_table(k_at_del, table.energies, table.pair_production)
+    photo = interpolate_table(k_at_del, table.energies, table.photonuclear)
+    total = brems + pair + photo
+    
+    process = 1  # Default to bremsstrahlung
+    if total > zero(T)
+        r_proc = rand(rng) * total
+        if r_proc < brems
+            process = 1
+        elseif r_proc < brems + pair
+            process = 2
+        else
+            process = 3
+        end
+    end
+    
+    return true, X_del, k_del, process
 end
 
 """
@@ -251,6 +320,9 @@ end
 
 Compute the elastic hard scattering mean free path.
 Based on PUMAS coulomb_ehs_length.
+
+In PUMAS, the EHS MFP is computed from the elastic scattering tables.
+The tabulated elastic_path already accounts for the momentum dependence.
 
 Returns mean free path in kg/m².
 """
@@ -263,19 +335,27 @@ function compute_ehs_mean_free_path(physics::PhysicsTables{T}, material::Int,
     mass = physics.mass
     table = physics.tables[material]
     
-    # Get elastic scattering parameters
-    p2 = kinetic * (kinetic + T(2) * mass)
-    
-    # The EHS path is Lb / p² where Lb is tabulated
-    # We approximate Lb from the elastic_path table
+    # Get tabulated elastic path
     elastic_path = interpolate_table(kinetic, table.energies, table.elastic_path)
     
-    # PUMAS divides by p² for the actual path
-    # lb_ehs = Lb / p² where Lb includes the p² factor in tabulation
-    # So the actual EHS mfp scales inversely with p²
-    ehs_path = elastic_path * p2
+    if elastic_path > zero(T) && elastic_path < T(EHS_PATH_MAX)
+        return elastic_path
+    end
     
+    # Fallback: compute from first principles
+    # EHS MFP ≈ λ_1 / μ_0 where λ_1 is first transport MFP and μ_0 is cutoff angle
+    # The elastic ratio determines what fraction of scatters are "hard"
+    elastic_ratio = physics.settings.elastic_ratio
+    transport_path = interpolate_table(kinetic, table.energies, table.transport_path)
+    
+    if transport_path > zero(T)
+        # EHS path = transport_path / (hard fraction)
+        # For small elastic_ratio, hard events are rare -> long MFP
+        ehs_path = transport_path / elastic_ratio
     return min(ehs_path, T(EHS_PATH_MAX))
+    end
+    
+    return T(EHS_PATH_MAX)
 end
 
 """

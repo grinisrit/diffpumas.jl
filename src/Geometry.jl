@@ -157,9 +157,10 @@ function transport_backward_step_full(physics::PhysicsTables{T}, state::State{T}
         kf = property_kinetic_energy(physics, mode_enum, material, Xtot)
     end
     
-    # Check for discrete events (DEL) below 100 GeV
-    if mode == :straggled && ki < T(100.0)
-        del_occurred, X_del, k_del = sample_del_event(
+    # Check for discrete events (DEL) - these matter at ALL energies in backward mode
+    # DEL events give large energy boosts, especially important for high zenith angles
+    if mode == :straggled
+        del_occurred, X_del, k_del, process = sample_del_event(
             physics, material, ki, kf, dX, Xi, ratio, rng; backward=true
         )
         
@@ -167,14 +168,21 @@ function transport_backward_step_full(physics::PhysicsTables{T}, state::State{T}
             # DEL event occurred - update final energy and grammage
             kf = k_del
             dX = X_del
-            event = EVENT_VERTEX_BREMSSTRAHLUNG  # Most common DEL
+            # Set event based on process (1=brems, 2=pair, 3=photo)
+            if process == 1
+                event = EVENT_VERTEX_BREMSSTRAHLUNG
+            elseif process == 2
+                event = EVENT_VERTEX_PAIR_CREATION
+            else
+                event = EVENT_VERTEX_PHOTONUCLEAR
+            end
         end
     end
     
-    # Check for elastic hard scattering (EHS) below 100 GeV
+    # Check for elastic hard scattering (EHS) - important at all energies
     new_direction = state.direction
     
-    if scattering && mode == :straggled && ki < T(100.0)
+    if scattering && mode == :straggled
         ehs_occurred, X_ehs, k_ehs = sample_ehs_event(
             physics, material, ki, kf, dX, Xi, ratio, rng; backward=true
         )
@@ -184,17 +192,18 @@ function transport_backward_step_full(physics::PhysicsTables{T}, state::State{T}
             mu = sample_scattering_angle(physics, material, k_ehs, rng)
             new_direction = rotate_direction(state.direction, mu, rng)
             
-            # Update energy at scattering point
-            if X_ehs < dX
+            # Update energy at scattering point (if EHS came before DEL)
+            if X_ehs < dX && event != EVENT_VERTEX_BREMSSTRAHLUNG && 
+               event != EVENT_VERTEX_PAIR_CREATION && event != EVENT_VERTEX_PHOTONUCLEAR
                 kf = k_ehs
                 dX = X_ehs
+                event = EVENT_VERTEX_COULOMB
             end
-            event = EVENT_VERTEX_COULOMB
         end
     end
     
-    # Apply soft multiple scattering (Highland formula) below 100 GeV
-    if scattering && ki < T(100.0) && event != EVENT_VERTEX_COULOMB
+    # Apply soft multiple scattering (Highland formula) when no hard event
+    if scattering && event != EVENT_VERTEX_COULOMB
         mu_soft = sample_soft_scattering(physics, material, ki, dX, rng)
         if mu_soft > zero(T)
             new_direction = rotate_direction(state.direction, mu_soft, rng)
