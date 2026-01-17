@@ -108,7 +108,8 @@ This matches the PUMAS implementation for accurate muon transport.
                                        step_distance::T,
                                        rng::AbstractRNG;
                                        mode::Symbol = :straggled,
-                                       scattering::Bool = true) where T<:Real
+                                       scattering::Bool = true,
+                                       energy_limit::T = T(-1)) where T<:Real
     
     ki = state.energy
     mass = physics.mass
@@ -116,9 +117,12 @@ This matches the PUMAS implementation for accurate muon transport.
     # Grammage for this step
     dX = step_distance * density
     
-    # Get initial CSDA total grammage (range)
-    mode_enum = ENERGY_LOSS_CSDA
-    Xi = property_range(physics, mode_enum, material, ki)
+    # PUMAS uses MIXED mode for range lookups in STRAGGLED mode
+    # (STRAGGLED > MIXED, so it gets clamped to MIXED in table_get_X)
+    # But weight calculation uses CSDA (see pumas.c line 4920-4924)
+    range_mode = ENERGY_LOSS_MIXED
+    weight_mode = ENERGY_LOSS_CSDA
+    Xi = property_range(physics, range_mode, material, ki)
     
     # Backward: Xtot increases
     Xtot = Xi + dX
@@ -127,6 +131,7 @@ This matches the PUMAS implementation for accurate muon transport.
     kf::T = ki
     ratio::T = one(T)
     event = EVENT_NONE
+    hit_energy_limit = false
     
     if mode == :straggled && ki > T(0.001)
         # Use Landau/Vavilov fluctuation from Straggling module
@@ -155,6 +160,22 @@ This matches the PUMAS implementation for accurate muon transport.
     else
         # Pure CSDA
         kf = property_kinetic_energy(physics, mode_enum, material, Xtot)
+    end
+    
+    # Check for energy limit (PUMAS style: limit step to stop exactly at threshold)
+    # This is critical for correct mode switching at energy thresholds
+    if energy_limit > zero(T) && kf >= energy_limit
+        dk = abs(ki - kf)
+        if dk > zero(T)
+            # Compute fraction of step to reach exactly the energy limit
+            dk_to_limit = abs(energy_limit - ki)
+            frac = dk_to_limit / dk
+            # Adjust grammage and final energy
+            dX = dX * frac
+            kf = energy_limit
+            hit_energy_limit = true
+            event = EVENT_LIMIT_ENERGY
+        end
     end
     
     # Check for discrete events (DEL) - these matter at ALL energies in backward mode
@@ -223,9 +244,9 @@ This matches the PUMAS implementation for accurate muon transport.
     # Position update - BACKWARD mode means moving OPPOSITE to direction
     new_position = state.position - actual_step * state.direction
     
-    # Weight update for backward MC
-    dedx_i = property_stopping_power(physics, mode_enum, material, ki)
-    dedx_f = property_stopping_power(physics, mode_enum, material, kf)
+    # Weight update for backward MC (uses CSDA mode, see pumas.c line 4920-4924)
+    dedx_i = property_stopping_power(physics, weight_mode, material, ki)
+    dedx_f = property_stopping_power(physics, weight_mode, material, kf)
     weight_factor = dedx_f / dedx_i
     
     # Decay weight
@@ -416,16 +437,22 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
         end
         
         # Determine simulation mode based on energy (PUMAS dual-mode)
+        # This must EXACTLY match C geometry.c behavior:
+        # - Below threshold: PUMAS_MODE_STRAGGLED + PUMAS_MODE_MIXED scattering
+        # - Above threshold: PUMAS_MODE_MIXED energy loss + PUMAS_MODE_DISABLED scattering
         if state.energy < ENERGY_THRESHOLD_LOW - eps(T)
-            # Below 100 GeV: detailed simulation (Geant4-like)
+            # Below threshold: detailed simulation (Geant4-like)
+            # PUMAS_MODE_STRAGGLED = full stochastic energy loss
             use_straggled = straggling
+            use_mixed_mode = false  # Full straggling, not mixed
             use_scattering = scattering
             current_energy_limit = ENERGY_THRESHOLD_LOW
         else
-            # Above 100 GeV: fast simulation (MUM-like)
-            # Use MIXED mode (partial fluctuations) but no scattering
-            use_straggled = straggling  # Use mixed mode behavior
-            use_scattering = false  # Disable scattering above 100 GeV
+            # Above threshold: fast simulation (MUM-like)
+            # PUMAS_MODE_MIXED = deterministic CEL with stochastic DEL
+            use_straggled = false  # No straggling above threshold
+            use_mixed_mode = straggling  # Use MIXED mode instead
+            use_scattering = false  # Disable scattering above threshold
             current_energy_limit = energy_threshold
         end
         
@@ -482,16 +509,13 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             end
             
             # Adaptive step sizing for accuracy
+            # PUMAS C uses DEFAULT_ACCURACY = 1E-02 (1% of range)
+            # step_loc = accuracy * density * Xtot (see pumas.c line 6337)
             Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
             
-            # Step fraction depends on mode and material
-            if z < geometry.rock_thickness
-                # Rock: use 5% of range for accuracy
-                max_grammage_frac = T(0.05)
-            else
-                # Air: can use larger steps (lower density, less interaction)
-                max_grammage_frac = T(0.1)
-            end
+            # Use 1% of range to match PUMAS C accuracy
+            # This is critical for correct physics approximations
+            max_grammage_frac = T(0.01)
             
             max_grammage_step = max_grammage_frac * Xi
             max_geometric_step = max_grammage_step / max(density, T(1e-6))
@@ -509,16 +533,23 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             step_size = clamp(step_size, T(STEP_MIN), T(1000.0))
             
             # Perform transport step with appropriate mode
-            if use_scattering && rng !== nothing && state.energy < ENERGY_THRESHOLD_LOW
-                # Full physics below 100 GeV
+            # Match PUMAS C geometry.c exactly:
+            # - Below threshold: STRAGGLED + MIXED scattering (full physics)
+            # - Above threshold: MIXED energy loss (no full straggling, no scattering)
+            # NOTE: Mode flags are set at outer loop, use them consistently (no redundant energy check)
+            if use_straggled && use_scattering && rng !== nothing
+                # Full physics below threshold: STRAGGLED + MIXED scattering
+                # Pass energy_limit so step is limited to stop exactly at threshold (like PUMAS C)
                 state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
-                                                        mode=use_straggled ? :straggled : :csda,
-                                                        scattering=true)
-            elseif use_straggled && rng !== nothing && state.energy >= ENERGY_THRESHOLD_LOW
-                # Above 100 GeV: MIXED mode (simplified straggling, no scattering)
-                state = transport_backward_step_mixed(physics, state, material, density, step_size, rng)
+                                                        mode=:straggled,
+                                                        scattering=true,
+                                                        energy_limit=current_energy_limit)
+            elseif use_mixed_mode && rng !== nothing
+                # Above threshold: MIXED mode (deterministic CEL + stochastic DEL, no scattering)
+                state = transport_backward_step_mixed(physics, state, material, density, step_size, rng;
+                                                      energy_limit=current_energy_limit)
             elseif use_straggled && rng !== nothing
-                # Below 100 GeV without scattering
+                # Below threshold without scattering (straggling only)
                 state = transport_backward_step(physics, state, material, density, step_size;
                                                 rng=rng, straggling=true)
             else
@@ -533,16 +564,18 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
 end
 
 """
-    transport_backward_step_mixed(physics, state, material, density, step_distance, rng)
+    transport_backward_step_mixed(physics, state, material, density, step_distance, rng; energy_limit=-1)
 
 Perform a backward transport step in MIXED mode (for energies > 100 GeV).
-Uses MIXED energy loss (partial straggling) with DISABLED scattering.
-This is the fast "MUM-like" simulation mode.
+Uses PURE DETERMINISTIC CEL (Continuous Energy Loss) with NO fluctuations.
+This matches PUMAS C's PUMAS_MODE_MIXED which is deterministic.
+Scattering is disabled in this mode.
 """
 function transport_backward_step_mixed(physics::PhysicsTables{T}, state::State{T},
                                        material::Int, density::T, 
                                        step_distance::T,
-                                       rng::AbstractRNG) where T<:Real
+                                       rng::AbstractRNG;
+                                       energy_limit::T = T(-1)) where T<:Real
     
     ki = state.energy
     mass = physics.mass
@@ -551,26 +584,22 @@ function transport_backward_step_mixed(physics::PhysicsTables{T}, state::State{T
     # Get CSDA properties
     Xi = property_range(physics, ENERGY_LOSS_CSDA, material, ki)
     Xf = Xi + grammage_step
-    kf_csda = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, material, Xf)
     
-    # MIXED mode: use CEL (Continuous Energy Loss) with radiative fluctuations
-    # This accounts for hard radiative processes probabilistically
-    kf = kf_csda
+    # MIXED mode in PUMAS C = PURE DETERMINISTIC CEL (no fluctuations!)
+    # See pumas.c lines 6516-6562: cel_kinetic_energy is called directly
+    kf = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, material, Xf)
     
-    # Add fluctuation from radiative processes
-    Omega = property_straggling(physics, material, ki)
-    dk_expected = kf_csda - ki
-    
-    if Omega > zero(T) && dk_expected > zero(T)
-        # Variance scaled down for MIXED mode (80% CSDA + 20% stochastic)
-        sigma = sqrt(Omega * grammage_step * T(0.2))
-        
-        # Gaussian fluctuation (truncated)
-        u = box_muller_randn(rng)
-        u = clamp(u, T(-3), T(3))
-        
-        kf = kf_csda + sigma * u
-        kf = max(kf, ki)  # Energy must increase in backward mode
+    # Check for energy limit (like PUMAS C: limit step to stop exactly at threshold)
+    actual_step = step_distance
+    if energy_limit > zero(T) && kf >= energy_limit
+        dk = abs(ki - kf)
+        if dk > zero(T)
+            dk_to_limit = abs(energy_limit - ki)
+            frac = dk_to_limit / dk
+            grammage_step = grammage_step * frac
+            actual_step = actual_step * frac
+            kf = energy_limit
+        end
     end
     
     # Kinematics (using average of actual energies)
@@ -579,14 +608,15 @@ function transport_backward_step_mixed(physics::PhysicsTables{T}, state::State{T
     gamma_avg = (gamma_i + gamma_f) / 2
     beta_avg = sqrt(max(one(T) - one(T) / gamma_avg^2, T(1e-12)))
     
-    proper_time_step = step_distance / (beta_avg * gamma_avg)
+    proper_time_step = actual_step / (beta_avg * gamma_avg)
     
     # Position update (backward = opposite to direction)
-    new_position = state.position - step_distance * state.direction
+    new_position = state.position - actual_step * state.direction
     
     # Weight update using CSDA Jacobian
+    # In pure CSDA mode, kf IS the CSDA energy (no fluctuations)
     dedx_i = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, ki)
-    dedx_f = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, kf_csda)
+    dedx_f = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, kf)
     weight_factor = dedx_f / dedx_i
     
     # Decay factor
@@ -595,7 +625,7 @@ function transport_backward_step_mixed(physics::PhysicsTables{T}, state::State{T
     new_weight = state.weight * weight_factor * decay_factor
     
     return State{T}(
-        state.charge, kf, state.distance + step_distance,
+        state.charge, kf, state.distance + actual_step,
         state.grammage + grammage_step, state.time + proper_time_step,
         new_weight, new_position, state.direction, state.decayed
     )
@@ -684,6 +714,10 @@ Compute integrated muon flux using backward Monte Carlo.
 - `straggling`: Enable energy straggling (default: true)
 - `scattering`: Enable full scattering model (default: true)
 - `energy_threshold_low`: Energy threshold for mode switching in GeV (default: 100.0)
+
+# Returns
+- `flux`: Average flux in m⁻² s⁻¹ sr⁻¹
+- `sigma`: Standard error of the mean (proper variance calculation matching PUMAS C)
 """
 function compute_flux(physics::PhysicsTables{T}, 
                       rock_density::T,
@@ -745,7 +779,12 @@ function compute_flux(physics::PhysicsTables{T},
     # Average flux
     flux_avg = w_sum / n_samples
     
-    return flux_avg
+    # Proper standard error: σ = sqrt(Var(X)/n) where Var(X) = E[X²] - E[X]²
+    # This matches PUMAS C implementation
+    variance = (w2_sum / n_samples) - flux_avg * flux_avg
+    sigma = rock_thickness > zero(T) ? sqrt(max(variance, zero(T)) / n_samples) : zero(T)
+    
+    return flux_avg, sigma
 end
 
 """
@@ -832,14 +871,11 @@ function run_backward_mc(physics::PhysicsTables{T};
     @info "  Straggling: $(straggling), Scattering: $(scattering)"
     @info "  Energy threshold: $(energy_threshold_low) GeV"
     
-    # Compute flux
-    flux = compute_flux(physics, rock_density, rock_thickness, elevation,
+    # Compute flux (now returns flux and proper sigma)
+    flux, sigma = compute_flux(physics, rock_density, rock_thickness, elevation,
                         energy_min, energy_max; n_samples=n_samples, seed=seed,
                         straggling=straggling, scattering=scattering,
                         energy_threshold_low=energy_threshold_low)
-    
-    # Estimate error
-    sigma = rock_thickness > 0 ? flux / sqrt(T(n_samples)) : zero(T)
     
     # Compute gradient if requested
     grad_density = nothing

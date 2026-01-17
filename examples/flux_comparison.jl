@@ -176,21 +176,25 @@ function compute_c_flux_grid(thicknesses::Vector{Float64},
 end
 
 """
-    compute_julia_flux_grid(physics, thicknesses, zeniths; n_samples, energy_threshold_low)
+    compute_julia_flux_grid(physics, thicknesses, zeniths; n_samples, energy_threshold_low, straggling, scattering)
 
 Compute Julia flux values for a grid of parameters.
-Matches PUMAS C geometry.c behavior:
+Matches PUMAS C geometry.c behavior when straggling=true, scattering=true:
 - Below energy_threshold_low: STRAGGLED energy loss + MIXED scattering (transverse transport ON)
 - Above energy_threshold_low: MIXED energy loss + DISABLED scattering
 
 # Arguments
 - `energy_threshold_low`: Energy threshold for mode switching in GeV (default: 100.0)
+- `straggling`: Enable energy straggling (default: true)
+- `scattering`: Enable scattering (default: true)
 """
 function compute_julia_flux_grid(physics, 
                                   thicknesses::Vector{Float64}, 
                                   zeniths::Vector{Float64};
                                   n_samples::Int = 10000,
-                                  energy_threshold_low::Float64 = 100.0)
+                                  energy_threshold_low::Float64 = 100.0,
+                                  straggling::Bool = true,
+                                  scattering::Bool = true)
     
     energy_min = 1e-3
     energy_max = 1e9
@@ -206,14 +210,12 @@ function compute_julia_flux_grid(physics,
             elevation = zenith_to_elevation(zenith)
             @info "[$n_done/$n_total] Running Julia: thickness=$thickness m, θ=$(zenith)°"
             
-            # Match PUMAS C geometry.c:
-            # - straggling=true: STRAGGLED mode below energy_threshold_low, MIXED above
-            # - scattering=true: MIXED scattering below energy_threshold_low, DISABLED above
-            flux = compute_flux(physics, 2650.0, thickness, elevation, 
+            # Use provided straggling and scattering settings
+            # compute_flux now returns (flux, sigma) with proper variance calculation
+            flux, sigma = compute_flux(physics, 2650.0, thickness, elevation, 
                                energy_min, energy_max; n_samples=n_samples,
-                               straggling=true, scattering=true,
+                               straggling=straggling, scattering=scattering,
                                energy_threshold_low=energy_threshold_low)
-            sigma = thickness > 0 ? flux / sqrt(n_samples) : 0.0
             
             results[(thickness, zenith)] = (flux, sigma)
         end
@@ -407,6 +409,8 @@ function parse_commandline()
     reload_physics = false
     energy_threshold_low = 100.0
     output_path = nothing  # Default will be set in main()
+    straggling = true
+    scattering = true
     
     if "--help" in ARGS || "-h" in ARGS
         println("""
@@ -422,6 +426,10 @@ function parse_commandline()
             --threshold N        Energy threshold for mode switching in GeV (default: 100.0)
                                 Below threshold: STRAGGLED + MIXED scattering
                                 Above threshold: MIXED energy loss, no scattering
+            --straggling         Enable energy straggling (default: true)
+            --no-straggling      Disable energy straggling
+            --scattering         Enable scattering (default: true)
+            --no-scattering      Disable scattering
             --output PATH, -o PATH
                                 Output path for 3D plot HTML file
                                 (default: examples/data/flux_comparison_3d.html)
@@ -433,6 +441,8 @@ function parse_commandline()
             julia --project=. examples/flux_comparison.jl --threshold 50.0
             julia --project=. examples/flux_comparison.jl --output my_plot.html
             julia --project=. examples/flux_comparison.jl --recompute --reload-physics
+            julia --project=. examples/flux_comparison.jl --no-scattering
+            julia --project=. examples/flux_comparison.jl --no-straggling --scattering
         """)
         exit(0)
     end
@@ -467,6 +477,18 @@ function parse_commandline()
             else
                 error("--output requires a path")
             end
+        elseif arg == "--straggling"
+            straggling = true
+            i += 1
+        elseif arg == "--no-straggling"
+            straggling = false
+            i += 1
+        elseif arg == "--scattering"
+            scattering = true
+            i += 1
+        elseif arg == "--no-scattering"
+            scattering = false
+            i += 1
         elseif startswith(arg, "--samples=")
             n_samples = parse(Int, split(arg, "=")[2])
             i += 1
@@ -481,12 +503,12 @@ function parse_commandline()
         end
     end
     
-    return n_samples, recompute, reload_physics, energy_threshold_low, output_path
+    return n_samples, recompute, reload_physics, energy_threshold_low, output_path, straggling, scattering
 end
 
 function main()
     # Parse command line
-    n_samples, recompute, reload_physics, energy_threshold_low, output_path = parse_commandline()
+    n_samples, recompute, reload_physics, energy_threshold_low, output_path, straggling, scattering = parse_commandline()
     
     # Set default output path if not provided
     if output_path === nothing
@@ -508,8 +530,20 @@ function main()
     end
     println("Monte Carlo samples: $n_samples")
     println("Energy threshold: $energy_threshold_low GeV")
-    println("  Below threshold: STRAGGLED + MIXED scattering")
-    println("  Above threshold: MIXED energy loss, no scattering")
+    if straggling && scattering
+        println("  Below threshold: STRAGGLED + MIXED scattering")
+        println("  Above threshold: MIXED energy loss, no scattering")
+    elseif straggling && !scattering
+        println("  Below threshold: STRAGGLED (no scattering)")
+        println("  Above threshold: MIXED energy loss, no scattering")
+    elseif !straggling && scattering
+        println("  Below threshold: CSDA + MIXED scattering")
+        println("  Above threshold: MIXED energy loss, no scattering")
+    else
+        println("  All energies: Pure CSDA (no straggling, no scattering)")
+    end
+    println("Straggling: $straggling")
+    println("Scattering: $scattering")
     println("Output plot: $output_path")
     println()
     
@@ -563,7 +597,9 @@ function main()
     println("Computing DiffPumas (Julia) flux values...")
     julia_results = compute_julia_flux_grid(physics, thicknesses, zeniths; 
                                             n_samples=n_samples,
-                                            energy_threshold_low=energy_threshold_low)
+                                            energy_threshold_low=energy_threshold_low,
+                                            straggling=straggling,
+                                            scattering=scattering)
     println()
     
     # Print detailed flux table with sigma percentages and differences

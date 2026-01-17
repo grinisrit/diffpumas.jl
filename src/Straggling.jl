@@ -85,9 +85,11 @@ This implements the Landau/Vavilov distribution approximation used by PUMAS:
                                backward::Bool = false) where T<:Real
     
     sgn = backward ? T(-1) : T(1)
-    mode = ENERGY_LOSS_CSDA
+    # PUMAS uses MIXED mode tables for STRAGGLED mode (see pumas.c line 4268, 4277, 4301)
+    # STRAGGLED > MIXED, so it gets clamped to MIXED
+    mode = ENERGY_LOSS_MIXED
     
-    # Get expected final energy from CSDA
+    # Get expected final energy from MIXED tables (matching PUMAS C)
     k1 = property_kinetic_energy(physics, mode, material, Xtot - sgn * dX)
     dk0 = abs(ki - k1)
     
@@ -104,8 +106,8 @@ This implements the Landau/Vavilov distribution approximation used by PUMAS:
         # Apply correction for large steps
         tmp = dX / Xtot
         if tmp > T(X_THRESHOLD)
-            de1 = property_stopping_power(physics, mode, material, k1)
-            de0 = property_stopping_power(physics, mode, material, ki)
+            de1 = property_stopping_power(physics, ENERGY_LOSS_MIXED, material, k1)
+            de0 = property_stopping_power(physics, ENERGY_LOSS_MIXED, material, ki)
             dk12 *= one(T) + sgn * dX / dk0 * (de1 - de0)
         end
         
@@ -198,7 +200,8 @@ high zenith angles where hard events matter more.
                           backward::Bool = false) where T<:Real
     
     sgn = backward ? T(-1) : T(1)
-    mode = ENERGY_LOSS_CSDA
+    # PUMAS uses MIXED mode tables for STRAGGLED mode
+    mode = ENERGY_LOSS_MIXED
     
     # Get maximum cross-section over the step
     xs_del_i = compute_del_cross_section(physics, material, ki)
@@ -221,7 +224,7 @@ high zenith angles where hard events matter more.
         return false, zero(T), zero(T), 0
     end
     
-    # Get energy at the interaction point (CSDA propagation to X_del)
+    # Get energy at the interaction point (using MIXED tables like PUMAS C)
     k_h = property_kinetic_energy(physics, mode, material, Xtot - sgn * X_del)
     
     # Energy at interaction using fluctuation ratio
@@ -329,7 +332,7 @@ Returns mean free path in kg/m².
         # EHS path = transport_path / (hard fraction)
         # For small elastic_ratio, hard events are rare -> long MFP
         ehs_path = transport_path / elastic_ratio
-    return min(ehs_path, T(EHS_PATH_MAX))
+        return min(ehs_path, T(EHS_PATH_MAX))
     end
     
     return T(EHS_PATH_MAX)
@@ -352,7 +355,8 @@ Based on PUMAS's EHS sampling.
                           backward::Bool = false) where T<:Real
     
     sgn = backward ? T(-1) : T(1)
-    mode = ENERGY_LOSS_CSDA
+    # PUMAS uses MIXED mode tables for STRAGGLED mode
+    mode = ENERGY_LOSS_MIXED
     
     # Get minimum/maximum energies
     kmin = min(ki, kf)
@@ -435,22 +439,28 @@ Returns mu (0 = forward, 1 = backward).
     # A ≈ mu0 / 4 following Molière
     A = mu0 / T(4)
     
+    # Precompute spin factor (outside loop for efficiency)
+    fspin = interpolate_table(kinetic, table.energies, table.spin_factor)
+    
+    # Precompute constants for sampling
+    A_plus_mu0 = A + mu0
+    A_plus_1 = A + one(T)
+    one_minus_mu0 = one(T) - mu0
+    
     # Sample from Wentzel-like distribution: dσ/dμ ∝ 1/(A + μ)²
     # Using inverse CDF: μ = A * (A + 1) / (A + 1 - ξ * (1 - μ0)) - A
-    max_iter = 1000
-    for _ in 1:max_iter
+    @inbounds for _ in 1:100
         zeta = rand(rng)
-        tmp = one(T) + A - zeta * (one(T) - mu0)
+        tmp = A_plus_1 - zeta * one_minus_mu0
         
         if tmp <= zero(T)
             continue
         end
         
-        mu1 = (A + mu0) * (A + one(T)) / tmp - A
+        mu1 = A_plus_mu0 * A_plus_1 / tmp - A
         mu1 = clamp(mu1, mu0, one(T))
         
         # Spin correction factor rejection
-        fspin = interpolate_table(kinetic, table.energies, table.spin_factor)
         if rand(rng) <= one(T) - fspin * mu1
             return mu1
         end
@@ -473,48 +483,46 @@ Returns mu = 0.5*(1 - cos(theta)).
 @inline function sample_msc_angle(physics::PhysicsTables{T}, material::Int,
                           kinetic::T, grammage::T, rng::AbstractRNG) where T<:Real
     
-    if grammage <= zero(T) || kinetic <= zero(T)
-        return zero(T)
-    end
-    
-    # Get inverse transport path (invlb1 = 1/λ₁)
-    table = physics.tables[material]
-    lb1 = interpolate_table(kinetic, table.energies, table.transport_path)
-    
-    if lb1 <= zero(T)
-        return zero(T)
-    end
-    
-    invlb1 = one(T) / lb1
-    
-    # PUMAS formula: ilb1 = 0.25 * step * (invlb1_start + invlb1_end)
-    # Simplified: use single point estimate with factor 0.25
-    ilb1 = T(0.25) * grammage * invlb1
-    
-    if ilb1 <= zero(T)
-        return zero(T)
-    end
-    
-    # Cap ilb1 at 1 as in C
-    if ilb1 > one(T)
-        ilb1 = one(T)
-    end
-    
-    # Sample mu from exponential distribution with rejection
-    # mu = -ilb1 * log(rand()) with rejection for mu > 1
-    local mu::T
-    for _ in 1:100  # Max iterations (rarely loops)
-        u = rand(rng)
-        if u > zero(T)
-            mu = -ilb1 * log(u)
-            if mu <= one(T)
-                return mu
-            end
+    @inbounds begin
+        if grammage <= zero(T) || kinetic <= zero(T)
+            return zero(T)
         end
+        
+        # Get transport path from table
+        table = physics.tables[material]
+        lb1 = interpolate_table(kinetic, table.energies, table.transport_path)
+        
+        if lb1 <= zero(T)
+            return zero(T)
+        end
+        
+        # PUMAS formula: ilb1 = 0.5 * step * (invlb1_start + invlb1_end)
+        # For similar start/end values: ilb1 ≈ step / lb1
+        # Use 0.5 as estimate (C averages start/end, we only have start)
+        ilb1 = T(0.5) * grammage / lb1
+        
+        if ilb1 <= zero(T)
+            return zero(T)
+        end
+        
+        # Cap ilb1 at 1 as in C
+        if ilb1 > one(T)
+            ilb1 = one(T)
+        end
+        
+        # Efficient sampling from truncated exponential distribution
+        # mu ~ Exp(rate = 1/ilb1) truncated to [0, 1]
+        # Using inverse CDF method (no rejection needed):
+        # F(x) = (1 - exp(-x/ilb1)) / (1 - exp(-1/ilb1)) for x in [0, 1]
+        # Inverse: x = -ilb1 * log(1 - u * (1 - exp(-1/ilb1)))
+        u = rand(rng)
+        inv_ilb1 = one(T) / ilb1
+        exp_factor = one(T) - exp(-inv_ilb1)
+        mu = -ilb1 * log(one(T) - u * exp_factor)
+        
+        # Ensure mu is in valid range (numerical safety)
+        return min(max(mu, zero(T)), one(T))
     end
-    
-    # Fallback: return small angle
-    return ilb1
 end
 
 """
@@ -575,10 +583,11 @@ Based on PUMAS step_rotate_direction implementation.
         end
     end
     
-    # Cross product: u1 = d × u0
-    u1x = d[2] * u0z - d[3] * u0y
-    u1y = d[3] * u0x - d[1] * u0z
-    u1z = d[1] * u0y - d[2] * u0x
+    # Cross product: u1 = u0 × d (PUMAS convention)
+    # Note: u0 × d = -d × u0, so signs are flipped from d × u0
+    u1x = u0y * d[3] - u0z * d[2]
+    u1y = u0z * d[1] - u0x * d[3]
+    u1z = u0x * d[2] - u0y * d[1]
     
     # Random azimuthal angle (following PUMAS: phi = π*(1 - 2*random))
     phi = T(π) * (one(T) - T(2) * rand(rng))
