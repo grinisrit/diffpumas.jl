@@ -176,15 +176,21 @@ function compute_c_flux_grid(thicknesses::Vector{Float64},
 end
 
 """
-    compute_julia_flux_grid(physics, thicknesses, zeniths)
+    compute_julia_flux_grid(physics, thicknesses, zeniths; n_samples, energy_threshold_low)
 
 Compute Julia flux values for a grid of parameters.
-Enables both straggling and scattering for best match with PUMAS C.
+Matches PUMAS C geometry.c behavior:
+- Below energy_threshold_low: STRAGGLED energy loss + MIXED scattering (transverse transport ON)
+- Above energy_threshold_low: MIXED energy loss + DISABLED scattering
+
+# Arguments
+- `energy_threshold_low`: Energy threshold for mode switching in GeV (default: 100.0)
 """
 function compute_julia_flux_grid(physics, 
                                   thicknesses::Vector{Float64}, 
                                   zeniths::Vector{Float64};
-                                  n_samples::Int = 10000)
+                                  n_samples::Int = 10000,
+                                  energy_threshold_low::Float64 = 100.0)
     
     energy_min = 1e-3
     energy_max = 1e9
@@ -200,10 +206,13 @@ function compute_julia_flux_grid(physics,
             elevation = zenith_to_elevation(zenith)
             @info "[$n_done/$n_total] Running Julia: thickness=$thickness m, θ=$(zenith)°"
             
-            # Enable straggling and scattering for best PUMAS match
+            # Match PUMAS C geometry.c:
+            # - straggling=true: STRAGGLED mode below energy_threshold_low, MIXED above
+            # - scattering=true: MIXED scattering below energy_threshold_low, DISABLED above
             flux = compute_flux(physics, 2650.0, thickness, elevation, 
                                energy_min, energy_max; n_samples=n_samples,
-                               straggling=true, scattering=true)
+                               straggling=true, scattering=true,
+                               energy_threshold_low=energy_threshold_low)
             sigma = thickness > 0 ? flux / sqrt(n_samples) : 0.0
             
             results[(thickness, zenith)] = (flux, sigma)
@@ -307,6 +316,49 @@ function create_comparison_table(c_results::Dict, julia_results::Dict)
 end
 
 """
+    save_detailed_flux_table_csv(c_results, julia_results, csv_path)
+
+Save the detailed flux comparison table to a CSV file.
+Includes flux values, relative errors (σ%), and difference percentages.
+"""
+function save_detailed_flux_table_csv(c_results::Dict, julia_results::Dict, csv_path::String)
+    mkpath(dirname(csv_path))
+    
+    open(csv_path, "w") do io
+        # Write CSV header
+        println(io, "Thickness (m),Zenith θ (°),Julia Flux (m⁻²s⁻¹sr⁻¹),Julia σ (%),C Flux (m⁻²s⁻¹sr⁻¹),C σ (%),Diff (%)")
+        
+        # Write data rows
+        for key in sort(collect(keys(c_results)))
+            thickness, zenith = key
+            c_flux, c_sigma = c_results[key]
+            j_flux, j_sigma = get(julia_results, key, (NaN, NaN))
+            
+            # Calculate relative errors in percentage
+            j_sigma_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma)) ? 
+                          (j_sigma / j_flux) * 100.0 : NaN
+            c_sigma_pct = (c_flux > 0 && isfinite(c_flux) && isfinite(c_sigma)) ? 
+                          (c_sigma / c_flux) * 100.0 : NaN
+            
+            # Calculate difference percentage: ((Julia - C) / C) * 100
+            diff_pct = (c_flux > 0 && j_flux > 0 && isfinite(c_flux) && isfinite(j_flux)) ? 
+                       ((j_flux - c_flux) / c_flux) * 100.0 : NaN
+            
+            # Format values for CSV
+            j_flux_str = isfinite(j_flux) ? string(j_flux) : "NaN"
+            j_sigma_pct_str = isfinite(j_sigma_pct) ? string(j_sigma_pct) : "NaN"
+            c_flux_str = isfinite(c_flux) ? string(c_flux) : "NaN"
+            c_sigma_pct_str = isfinite(c_sigma_pct) ? string(c_sigma_pct) : "NaN"
+            diff_pct_str = isfinite(diff_pct) ? string(diff_pct) : "NaN"
+            
+            println(io, "$thickness,$zenith,$j_flux_str,$j_sigma_pct_str,$c_flux_str,$c_sigma_pct_str,$diff_pct_str")
+        end
+    end
+    
+    @info "Saved detailed flux comparison table to: $csv_path"
+end
+
+"""
     create_detailed_flux_table(c_results, julia_results)
 
 Create a detailed table with flux values, sigma percentages, and difference percentages.
@@ -352,6 +404,8 @@ end
 function parse_commandline()
     n_samples = 10000
     recompute = false
+    reload_physics = false
+    energy_threshold_low = 100.0
     output_path = nothing  # Default will be set in main()
     
     if "--help" in ARGS || "-h" in ARGS
@@ -363,7 +417,11 @@ function parse_commandline()
         
         Options:
             --recompute          Force recomputation of C results (default: use cached)
+            --reload-physics     Force recreation of physics tables
             --samples N, -n N    Number of Monte Carlo samples per point (default: 10000)
+            --threshold N        Energy threshold for mode switching in GeV (default: 100.0)
+                                Below threshold: STRAGGLED + MIXED scattering
+                                Above threshold: MIXED energy loss, no scattering
             --output PATH, -o PATH
                                 Output path for 3D plot HTML file
                                 (default: examples/data/flux_comparison_3d.html)
@@ -372,8 +430,9 @@ function parse_commandline()
         Examples:
             julia --project=. examples/flux_comparison.jl
             julia --project=. examples/flux_comparison.jl --samples 50000
+            julia --project=. examples/flux_comparison.jl --threshold 50.0
             julia --project=. examples/flux_comparison.jl --output my_plot.html
-            julia --project=. examples/flux_comparison.jl --recompute --samples 20000
+            julia --project=. examples/flux_comparison.jl --recompute --reload-physics
         """)
         exit(0)
     end
@@ -384,12 +443,22 @@ function parse_commandline()
         if arg == "--recompute"
             recompute = true
             i += 1
+        elseif arg == "--reload-physics"
+            reload_physics = true
+            i += 1
         elseif arg == "--samples" || arg == "-n"
             if i + 1 <= length(ARGS)
                 n_samples = parse(Int, ARGS[i + 1])
                 i += 2
             else
                 error("--samples requires a value")
+            end
+        elseif arg == "--threshold"
+            if i + 1 <= length(ARGS)
+                energy_threshold_low = parse(Float64, ARGS[i + 1])
+                i += 2
+            else
+                error("--threshold requires a value")
             end
         elseif arg == "--output" || arg == "-o"
             if i + 1 <= length(ARGS)
@@ -401,6 +470,9 @@ function parse_commandline()
         elseif startswith(arg, "--samples=")
             n_samples = parse(Int, split(arg, "=")[2])
             i += 1
+        elseif startswith(arg, "--threshold=")
+            energy_threshold_low = parse(Float64, split(arg, "=")[2])
+            i += 1
         elseif startswith(arg, "--output=")
             output_path = split(arg, "=", limit=2)[2]
             i += 1
@@ -409,12 +481,12 @@ function parse_commandline()
         end
     end
     
-    return n_samples, recompute, output_path
+    return n_samples, recompute, reload_physics, energy_threshold_low, output_path
 end
 
 function main()
     # Parse command line
-    n_samples, recompute, output_path = parse_commandline()
+    n_samples, recompute, reload_physics, energy_threshold_low, output_path = parse_commandline()
     
     # Set default output path if not provided
     if output_path === nothing
@@ -431,7 +503,13 @@ function main()
     else
         println("Mode: Use cached C results where available")
     end
+    if reload_physics
+        println("Mode: Force reload physics tables")
+    end
     println("Monte Carlo samples: $n_samples")
+    println("Energy threshold: $energy_threshold_low GeV")
+    println("  Below threshold: STRAGGLED + MIXED scattering")
+    println("  Above threshold: MIXED energy loss, no scattering")
     println("Output plot: $output_path")
     println()
     
@@ -439,12 +517,16 @@ function main()
     if !isfile(C_EXECUTABLE)
         println("WARNING: C executable not found at: $C_EXECUTABLE")
         println("Please compile PUMAS first:")
-        println("  cd $(PUMAS_DIR) && mkdir -p build && cd build && cmake .. && make")
+        println("  cd $(PUMAS_DIR) && mkdir -p build && cd build && cmake .. -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DPUMAS_BUILD_EXAMPLES=true && cmake --build .")
         println()
     end
     
     # Load or create physics
     println("Loading physics tables...")
+    if reload_physics && isfile(PHYSICS_DUMP)
+        @info "Removing existing physics dump for reload..."
+        rm(PHYSICS_DUMP)
+    end
     if !isfile(PHYSICS_DUMP)
         @info "Physics dump not found, creating..."
         physics = create_physics(MUON; n_energies=200, K_min=1e-3, K_max=1e9)
@@ -480,11 +562,16 @@ function main()
     # Compute Julia results
     println("Computing DiffPumas (Julia) flux values...")
     julia_results = compute_julia_flux_grid(physics, thicknesses, zeniths; 
-                                            n_samples=n_samples)
+                                            n_samples=n_samples,
+                                            energy_threshold_low=energy_threshold_low)
     println()
     
-    # Print comparison table
-    create_comparison_table(c_results, julia_results)
+    # Print detailed flux table with sigma percentages and differences
+    create_detailed_flux_table(c_results, julia_results)
+    
+    # Save detailed flux table to CSV (same directory as HTML)
+    csv_path = joinpath(dirname(output_path), "flux_comparison.csv")
+    save_detailed_flux_table_csv(c_results, julia_results, csv_path)
     
     # Create plot
     println()
@@ -506,14 +593,12 @@ function main()
         # Not in interactive environment
     end
     
-    # Print detailed flux table with sigma percentages and differences
-    create_detailed_flux_table(c_results, julia_results)
-    
     println()
     println("Done!")
     println()
     println("View results:")
     println("  3D comparison: $output_path")
+    println("  CSV table: $csv_path")
     println()
     
     return 0

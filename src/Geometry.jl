@@ -103,7 +103,7 @@ This matches the PUMAS implementation for accurate muon transport.
 - `new_state`: Updated particle state
 - `event`: Transport event that occurred (if any)
 """
-function transport_backward_step_full(physics::PhysicsTables{T}, state::State{T},
+@inline function transport_backward_step_full(physics::PhysicsTables{T}, state::State{T},
                                        material::Int, density::T, 
                                        step_distance::T,
                                        rng::AbstractRNG;
@@ -360,10 +360,16 @@ function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
 end
 
 """
-    transport_backward_through_geometry(physics, geometry, initial_state, energy_threshold; rng=nothing, straggling=false, scattering=false)
+    transport_backward_through_geometry(physics, geometry, initial_state, energy_threshold; rng=nothing, straggling=false, scattering=false, energy_threshold_low=100.0)
 
 Transport particle backward through the two-layer geometry.
 Particle starts at z=0 and travels upward (opposite to downward direction).
+
+**CRITICAL**: This implements PUMAS's dual-mode transport:
+- Below energy_threshold_low: STRAGGLED energy loss + MIXED scattering (detailed Geant4-like)
+- Above energy_threshold_low: MIXED energy loss + DISABLED scattering (fast MUM-like)
+
+This mode switching is essential for accurate flux calculation!
 
 # Arguments
 - `physics`: Physics tables
@@ -373,6 +379,7 @@ Particle starts at z=0 and travels upward (opposite to downward direction).
 - `rng`: Random number generator for straggling
 - `straggling`: Enable energy straggling (default: false)
 - `scattering`: Enable full scattering (default: false)
+- `energy_threshold_low`: Energy threshold for mode switching (default: 100.0 GeV)
 """
 function transport_backward_through_geometry(physics::PhysicsTables{T}, 
                                              geometry::TwoLayerGeometry{T},
@@ -380,101 +387,145 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
                                              energy_threshold::T;
                                              rng::Union{AbstractRNG, Nothing} = nothing,
                                              straggling::Bool = false,
-                                             scattering::Bool = false) where T<:Real
+                                             scattering::Bool = false,
+                                             energy_threshold_low::T = T(100.0)) where T<:Real
     
     state = initial_state
-    max_steps = 100000  # Increased for higher accuracy with scattering
     
-    for step in 1:max_steps
+    # PUMAS-style dual mode transport with energy limit triggers
+    ENERGY_THRESHOLD_LOW = energy_threshold_low  # Mode switch threshold (default 100 GeV)
+    STEP_EPSILON = T(1e-7)  # Small offset to cross boundaries
+    
+    # Outer loop: runs until we exit simulation area or reach energy_threshold
+    while state.energy < energy_threshold - eps(T)
         z = state.position[3]
         
-        # Check if reached primary altitude (success)
-        if z >= PRIMARY_ALTITUDE
-            break
-        end
-        
-        # Check if went below ground (failure)
+        # Check termination conditions
         if z < zero(T)
+            # Below ground - particle absorbed
             break
         end
         
-        # Check energy threshold
-        if state.energy >= energy_threshold
+        if z >= PRIMARY_ALTITUDE - eps(T)
+            # Reached primary altitude - success!
             break
         end
         
-        # Check weight (numerical issues)
         if state.weight <= zero(T) || !isfinite(state.weight)
             break
         end
         
-        # Determine current medium and compute step
-        # In backward mode, uz is the vertical component of actual motion
-        # (opposite to direction vector)
-        uz_motion = -state.direction[3]  # Actual vertical motion direction
-        
-        if z < geometry.rock_thickness
-            # In rock layer
-            material = geometry.rock_material
-            density = geometry.rock_density
-            
-            # Step to upper boundary of rock
-            if uz_motion > eps(T)
-                step_to_boundary = (geometry.rock_thickness - z) / uz_motion
-            else
-                # Moving down or horizontal - shouldn't happen in proper backward MC
-                step_to_boundary = T(1.0)
-            end
-            
-            # Adaptive step based on energy and density
-            # Limit grammage per step to ~5% of CSDA range for accuracy
-            Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
-            max_grammage_step = T(0.05) * Xi
-            max_geometric_step = max_grammage_step / density
-            
-            step_size = min(step_to_boundary + T(1e-6), max_geometric_step)
+        # Determine simulation mode based on energy (PUMAS dual-mode)
+        if state.energy < ENERGY_THRESHOLD_LOW - eps(T)
+            # Below 100 GeV: detailed simulation (Geant4-like)
+            use_straggled = straggling
+            use_scattering = scattering
+            current_energy_limit = ENERGY_THRESHOLD_LOW
         else
-            # In air layer
-            material = geometry.air_material
-            density = locals_air_at_altitude(z).density
-            
-            # Step to primary altitude
-            if uz_motion > eps(T)
-                step_to_boundary = (PRIMARY_ALTITUDE - z) / uz_motion
-            else
-                step_to_boundary = T(1.0)
-            end
-            
-            # Adaptive step size for non-uniform atmosphere
-            # Use smaller steps where density changes rapidly
-            h = T(12e3)  # Scale height
-            uz_abs = max(abs(uz_motion), T(0.01))
-            
-            # Limit step to ~1% density change
-            altitude_step = T(0.01) * h / uz_abs
-            
-            # Also limit by CSDA range fraction
-            Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
-            max_grammage_step = T(0.1) * Xi  # Can use larger fraction in air
-            max_geometric_step = max_grammage_step / max(density, T(1e-6))
-            
-            step_size = min(step_to_boundary + T(1e-6), altitude_step, max_geometric_step)
+            # Above 100 GeV: fast simulation (MUM-like)
+            # Use MIXED mode (partial fluctuations) but no scattering
+            use_straggled = straggling  # Use mixed mode behavior
+            use_scattering = false  # Disable scattering above 100 GeV
+            current_energy_limit = energy_threshold
         end
         
-        # Apply overall limits
-        step_size = min(step_size, T(1000.0))  # Max 1 km per step
-        step_size = max(step_size, T(STEP_MIN))
+        # Inner transport loop until hitting energy limit or boundary
+        inner_steps = 0
+        max_inner_steps = 50000
         
-        # Perform backward transport step with optional straggling and scattering
-        if scattering && rng !== nothing
-            # Use full physics model with DEL and scattering
-            state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
-                                                    mode=straggling ? :straggled : :csda,
-                                                    scattering=true)
-        else
-            # Use simpler model without scattering
-            state = transport_backward_step(physics, state, material, density, step_size;
-                                            rng=rng, straggling=straggling)
+        while inner_steps < max_inner_steps
+            inner_steps += 1
+            z = state.position[3]
+            
+            # Check boundary conditions
+            if z < zero(T) || z >= PRIMARY_ALTITUDE - eps(T)
+                break
+            end
+            
+            # Check energy limit for mode switching
+            if state.energy >= current_energy_limit - eps(T)
+                break
+            end
+            
+            if state.weight <= zero(T) || !isfinite(state.weight)
+                break
+            end
+            
+            # Compute motion direction (opposite to direction in backward mode)
+            uz_motion = -state.direction[3]
+            
+            # Determine medium and step size
+            if z < geometry.rock_thickness
+                material = geometry.rock_material
+                density = geometry.rock_density
+                
+                # Step to rock-air interface
+                if uz_motion > eps(T)
+                    step_to_boundary = (geometry.rock_thickness - z) / uz_motion
+                elseif uz_motion < -eps(T)
+                    step_to_boundary = -z / uz_motion
+                else
+                    step_to_boundary = T(1000.0)
+                end
+            else
+                material = geometry.air_material
+                density = locals_air_at_altitude(z).density
+                
+                # Step to primary altitude or rock-air interface
+                if uz_motion > eps(T)
+                    step_to_boundary = (PRIMARY_ALTITUDE - z) / uz_motion
+                elseif uz_motion < -eps(T)
+                    step_to_boundary = (geometry.rock_thickness - z) / uz_motion
+                else
+                    step_to_boundary = T(1000.0)
+                end
+            end
+            
+            # Adaptive step sizing for accuracy
+            Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
+            
+            # Step fraction depends on mode and material
+            if z < geometry.rock_thickness
+                # Rock: use 5% of range for accuracy
+                max_grammage_frac = T(0.05)
+            else
+                # Air: can use larger steps (lower density, less interaction)
+                max_grammage_frac = T(0.1)
+            end
+            
+            max_grammage_step = max_grammage_frac * Xi
+            max_geometric_step = max_grammage_step / max(density, T(1e-6))
+            
+            # For non-uniform air, also limit by density change
+            if z >= geometry.rock_thickness
+                h = T(12e3)  # Scale height
+                uz_abs = max(abs(uz_motion), T(0.05))
+                altitude_step = T(0.05) * h / uz_abs
+                max_geometric_step = min(max_geometric_step, altitude_step)
+            end
+            
+            # Final step size (add small epsilon to cross boundaries)
+            step_size = min(step_to_boundary + STEP_EPSILON, max_geometric_step)
+            step_size = clamp(step_size, T(STEP_MIN), T(1000.0))
+            
+            # Perform transport step with appropriate mode
+            if use_scattering && rng !== nothing && state.energy < ENERGY_THRESHOLD_LOW
+                # Full physics below 100 GeV
+                state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
+                                                        mode=use_straggled ? :straggled : :csda,
+                                                        scattering=true)
+            elseif use_straggled && rng !== nothing && state.energy >= ENERGY_THRESHOLD_LOW
+                # Above 100 GeV: MIXED mode (simplified straggling, no scattering)
+                state = transport_backward_step_mixed(physics, state, material, density, step_size, rng)
+            elseif use_straggled && rng !== nothing
+                # Below 100 GeV without scattering
+                state = transport_backward_step(physics, state, material, density, step_size;
+                                                rng=rng, straggling=true)
+            else
+                # Pure CSDA
+                state = transport_backward_step(physics, state, material, density, step_size;
+                                                rng=nothing, straggling=false)
+            end
         end
     end
     
@@ -482,7 +533,76 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
 end
 
 """
-    compute_flux_single(physics, geometry, energy_final, elevation, charge; rng=nothing, straggling=false, scattering=false)
+    transport_backward_step_mixed(physics, state, material, density, step_distance, rng)
+
+Perform a backward transport step in MIXED mode (for energies > 100 GeV).
+Uses MIXED energy loss (partial straggling) with DISABLED scattering.
+This is the fast "MUM-like" simulation mode.
+"""
+function transport_backward_step_mixed(physics::PhysicsTables{T}, state::State{T},
+                                       material::Int, density::T, 
+                                       step_distance::T,
+                                       rng::AbstractRNG) where T<:Real
+    
+    ki = state.energy
+    mass = physics.mass
+    grammage_step = step_distance * density
+    
+    # Get CSDA properties
+    Xi = property_range(physics, ENERGY_LOSS_CSDA, material, ki)
+    Xf = Xi + grammage_step
+    kf_csda = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, material, Xf)
+    
+    # MIXED mode: use CEL (Continuous Energy Loss) with radiative fluctuations
+    # This accounts for hard radiative processes probabilistically
+    kf = kf_csda
+    
+    # Add fluctuation from radiative processes
+    Omega = property_straggling(physics, material, ki)
+    dk_expected = kf_csda - ki
+    
+    if Omega > zero(T) && dk_expected > zero(T)
+        # Variance scaled down for MIXED mode (80% CSDA + 20% stochastic)
+        sigma = sqrt(Omega * grammage_step * T(0.2))
+        
+        # Gaussian fluctuation (truncated)
+        u = box_muller_randn(rng)
+        u = clamp(u, T(-3), T(3))
+        
+        kf = kf_csda + sigma * u
+        kf = max(kf, ki)  # Energy must increase in backward mode
+    end
+    
+    # Kinematics (using average of actual energies)
+    gamma_i = one(T) + ki / mass
+    gamma_f = one(T) + kf / mass
+    gamma_avg = (gamma_i + gamma_f) / 2
+    beta_avg = sqrt(max(one(T) - one(T) / gamma_avg^2, T(1e-12)))
+    
+    proper_time_step = step_distance / (beta_avg * gamma_avg)
+    
+    # Position update (backward = opposite to direction)
+    new_position = state.position - step_distance * state.direction
+    
+    # Weight update using CSDA Jacobian
+    dedx_i = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, ki)
+    dedx_f = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, kf_csda)
+    weight_factor = dedx_f / dedx_i
+    
+    # Decay factor
+    decay_factor = exp(-proper_time_step / physics.ctau)
+    
+    new_weight = state.weight * weight_factor * decay_factor
+    
+    return State{T}(
+        state.charge, kf, state.distance + step_distance,
+        state.grammage + grammage_step, state.time + proper_time_step,
+        new_weight, new_position, state.direction, state.decayed
+    )
+end
+
+"""
+    compute_flux_single(physics, geometry, energy_final, elevation, charge; rng=nothing, straggling=false, scattering=false, energy_threshold_low=100.0)
 
 Compute flux contribution from a single backward MC particle.
 """
@@ -493,7 +613,8 @@ function compute_flux_single(physics::PhysicsTables{T},
                              charge::T;
                              rng::Union{AbstractRNG, Nothing} = nothing,
                              straggling::Bool = false,
-                             scattering::Bool = false) where T<:Real
+                             scattering::Bool = false,
+                             energy_threshold_low::T = T(100.0)) where T<:Real
     
     # Convert elevation to direction (pointing downward into rock)
     # elevation = 0 means horizontal, elevation = 90 means vertical (straight down)
@@ -520,7 +641,8 @@ function compute_flux_single(physics::PhysicsTables{T},
     
     # Transport backward through geometry with optional straggling and scattering
     final_state = transport_backward_through_geometry(physics, geometry, state, energy_threshold;
-                                                      rng=rng, straggling=straggling, scattering=scattering)
+                                                      rng=rng, straggling=straggling, scattering=scattering,
+                                                      energy_threshold_low=energy_threshold_low)
     
     # Check if reached primary altitude
     if final_state.position[3] >= PRIMARY_ALTITUDE - T(1.0)
@@ -546,7 +668,7 @@ function compute_flux_single(physics::PhysicsTables{T},
 end
 
 """
-    compute_flux(physics, rock_density, rock_thickness, elevation, energy_min, energy_max; n_samples, seed, straggling, scattering)
+    compute_flux(physics, rock_density, rock_thickness, elevation, energy_min, energy_max; n_samples, seed, straggling, scattering, energy_threshold_low)
 
 Compute integrated muon flux using backward Monte Carlo.
 
@@ -561,6 +683,7 @@ Compute integrated muon flux using backward Monte Carlo.
 - `seed`: Random seed (default: 42)
 - `straggling`: Enable energy straggling (default: true)
 - `scattering`: Enable full scattering model (default: true)
+- `energy_threshold_low`: Energy threshold for mode switching in GeV (default: 100.0)
 """
 function compute_flux(physics::PhysicsTables{T}, 
                       rock_density::T,
@@ -571,7 +694,8 @@ function compute_flux(physics::PhysicsTables{T},
                       n_samples::Int = 1000,
                       seed::Int = 42,
                       straggling::Bool = true,
-                      scattering::Bool = true) where T<:Real
+                      scattering::Bool = true,
+                      energy_threshold_low::T = T(100.0)) where T<:Real
     
     rng = Random.MersenneTwister(seed)
     
@@ -611,7 +735,8 @@ function compute_flux(physics::PhysicsTables{T},
         
         # Compute contribution with optional straggling and scattering
         wi = wf * compute_flux_single(physics, geometry, kf, elevation, charge;
-                                      rng=rng, straggling=straggling, scattering=scattering)
+                                      rng=rng, straggling=straggling, scattering=scattering,
+                                      energy_threshold_low=energy_threshold_low)
         
         w_sum += wi
         w2_sum += wi * wi
@@ -691,7 +816,8 @@ function run_backward_mc(physics::PhysicsTables{T};
                          compute_gradient::Bool = false,
                          seed::Int = 42,
                          straggling::Bool = true,
-                         scattering::Bool = true) where T<:Real
+                         scattering::Bool = true,
+                         energy_threshold_low::T = T(100.0)) where T<:Real
     
     if energy_max === nothing
         energy_max = energy_min
@@ -704,11 +830,13 @@ function run_backward_mc(physics::PhysicsTables{T};
     @info "  Energy range: $(energy_min) - $(energy_max) GeV"
     @info "  Samples: $(n_samples)"
     @info "  Straggling: $(straggling), Scattering: $(scattering)"
+    @info "  Energy threshold: $(energy_threshold_low) GeV"
     
     # Compute flux
     flux = compute_flux(physics, rock_density, rock_thickness, elevation,
                         energy_min, energy_max; n_samples=n_samples, seed=seed,
-                        straggling=straggling, scattering=scattering)
+                        straggling=straggling, scattering=scattering,
+                        energy_threshold_low=energy_threshold_low)
     
     # Estimate error
     sigma = rock_thickness > 0 ? flux / sqrt(T(n_samples)) : zero(T)

@@ -36,7 +36,7 @@ const MSC_ACCURACY = 0.01     # Default accuracy for MSC angular distribution
 
 Generate a standard normal random variate using Box-Muller transform.
 """
-function box_muller_randn(rng::AbstractRNG)
+@inline function box_muller_randn(rng::AbstractRNG)
     r = sqrt(-2.0 * log(rand(rng)))
     phi = 2.0 * π * rand(rng)
     return r * sin(phi)
@@ -48,12 +48,13 @@ end
 Generate a truncated normal random variate |u| <= limit.
 The value is scaled by 1.015387 to match PUMAS normalization.
 """
-function truncated_randn(rng::AbstractRNG, limit::Float64 = 3.0)
+@inline function truncated_randn(rng::AbstractRNG, limit::Float64 = 3.0)
     u = box_muller_randn(rng)
-    while abs(u) > limit
+    # Rejection sampling (rarely loops more than once for limit=3)
+    @inbounds while abs(u) > limit
         u = box_muller_randn(rng)
     end
-    return u / 1.015387
+    return u * 0.9848416472  # Pre-computed 1/1.015387
 end
 
 """
@@ -79,7 +80,7 @@ This implements the Landau/Vavilov distribution approximation used by PUMAS:
 - For 3*dk1 > dk0 >= sqrt(3)*dk1: Uniform distribution
 - For dk0 < sqrt(3)*dk1: Mixed model
 """
-function fluctuate_energy_loss(physics::PhysicsTables{T}, material::Int,
+@inline function fluctuate_energy_loss(physics::PhysicsTables{T}, material::Int,
                                ki::T, dX::T, Xtot::T, rng::AbstractRNG;
                                backward::Bool = false) where T<:Real
     
@@ -160,42 +161,19 @@ The cross-section represents the probability per unit grammage of a hard
 
 Returns cross-section in m²/kg.
 """
-function compute_del_cross_section(physics::PhysicsTables{T}, material::Int, 
-                                   kinetic::T) where T<:Real
+@inline function compute_del_cross_section(physics::PhysicsTables{T}, material::Int, 
+                                           kinetic::T) where T<:Real
     if kinetic < T(1e-3)
         return zero(T)
     end
     
-    table = physics.tables[material]
+    @inbounds table = physics.tables[material]
     
-    # Use tabulated cross-section if available
+    # Use tabulated cross-section (always try first - it's pre-computed)
     xs = interpolate_table(kinetic, table.energies, table.cross_section)
     
-    if xs > zero(T)
-        return xs
-    end
-    
-    # Fallback: compute from radiative stopping powers
-    # This matches PUMAS's approach: σ_DEL = (dE/dX)_rad / <ν * K>
-    # where <ν * K> is the average energy transfer per interaction
-    brems = interpolate_table(kinetic, table.energies, table.bremsstrahlung)
-    pair = interpolate_table(kinetic, table.energies, table.pair_production)
-    photo = interpolate_table(kinetic, table.energies, table.photonuclear)
-    
-    radiative = brems + pair + photo
-    cutoff = physics.settings.cutoff
-    
-    if radiative > zero(T) && kinetic > T(0.001)
-        # For DEL, the average energy loss is ~cutoff * K
-        # So σ ≈ (dE/dX)_rad / (cutoff * K)
-        # But we need to account for the fact that hard events transfer more energy
-        # Use alpha = 2 for BMC approximation (1/ν^α distribution)
-        avg_nu = cutoff * log(one(T) / cutoff) / (one(T) - cutoff)
-        sigma = radiative / (avg_nu * kinetic + T(1e-12))
-        return sigma
-    end
-    
-        return zero(T)
+    # Cross-section is always positive if tabulated correctly
+    return max(xs, zero(T))
 end
 
 """
@@ -214,7 +192,7 @@ high zenith angles where hard events matter more.
 - `k_del`: Energy at which event occurred (if any)
 - `process`: Which process (0=none, 1=brems, 2=pair, 3=photo)
 """
-function sample_del_event(physics::PhysicsTables{T}, material::Int,
+@inline function sample_del_event(physics::PhysicsTables{T}, material::Int,
                           ki::T, kf::T, dX::T, Xtot::T, ratio::T,
                           rng::AbstractRNG;
                           backward::Bool = false) where T<:Real
@@ -326,16 +304,15 @@ The tabulated elastic_path already accounts for the momentum dependence.
 
 Returns mean free path in kg/m².
 """
-function compute_ehs_mean_free_path(physics::PhysicsTables{T}, material::Int,
-                                     kinetic::T) where T<:Real
+@inline function compute_ehs_mean_free_path(physics::PhysicsTables{T}, material::Int,
+                                            kinetic::T) where T<:Real
     if kinetic < T(1e-3)
         return T(EHS_PATH_MAX)
     end
     
-    mass = physics.mass
-    table = physics.tables[material]
+    @inbounds table = physics.tables[material]
     
-    # Get tabulated elastic path
+    # Get tabulated elastic path (primary source)
     elastic_path = interpolate_table(kinetic, table.energies, table.elastic_path)
     
     if elastic_path > zero(T) && elastic_path < T(EHS_PATH_MAX)
@@ -369,7 +346,7 @@ Based on PUMAS's EHS sampling.
 - `X_ehs`: Grammage at which event occurred (if any)
 - `k_ehs`: Energy at which event occurred (if any)
 """
-function sample_ehs_event(physics::PhysicsTables{T}, material::Int,
+@inline function sample_ehs_event(physics::PhysicsTables{T}, material::Int,
                           ki::T, kf::T, dX::T, Xtot::T, ratio::T,
                           rng::AbstractRNG;
                           backward::Bool = false) where T<:Real
@@ -437,7 +414,7 @@ Uses Coulomb scattering with screening based on PUMAS implementation.
 
 Returns mu (0 = forward, 1 = backward).
 """
-function sample_scattering_angle(physics::PhysicsTables{T}, material::Int,
+@inline function sample_scattering_angle(physics::PhysicsTables{T}, material::Int,
                                   kinetic::T, rng::AbstractRNG;
                                   mu0::Union{T, Nothing} = nothing) where T<:Real
     
@@ -487,22 +464,20 @@ end
     sample_msc_angle(physics, material, kinetic, grammage, rng)
 
 Sample the multiple scattering angle for soft scattering.
-Uses Gaussian approximation with Highland formula width.
+Uses PUMAS-style exponential sampling matching C implementation.
+
+The formula: mu = -invlb1 * grammage * 0.25 * log(rand()) with rejection for mu > 1
 
 Returns mu = 0.5*(1 - cos(theta)).
 """
-function sample_msc_angle(physics::PhysicsTables{T}, material::Int,
+@inline function sample_msc_angle(physics::PhysicsTables{T}, material::Int,
                           kinetic::T, grammage::T, rng::AbstractRNG) where T<:Real
     
     if grammage <= zero(T) || kinetic <= zero(T)
         return zero(T)
     end
     
-    mass = physics.mass
-    p = sqrt(kinetic * (kinetic + T(2) * mass))
-    beta = p / (kinetic + mass)
-    
-    # Get transport path (related to radiation length)
+    # Get inverse transport path (invlb1 = 1/λ₁)
     table = physics.tables[material]
     lb1 = interpolate_table(kinetic, table.energies, table.transport_path)
     
@@ -510,35 +485,36 @@ function sample_msc_angle(physics::PhysicsTables{T}, material::Int,
         return zero(T)
     end
     
-    # First transport coefficient: μ₁ ≈ x / λ₁
-    mu1 = grammage / lb1
+    invlb1 = one(T) / lb1
     
-    # Highland formula RMS angle
-    # θ_rms² ≈ 2 * μ₁ for Gaussian approximation
-    theta_rms_sq = T(2) * mu1
+    # PUMAS formula: ilb1 = 0.25 * step * (invlb1_start + invlb1_end)
+    # Simplified: use single point estimate with factor 0.25
+    ilb1 = T(0.25) * grammage * invlb1
     
-    if theta_rms_sq <= zero(T)
+    if ilb1 <= zero(T)
         return zero(T)
     end
     
-    theta_rms = sqrt(theta_rms_sq)
-    
-    # Sample from 2D Gaussian and convert to mu
-    # Rayleigh distribution for |θ|
-    u1 = box_muller_randn(rng) * theta_rms
-    u2 = box_muller_randn(rng) * theta_rms
-    theta = sqrt(u1^2 + u2^2)
-    
-    # Convert to mu = 0.5*(1 - cos(theta))
-    if theta < T(0.1)
-        # Small angle approximation
-        mu = theta^2 / T(4)
-    else
-        mu = T(0.5) * (one(T) - cos(theta))
+    # Cap ilb1 at 1 as in C
+    if ilb1 > one(T)
+        ilb1 = one(T)
     end
     
-    # Cap at 90 degrees (mu = 0.5)
-    return min(mu, T(0.5))
+    # Sample mu from exponential distribution with rejection
+    # mu = -ilb1 * log(rand()) with rejection for mu > 1
+    local mu::T
+    for _ in 1:100  # Max iterations (rarely loops)
+        u = rand(rng)
+        if u > zero(T)
+            mu = -ilb1 * log(u)
+            if mu <= one(T)
+                return mu
+            end
+        end
+    end
+    
+    # Fallback: return small angle
+    return ilb1
 end
 
 """
@@ -547,7 +523,9 @@ end
 Sample soft multiple scattering angle for a given grammage step.
 Alias for sample_msc_angle for backward compatibility.
 """
-sample_soft_scattering = sample_msc_angle
+@inline sample_soft_scattering(physics::PhysicsTables{T}, material::Int,
+                               kinetic::T, grammage::T, rng::AbstractRNG) where T<:Real = 
+    sample_msc_angle(physics, material, kinetic, grammage, rng)
 
 """
     rotate_direction(direction, mu, rng)
@@ -557,7 +535,7 @@ Returns the new direction vector (normalized).
 
 Based on PUMAS step_rotate_direction implementation.
 """
-function rotate_direction(direction::Vec3{T}, mu::T, rng::AbstractRNG) where T<:Real
+@inline function rotate_direction(direction::Vec3{T}, mu::T, rng::AbstractRNG) where T<:Real
     # Cosine and sine of scattering angle
     cos_theta = one(T) - T(2) * mu
     sin_theta_sq = T(4) * mu * (one(T) - mu)

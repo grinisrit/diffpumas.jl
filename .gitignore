@@ -21,3 +21,5 @@ venv
 
 # pumas
 examples/data/*.pumas
+examples/data/*.html
+examples/data/*.csv
