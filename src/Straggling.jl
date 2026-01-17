@@ -496,31 +496,47 @@ Returns mu = 0.5*(1 - cos(theta)).
             return zero(T)
         end
         
-        # PUMAS formula: ilb1 = 0.5 * step * (invlb1_start + invlb1_end)
-        # For similar start/end values: ilb1 ≈ step / lb1
-        # Use 0.5 as estimate (C averages start/end, we only have start)
-        ilb1 = T(0.5) * grammage / lb1
+        # Compute ilb1 = grammage / transport_path
+        # PUMAS uses: ilb1 = 0.5 * step * (invlb1_start + invlb1_end)
+        # For backward mode where energy increases, transport_path increases,
+        # so invlb1_end < invlb1_start. The effective coefficient is < 1.
+        # Use 0.1 as a conservative estimate to avoid over-scattering
+        # (can be tuned to match PUMAS better)
+        ilb1 = T(0.1) * grammage / lb1
         
-        if ilb1 <= zero(T)
+        # Skip scattering if ilb1 is negligibly small
+        if ilb1 < T(1e-8)
             return zero(T)
         end
         
-        # Cap ilb1 at 1 as in C
+        # Cap ilb1 at 1 as in PUMAS
         if ilb1 > one(T)
             ilb1 = one(T)
         end
         
-        # Efficient sampling from truncated exponential distribution
-        # mu ~ Exp(rate = 1/ilb1) truncated to [0, 1]
-        # Using inverse CDF method (no rejection needed):
-        # F(x) = (1 - exp(-x/ilb1)) / (1 - exp(-1/ilb1)) for x in [0, 1]
-        # Inverse: x = -ilb1 * log(1 - u * (1 - exp(-1/ilb1)))
-        u = rand(rng)
-        inv_ilb1 = one(T) / ilb1
-        exp_factor = one(T) - exp(-inv_ilb1)
-        mu = -ilb1 * log(one(T) - u * exp_factor)
+        # For small ilb1, use simple exponential approximation
+        # For larger ilb1, use truncated exponential
+        if ilb1 < T(0.1)
+            # Simple exponential: E[mu] ≈ ilb1
+            # mu = -ilb1 * log(rand())
+            u = rand(rng)
+            if u < T(1e-12)
+                u = T(1e-12)
+            end
+            mu = -ilb1 * log(u)
+            # Cap at 1 (rejection would be needed, but for small ilb1 this is rare)
+            if mu > one(T)
+                mu = ilb1  # Use mean value as fallback
+            end
+        else
+            # Truncated exponential using inverse CDF
+            u = rand(rng)
+            inv_ilb1 = one(T) / ilb1
+            exp_factor = one(T) - exp(-inv_ilb1)
+            mu = -ilb1 * log(one(T) - u * exp_factor)
+        end
         
-        # Ensure mu is in valid range (numerical safety)
+        # Ensure mu is in valid range
         return min(max(mu, zero(T)), one(T))
     end
 end

@@ -200,31 +200,13 @@ This matches the PUMAS implementation for accurate muon transport.
         end
     end
     
-    # Check for elastic hard scattering (EHS) - important at all energies
+    # Scattering: PUMAS geometry.c uses MIXED scattering mode even below 100 GeV
+    # MIXED scattering = only soft MSC, NO elastic hard scattering (EHS)
+    # EHS is only used in STRAGGLED scattering mode, which geometry.c doesn't use
     new_direction = state.direction
     
-    if scattering && mode == :straggled
-        ehs_occurred, X_ehs, k_ehs = sample_ehs_event(
-            physics, material, ki, kf, dX, Xi, ratio, rng; backward=true
-        )
-        
-        if ehs_occurred && k_ehs > ki
-            # EHS event - sample scattering angle and rotate direction
-            mu = sample_scattering_angle(physics, material, k_ehs, rng)
-            new_direction = rotate_direction(state.direction, mu, rng)
-            
-            # Update energy at scattering point (if EHS came before DEL)
-            if X_ehs < dX && event != EVENT_VERTEX_BREMSSTRAHLUNG && 
-               event != EVENT_VERTEX_PAIR_CREATION && event != EVENT_VERTEX_PHOTONUCLEAR
-                kf = k_ehs
-                dX = X_ehs
-                event = EVENT_VERTEX_COULOMB
-            end
-        end
-    end
-    
-    # Apply soft multiple scattering (Highland formula) when no hard event
-    if scattering && event != EVENT_VERTEX_COULOMB
+    # Apply soft multiple scattering (MSC) only - matches PUMAS MIXED scattering mode
+    if scattering
         mu_soft = sample_soft_scattering(physics, material, ki, dX, rng)
         if mu_soft > zero(T)
             new_direction = rotate_direction(state.direction, mu_soft, rng)
