@@ -48,17 +48,21 @@ Options:
     --energy-max FLOAT       Maximum kinetic energy in GeV (optional)
     --samples, -n INT        Number of Monte Carlo samples (default: 10000)
     --gradient, -g            Compute gradient ∂flux/∂density
+    --no-straggling           Disable energy straggling
+    --no-scattering           Disable scattering
+    --threshold FLOAT         Energy threshold for mode switching in GeV (default: 100.0)
 
 Examples:
     julia --project=. examples/geometry_example.jl --thickness 500 --elevation 0 --energy-min 1e-3 --energy-max 1e9
     julia --project=. examples/geometry_example.jl --thickness 100 --elevation 90 --samples 50000
     julia --project=. examples/geometry_example.jl --thickness 200 --elevation 45 --samples 20000 --gradient
+    julia --project=. examples/geometry_example.jl --thickness 200 --elevation 45 --no-straggling --no-scattering
 """
 
 using DiffPumas
 using DiffPumas.Physics: get_material_index
 using DiffPumas.Loader: print_physics_summary
-using DiffPumas.Geometry: run_backward_mc, compute_flux_gradient, compute_flux_differentiable
+using DiffPumas.Geometry: compute_flux, compute_flux_gradient, compute_flux_differentiable
 using ArgParse
 using Zygote
 using Printf
@@ -97,6 +101,16 @@ function parse_commandline()
         "--gradient", "-g"
             help = "Compute gradient ∂flux/∂density"
             action = :store_true
+        "--no-straggling"
+            help = "Disable energy straggling"
+            action = :store_true
+        "--no-scattering"
+            help = "Disable scattering"
+            action = :store_true
+        "--threshold"
+            help = "Energy threshold for mode switching in GeV (default: 100.0)"
+            arg_type = Float64
+            default = 100.0
     end
     
     return parse_args(s)
@@ -112,6 +126,9 @@ function main()
     energy_max = args["energy-max"]
     n_samples = args["samples"]
     compute_grad = args["gradient"]
+    straggling = !args["no-straggling"]
+    scattering = !args["no-scattering"]
+    energy_threshold_low = args["threshold"]
     
     println("=" ^ 60)
     println(" DiffPumas - Backward Monte Carlo Flux Calculation")
@@ -129,6 +146,9 @@ function main()
     end
     println("  MC samples:     $(n_samples)")
     println("  Compute grad:   $(compute_grad)")
+    println("  Straggling:     $(straggling)")
+    println("  Scattering:     $(scattering)")
+    println("  Energy threshold: $(energy_threshold_low) GeV")
     println()
     
     # Load PUMAS physics from binary dump (created by loader_example.jl)
@@ -169,28 +189,44 @@ function main()
     println("  Air: $(air_idx)")
     println()
     
-    # Run backward Monte Carlo
+    # Run backward Monte Carlo using compute_flux (as in flux_comparison.jl)
     println("Running backward Monte Carlo simulation...")
-    result = run_backward_mc(
-        physics;
-        rock_thickness = rock_thickness,
-        rock_density = 2650.0,  # Standard rock density (kg/m³)
-        elevation = elevation,
-        energy_min = energy_min,
-        energy_max = energy_max,
+    
+    # Handle energy_max for point estimate (same as run_backward_mc)
+    energy_max_actual = energy_max !== nothing ? energy_max : energy_min
+    
+    # Compute flux using compute_flux directly (as in flux_comparison.jl)
+    flux, sigma = compute_flux(
+        physics,
+        2650.0,  # Standard rock density (kg/m³)
+        rock_thickness,
+        elevation,
+        energy_min,
+        energy_max_actual;
         n_samples = n_samples,
-        compute_gradient = compute_grad
+        straggling = straggling,
+        scattering = scattering,
+        energy_threshold_low = energy_threshold_low
     )
+    
+    # Compute gradient if requested
+    grad_density = nothing
+    if compute_grad
+        energy_test = energy_max !== nothing ? sqrt(energy_min * energy_max) : energy_min
+        _, grad_density = compute_flux_gradient(
+            physics, 2650.0, rock_thickness, elevation, energy_test, 1.0
+        )
+    end
     
     # Print results
     println()
     println("Results:")
     println("-" ^ 40)
     unit = energy_max !== nothing ? "" : "GeV⁻¹ "
-    @printf("  Flux: %.5e ± %.5e %sm⁻² s⁻¹ sr⁻¹\n", result.flux, result.sigma, unit)
+    @printf("  Flux: %.5e ± %.5e %sm⁻² s⁻¹ sr⁻¹\n", flux, sigma, unit)
     
-    if result.gradient !== nothing
-        @printf("  ∂flux/∂ρ: %.5e\n", result.gradient)
+    if grad_density !== nothing
+        @printf("  ∂flux/∂ρ: %.5e\n", grad_density)
     end
     
     println()
@@ -209,11 +245,11 @@ function main()
         println("  Rock density: $(rock_density) kg/m³")
         println("  Test energy: $(energy_test) GeV")
         
-        flux, grad = compute_flux_gradient(
+        flux_single, grad = compute_flux_gradient(
             physics, rock_density, rock_thickness, elevation, energy_test, 1.0
         )
         
-        @printf("  Flux contribution: %.5e\n", flux)
+        @printf("  Flux contribution: %.5e\n", flux_single)
         if grad !== nothing
             @printf("  AD Gradient: %.5e\n", grad)
         else

@@ -139,7 +139,7 @@ This matches the PUMAS implementation for accurate muon transport.
         kf = max(kf, ki)  # Energy must increase in backward mode
     elseif mode == :mixed && ki > T(0.001)
         # Mixed mode: 80% CSDA + fluctuation
-        kf_csda = property_kinetic_energy(physics, mode_enum, material, Xtot)
+        kf_csda = property_kinetic_energy(physics, ENERGY_LOSS_MIXED, material, Xtot)
         dk_csda = kf_csda - ki
         
         # Small fluctuation around CSDA
@@ -159,7 +159,7 @@ This matches the PUMAS implementation for accurate muon transport.
         end
     else
         # Pure CSDA
-        kf = property_kinetic_energy(physics, mode_enum, material, Xtot)
+        kf = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, material, Xtot)
     end
     
     # Check for energy limit (PUMAS style: limit step to stop exactly at threshold)

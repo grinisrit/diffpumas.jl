@@ -426,10 +426,8 @@ function parse_commandline()
             --threshold N        Energy threshold for mode switching in GeV (default: 100.0)
                                 Below threshold: STRAGGLED + MIXED scattering
                                 Above threshold: MIXED energy loss, no scattering
-            --straggling         Enable energy straggling (default: true)
-            --no-straggling      Disable energy straggling
-            --scattering         Enable scattering (default: true)
-            --no-scattering      Disable scattering
+            --no-straggling      Disable energy straggling (default: enabled)
+            --no-scattering      Disable scattering (default: enabled)
             --output PATH, -o PATH
                                 Output path for 3D plot HTML file
                                 (default: examples/data/flux_comparison_3d.html)
@@ -442,7 +440,7 @@ function parse_commandline()
             julia --project=. examples/flux_comparison.jl --output my_plot.html
             julia --project=. examples/flux_comparison.jl --recompute --reload-physics
             julia --project=. examples/flux_comparison.jl --no-scattering
-            julia --project=. examples/flux_comparison.jl --no-straggling --scattering
+            julia --project=. examples/flux_comparison.jl --no-straggling --no-scattering
         """)
         exit(0)
     end
@@ -477,14 +475,8 @@ function parse_commandline()
             else
                 error("--output requires a path")
             end
-        elseif arg == "--straggling"
-            straggling = true
-            i += 1
         elseif arg == "--no-straggling"
             straggling = false
-            i += 1
-        elseif arg == "--scattering"
-            scattering = true
             i += 1
         elseif arg == "--no-scattering"
             scattering = false
