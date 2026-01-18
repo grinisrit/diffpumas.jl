@@ -47,7 +47,7 @@ Rather than simulating muons forward from the atmosphere (which would be highly 
 The differential flux of atmospheric muons at sea level is well-described by the modified Gaisser formula. For muons with energy $E$ and zenith angle $\theta$, the flux is:
 
 $$
-\frac{d\Phi}{dE\, d\Omega} = \frac{0.14 \cdot E^{-2.7}}{\text{cm}^2\, \text{s}\, \text{sr}\, \text{GeV}} \left( \frac{1}{1 + \frac{1.1 E \cos\theta^*}{115\, \text{GeV}}} + \frac{0.054}{1 + \frac{1.1 E \cos\theta^*}{850\, \text{GeV}}} \right)
+\frac{d\Phi}{dE\, d\Omega} = \frac{0.14 \cdot E^{-2.7}}{\text{cm}^{2}\, \text{s}\, \text{sr}\, \text{GeV}} \left( \frac{1}{1 + \frac{1.1 E \cos\theta^*}{115\, \text{GeV}}} + \frac{0.054}{1 + \frac{1.1 E \cos\theta^*}{850\, \text{GeV}}} \right)
 $$
 
 where:
