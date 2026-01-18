@@ -84,7 +84,7 @@ include("Straggling.jl")
 include("Loader.jl")
 include("Geometry.jl")
 include("Plotting.jl")
-include("ExamplesCommon.jl")
+include("Pumas.jl")
 
 # Import and re-export from submodules
 using .Constants
@@ -99,7 +99,7 @@ using .Straggling
 using .Loader
 using .Geometry
 using .Plotting
-using .ExamplesCommon
+using .Pumas
 
 # Export Constants
 export ALPHA_EM, HBAR_C, BOHR_RADIUS, MUON_C_TAU, TAU_C_TAU
@@ -165,12 +165,15 @@ export sample_soft_scattering
 # Export Geometry
 export TwoLayerGeometry, create_geometry_context
 export compute_flux, compute_flux_differentiable, compute_flux_gradient
+export compute_flux_csda_direct, compute_flux_differentiable_csda, compute_flux_gradient_csda
 export run_backward_mc, locals_rock, locals_air
+export PRIMARY_ALTITUDE, compute_air_grammage, compute_rock_grammage
+export compute_decay_weight_from_path
 
 # Export Plotting
 export plot_trajectories, plot_transport_path
 
-# Export ExamplesCommon
+# Export Pumas
 export zenith_to_elevation, compute_gaisser_flux_grid, compute_gaisser_flux_integrated
 export sample_energy_loguniform
 

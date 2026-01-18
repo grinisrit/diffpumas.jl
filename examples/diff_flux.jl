@@ -54,34 +54,32 @@ Options:
     --energy-max FLOAT        Maximum kinetic energy in GeV (default: 1e9)
     --n-angles INT            Number of zenith angle points (default: 100)
     --samples, -n INT         Number of energy samples per angle (default: 100)
-    --gradient, -g            Compute gradient ∂flux/∂density
-    --straggling              Enable energy straggling (default: disabled for CSDA)
-    --scattering              Enable scattering (default: disabled)
-    --threshold FLOAT         Energy threshold for mode switching in GeV (default: 0.0)
+    --threshold FLOAT         Energy threshold for mode switching in GeV (default: 100.0)
+    --no-straggling           Disable straggling in Part 1 (default: enabled)
+    --no-scattering           Disable scattering in Part 1 (default: enabled)
 
 Examples:
-    # Basic CSDA flux computation
+    # Basic flux computation
     julia --project=. examples/diff_flux.jl --thickness 100 --zenith-max 45
 
     # Higher statistics
     julia --project=. examples/diff_flux.jl --thickness 200 --n-angles 200 --samples 500
 
-    # Compute density gradient (sensitivity analysis)
-    julia --project=. examples/diff_flux.jl --thickness 100 --gradient
-
-    # Enable straggling for more accurate physics
-    julia --project=. examples/diff_flux.jl --thickness 100 --straggling --threshold 100
+    # Pure CSDA (no straggling) for Part 1
+    julia --project=. examples/diff_flux.jl --thickness 100 --no-straggling
 """
 
 using DiffPumas
 using DiffPumas.Physics: get_material_index
 using DiffPumas.Loader: print_physics_summary
 using DiffPumas.Geometry: compute_flux_single, compute_flux_differentiable, TwoLayerGeometry
+using DiffPumas.Geometry: compute_flux_differentiable_csda, compute_flux_csda_direct
 using DiffPumas.GaisserFlux: flux_gaisser
 using DiffPumas: zenith_to_elevation, sample_energy_loguniform
-using DiffPumas.ExamplesCommon: load_or_create_physics
+using DiffPumas.Pumas: load_or_create_physics
 using Printf
 using Random
+using Zygote
 
 const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
 
@@ -95,10 +93,9 @@ function parse_commandline()
     energy_max = 1e9
     n_angles = 100
     n_samples = 100
-    compute_grad = false
-    straggling = false
-    scattering = false
-    energy_threshold_low = 0.0
+    energy_threshold_low = 100.0  # Mode switch at 100 GeV (like PUMAS C)
+    straggling = true   # Enable straggling by default for Part 1
+    scattering = true   # Enable scattering by default for Part 1
     
     i = 1
     while i <= length(ARGS)
@@ -139,19 +136,16 @@ function parse_commandline()
             i + 1 <= length(ARGS) || error("--samples requires a value")
             n_samples = parse(Int, ARGS[i + 1])
             i += 2
-        elseif arg == "--gradient" || arg == "-g"
-            compute_grad = true
-            i += 1
-        elseif arg == "--straggling"
-            straggling = true
-            i += 1
-        elseif arg == "--scattering"
-            scattering = true
-            i += 1
         elseif arg == "--threshold"
             i + 1 <= length(ARGS) || error("--threshold requires a value")
             energy_threshold_low = parse(Float64, ARGS[i + 1])
             i += 2
+        elseif arg == "--no-straggling"
+            straggling = false
+            i += 1
+        elseif arg == "--no-scattering"
+            scattering = false
+            i += 1
         elseif arg == "--help" || arg == "-h"
             println(@doc diff_flux)
             exit(0)
@@ -170,10 +164,9 @@ function parse_commandline()
         energy_max = energy_max,
         n_angles = n_angles,
         n_samples = n_samples,
-        compute_grad = compute_grad,
+        energy_threshold_low = energy_threshold_low,
         straggling = straggling,
-        scattering = scattering,
-        energy_threshold_low = energy_threshold_low
+        scattering = scattering
     )
 end
 
@@ -268,8 +261,6 @@ function compute_integrated_flux_gradient_mc(physics, rock_density::Float64, roc
                                              energy_threshold_low::Float64=0.0,
                                              verbose::Bool=true)
     
-    using Zygote
-    
     rng = MersenneTwister(42)
     d_zenith = zenith_max - zenith_min
     
@@ -331,6 +322,81 @@ function compute_integrated_flux_gradient_mc(physics, rock_density::Float64, roc
     return flux, sigma, grad_density
 end
 
+"""
+    compute_integrated_flux_gradient_direct_csda(physics, rock_density, rock_thickness,
+                                                  zenith_min, zenith_max, energy_min, energy_max,
+                                                  n_angles, n_samples; verbose=true)
+
+Compute integrated flux and its gradient ∂flux/∂ρ using the optimized direct CSDA.
+
+This version bypasses iterative transport and computes CSDA energy loss directly,
+which is significantly faster for Zygote autodiff.
+
+Returns: (flux, sigma, grad_density)
+"""
+function compute_integrated_flux_gradient_direct_csda(physics, rock_density::Float64, rock_thickness::Float64,
+                                                       rock_idx::Int, air_idx::Int,
+                                                       zenith_min::Float64, zenith_max::Float64,
+                                                       energy_min::Float64, energy_max::Float64,
+                                                       n_angles::Int, n_samples::Int;
+                                                       verbose::Bool=true)
+    
+    rng = MersenneTwister(42)
+    d_zenith = zenith_max - zenith_min
+    
+    # Pre-sample all random values
+    samples = Vector{NTuple{4, Float64}}()
+    for i_angle in 1:n_angles
+        zenith = zenith_min + d_zenith * rand(rng)
+        elevation = zenith_to_elevation(zenith)
+        
+        for i_sample in 1:n_samples
+            kf, w_energy = sample_energy_loguniform(energy_min, energy_max, rng)
+            charge = rand(rng) > 0.5 ? 1.0 : -1.0
+            push!(samples, (elevation, kf, charge, w_energy))
+        end
+    end
+    
+    n_total = length(samples)
+    
+    # Differentiable flux function using direct CSDA (no iteration)
+    function flux_fn(ρ)
+        w_sum = 0.0
+        for (elevation, kf, charge, w_energy) in samples
+            # Use the optimized direct CSDA - no iterative stepping required
+            flux_single = compute_flux_differentiable_csda(physics, ρ, rock_thickness,
+                                                            elevation, kf, charge)
+            w_sum += 2.0 * w_energy * flux_single
+        end
+        return w_sum / n_total
+    end
+    
+    verbose && println("Computing integrated flux (direct CSDA for AD)...")
+    flux = flux_fn(rock_density)
+    
+    verbose && println("Computing gradient ∂flux/∂ρ using Zygote (direct CSDA)...")
+    grad_density = Zygote.gradient(flux_fn, rock_density)[1]
+    
+    # Compute variance using the same direct CSDA (no RNG needed)
+    verbose && println("Computing statistical uncertainty...")
+    w_sum = 0.0
+    w2_sum = 0.0
+    
+    for (elevation, kf, charge, w_energy) in samples
+        flux_single = compute_flux_differentiable_csda(physics, rock_density, rock_thickness,
+                                                        elevation, kf, charge)
+        wi = 2.0 * w_energy * flux_single
+        w_sum += wi
+        w2_sum += wi * wi
+    end
+    
+    flux_mc = w_sum / n_total
+    variance = (w2_sum / n_total - flux_mc^2) / max(1.0, n_total - 1)
+    sigma = sqrt(max(0.0, variance))
+    
+    return flux, sigma, grad_density
+end
+
 function main()
     args = parse_commandline()
     
@@ -348,10 +414,11 @@ function main()
     println("  Angle points:    $(args.n_angles)")
     println("  Samples/angle:   $(args.n_samples)")
     println("  Total samples:   $(args.n_angles * args.n_samples)")
-    println("  Compute grad:    $(args.compute_grad)")
-    println("  Straggling:      $(args.straggling)")
-    println("  Scattering:      $(args.scattering)")
     println("  Threshold:       $(args.energy_threshold_low) GeV")
+    println()
+    println("Physics modes:")
+    println("  PART 1: Detailed transport (straggling=$(args.straggling), scattering=$(args.scattering))")
+    println("  PART 2: Direct CSDA (Zygote-optimized, analytical)")
     println()
     
     # Load physics
@@ -384,66 +451,172 @@ function main()
         args.rock_thickness, args.rock_density, rock_idx, air_idx
     )
     
-    # Compute integrated flux
+    # =========================================================================
+    # PART 1: Detailed Transport with Finite Differences
+    # =========================================================================
+    strag_str = args.straggling ? "straggling" : "no straggling"
+    scat_str = args.scattering ? "scattering" : "no scattering"
+    println("=" ^ 60)
+    println(" PART 1: Detailed Transport ($strag_str, $scat_str)")
+    println("=" ^ 60)
+    println()
+    
     println("Running Monte Carlo integration...")
     println("-" ^ 40)
     
-    if args.compute_grad
-        flux, sigma, grad_density = compute_integrated_flux_gradient_mc(
-            physics, args.rock_density, args.rock_thickness, rock_idx, air_idx,
-            args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
-            args.n_angles, args.n_samples;
-            straggling=args.straggling,
-            energy_threshold_low=args.energy_threshold_low,
-            verbose=true
-        )
-        
-        println()
-        println("Results:")
-        println("=" ^ 40)
-        @printf("  Integrated flux:    %.5e ± %.5e m⁻² s⁻¹ sr⁻¹\n", flux, sigma)
-        @printf("  Relative error:     %.2f%%\n", 100 * sigma / max(flux, 1e-30))
-        println()
-        @printf("  ∂flux/∂ρ:           %.5e m⁻² s⁻¹ sr⁻¹ / (kg/m³)\n", grad_density)
-        @printf("  Sensitivity:        %.2f%% per 1%% density change\n", 
-                100 * grad_density * args.rock_density / max(flux, 1e-30))
-        
-        # Numerical gradient check
-        println()
-        println("Numerical gradient check (finite differences):")
-        h = 1.0
-        geometry_plus = TwoLayerGeometry{Float64}(args.rock_thickness, args.rock_density + h, rock_idx, air_idx)
-        geometry_minus = TwoLayerGeometry{Float64}(args.rock_thickness, args.rock_density - h, rock_idx, air_idx)
-        
-        flux_plus, _ = compute_integrated_flux_mc(physics, geometry_plus,
-            args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
-            args.n_angles, args.n_samples;
-            straggling=args.straggling, scattering=false,
-            energy_threshold_low=args.energy_threshold_low, verbose=false)
-        
-        flux_minus, _ = compute_integrated_flux_mc(physics, geometry_minus,
-            args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
-            args.n_angles, args.n_samples;
-            straggling=args.straggling, scattering=false,
-            energy_threshold_low=args.energy_threshold_low, verbose=false)
-        
-        numerical_grad = (flux_plus - flux_minus) / (2 * h)
-        @printf("  Numerical gradient: %.5e\n", numerical_grad)
-        @printf("  AD gradient:        %.5e\n", grad_density)
-        @printf("  Relative diff:      %.2f%%\n", 100 * abs(numerical_grad - grad_density) / max(abs(grad_density), 1e-30))
-    else
-        flux, sigma = compute_integrated_flux_mc(physics, geometry,
-            args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
-            args.n_angles, args.n_samples;
-            straggling=args.straggling, scattering=args.scattering,
-            energy_threshold_low=args.energy_threshold_low, verbose=true)
-        
-        println()
-        println("Results:")
-        println("=" ^ 40)
-        @printf("  Integrated flux:    %.5e ± %.5e m⁻² s⁻¹ sr⁻¹\n", flux, sigma)
-        @printf("  Relative error:     %.2f%%\n", 100 * sigma / max(flux, 1e-30))
+    flux_strag, sigma_strag = compute_integrated_flux_mc(physics, geometry,
+        args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
+        args.n_angles, args.n_samples;
+        straggling=args.straggling, scattering=args.scattering,
+        energy_threshold_low=args.energy_threshold_low, verbose=true)
+    
+    println()
+    println("Results (detailed transport):")
+    println("-" ^ 40)
+    @printf("  Integrated flux:    %.5e ± %.5e m⁻² s⁻¹ sr⁻¹\n", flux_strag, sigma_strag)
+    @printf("  Relative error:     %.2f%%\n", 100 * sigma_strag / max(flux_strag, 1e-30))
+    
+    # Compute gradient using finite differences
+    println()
+    println("Gradient (finite differences):")
+    println("-" ^ 40)
+    h = 1.0
+    geometry_plus = TwoLayerGeometry{Float64}(args.rock_thickness, args.rock_density + h, rock_idx, air_idx)
+    geometry_minus = TwoLayerGeometry{Float64}(args.rock_thickness, args.rock_density - h, rock_idx, air_idx)
+    
+    println("Computing flux at ρ + h...")
+    flux_strag_plus, _ = compute_integrated_flux_mc(physics, geometry_plus,
+        args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
+        args.n_angles, args.n_samples;
+        straggling=args.straggling, scattering=args.scattering,
+        energy_threshold_low=args.energy_threshold_low, verbose=false)
+    
+    println("Computing flux at ρ - h...")
+    flux_strag_minus, _ = compute_integrated_flux_mc(physics, geometry_minus,
+        args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
+        args.n_angles, args.n_samples;
+        straggling=args.straggling, scattering=args.scattering,
+        energy_threshold_low=args.energy_threshold_low, verbose=false)
+    
+    grad_strag_fd = (flux_strag_plus - flux_strag_minus) / (2 * h)
+    
+    @printf("  Flux(ρ=%.1f):       %.5e m⁻² s⁻¹ sr⁻¹\n", args.rock_density + h, flux_strag_plus)
+    @printf("  Flux(ρ=%.1f):       %.5e m⁻² s⁻¹ sr⁻¹\n", args.rock_density, flux_strag)
+    @printf("  Flux(ρ=%.1f):       %.5e m⁻² s⁻¹ sr⁻¹\n", args.rock_density - h, flux_strag_minus)
+    @printf("  ∂flux/∂ρ (FD):      %.5e m⁻² s⁻¹ sr⁻¹ / (kg/m³)\n", grad_strag_fd)
+    @printf("  Sensitivity:        %.2f%% per 1%% density change\n", 
+            100 * grad_strag_fd * args.rock_density / max(flux_strag, 1e-30))
+    
+    # =========================================================================
+    # PART 2: Direct CSDA (no straggling) with Zygote AD
+    # =========================================================================
+    println()
+    println("=" ^ 60)
+    println(" PART 2: Direct CSDA (Zygote-optimized, no straggling)")
+    println("=" ^ 60)
+    println()
+    
+    println("Computing flux with direct CSDA...")
+    println("-" ^ 40)
+    
+    # Use optimized direct CSDA - much faster for Zygote
+    flux_csda, sigma_csda, grad_csda_ad = compute_integrated_flux_gradient_direct_csda(
+        physics, args.rock_density, args.rock_thickness, rock_idx, air_idx,
+        args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
+        args.n_angles, args.n_samples;
+        verbose=true
+    )
+    
+    println()
+    println("Results (direct CSDA):")
+    println("-" ^ 40)
+    @printf("  Integrated flux:    %.5e ± %.5e m⁻² s⁻¹ sr⁻¹\n", flux_csda, sigma_csda)
+    @printf("  ∂flux/∂ρ (Zygote):  %.5e m⁻² s⁻¹ sr⁻¹ / (kg/m³)\n", grad_csda_ad)
+    @printf("  Sensitivity:        %.2f%% per 1%% density change\n", 
+            100 * grad_csda_ad * args.rock_density / max(flux_csda, 1e-30))
+    
+    # Also compute FD gradient for direct CSDA for comparison
+    println()
+    println("Gradient (finite differences, direct CSDA):")
+    println("-" ^ 40)
+    
+    # Simple FD for direct CSDA
+    println("Computing flux at ρ ± h using direct CSDA...")
+    
+    # We need to compute flux_csda at ρ+h and ρ-h using the direct method
+    rng = MersenneTwister(42)
+    d_zenith = args.zenith_max - args.zenith_min
+    
+    # Pre-sample same random values
+    samples = Vector{NTuple{4, Float64}}()
+    for i_angle in 1:args.n_angles
+        zenith = args.zenith_min + d_zenith * rand(rng)
+        elevation = zenith_to_elevation(zenith)
+        for i_sample in 1:args.n_samples
+            kf, w_energy = sample_energy_loguniform(args.energy_min, args.energy_max, rng)
+            charge = rand(rng) > 0.5 ? 1.0 : -1.0
+            push!(samples, (elevation, kf, charge, w_energy))
+        end
     end
+    n_total = length(samples)
+    
+    function compute_flux_direct(ρ)
+        w_sum = 0.0
+        for (elevation, kf, charge, w_energy) in samples
+            flux_single = compute_flux_differentiable_csda(physics, ρ, args.rock_thickness,
+                                                            elevation, kf, charge)
+            w_sum += 2.0 * w_energy * flux_single
+        end
+        return w_sum / n_total
+    end
+    
+    flux_csda_plus = compute_flux_direct(args.rock_density + h)
+    flux_csda_minus = compute_flux_direct(args.rock_density - h)
+    grad_csda_fd = (flux_csda_plus - flux_csda_minus) / (2 * h)
+    
+    @printf("  Flux(ρ=%.1f):       %.5e m⁻² s⁻¹ sr⁻¹\n", args.rock_density + h, flux_csda_plus)
+    @printf("  Flux(ρ=%.1f):       %.5e m⁻² s⁻¹ sr⁻¹\n", args.rock_density, flux_csda)
+    @printf("  Flux(ρ=%.1f):       %.5e m⁻² s⁻¹ sr⁻¹\n", args.rock_density - h, flux_csda_minus)
+    @printf("  ∂flux/∂ρ (FD):      %.5e m⁻² s⁻¹ sr⁻¹ / (kg/m³)\n", grad_csda_fd)
+    
+    # =========================================================================
+    # PART 3: Comparison Summary
+    # =========================================================================
+    println()
+    println("=" ^ 60)
+    println(" COMPARISON SUMMARY")
+    println("=" ^ 60)
+    println()
+    
+    println("Flux values:")
+    println("-" ^ 40)
+    @printf("  Detailed (Part 1):  %.5e m⁻² s⁻¹ sr⁻¹\n", flux_strag)
+    @printf("  Direct CSDA:        %.5e m⁻² s⁻¹ sr⁻¹\n", flux_csda)
+    flux_diff_pct = 100 * abs(flux_strag - flux_csda) / max(flux_strag, 1e-30)
+    @printf("  Difference:         %.2f%%\n", flux_diff_pct)
+    
+    println()
+    println("Gradient values:")
+    println("-" ^ 40)
+    @printf("  Detailed (FD):      %.5e m⁻² s⁻¹ sr⁻¹ / (kg/m³)\n", grad_strag_fd)
+    @printf("  Direct CSDA (FD):   %.5e m⁻² s⁻¹ sr⁻¹ / (kg/m³)\n", grad_csda_fd)
+    @printf("  Direct CSDA (AD):   %.5e m⁻² s⁻¹ sr⁻¹ / (kg/m³)\n", grad_csda_ad)
+    
+    println()
+    println("Gradient comparison:")
+    println("-" ^ 40)
+    grad_iter_vs_csda = 100 * abs(grad_strag_fd - grad_csda_fd) / max(abs(grad_strag_fd), 1e-30)
+    grad_fd_vs_ad = 100 * abs(grad_csda_fd - grad_csda_ad) / max(abs(grad_csda_ad), 1e-30)
+    @printf("  Detailed FD vs CSDA FD:    %.2f%%\n", grad_iter_vs_csda)
+    @printf("  CSDA FD vs CSDA AD:        %.2f%% (validates Zygote)\n", grad_fd_vs_ad)
+    
+    println()
+    println("Sensitivity (∂log(flux)/∂log(ρ)):")
+    println("-" ^ 40)
+    sens_iter = grad_strag_fd * args.rock_density / max(flux_strag, 1e-30)
+    sens_csda = grad_csda_ad * args.rock_density / max(flux_csda, 1e-30)
+    @printf("  Detailed:           %.4f (%.2f%% per 1%% density change)\n", sens_iter, 100*sens_iter)
+    @printf("  Direct CSDA:        %.4f (%.2f%% per 1%% density change)\n", sens_csda, 100*sens_csda)
     
     # Compare with Gaisser analytical flux (no rock)
     println()
@@ -463,7 +636,7 @@ function main()
     rk = log(args.energy_max / args.energy_min)
     gaisser_integrated_estimate = gaisser_point * energy_mid * rk
     @printf("  Rough integrated Gaisser estimate: %.5e m⁻² s⁻¹ sr⁻¹\n", gaisser_integrated_estimate)
-    @printf("  Attenuation factor (flux/Gaisser): %.3e\n", flux / max(gaisser_integrated_estimate, 1e-30))
+    @printf("  Attenuation factor (flux/Gaisser): %.3e\n", flux_strag / max(gaisser_integrated_estimate, 1e-30))
     
     println()
     println("=" ^ 60)

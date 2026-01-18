@@ -24,8 +24,12 @@ using Random
 
 export TwoLayerGeometry, create_geometry_context
 export compute_flux, compute_flux_gradient, compute_flux_differentiable
-export locals_rock, locals_air, medium_callback
+export compute_flux_csda_direct, compute_flux_differentiable_csda, compute_flux_gradient_csda
+export locals_rock, locals_air, locals_air_at_altitude, medium_callback
 export run_backward_mc
+export PRIMARY_ALTITUDE, compute_air_grammage, compute_rock_grammage
+export compute_decay_weight_from_path
+export transport_backward_step, transport_backward_step_full, transport_backward_step_mixed
 
 # Primary altitude for sampling (m)
 const PRIMARY_ALTITUDE = 1e3
@@ -852,6 +856,233 @@ function compute_flux_gradient(physics::PhysicsTables{T},
     
     return flux, grad
 end
+
+# =============================================================================
+# Optimized Direct CSDA Transport (Zygote-friendly)
+# =============================================================================
+
+"""
+    compute_air_grammage(z_start, z_end, cos_theta)
+
+Compute integrated air grammage (kg/m²) along a straight path from z_start to z_end.
+Uses exponential atmosphere model: ρ(z) = ρ₀ * exp(-z/h)
+
+For a path at angle θ to vertical: dL = dz / cos(θ)
+Grammage = ∫ ρ(z) dL = (ρ₀ * h / cos_θ) * [exp(-z_start/h) - exp(-z_end/h)]
+"""
+function compute_air_grammage(z_start::T, z_end::T, cos_theta::T) where T<:Real
+    ρ0 = T(1.205)   # kg/m³ at sea level
+    h = T(12e3)     # Scale height in meters
+    
+    # Safeguard for numerical stability
+    cos_theta_safe = max(abs(cos_theta), T(0.01))
+    
+    # Integrated grammage through exponential atmosphere
+    # Note: for upward path, z_end > z_start, and exp(-z_end/h) < exp(-z_start/h)
+    grammage = (ρ0 * h / cos_theta_safe) * (exp(-z_start / h) - exp(-z_end / h))
+    
+    return max(grammage, zero(T))
+end
+
+"""
+    compute_rock_grammage(rock_thickness, rock_density, cos_theta)
+
+Compute grammage (kg/m²) through uniform rock layer.
+"""
+@inline function compute_rock_grammage(rock_thickness::T, rock_density::T, cos_theta::T) where T<:Real
+    cos_theta_safe = max(abs(cos_theta), T(0.01))
+    path_length = rock_thickness / cos_theta_safe
+    return path_length * rock_density
+end
+
+"""
+    compute_decay_weight_from_path(physics, path_length, E_avg)
+
+Compute decay weight factor for CSDA transport from path length.
+
+Uses the correct decay formula:
+P(survive) = exp(-t_proper / τ) = exp(-L / (βγ * c * τ)) = exp(-L / (βγ * ctau))
+
+where L is the lab-frame path length and ctau is the muon decay length.
+
+# Arguments
+- `physics`: Physics tables (for ctau)
+- `path_length`: Lab-frame path length in meters
+- `E_avg`: Average kinetic energy for computing βγ
+"""
+function compute_decay_weight_from_path(physics::PhysicsTables{T}, 
+                                        path_length::T, 
+                                        E_avg::T) where T<:Real
+    mass = physics.mass
+    gamma_avg = one(T) + E_avg / mass
+    beta_avg = sqrt(max(one(T) - one(T) / gamma_avg^2, T(1e-12)))
+    
+    # Decay weight: exp(-L / (βγ * ctau))
+    decay_length = beta_avg * gamma_avg * physics.ctau
+    return exp(-path_length / decay_length)
+end
+
+"""
+    compute_flux_csda_direct(physics, rock_material, air_material, rock_density, 
+                              rock_thickness, elevation, energy_initial, charge)
+
+Compute backward MC flux for a single particle using direct CSDA computation.
+This is optimized for differentiation - no iterative stepping required.
+
+For pure CSDA (no scattering, no straggling), the path is deterministic:
+1. Transport through rock layer using rock material tables
+2. Transport through air layer using air material tables
+3. Compute weight from stopping power ratio and decay
+
+The flux contribution is:
+  w = (dE/dX)_final / (dE/dX)_initial * exp(-Δτ/ctau) * flux_gccly(E_final, cos_theta)
+
+Returns flux contribution (m⁻² s⁻¹ sr⁻¹ GeV⁻¹).
+"""
+function compute_flux_csda_direct(physics::PhysicsTables{T},
+                                  rock_material::Int,
+                                  air_material::Int,
+                                  rock_density::T,
+                                  rock_thickness::T,
+                                  elevation::T,
+                                  energy_initial::T,
+                                  charge::T) where T<:Real
+    
+    # Convert elevation (degrees from horizontal) to cos(zenith)
+    elevation_rad = deg2rad(elevation)
+    cos_theta = cos(T(π/2) - elevation_rad)  # cos(zenith) = sin(elevation)
+    
+    # =========================================================================
+    # Step 1: Transport through ROCK layer
+    # =========================================================================
+    X_rock = compute_rock_grammage(rock_thickness, rock_density, cos_theta)
+    
+    # Initial CSDA range at detector (in rock material)
+    X_initial_rock = property_range(physics, ENERGY_LOSS_CSDA, rock_material, energy_initial)
+    
+    # Range after traversing rock (backward = range increases)
+    X_after_rock = X_initial_rock + X_rock
+    
+    # Energy after rock layer
+    energy_after_rock = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, rock_material, X_after_rock)
+    
+    # Check energy validity
+    if energy_after_rock >= T(1e12) || !isfinite(energy_after_rock)
+        return zero(T)
+    end
+    
+    # Weight factor for rock: dedx_final / dedx_initial
+    dedx_initial_rock = property_stopping_power(physics, ENERGY_LOSS_CSDA, rock_material, energy_initial)
+    dedx_after_rock = property_stopping_power(physics, ENERGY_LOSS_CSDA, rock_material, energy_after_rock)
+    weight_rock = dedx_after_rock / dedx_initial_rock
+    
+    # Decay weight through rock (using path length and average energy)
+    cos_theta_safe = max(abs(cos_theta), T(0.01))
+    path_rock = rock_thickness / cos_theta_safe
+    E_avg_rock = (energy_initial + energy_after_rock) / 2
+    decay_rock = compute_decay_weight_from_path(physics, path_rock, E_avg_rock)
+    
+    # =========================================================================
+    # Step 2: Transport through AIR layer
+    # =========================================================================
+    X_air = compute_air_grammage(rock_thickness, PRIMARY_ALTITUDE, cos_theta)
+    
+    # Range at start of air (convert from rock energy to air range)
+    X_initial_air = property_range(physics, ENERGY_LOSS_CSDA, air_material, energy_after_rock)
+    
+    # Range after traversing air
+    X_final_air = X_initial_air + X_air
+    
+    # Final energy at top of atmosphere
+    energy_final = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, air_material, X_final_air)
+    
+    # Check energy validity
+    if energy_final >= T(1e12) || !isfinite(energy_final)
+        return zero(T)
+    end
+    
+    # Weight factor for air: dedx_final / dedx_initial
+    dedx_initial_air = property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy_after_rock)
+    dedx_final_air = property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy_final)
+    weight_air = dedx_final_air / dedx_initial_air
+    
+    # Decay weight through air (path length from rock top to primary altitude)
+    path_air = (PRIMARY_ALTITUDE - rock_thickness) / cos_theta_safe
+    E_avg_air = (energy_after_rock + energy_final) / 2
+    decay_air = compute_decay_weight_from_path(physics, path_air, E_avg_air)
+    
+    # =========================================================================
+    # Step 3: Combine weights and compute flux
+    # =========================================================================
+    weight = weight_rock * decay_rock * weight_air * decay_air
+    
+    # Flux at top of atmosphere (using GCCLY model)
+    # flux_gccly expects (cos_theta, energy, charge)
+    atmospheric_flux = flux_gccly(cos_theta, energy_final, charge)
+    
+    return weight * atmospheric_flux
+end
+
+"""
+    compute_flux_differentiable_csda(physics, rock_density, rock_thickness, elevation, 
+                                     energy_final, charge)
+
+Compute flux for a single particle using optimized direct CSDA.
+This version is specifically optimized for Zygote autodiff.
+
+No iteration, no RNG - pure functional computation suitable for AD.
+"""
+function compute_flux_differentiable_csda(physics::PhysicsTables{T},
+                                          rock_density::T,
+                                          rock_thickness::T,
+                                          elevation::T,
+                                          energy_final::T,
+                                          charge::T) where T<:Real
+    
+    rock_idx = get_material_index(physics, "StandardRock")
+    air_idx = get_material_index(physics, "Air")
+    
+    if rock_idx == -1
+        rock_idx = 1
+    end
+    if air_idx == -1
+        air_idx = length(physics.tables)
+    end
+    
+    return compute_flux_csda_direct(physics, rock_idx, air_idx, 
+                                    rock_density, rock_thickness, 
+                                    elevation, energy_final, charge)
+end
+
+"""
+    compute_flux_gradient_csda(physics, rock_density, rock_thickness, elevation, 
+                               energy_final, charge)
+
+Compute gradient of flux w.r.t. rock density using optimized direct CSDA.
+This is significantly faster than the iterative version for Zygote.
+
+# Returns
+- `flux`: The flux value
+- `grad_density`: ∂flux/∂rock_density
+"""
+function compute_flux_gradient_csda(physics::PhysicsTables{T},
+                                    rock_density::T,
+                                    rock_thickness::T,
+                                    elevation::T,
+                                    energy_final::T,
+                                    charge::T) where T<:Real
+    
+    f = ρ -> compute_flux_differentiable_csda(physics, ρ, rock_thickness, 
+                                              elevation, energy_final, charge)
+    
+    flux = f(rock_density)
+    grad = Zygote.gradient(f, rock_density)[1]
+    
+    return flux, grad
+end
+
+# Export the new optimized functions
+export compute_flux_csda_direct, compute_flux_differentiable_csda, compute_flux_gradient_csda
 
 """
     run_backward_mc(physics; kwargs...)

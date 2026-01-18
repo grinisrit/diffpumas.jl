@@ -1,5 +1,5 @@
 """
-    ExamplesCommon
+    Pumas
 
 Shared utilities for DiffPumas example scripts.
 
@@ -9,7 +9,7 @@ This module provides common functions used across multiple examples:
 - `compute_gaisser_flux_grid`: Analytical Gaisser flux computation
 - `sample_energy_loguniform`: Log-uniform energy sampling (as in PUMAS geometry.c)
 """
-module ExamplesCommon
+module Pumas
 
 using ..Constants
 using ..Physics
@@ -179,4 +179,4 @@ function sample_energy_loguniform(energy_min::Float64, energy_max::Float64, rng)
     return kf, wf
 end
 
-end # module ExamplesCommon
+end # module Pumas

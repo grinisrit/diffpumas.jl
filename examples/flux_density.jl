@@ -45,7 +45,7 @@ using DiffPumas.Loader: print_physics_summary
 using DiffPumas.Geometry: compute_flux
 using DiffPumas.GaisserFlux: flux_gaisser
 using DiffPumas: zenith_to_elevation
-using DiffPumas.ExamplesCommon: load_or_create_physics
+using DiffPumas.Pumas: load_or_create_physics
 using PlotlyJS
 using Printf
 
