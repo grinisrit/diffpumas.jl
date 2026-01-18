@@ -559,7 +559,7 @@ function parse_commandline()
         "--output", "-o"
             help = "Output file for the plot (HTML format)"
             arg_type = String
-            default = "examples/data/no_physics_cube_mc.html"
+            default = "examples/data/no_physics_cube.html"
         "--seed", "-s"
             help = "Random seed for reproducibility"
             arg_type = Int

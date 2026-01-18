@@ -25,6 +25,8 @@ using DiffPumas.Physics: get_material_index
 using DiffPumas.Loader: print_physics_summary
 using DiffPumas.GaisserFlux: flux_gccly, flux_gaisser
 using DiffPumas.Geometry: run_backward_mc, compute_flux
+using DiffPumas: zenith_to_elevation
+using DiffPumas.ExamplesCommon: load_or_create_physics
 using PlotlyJS
 using Printf
 
@@ -33,14 +35,6 @@ const PUMAS_DIR = joinpath(dirname(@__DIR__), "..", "pumas")
 const C_EXECUTABLE = joinpath(PUMAS_DIR, "build", "example-geometry")
 const CACHE_FILE = joinpath(@__DIR__, "data", "flux_comparison.xml")
 const PHYSICS_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
-
-"""
-    zenith_to_elevation(zenith)
-
-Convert zenith angle to elevation angle.
-elevation = 90° - zenith
-"""
-zenith_to_elevation(zenith::Float64) = 90.0 - zenith
 
 """
     run_c_example(thickness, zenith, energy_min, energy_max)

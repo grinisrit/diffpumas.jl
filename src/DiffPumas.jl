@@ -84,6 +84,7 @@ include("Straggling.jl")
 include("Loader.jl")
 include("Geometry.jl")
 include("Plotting.jl")
+include("ExamplesCommon.jl")
 
 # Import and re-export from submodules
 using .Constants
@@ -98,6 +99,7 @@ using .Straggling
 using .Loader
 using .Geometry
 using .Plotting
+using .ExamplesCommon
 
 # Export Constants
 export ALPHA_EM, HBAR_C, BOHR_RADIUS, MUON_C_TAU, TAU_C_TAU
@@ -167,6 +169,10 @@ export run_backward_mc, locals_rock, locals_air
 
 # Export Plotting
 export plot_trajectories, plot_transport_path
+
+# Export ExamplesCommon
+export zenith_to_elevation, compute_gaisser_flux_grid, compute_gaisser_flux_integrated
+export sample_energy_loguniform
 
 # Version information
 const VERSION = v"0.2.0"

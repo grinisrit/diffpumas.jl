@@ -534,8 +534,13 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
                 # Below threshold without scattering (straggling only)
                 state = transport_backward_step(physics, state, material, density, step_size;
                                                 rng=rng, straggling=true)
+            elseif use_straggled && rng === nothing
+                # Straggling requested but no RNG (for Zygote/AD compatibility)
+                # Use deterministic CSDA as differentiable approximation
+                state = transport_backward_step(physics, state, material, density, step_size;
+                                                rng=nothing, straggling=false)
             else
-                # Pure CSDA
+                # Pure CSDA (no straggling, no scattering)
                 state = transport_backward_step(physics, state, material, density, step_size;
                                                 rng=nothing, straggling=false)
             end
@@ -770,16 +775,24 @@ function compute_flux(physics::PhysicsTables{T},
 end
 
 """
-    compute_flux_differentiable(physics, rock_density, rock_thickness, elevation, energy_final, charge)
+    compute_flux_differentiable(physics, rock_density, rock_thickness, elevation, energy_final, charge; straggling=false, scattering=false, energy_threshold_low=100.0)
 
 Compute flux for a single particle - fully differentiable version.
+
+For Zygote compatibility:
+- Uses deterministic transport (no RNG)
+- straggling=true with no RNG uses deterministic CSDA approximation
+- scattering=false is recommended for gradient computation
 """
 function compute_flux_differentiable(physics::PhysicsTables{T},
                                      rock_density::T,
                                      rock_thickness::T,
                                      elevation::T,
                                      energy_final::T,
-                                     charge::T) where T<:Real
+                                     charge::T;
+                                     straggling::Bool = false,
+                                     scattering::Bool = false,
+                                     energy_threshold_low::T = T(100.0)) where T<:Real
     
     rock_idx = get_material_index(physics, "StandardRock")
     air_idx = get_material_index(physics, "Air")
@@ -793,13 +806,27 @@ function compute_flux_differentiable(physics::PhysicsTables{T},
     
     geometry = TwoLayerGeometry{T}(rock_thickness, rock_density, rock_idx, air_idx)
     
-    return compute_flux_single(physics, geometry, energy_final, elevation, charge)
+    # Note: rng=nothing for Zygote compatibility (deterministic transport)
+    # With straggling=true but no rng, transport uses deterministic CSDA
+    return compute_flux_single(physics, geometry, energy_final, elevation, charge;
+                               rng=nothing, straggling=straggling, scattering=scattering,
+                               energy_threshold_low=energy_threshold_low)
 end
 
 """
-    compute_flux_gradient(physics, rock_density, rock_thickness, elevation, energy_final, charge)
+    compute_flux_gradient(physics, rock_density, rock_thickness, elevation, energy_final, charge; straggling=false, scattering=false, energy_threshold_low=100.0)
 
 Compute gradient of flux w.r.t. rock density using Zygote.
+
+For Zygote compatibility:
+- Uses deterministic transport (no RNG)
+- straggling=true with no RNG uses deterministic CSDA approximation
+- scattering=false is recommended for gradient computation
+
+# Arguments
+- `straggling`: Use straggling model (deterministic approximation for AD)
+- `scattering`: Enable scattering (should be false for Zygote)
+- `energy_threshold_low`: Energy threshold for mode switching in GeV
 
 # Returns
 - `flux`: The flux value
@@ -810,10 +837,15 @@ function compute_flux_gradient(physics::PhysicsTables{T},
                                rock_thickness::T,
                                elevation::T,
                                energy_final::T,
-                               charge::T) where T<:Real
+                               charge::T;
+                               straggling::Bool = false,
+                               scattering::Bool = false,
+                               energy_threshold_low::T = T(100.0)) where T<:Real
     
     f = ρ -> compute_flux_differentiable(physics, ρ, rock_thickness, 
-                                         elevation, energy_final, charge)
+                                         elevation, energy_final, charge;
+                                         straggling=straggling, scattering=scattering,
+                                         energy_threshold_low=energy_threshold_low)
     
     flux = f(rock_density)
     grad = Zygote.gradient(f, rock_density)[1]

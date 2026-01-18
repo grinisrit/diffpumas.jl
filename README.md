@@ -191,7 +191,7 @@ include("test/runtests.jl")
 
 ```bash
 julia --project=. examples/loader_example.jl
-julia --project=. examples/geometry_example.jl [ROCK_THICKNESS] [ELEVATION] [ENERGY_MIN] [ENERGY_MAX]
+julia --project=. examples/diff_flux.jl [ROCK_THICKNESS] [ELEVATION] [ENERGY_MIN] [ENERGY_MAX]
 ```
 
 ## API Reference

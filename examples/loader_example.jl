@@ -125,8 +125,8 @@ function main()
     println("=" ^ 60)
     println("Physics dump saved to: $(dump_path)")
     println()
-    println("To use this dump in geometry_example.jl:")
-    println("  julia --project=. examples/geometry_example.jl --dump $(dump_path)")
+    println("To use this dump in diff_flux.jl:")
+    println("  julia --project=. examples/diff_flux.jl --dump $(dump_path)")
     println("=" ^ 60)
     
     return 0
