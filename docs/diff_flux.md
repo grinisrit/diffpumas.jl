@@ -199,18 +199,10 @@ These processes have cross-sections that scale approximately as $\sigma \propto 
 DEL events are sampled using an acceptance-rejection method:
 
 1. **Cross-section lookup**: Compute the maximum DEL cross-section $\sigma_{\text{DEL}}$ over the energy range of the step
-2. **Interaction length**: Sample the interaction grammage $X_{\text{DEL}}$ from an exponential distribution:
-   $$
-   X_{\text{DEL}} = -\frac{\ln(\zeta)}{\sigma_{\text{DEL}}}
-   $$
-   where $\zeta \sim \text{Uniform}(0,1)$
+2. **Interaction length**: Sample the interaction grammage $X_{\text{DEL}}$ from an exponential distribution: $X_{\text{DEL}} = -\frac{\ln(\zeta)}{\sigma_{\text{DEL}}}$ where $\zeta \sim \text{Uniform}(0,1)$
 3. **Energy at interaction**: Determine the energy $K_{\text{DEL}}$ at the interaction point using the fluctuation ratio from straggling
 4. **Acceptance**: Accept the event with probability $r = \sigma_{\text{DEL}}(K_{\text{DEL}}) / \sigma_{\text{DEL}}^{\max}$
-5. **Energy transfer**: If accepted, sample the fractional energy transfer $\nu$ from a power-law distribution:
-   $$
-   P(\nu) \propto \nu^{-\alpha}, \quad \nu \in [\nu_{\text{cut}}, 1]
-   $$
-   where $\alpha = 2$ for backward Monte Carlo
+5. **Energy transfer**: If accepted, sample the fractional energy transfer $\nu$ from a power-law distribution $P(\nu) \propto \nu^{-\alpha}, \quad \nu \in [\nu_{\text{cut}}, 1]$ where $\alpha = 2$ for backward Monte Carlo
 
 #### 4.3.3 When DEL Events Are Modeled
 
