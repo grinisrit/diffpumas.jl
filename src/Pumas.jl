@@ -12,7 +12,9 @@ This module provides common functions used across multiple examples:
 module Pumas
 
 using ..Constants
+using ..Types: MUON
 using ..Physics
+using ..Materials
 using ..Loader
 using ..GaisserFlux: flux_gaisser
 
@@ -49,13 +51,23 @@ function load_or_create_physics(dump_path::String; verbose::Bool=true)
         verbose && println("  Dump file: $(dump_path)")
         physics = load_physics(dump_path)
         if physics !== nothing
-            verbose && println("✓ Physics loaded successfully")
-            return physics
+            # Verify dump has all required materials (StandardRock, Air, Water)
+            required = ["StandardRock", "Air", "Water"]
+            missing_mats = filter(m -> !haskey(physics.materials, m), required)
+            if isempty(missing_mats)
+                verbose && println("✓ Physics loaded successfully ($(length(physics.tables)) materials)")
+                return physics
+            else
+                verbose && println("⚠ Dump missing materials: $(join(missing_mats, ", ")). Recreating...")
+                rm(dump_path; force=true)
+                # Fall through to creation below
+            end
         end
     end
     
     verbose && println("Physics dump not found, creating new physics tables...")
-    physics = create_physics(MUON; n_energies=200, K_min=1e-3, K_max=1e9)
+    physics = create_physics(MUON; n_energies=200, K_min=1e-3, K_max=1e9,
+                              materials=[STANDARD_ROCK, AIR, WATER])
     mkpath(dirname(dump_path))
     save_physics(physics, dump_path)
     verbose && println("✓ Physics tables created and saved to $(dump_path)")

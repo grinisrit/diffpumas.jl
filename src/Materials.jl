@@ -11,7 +11,7 @@ using SpecialFunctions
 using ChainRulesCore
 
 export AtomicElement, BaseMaterial, CompositeMaterial
-export ELEMENTS, MATERIALS, STANDARD_ROCK, AIR
+export ELEMENTS, MATERIALS, STANDARD_ROCK, AIR, WATER
 export electronic_stopping_power, electronic_density_effect
 export elastic_dcs, elastic_path, electronic_dcs
 export dcs_bremsstrahlung_ssr, dcs_pair_production_ssr, dcs_photonuclear_drss
@@ -118,9 +118,18 @@ const AIR = BaseMaterial(
     [0.755, 0.232, 0.013]
 )
 
+const WATER = BaseMaterial(
+    "Water",
+    1000.0,  # kg/m³
+    75.0e-9,  # GeV (mean excitation energy for water)
+    [ELEMENTS["H"], ELEMENTS["O"]],
+    [0.1119, 0.8881]  # Mass fractions for H₂O
+)
+
 const MATERIALS = Dict{String, BaseMaterial}(
     "StandardRock" => STANDARD_ROCK,
-    "Air" => AIR
+    "Air" => AIR,
+    "Water" => WATER
 )
 
 """

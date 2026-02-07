@@ -177,10 +177,118 @@ $$
 where $\xi$ is the mean energy loss in the absorber and $\kappa$ is the ratio of mean to maximum energy transfer.
 
 In DiffPumas.jl, straggling is implemented using sampling from appropriate distributions, with the mode controlled by energy thresholds:
-- **Below threshold** (typically 100 GeV): Full straggling with the STRAGGLED mode
-- **Above threshold**: MIXED mode with deterministic continuous energy loss plus stochastic discrete losses
+- **Below threshold** (typically 100 GeV): Full straggling with the STRAGGLED mode, including DEL events
+- **Above threshold**: MIXED mode with purely deterministic CSDA energy loss (no straggling, no DEL events)
 
-### 4.3 Multiple Coulomb Scattering
+### 4.3 Discrete Energy Loss (DEL) Events
+
+While straggling models the statistical fluctuations in continuous energy loss, **Discrete Energy Loss (DEL) events** represent rare, large energy transfers from individual hard collisions. These are distinct from the many small ionization losses that contribute to straggling.
+
+#### 4.3.1 DEL Processes
+
+DEL events include three radiative processes:
+
+1. **Bremsstrahlung**: $\mu \rightarrow \mu \gamma$ - emission of a high-energy photon in the Coulomb field of a nucleus
+2. **Pair production**: $\mu \rightarrow \mu e^+ e^-$ - creation of an electron-positron pair
+3. **Photonuclear interactions**: $\mu N \rightarrow \mu X$ - inelastic scattering off nuclei
+
+These processes have cross-sections that scale approximately as $\sigma \propto E^{-1}$ at high energies, making them increasingly important for high-energy muons.
+
+#### 4.3.2 DEL Sampling Algorithm
+
+DEL events are sampled using an acceptance-rejection method:
+
+1. **Cross-section lookup**: Compute the maximum DEL cross-section $\sigma_{\text{DEL}}$ over the energy range of the step
+2. **Interaction length**: Sample the interaction grammage $X_{\text{DEL}}$ from an exponential distribution:
+   $$
+   X_{\text{DEL}} = -\frac{\ln(\zeta)}{\sigma_{\text{DEL}}}
+   $$
+   where $\zeta \sim \text{Uniform}(0,1)$
+3. **Energy at interaction**: Determine the energy $K_{\text{DEL}}$ at the interaction point using the fluctuation ratio from straggling
+4. **Acceptance**: Accept the event with probability $r = \sigma_{\text{DEL}}(K_{\text{DEL}}) / \sigma_{\text{DEL}}^{\max}$
+5. **Energy transfer**: If accepted, sample the fractional energy transfer $\nu$ from a power-law distribution:
+   $$
+   P(\nu) \propto \nu^{-\alpha}, \quad \nu \in [\nu_{\text{cut}}, 1]
+   $$
+   where $\alpha = 2$ for backward Monte Carlo
+
+#### 4.3.3 When DEL Events Are Modeled
+
+DEL events are **only modeled in STRAGGLED mode** (energies below ~100 GeV):
+
+- **STRAGGLED mode**: Both straggling and DEL events are sampled
+- **MIXED mode**: Only deterministic CSDA energy loss (no DEL events)
+- **CSDA mode**: Purely deterministic (no DEL events)
+
+This matches the PUMAS C implementation, where DEL sampling occurs only in `PUMAS_MODE_STRAGGLED`.
+
+#### 4.3.4 Importance in Backward Monte Carlo
+
+DEL events are particularly important in backward Monte Carlo transport because:
+
+1. **Energy boosts**: In backward mode, a DEL event that caused energy loss in forward mode becomes an energy gain, allowing particles to reach higher energies
+2. **High zenith angles**: For near-horizontal muons, the long path through the atmosphere makes DEL events more likely, significantly affecting the flux
+3. **Rare but large**: While DEL events are rare, they can transfer a large fraction of the muon's energy (up to $\nu \approx 1$), making them crucial for accurate flux computation
+
+The energy after a DEL event in backward mode is:
+$$
+K_{\text{after}} = \frac{K_{\text{before}}}{1 - \nu}
+$$
+
+where $\nu$ is the fractional energy transfer sampled from the power-law distribution.
+
+#### 4.3.5 DEL Angular Scattering
+
+In addition to transferring energy, DEL events also deflect the muon. DiffPumas.jl implements the same process-specific polar angle sampling as PUMAS C. Each function returns $\mu = \tfrac{1}{2}(1 - \cos\theta)$:
+
+**Bremsstrahlung and pair production** use Tsai's double-differential cross-section (DDCS) with nuclear screening. The characteristic angle is set by the minimum momentum transfer:
+
+$$
+\mu_0 = \left(\frac{m_\mu \nu}{2 E (E - \nu)}\right)^2
+$$
+
+where $\nu = K_i - K_f$ is the energy transfer and $E = K_i + m_\mu$ is the total energy. A rejection sampling method draws $\mu$ from an envelope $\propto 1/(\mu_0 + \mu)^2$ and accepts based on the unscreened PDF and a nuclear form-factor correction parameterised by the nuclear RMS radius $R_N(Z)$.
+
+**Photonuclear events** sample the virtuality $Q^2$ from the photonuclear DDCS envelope (log-uniform in $Q^2$), then convert to $\mu$ via energy-momentum conservation:
+
+$$
+\mu = \frac{1}{2}\,\frac{p\,p' + m_\mu^2 - E\,E'}{p\,p'} + \frac{Q^2}{4\,p\,p'}
+$$
+
+where $p$, $p'$ are the initial and final momenta and $E' = E - \nu$.
+
+**Ionisation (delta rays)** uses the exact kinematic formula for an electron initially at rest:
+
+$$
+\mu = \frac{1}{2}\left(1 - \frac{p^2 - \nu(E + m_e)}{\sqrt{p^2(p^2 + \nu^2 - 2\nu E)}}\right)
+$$
+
+**Activation condition.** Matching PUMAS C (`transport_do_del`, line 5746), DEL angular deflection is applied **only when multiple Coulomb scattering (MCS) is enabled** (`scattering=true`). When scattering is disabled, DEL events update the energy but not the direction. This coupling is physically motivated: if soft MCS is already being tracked, the rarer but larger DEL deflections should also be included for a consistent angular distribution.
+
+#### 4.3.6 Elastic Hard Scattering (EHS)
+
+In addition to radiative DEL events, muons can undergo rare large-angle Coulomb scatters off nuclei. These **elastic hard scattering (EHS)** events are distinct from the many soft Coulomb scatterings that are treated collectively as multiple Coulomb scattering (MCS, Section 4.4).
+
+**Sampling.** EHS events are sampled with the same acceptance-rejection approach used for DEL:
+
+1. Compute the EHS mean free path $\lambda_{\text{EHS}}$ at the lower energy of the step. This is derived from the first transport mean free path $\lambda_1$ and the elastic ratio parameter: $\lambda_{\text{EHS}} \approx \lambda_1 / \varepsilon_{\text{elastic}}$
+2. Sample the interaction grammage: $X_{\text{EHS}} = -\lambda_{\text{EHS}} \ln(\zeta)$
+3. If $X_{\text{EHS}} < \Delta X$ (the step grammage), the event occurs
+4. Apply acceptance correction based on the energy-dependent MFP at the actual interaction energy
+
+**Angular distribution.** When an EHS event occurs, the scattering angle $\mu = \tfrac{1}{2}(1 - \cos\theta)$ is sampled from a screened Coulomb (Wentzel) distribution:
+
+$$
+\frac{d\sigma}{d\mu} \propto \frac{1}{(A + \mu)^2} \cdot (1 - f_{\text{spin}} \cdot \mu)
+$$
+
+where $A = \mu_0 / 4$ is the screening parameter derived from the Thomas-Fermi atomic radius and $f_{\text{spin}}$ is the spin correction factor for the muon. The sampling uses inverse-CDF sampling from the envelope $1/(A + \mu)^2$ with spin-factor rejection.
+
+**Priority.** In each transport step, DEL and EHS are sampled independently. If a DEL event already occurred (truncating the step), EHS is skipped for that step — the DEL takes priority since it already determined the step's interaction grammage. Conversely, if no DEL occurred, EHS is checked over the full step.
+
+**Direction update ordering.** Within the scattering block, deflections are applied in order: (1) DEL angular deflection, (2) EHS angular deflection, (3) soft MCS. All three accumulate on the direction vector before the position update.
+
+### 4.4 Multiple Coulomb Scattering
 
 As muons traverse matter, they undergo many small-angle Coulomb scatterings. The cumulative effect is described by Molière theory. The RMS scattering angle after traversing thickness $X$ is approximately:
 
@@ -329,28 +437,119 @@ $$
 \frac{\partial\Phi}{\partial\rho} \sim -10^{-5} \text{ to } -10^{-6} \text{ m}^{-2}\text{s}^{-1}\text{sr}^{-1}\text{(kg/m}^3\text{)}^{-1}
 $$
 
-## 8. Conclusions and Future Work
+## 8. Material Mixtures
 
-### 8.1 Summary
+### 8.1 Motivation
+
+In many muography scenarios, the traversed medium is not a single pure material. An aquifer, for example, consists of rock with varying degrees of water saturation. Rather than defining a new material table for every possible mixture, DiffPumas.jl supports **runtime material mixtures**: arbitrary combinations of loaded materials, specified by mass fractions.
+
+### 8.2 The `MaterialMixture` Type
+
+A mixture is represented by:
+
+```julia
+struct MaterialMixture
+    materials::Vector{Int}       # Material indices into PhysicsTables
+    fractions::Vector{Float64}   # Mass fractions (sum to 1)
+end
+```
+
+A convenience constructor wraps a single material index for backward compatibility:
+
+```julia
+MaterialMixture(material::Int) = MaterialMixture([material], [1.0])
+```
+
+### 8.3 Physics for Mixtures
+
+#### 8.3.1 Continuous Processes (CSDA)
+
+For continuous energy loss, the effective stopping power of a mixture is the mass-fraction-weighted sum of per-material stopping powers:
+
+$$
+\left(\frac{dE}{dX}\right)_{\text{mix}} = \sum_i f_i \left(\frac{dE}{dX}\right)_i
+$$
+
+where $f_i$ is the mass fraction of material $i$. This applies to both total CSDA stopping power and the mixed-mode soft stopping power.
+
+Similarly, straggling variance is additive:
+
+$$
+\Omega^2_{\text{mix}} = \sum_i f_i \, \Omega^2_i
+$$
+
+Since precomputed range tables $R(E)$ are only available for individual materials, the mixture range is approximated by scaling the dominant material's range by the ratio of stopping powers:
+
+$$
+R_{\text{mix}}(E) \approx R_{\text{dom}}(E) \cdot \frac{(dE/dX)_{\text{dom}}}{(dE/dX)_{\text{mix}}}
+$$
+
+This is accurate for the small steps (1% of range) used in the transport loops.
+
+#### 8.3.2 Discrete Events (DEL, EHS)
+
+For discrete interactions, the total cross-section is the weighted sum:
+
+$$
+\sigma_{\text{mix}} = \sum_i f_i \, \sigma_i(E)
+$$
+
+When a discrete event occurs, the interacting material is sampled with probability:
+
+$$
+P(\text{material } i) = \frac{f_i \, \sigma_i(E)}{\sigma_{\text{mix}}}
+$$
+
+The sampled material's cross-section tables are then used to determine the energy transfer, process type (bremsstrahlung, pair production, photonuclear), and other event properties.
+
+#### 8.3.3 Scattering
+
+The transport mean free path for soft multiple scattering follows a harmonic-mean weighting:
+
+$$
+\frac{1}{\lambda_{\text{mix}}} = \sum_i \frac{f_i}{\lambda_i}
+$$
+
+This reflects the additive nature of scattering probabilities.
+
+### 8.4 Example: Aquifer Rock-to-Water Sweep
+
+The `muography.jl` example includes Part 3, which demonstrates mixture support with a geologically motivated scenario:
+
+1. **Aquifer region** (z = 400m to 600m): The water fraction sweeps from 0% (pure rock) to 100% (pure water) in 10% increments
+2. **Shallow zone** (depth < 100m, z > 900m): An additional 10% air is mixed in, representing the unsaturated vadose zone
+3. **Effective density**: Computed as $\rho_{\text{eff}} = \sum_i f_i \rho_i$, e.g. 50% rock + 50% water gives $\rho \approx 1825$ kg/m³
+
+The resulting flux curves show the progressive effect of replacing dense rock with lighter water, producing a characteristic increase in transmitted muon flux.
+
+## 9. Conclusions and Future Work
+
+### 9.1 Summary
 
 DiffPumas.jl successfully implements differentiable muon transport by:
 
 1. Accurately reproducing PUMAS physics for flux computation
 2. Enabling automatic differentiation through the Direct CSDA formulation
 3. Supporting tessellated geometries with per-cell gradients
+4. **Supporting runtime material mixtures** with physically correct weighted stopping powers, straggling, cross-sections, and scattering
+5. **Full discrete angular scattering** matching PUMAS C: process-specific DEL polar angle sampling (bremsstrahlung/Tsai DDCS, pair production, photonuclear kinematics, ionisation) and elastic hard scattering (EHS) with screened Coulomb/Wentzel angular distribution, both activated alongside soft multiple Coulomb scattering
 
-### 8.2 Limitations and Future Directions
+### 9.2 Limitations and Future Directions
 
-The current Direct CSDA approach assumes deterministic energy loss. To fully match the detailed transport with straggling and scattering, we need to:
+The current Direct CSDA approach assumes deterministic energy loss. To fully match the detailed transport with straggling, DEL events, and scattering, we need to:
 
 1. **Integrate straggling with Zygote**: This requires either:
    - Reparameterization tricks for stochastic sampling
    - Pathwise gradient estimators
    - Score function (REINFORCE) estimators
 
-2. **Handle scattering differentiably**: Scattering changes trajectory directions, coupling geometric and physics computations
+2. **Handle DEL events differentiably**: DEL events introduce discrete jumps in energy and direction. The stochastic nature of DEL sampling presents similar AD challenges as straggling.
 
-3. **Extend to 3D tomography**: Full inversion of density distributions from multi-angle flux measurements
+3. **Handle scattering differentiably**: Scattering changes trajectory directions, coupling geometric and physics computations
+
+4. **Extend to 3D tomography**: Full inversion of density distributions from multi-angle flux measurements
+
+5. **Precomputed mixture tables**: For frequently used mixtures, precompute range and energy tables to avoid the dominant-material approximation in range lookups
 
 The framework established here provides a foundation for these extensions, enabling gradient-based optimization for muon tomography applications.
 

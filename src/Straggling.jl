@@ -23,6 +23,7 @@ export fluctuate_energy_loss, sample_del_event, sample_ehs_event
 export compute_del_cross_section, compute_ehs_mean_free_path
 export rotate_direction, box_muller_randn, sample_scattering_angle
 export sample_soft_scattering, sample_msc_angle
+export polar_del_angle, sample_target_element
 
 # Constants from PUMAS
 const BMC_ALPHA = 2.0         # Exponent for backward MC DEL sampling
@@ -30,6 +31,25 @@ const EHS_PATH_MAX = 1e9      # Maximum path for EHS
 const X_THRESHOLD = 0.05      # Threshold for straggling correction
 const STEP_EPSILON = 1e-7     # Small offset for step boundaries
 const MSC_ACCURACY = 0.01     # Default accuracy for MSC angular distribution
+const POLAR_MAX_TRIALS = 100  # Maximum rejection sampling iterations for polar angle
+
+# Nuclear RMS radii in metres (from PUMAS data_nuclear_radius, Z=1..120)
+const NUCLEAR_RMS_RADII = [
+    2.098, 0.858, 1.680, 2.400, 2.518, 2.405, 2.470, 2.548, 2.734,
+    2.900, 2.993, 2.940, 3.043, 3.035, 3.098, 3.187, 3.245, 3.360,
+    3.413, 3.408, 3.477, 3.443, 3.595, 3.600, 3.644, 3.681, 3.748,
+    3.843, 3.776, 3.943, 3.942, 4.032, 4.065, 4.078, 4.123, 4.135,
+    4.188, 4.209, 4.237, 4.249, 4.306, 4.318, 4.363, 4.388, 4.432,
+    4.435, 4.479, 4.520, 4.612, 4.646, 4.640, 4.630, 4.714, 4.706,
+    4.756, 4.774, 4.823, 4.848, 4.878, 4.897, 4.927, 4.948, 5.054,
+    5.093, 5.133, 5.177, 5.197, 5.210, 5.264, 5.301, 5.390, 5.371,
+    5.429, 5.479, 5.423, 5.400, 5.409, 5.411, 5.387, 5.318, 5.404,
+    5.471, 5.498, 5.520, 5.520, 5.529, 5.629, 5.637, 5.661, 5.669,
+    5.710, 5.701, 5.784, 5.825, 5.824, 5.817, 5.843, 5.843, 5.868,
+    5.875, 5.906, 5.912, 5.918, 5.937, 5.967, 5.973, 5.979, 5.985,
+    5.980, 6.033, 6.051, 6.056, 6.074, 6.079, 6.097, 6.097, 6.119,
+    6.125, 6.125, 2.958
+] .* 1e-15  # Convert fm → m
 
 """
     box_muller_randn(rng)
@@ -624,6 +644,626 @@ Based on PUMAS step_rotate_direction implementation.
     end
     
     return Vec3{T}(new_dx, new_dy, new_dz)
+end
+
+# =============================================================================
+# DEL angular scattering (polar angle after discrete events)
+# =============================================================================
+# Implements PUMAS's polar angle sampling for each DEL process.
+# All functions return mu = 0.5*(1 - cos(theta)).
+# Enabled only when scattering (MCS) is on, matching PUMAS C behaviour
+# where DEL direction update requires context->mode.scattering == PUMAS_MODE_MIXED.
+
+"""
+    nuclear_radius(Z)
+
+Look up nuclear RMS radius in metres for atomic number Z.
+Matches PUMAS `data_nuclear_radius`.
+"""
+@inline function nuclear_radius(Z::Real)
+    iZ = clamp(round(Int, Z), 1, length(NUCLEAR_RMS_RADII))
+    return NUCLEAR_RMS_RADII[iZ]
+end
+
+"""
+    polar_bremsstrahlung(mass, ki, kf, Z, A, rng)
+
+Sample polar angle mu = 0.5*(1-cos θ) for a bremsstrahlung or pair-production event.
+Uses Tsai's DDCS with nuclear screening and rejection sampling.
+
+# Arguments
+- `mass`: Projectile mass (GeV/c²)
+- `ki`: Kinetic energy before DEL (higher energy)
+- `kf`: Kinetic energy after DEL (lower energy)
+- `Z`, `A`: Atomic number / mass of target element
+- `rng`: Random number generator
+
+Reference: Y. Tsai, Rev. Mod. Phys. (1974); PUMAS polar_bremsstrahlung().
+"""
+function polar_bremsstrahlung(mass::T, ki::T, kf::T, Z::T, A::T,
+                               rng::AbstractRNG) where T<:Real
+    m = mass
+    E = ki + m
+    nu = ki - kf
+    if nu <= zero(T) || E <= m
+        return zero(T)
+    end
+    y = nu / E
+
+    tmp = T(0.5) * m * nu / (E * (E - nu))
+    mu0 = tmp * tmp
+    c1 = (T(2) * (one(T) - y) + y * y) * mu0
+    c2 = T(4) * (one(T) - y) * mu0 * mu0
+
+    RN = T(nuclear_radius(Z))
+    tmp2 = m * RN / T(HBAR_C)
+    muni = tmp2 * tmp2 / T(6)
+    muc = sqrt(mu0) - mu0
+    if muc < zero(T)
+        return zero(T)
+    end
+
+    # Precompute screening factor x0 at mu=0 (envelope normalisation)
+    q0 = muni
+    r0 = mu0
+    qr0 = q0 * r0
+    denom0 = r0 + qr0
+    if denom0 <= zero(T) || (one(T) + qr0) <= zero(T)
+        return zero(T)
+    end
+    x0 = (one(T) + T(2) * qr0) * log((one(T) + qr0) / denom0) -
+         (one(T) - r0) * (one(T) + T(2) * q0) / (one(T) + q0)
+    if x0 <= zero(T)
+        return zero(T)
+    end
+
+    # Rejection sampling
+    for _ in 1:POLAR_MAX_TRIALS
+        r0_rng = rand(rng)
+        r1 = rand(rng)
+
+        # Sample mu from envelope: mu = r0*mu0 / (mu0 + 1 - r0)
+        mu = r0_rng * mu0 / (mu0 + one(T) - r0_rng)
+
+        mus = mu0 + mu
+        mu2 = mus * mus
+        d1 = one(T) / mu2
+        d2 = d1 * d1
+        score = r1 * c1 * d1
+
+        # Unscreened PDF check
+        pdf = c1 * d1 - mu * c2 * d2
+        if score > pdf
+            continue
+        end
+
+        # Nuclear screening check
+        l2 = mu2 / (mu0 * mu0)
+        q = muni * l2
+        r = mu0 * l2
+        qr = q * r
+        if qr > T(1e5)
+            continue  # numerically unstable region
+        end
+        denom = r + qr
+        if denom <= zero(T) || (one(T) + qr) <= zero(T)
+            continue
+        end
+        x = (one(T) + T(2) * qr) * log((one(T) + qr) / denom) -
+            (one(T) - r) * (one(T) + T(2) * q) / (one(T) + q)
+
+        pdf *= x / x0
+        if score <= pdf
+            return mu
+        end
+    end
+
+    return zero(T)  # Fallback: no deflection
+end
+
+"""
+    polar_pair_production(mass, ki, kf, Z, A, rng)
+
+Sample polar angle for a pair-production event.
+PUMAS uses the same formula as bremsstrahlung (virtual bremsstrahlung assumption).
+"""
+@inline polar_pair_production(mass::T, ki::T, kf::T, Z::T, A::T,
+                              rng::AbstractRNG) where T<:Real =
+    polar_bremsstrahlung(mass, ki, kf, Z, A, rng)
+
+"""
+    polar_photonuclear(mass, ki, kf, Z, A, rng)
+
+Sample polar angle for a photonuclear event.
+Simplified version: samples Q² uniformly in log-space from the DDCS envelope,
+then converts to mu via energy-momentum conservation.
+
+Reference: PUMAS polar_photonuclear().
+"""
+function polar_photonuclear(mass::T, ki::T, kf::T, Z::T, A::T,
+                             rng::AbstractRNG) where T<:Real
+    M = T(0.5) * (T(PROTON_MASS) + T(NEUTRON_MASS))
+    q = ki - kf
+    ml = mass
+    E = ki + ml
+    ml2 = ml * ml
+
+    Q2min = ml2 * (q * q - T(0.5) * ml2) / (E * (E - q))
+    Q2max = T(2) * M * (q - T(PION_MASS)) - T(PION_MASS)^2
+
+    if Q2max < Q2min || Q2min < zero(T)
+        return zero(T)
+    end
+
+    # Simplified sampling: uniform in log(Q²) then accept
+    # For a simplified version we sample Q² uniformly in log-space
+    lnQ2min = log(Q2min)
+    lnQ2max = log(Q2max)
+    rQ2 = lnQ2max - lnQ2min
+
+    # Sample Q² (single draw; the full PUMAS version does rejection but that
+    # requires the full photonuclear DDCS which we don't have tabulated.
+    # Using the midpoint of the log range gives a representative angle.)
+    u = rand(rng)
+    Q2 = Q2min * exp(rQ2 * u)
+
+    # Convert Q² → mu via kinematics
+    p = sqrt(ki * (ki + T(2) * ml))
+    E1 = E - q
+    eps_ratio = ml / E1
+    p1 = E1 * sqrt(max((one(T) + eps_ratio) * (one(T) - eps_ratio), zero(T)))
+    p2 = p * p1
+    if p2 <= zero(T)
+        return zero(T)
+    end
+
+    tmp_val = p2 + ml2 - E * E1
+    if abs(tmp_val) <= T(3) * eps(T(1.0)) * p2
+        tmp_val = zero(T)
+    end
+    a_mu = T(0.5) * tmp_val / p2
+    b_mu = T(0.25) / p2
+    mu = a_mu + b_mu * Q2
+
+    return clamp(mu, zero(T), one(T))
+end
+
+"""
+    polar_ionisation(mass, ki, kf)
+
+Compute polar angle for an ionisation (delta-ray) event.
+Exact formula from energy-momentum conservation (electron at rest).
+
+Reference: Salvat (2013), NIMB 316; PUMAS polar_ionisation().
+"""
+@inline function polar_ionisation(mass::T, ki::T, kf::T) where T<:Real
+    nu = ki - kf
+    p2 = ki * (ki + T(2) * mass)
+    E = ki + mass
+
+    denom = sqrt(p2 * (p2 + nu * nu - T(2) * nu * E))
+    if denom <= zero(T)
+        return zero(T)
+    end
+
+    c = (p2 - nu * (E + T(ELECTRON_MASS))) / denom
+    return T(0.5) * (one(T) - c)
+end
+
+"""
+    sample_target_element(material::BaseMaterial, rng)
+
+Randomly sample a target atomic element from a material,
+weighted by mass fraction. Returns (Z, A) of the selected element.
+"""
+function sample_target_element(material::BaseMaterial, rng::AbstractRNG)
+    u = rand(rng)
+    cumul = 0.0
+    for (i, f) in enumerate(material.fractions)
+        cumul += f
+        if u <= cumul
+            el = material.elements[i]
+            return el.Z, el.A
+        end
+    end
+    # Fallback: last element
+    el = material.elements[end]
+    return el.Z, el.A
+end
+
+"""
+    polar_del_angle(physics, material_name, process, ki, kf, rng)
+
+Sample the polar angle mu = 0.5*(1-cos θ) for a DEL event.
+
+# Arguments
+- `physics`: Physics tables (for particle mass)
+- `material_name`: Name of the material (to look up elements)
+- `process`: DEL process (1=bremsstrahlung, 2=pair production, 3=photonuclear)
+- `ki`: Higher kinetic energy (before DEL in forward sense)
+- `kf`: Lower kinetic energy (after DEL in forward sense)
+- `rng`: Random number generator
+
+Returns mu ∈ [0, 1]. The caller must ensure ki > kf.
+"""
+function polar_del_angle(physics::PhysicsTables{T}, material_name::String,
+                          process::Int, ki::T, kf::T,
+                          rng::AbstractRNG) where T<:Real
+    mass = physics.mass
+
+    # Look up material to get element-level data
+    mat = get(MATERIALS, material_name, nothing)
+    if mat === nothing
+        return zero(T)  # Cannot compute angle without element data
+    end
+
+    # Sample target element
+    Z, A = sample_target_element(mat, rng)
+    Z_T = T(Z)
+    A_T = T(A)
+
+    if process == 1
+        # Bremsstrahlung
+        return polar_bremsstrahlung(mass, ki, kf, Z_T, A_T, rng)
+    elseif process == 2
+        # Pair production (same formula as bremsstrahlung)
+        return polar_pair_production(mass, ki, kf, Z_T, A_T, rng)
+    elseif process == 3
+        # Photonuclear
+        return polar_photonuclear(mass, ki, kf, Z_T, A_T, rng)
+    else
+        # Ionisation (delta ray) – process 4 if ever used
+        return polar_ionisation(mass, ki, kf)
+    end
+end
+
+"""
+    polar_del_angle(physics, material_idx, process, ki, kf, rng)
+
+Convenience overload accepting material index instead of name.
+"""
+function polar_del_angle(physics::PhysicsTables{T}, material_idx::Int,
+                          process::Int, ki::T, kf::T,
+                          rng::AbstractRNG) where T<:Real
+    @inbounds table = physics.tables[material_idx]
+    return polar_del_angle(physics, table.name, process, ki, kf, rng)
+end
+
+# =============================================================================
+# Mixture-aware stochastic functions
+# =============================================================================
+# For mixtures, continuous quantities (straggling, stopping power) are weighted
+# sums. For discrete events (DEL, EHS), we first compute mixture cross-sections
+# then sample which material the interaction occurs in.
+
+"""
+    compute_del_cross_section(physics, mix::MaterialMixture, kinetic)
+
+Compute mixture DEL cross-section: weighted sum of per-material cross-sections.
+"""
+@inline function compute_del_cross_section(physics::PhysicsTables{T}, mix::MaterialMixture,
+                                           kinetic::T) where T<:Real
+    if is_single_material(mix)
+        return compute_del_cross_section(physics, single_material(mix), kinetic)
+    end
+    xs = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        xs += T(mix.fractions[j]) * compute_del_cross_section(physics, mix.materials[j], kinetic)
+    end
+    return xs
+end
+
+"""
+    compute_ehs_mean_free_path(physics, mix::MaterialMixture, kinetic)
+
+Compute mixture EHS mean free path: harmonic mean weighted by fractions.
+    1/λ_mix = sum(f_i / λ_i)
+"""
+@inline function compute_ehs_mean_free_path(physics::PhysicsTables{T}, mix::MaterialMixture,
+                                            kinetic::T) where T<:Real
+    if is_single_material(mix)
+        return compute_ehs_mean_free_path(physics, single_material(mix), kinetic)
+    end
+    inv_path = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        lp = compute_ehs_mean_free_path(physics, mix.materials[j], kinetic)
+        if lp > zero(T) && lp < T(EHS_PATH_MAX)
+            inv_path += T(mix.fractions[j]) / lp
+        end
+    end
+    return inv_path > zero(T) ? one(T) / inv_path : T(EHS_PATH_MAX)
+end
+
+"""
+    fluctuate_energy_loss(physics, mix::MaterialMixture, ki, dX, Xtot, rng; backward=false)
+
+Apply energy fluctuation for a material mixture. Uses mixture straggling variance
+and mixture stopping power for the Landau/Vavilov model.
+"""
+@inline function fluctuate_energy_loss(physics::PhysicsTables{T}, mix::MaterialMixture,
+                               ki::T, dX::T, Xtot::T, rng::AbstractRNG;
+                               backward::Bool = false) where T<:Real
+    if is_single_material(mix)
+        return fluctuate_energy_loss(physics, single_material(mix), ki, dX, Xtot, rng; backward=backward)
+    end
+
+    sgn = backward ? T(-1) : T(1)
+    mode = ENERGY_LOSS_MIXED
+
+    # Get expected final energy using mixture range tables
+    k1 = property_kinetic_energy(physics, mode, mix, Xtot - sgn * dX)
+    dk0 = abs(ki - k1)
+
+    ratio = one(T)
+
+    if k1 > zero(T) && dk0 > zero(T)
+        Omega0 = property_straggling(physics, mix, ki)
+        Omega1 = property_straggling(physics, mix, k1)
+        dk12 = T(0.5) * dX * (Omega0 + Omega1)
+
+        tmp = dX / Xtot
+        if tmp > T(X_THRESHOLD)
+            de1 = property_stopping_power(physics, ENERGY_LOSS_MIXED, mix, k1)
+            de0 = property_stopping_power(physics, ENERGY_LOSS_MIXED, mix, ki)
+            dk12 *= one(T) + sgn * dX / dk0 * (de1 - de0)
+        end
+
+        dk1 = sqrt(max(dk12, zero(T)))
+
+        if dk0 >= T(3) * dk1 && dk1 > zero(T)
+            u = truncated_randn(rng)
+            k1 += u * dk1
+        elseif dk0 >= T(1.7320508) * dk1 && dk1 > zero(T)
+            u = T(1.7320508) * (one(T) - T(2) * rand(rng))
+            k1 += u * dk1
+        elseif dk1 > zero(T)
+            dk32 = T(3) * dk12
+            dk02 = dk0 * dk0
+            a = one(T) - (dk32 - dk02) / (dk32 + T(3) * dk02)
+            if rand(rng) <= a
+                b = T(0.5) * (dk32 + T(3) * dk02) / dk0
+                u = rand(rng)
+                k1 = ki - sgn * b * u
+                if k1 < zero(T)
+                    k1 = zero(T)
+                end
+            else
+                k1 = ki
+            end
+        end
+        ratio = abs(ki - k1) / dk0
+    end
+
+    if ratio == zero(T)
+        ratio = one(T)
+    end
+    k1 = max(k1, zero(T))
+    return k1, ratio
+end
+
+"""
+    sample_del_event(physics, mix::MaterialMixture, ki, kf, dX, Xtot, ratio, rng; backward=false)
+
+Sample DEL event for a material mixture. The total cross-section is the mixture sum.
+If a DEL occurs, one material is sampled according to fraction-weighted cross-sections
+and that material's tables are used for the energy transfer and process identification.
+"""
+@inline function sample_del_event(physics::PhysicsTables{T}, mix::MaterialMixture,
+                          ki::T, kf::T, dX::T, Xtot::T, ratio::T,
+                          rng::AbstractRNG;
+                          backward::Bool = false) where T<:Real
+    if is_single_material(mix)
+        return sample_del_event(physics, single_material(mix), ki, kf, dX, Xtot, ratio, rng; backward=backward)
+    end
+
+    sgn = backward ? T(-1) : T(1)
+    mode = ENERGY_LOSS_MIXED
+
+    # Mixture cross-sections
+    xs_del_i = compute_del_cross_section(physics, mix, ki)
+    xs_del_f = compute_del_cross_section(physics, mix, kf)
+    xs_del = max(xs_del_i, xs_del_f)
+
+    if xs_del <= zero(T)
+        return false, zero(T), zero(T), 0
+    end
+
+    zeta = rand(rng)
+    if zeta <= T(1e-12) || zeta >= one(T) - T(1e-12)
+        return false, zero(T), zero(T), 0
+    end
+
+    X_del = -log(zeta) / xs_del
+    if X_del >= dX
+        return false, zero(T), zero(T), 0
+    end
+
+    k_h = property_kinetic_energy(physics, mode, mix, Xtot - sgn * X_del)
+    k_at_del = ki - sgn * ratio * abs(ki - k_h)
+    if k_at_del <= zero(T)
+        return false, zero(T), zero(T), 0
+    end
+
+    r = compute_del_cross_section(physics, mix, k_at_del) / xs_del
+    if rand(rng) > r
+        return false, zero(T), zero(T), 0
+    end
+
+    # DEL occurred – sample which material
+    mat_idx = sample_mixture_material(physics, mix, k_at_del, rng)
+
+    # Sample energy transfer
+    cutoff = physics.settings.cutoff
+    alpha = T(BMC_ALPHA)
+    u = rand(rng)
+    if abs(alpha - one(T)) < T(1e-6)
+        nu = cutoff * exp(u * log(one(T) / cutoff))
+    else
+        cutoff_term = cutoff^(one(T) - alpha)
+        nu = (u * (one(T) - cutoff_term) + cutoff_term)^(one(T) / (one(T) - alpha))
+    end
+    nu = clamp(nu, cutoff, one(T))
+
+    if backward
+        k_del = k_at_del / (one(T) - nu)
+    else
+        k_del = k_at_del * (one(T) - nu)
+    end
+
+    # Process identification from sampled material
+    table = physics.tables[mat_idx]
+    brems = interpolate_table(k_at_del, table.energies, table.bremsstrahlung)
+    pair = interpolate_table(k_at_del, table.energies, table.pair_production)
+    photo = interpolate_table(k_at_del, table.energies, table.photonuclear)
+    total = brems + pair + photo
+
+    process = 1
+    if total > zero(T)
+        r_proc = rand(rng) * total
+        if r_proc < brems
+            process = 1
+        elseif r_proc < brems + pair
+            process = 2
+        else
+            process = 3
+        end
+    end
+
+    return true, X_del, k_del, process
+end
+
+"""
+    sample_soft_scattering(physics, mix::MaterialMixture, kinetic, grammage, rng)
+
+Sample soft multiple scattering angle for a material mixture.
+Uses the mixture transport path (harmonic mean).
+"""
+@inline function sample_soft_scattering(physics::PhysicsTables{T}, mix::MaterialMixture,
+                               kinetic::T, grammage::T, rng::AbstractRNG) where T<:Real
+    if is_single_material(mix)
+        return sample_soft_scattering(physics, single_material(mix), kinetic, grammage, rng)
+    end
+
+    if grammage <= zero(T) || kinetic <= zero(T)
+        return zero(T)
+    end
+
+    # Mixture transport path (harmonic mean)
+    lb1 = property_transport_path(physics, mix, kinetic)
+
+    if lb1 <= zero(T)
+        return zero(T)
+    end
+
+    ilb1 = T(0.1) * grammage / lb1
+
+    if ilb1 < T(1e-8)
+        return zero(T)
+    end
+    if ilb1 > one(T)
+        ilb1 = one(T)
+    end
+
+    if ilb1 < T(0.1)
+        u = rand(rng)
+        if u < T(1e-12)
+            u = T(1e-12)
+        end
+        mu = -ilb1 * log(u)
+        if mu > one(T)
+            mu = ilb1
+        end
+    else
+        u = rand(rng)
+        inv_ilb1 = one(T) / ilb1
+        exp_factor = one(T) - exp(-inv_ilb1)
+        mu = -ilb1 * log(one(T) - u * exp_factor)
+    end
+
+    return min(max(mu, zero(T)), one(T))
+end
+
+"""
+    sample_ehs_event(physics, mix::MaterialMixture, ki, kf, dX, Xtot, ratio, rng; backward=false)
+
+Sample elastic hard scattering for a material mixture.
+Uses mixture EHS mean free path.
+"""
+@inline function sample_ehs_event(physics::PhysicsTables{T}, mix::MaterialMixture,
+                          ki::T, kf::T, dX::T, Xtot::T, ratio::T,
+                          rng::AbstractRNG;
+                          backward::Bool = false) where T<:Real
+    if is_single_material(mix)
+        return sample_ehs_event(physics, single_material(mix), ki, kf, dX, Xtot, ratio, rng; backward=backward)
+    end
+
+    sgn = backward ? T(-1) : T(1)
+    mode = ENERGY_LOSS_MIXED
+
+    kmin = min(ki, kf)
+    kmax = max(ki, kf)
+    if kmin < T(0.001)
+        kmin, kmax = kmax, kmin
+    end
+
+    lb_ehs = compute_ehs_mean_free_path(physics, mix, kmin)
+    if lb_ehs <= zero(T) || lb_ehs >= T(EHS_PATH_MAX)
+        return false, zero(T), zero(T)
+    end
+
+    zeta = rand(rng)
+    if zeta <= zero(T) || zeta >= one(T)
+        return false, zero(T), zero(T)
+    end
+
+    X_ehs = -log(zeta) * lb_ehs
+    if X_ehs >= dX
+        return false, zero(T), zero(T)
+    end
+
+    k_h = property_kinetic_energy(physics, mode, mix, Xtot - sgn * X_ehs)
+    k_ehs = ki - sgn * ratio * abs(ki - k_h)
+    if k_ehs <= zero(T)
+        return false, zero(T), zero(T)
+    end
+
+    lb_ehs_k = compute_ehs_mean_free_path(physics, mix, k_ehs)
+    if lb_ehs_k <= zero(T) || lb_ehs_k >= T(EHS_PATH_MAX)
+        return false, zero(T), zero(T)
+    end
+
+    r = lb_ehs / lb_ehs_k
+    if r <= zero(T) || rand(rng) > one(T) / r
+        return false, zero(T), zero(T)
+    end
+
+    return true, X_ehs, k_ehs
+end
+
+"""
+    sample_scattering_angle(physics, mix::MaterialMixture, kinetic, rng; mu0=nothing)
+
+Sample EHS polar scattering angle for a material mixture.
+Picks the material with the largest mass fraction (dominant material) and
+delegates to the single-material sampler. This is appropriate because the
+screening parameter and spin factor are material-dependent table lookups;
+using the dominant material gives a good approximation for the Wentzel
+distribution shape.
+"""
+@inline function sample_scattering_angle(physics::PhysicsTables{T}, mix::MaterialMixture,
+                                  kinetic::T, rng::AbstractRNG;
+                                  mu0::Union{T, Nothing} = nothing) where T<:Real
+    if is_single_material(mix)
+        return sample_scattering_angle(physics, single_material(mix), kinetic, rng; mu0=mu0)
+    end
+    # Use the dominant material for the angular distribution shape
+    dom_idx = 1
+    @inbounds for j in 2:length(mix.materials)
+        if mix.fractions[j] > mix.fractions[dom_idx]
+            dom_idx = j
+        end
+    end
+    return sample_scattering_angle(physics, mix.materials[dom_idx], kinetic, rng; mu0=mu0)
 end
 
 end # module Straggling

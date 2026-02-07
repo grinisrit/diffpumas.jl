@@ -123,9 +123,12 @@ export Property, PROPERTY_CROSS_SECTION, PROPERTY_STOPPING_POWER, PROPERTY_RANGE
 export State, Locals, Medium, ContextMode, ContextLimit, Vec3
 export update_state, LocalsCallback, has_event, combine_events
 
+# Export Types (MaterialMixture)
+export MaterialMixture, is_single_material, single_material
+
 # Export Materials
 export AtomicElement, BaseMaterial, CompositeMaterial
-export ELEMENTS, MATERIALS, STANDARD_ROCK, AIR
+export ELEMENTS, MATERIALS, STANDARD_ROCK, AIR, WATER
 export electronic_stopping_power, electronic_density_effect
 export elastic_dcs, elastic_path, electronic_dcs
 export dcs_bremsstrahlung_ssr, dcs_pair_production_ssr, dcs_photonuclear_drss
@@ -138,7 +141,7 @@ export PhysicsSettings, PhysicsTables, MaterialTable
 export create_physics, create_energy_grid, get_material_index
 export property_range, property_stopping_power, property_kinetic_energy
 export property_proper_time, property_cross_section, property_transport_path
-export interpolate_table
+export interpolate_table, sample_mixture_material
 
 # Export Transport
 export transport_csda_uniform, transport_csda_magnetic
@@ -160,7 +163,7 @@ export flux_gaisser, flux_gccly, charge_fraction, cos_theta_star
 export fluctuate_energy_loss, sample_del_event, sample_ehs_event
 export compute_del_cross_section, compute_ehs_mean_free_path
 export rotate_direction, box_muller_randn, sample_scattering_angle
-export sample_soft_scattering
+export sample_soft_scattering, polar_del_angle, sample_target_element
 
 # Export Geometry
 export TwoLayerGeometry, create_geometry_context

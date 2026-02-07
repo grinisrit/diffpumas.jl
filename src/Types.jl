@@ -28,6 +28,7 @@ export PROPERTY_KINETIC_ENERGY, PROPERTY_MAGNETIC_ROTATION
 export PROPERTY_TRANSPORT_PATH, PROPERTY_PROPER_TIME
 export State, Locals, Medium, ContextMode, ContextLimit
 export Vec3, LocalsCallback, update_state, has_event
+export MaterialMixture
 
 # Type alias for 3D vectors (static for performance, Zygote-friendly)
 const Vec3{T} = SVector{3,T}
@@ -334,6 +335,49 @@ function ContextLimit{T}(;
 end
 
 ContextLimit(; kwargs...) = ContextLimit{Float64}(; kwargs...)
+
+"""
+    MaterialMixture
+
+A mixture of materials given by mass fractions.
+Used to represent composite media (e.g. wet rock = rock + water).
+
+For CSDA transport, dE/dX is the weighted sum of each material's stopping power.
+For discrete events (DEL, scattering), one material is sampled according to
+its fraction-weighted cross-section, then that material's physics is used.
+
+# Fields
+- `materials::Vector{Int}`: Material indices into PhysicsTables
+- `fractions::Vector{Float64}`: Mass fractions (must sum to 1)
+"""
+struct MaterialMixture
+    materials::Vector{Int}
+    fractions::Vector{Float64}
+
+    function MaterialMixture(materials::Vector{Int}, fractions::Vector{Float64})
+        @assert length(materials) == length(fractions) "materials and fractions must have same length"
+        total = sum(fractions)
+        if total > 0
+            new(materials, fractions ./ total)
+        else
+            new(materials, fractions)
+        end
+    end
+end
+
+# Convenience: wrap a single material index
+MaterialMixture(material::Int) = MaterialMixture([material], [1.0])
+
+# Number of components
+Base.length(m::MaterialMixture) = length(m.materials)
+
+# Check if mixture is a single material (fast path)
+is_single_material(m::MaterialMixture) = length(m.materials) == 1
+
+# Get the single material index (only valid when is_single_material)
+single_material(m::MaterialMixture) = m.materials[1]
+
+export is_single_material, single_material
 
 end # module Types
 

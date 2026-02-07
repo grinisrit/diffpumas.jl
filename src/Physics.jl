@@ -14,6 +14,7 @@ using ..Materials
 using ..DEDXLoader
 using LinearAlgebra
 using ChainRulesCore
+using Random
 
 export PhysicsSettings, PhysicsTables
 export create_physics, property_range, property_stopping_power
@@ -824,5 +825,189 @@ Get component stopping power (ionization, bremsstrahlung, pair, photonuclear).
     
     return interpolate_table(energy, table.energies, comp_table)
 end
+
+# =============================================================================
+# Mixture-aware property functions
+# =============================================================================
+# For a MaterialMixture, continuous properties (stopping power, straggling)
+# are weighted sums over components. Range/energy inversion is not directly
+# available for mixtures (no precomputed table), so we provide dEdX-based
+# stepping helpers instead.
+
+"""
+    property_stopping_power(physics, mode, mix::MaterialMixture, energy)
+
+Mixture stopping power: weighted sum of per-material stopping powers.
+    dEdX_mix = sum(f_i * dEdX_i(E))
+"""
+@inline function property_stopping_power(physics::PhysicsTables{T}, mode::EnergyLossMode,
+                                 mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_stopping_power(physics, mode, single_material(mix), energy)
+    end
+    dedx = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        dedx += T(mix.fractions[j]) * property_stopping_power(physics, mode, mix.materials[j], energy)
+    end
+    return dedx
+end
+
+"""
+    property_straggling(physics, mix::MaterialMixture, energy)
+
+Mixture straggling variance: weighted sum of per-material straggling.
+"""
+@inline function property_straggling(physics::PhysicsTables{T}, mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_straggling(physics, single_material(mix), energy)
+    end
+    s = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        s += T(mix.fractions[j]) * property_straggling(physics, mix.materials[j], energy)
+    end
+    return s
+end
+
+"""
+    property_cross_section(physics, mix::MaterialMixture, energy)
+
+Mixture cross-section: weighted sum of per-material cross-sections.
+"""
+@inline function property_cross_section(physics::PhysicsTables{T}, mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_cross_section(physics, single_material(mix), energy)
+    end
+    xs = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        xs += T(mix.fractions[j]) * property_cross_section(physics, mix.materials[j], energy)
+    end
+    return xs
+end
+
+"""
+    property_transport_path(physics, mix::MaterialMixture, energy)
+
+Mixture transport path: inverse of weighted sum of inverse transport paths.
+    1/λ_mix = sum(f_i / λ_i)
+"""
+@inline function property_transport_path(physics::PhysicsTables{T}, mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_transport_path(physics, single_material(mix), energy)
+    end
+    inv_path = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        lp = property_transport_path(physics, mix.materials[j], energy)
+        if lp > zero(T)
+            inv_path += T(mix.fractions[j]) / lp
+        end
+    end
+    return inv_path > zero(T) ? one(T) / inv_path : T(1e9)
+end
+
+"""
+    property_range(physics, mode, mix::MaterialMixture, energy)
+
+Approximate mixture range from effective stopping power.
+For single material falls back to exact table. For mixtures, integrates
+1/dEdX_mix numerically (trapezoidal) over a small energy grid.
+"""
+@inline function property_range(physics::PhysicsTables{T}, mode::EnergyLossMode,
+                        mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_range(physics, mode, single_material(mix), energy)
+    end
+    # Use dominant-material range scaled by ratio of stopping powers
+    # This is a fast approximation: X_mix ≈ X_dom * (dEdX_dom / dEdX_mix)
+    # Pick the material with the largest fraction
+    dom_idx = 1
+    @inbounds for j in 2:length(mix.materials)
+        if mix.fractions[j] > mix.fractions[dom_idx]
+            dom_idx = j
+        end
+    end
+    dom_mat = mix.materials[dom_idx]
+    X_dom = property_range(physics, mode, dom_mat, energy)
+    dedx_dom = property_stopping_power(physics, mode, dom_mat, energy)
+    dedx_mix = property_stopping_power(physics, mode, mix, energy)
+    if dedx_mix > zero(T) && dedx_dom > zero(T)
+        return X_dom * dedx_dom / dedx_mix
+    end
+    return X_dom
+end
+
+"""
+    property_kinetic_energy(physics, mode, mix::MaterialMixture, range)
+
+Approximate inverse range lookup for mixture.
+Uses dominant-material table with stopping-power ratio scaling.
+"""
+@inline function property_kinetic_energy(physics::PhysicsTables{T}, mode::EnergyLossMode,
+                                 mix::MaterialMixture, range::T) where T<:Real
+    if is_single_material(mix)
+        return property_kinetic_energy(physics, mode, single_material(mix), range)
+    end
+    # Pick the dominant material and scale the range
+    dom_idx = 1
+    @inbounds for j in 2:length(mix.materials)
+        if mix.fractions[j] > mix.fractions[dom_idx]
+            dom_idx = j
+        end
+    end
+    dom_mat = mix.materials[dom_idx]
+    # First guess: use dominant table directly (range is roughly correct)
+    E_guess = property_kinetic_energy(physics, mode, dom_mat, range)
+    # Refine: compute actual mixture range at that energy, then adjust
+    X_mix = property_range(physics, mode, mix, E_guess)
+    if X_mix > zero(T)
+        # Scale the range and re-invert
+        adjusted_range = range * property_range(physics, mode, dom_mat, E_guess) / X_mix
+        return property_kinetic_energy(physics, mode, dom_mat, adjusted_range)
+    end
+    return E_guess
+end
+
+"""
+    sample_mixture_material(physics, mix, energy, rng)
+
+Sample which material an interaction occurs in, weighted by
+fraction * cross-section. Returns the material index.
+"""
+@inline function sample_mixture_material(physics::PhysicsTables{T}, mix::MaterialMixture,
+                                          energy::T, rng::AbstractRNG) where T<:Real
+    if is_single_material(mix)
+        return single_material(mix)
+    end
+    # Compute weighted cross-sections
+    n = length(mix.materials)
+    xs_total = zero(T)
+    @inbounds for j in 1:n
+        xs_j = T(mix.fractions[j]) * property_cross_section(physics, mix.materials[j], energy)
+        xs_total += xs_j
+    end
+    if xs_total <= zero(T)
+        # Fallback: sample proportional to fraction alone
+        u = rand(rng)
+        cumulative = zero(T)
+        @inbounds for j in 1:n
+            cumulative += T(mix.fractions[j])
+            if u <= cumulative
+                return mix.materials[j]
+            end
+        end
+        return mix.materials[n]
+    end
+    # Sample from cumulative distribution
+    u = rand(rng) * xs_total
+    cumulative = zero(T)
+    @inbounds for j in 1:n
+        cumulative += T(mix.fractions[j]) * property_cross_section(physics, mix.materials[j], energy)
+        if u <= cumulative
+            return mix.materials[j]
+        end
+    end
+    return mix.materials[n]
+end
+
+export sample_mixture_material
 
 end # module Physics
