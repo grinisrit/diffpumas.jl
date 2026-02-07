@@ -403,7 +403,7 @@ Gradient computation with spatially-varying properties uses a tessellated rock c
     ─────────────────────●─────────────────── z = 0 (Detector)
 ```
 
-For each Monte Carlo sample: sample trajectory parameters ($\theta$, $\phi$, $(x_0, y_0)$), trace through cells (path length per cell), compute flux via Direct CSDA, and accumulate gradients $\partial\Phi/\partial\rho_{ijk}$. The gradient gives sensitivity to density changes in cell $(i,j,k)$—negative (higher density → fewer muons), dominated by bottom cells and central regions. Applications: tomographic inversion, sensitivity analysis, experiment optimization.
+For each Monte Carlo sample: sample trajectory parameters ($\theta$, $\phi$, $(x_0, y_0)$ ), trace through cells (path length per cell), compute flux via Direct CSDA, and accumulate gradients $\partial\Phi/\partial\rho_{ijk}$. The gradient gives sensitivity to density changes in cell $(i,j,k)$—negative (higher density → fewer muons), dominated by bottom cells and central regions. Applications: tomographic inversion, sensitivity analysis, experiment optimization.
 
 ### 5.3 Validation
 
