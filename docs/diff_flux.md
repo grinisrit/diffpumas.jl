@@ -223,6 +223,7 @@ DEL events are particularly important in backward Monte Carlo transport because:
 3. **Rare but large**: While DEL events are rare, they can transfer a large fraction of the muon's energy (up to $\nu \approx 1$), making them crucial for accurate flux computation
 
 The energy after a DEL event in backward mode is:
+
 $$
 K_{\text{after}} = \frac{K_{\text{before}}}{1 - \nu}
 $$
@@ -436,10 +437,10 @@ Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, ai
                          |
     ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ vadose ends
                          |  ┌─────────────────────────┐
-                    ROCK │  │ AQUIFER (rock–water mix)│
-                    CUBE │  └─────────────────────────┘
+                         │  │ AQUIFER (rock–water mix)│
+                         │  └─────────────────────────┘
                          |
-                    ROCK
+                    ROCK |
                          |
                          |      ╱ incoming muon
                          |    ╱   at zenith angle θ
