@@ -300,6 +300,81 @@ where $X_0$ is the radiation length of the material.
 
 Scattering causes trajectories to deviate from straight lines, affecting both the path length through matter and the apparent arrival direction at the detector.
 
+### 4.5 Material Mixtures
+
+#### 4.5.1 Motivation
+
+In many muography scenarios, the traversed medium is not a single pure material. An aquifer, for example, consists of rock with varying degrees of water saturation. Rather than defining a new material table for every possible mixture, DiffPumas.jl supports **runtime material mixtures**: arbitrary combinations of loaded materials, specified by mass fractions.
+
+#### 4.5.2 The `MaterialMixture` Type
+
+A mixture is represented by:
+
+```julia
+struct MaterialMixture
+    materials::Vector{Int}       # Material indices into PhysicsTables
+    fractions::Vector{Float64}   # Mass fractions (sum to 1)
+end
+```
+
+A convenience constructor wraps a single material index for backward compatibility:
+
+```julia
+MaterialMixture(material::Int) = MaterialMixture([material], [1.0])
+```
+
+#### 4.5.3 Physics for Mixtures
+
+##### 4.5.3.1 Continuous Processes (CSDA)
+
+For continuous energy loss, the effective stopping power of a mixture is the mass-fraction-weighted sum of per-material stopping powers:
+
+$$
+\left(\frac{dE}{dX}\right)_{\text{mix}} = \sum_i f_i \left(\frac{dE}{dX}\right)_i
+$$
+
+where $f_i$ is the mass fraction of material $i$. This applies to both total CSDA stopping power and the mixed-mode soft stopping power.
+
+Similarly, straggling variance is additive:
+
+$$
+\Omega^2_{\text{mix}} = \sum_i f_i \, \Omega^2_i
+$$
+
+Since precomputed range tables $R(E)$ are only available for individual materials, the mixture range is approximated by scaling the dominant material's range by the ratio of stopping powers:
+
+$$
+R_{\text{mix}}(E) \approx R_{\text{dom}}(E) \cdot \frac{(dE/dX)_{\text{dom}}}{(dE/dX)_{\text{mix}}}
+$$
+
+This is accurate for the small steps (1% of range) used in the transport loops.
+
+##### 4.5.3.2 Discrete Events (DEL, EHS)
+
+For discrete interactions, the total cross-section is the weighted sum:
+
+$$
+\sigma_{\text{mix}} = \sum_i f_i \, \sigma_i(E)
+$$
+
+When a discrete event occurs, the interacting material is sampled with probability:
+
+$$
+P(\text{material } i) = \frac{f_i \, \sigma_i(E)}{\sigma_{\text{mix}}}
+$$
+
+The sampled material's cross-section tables are then used to determine the energy transfer, process type (bremsstrahlung, pair production, photonuclear), and other event properties.
+
+##### 4.5.3.3 Scattering
+
+The transport mean free path for soft multiple scattering follows a harmonic-mean weighting:
+
+$$
+\frac{1}{\lambda_{\text{mix}}} = \sum_i \frac{f_i}{\lambda_i}
+$$
+
+This reflects the additive nature of scattering probabilities.
+
 ## 5. Implementation
 
 ### 5.1 Validation Against PUMAS
@@ -437,90 +512,47 @@ $$
 \frac{\partial\Phi}{\partial\rho} \sim -10^{-5} \text{ to } -10^{-6} \text{ m}^{-2}\text{s}^{-1}\text{sr}^{-1}\text{(kg/m}^3\text{)}^{-1}
 $$
 
-## 8. Material Mixtures
+## 8. Material Mixtures and Aquifer Muography Example
 
-### 8.1 Motivation
+Section 4.5 defines runtime material mixtures (type and physics). This section describes the aquifer muography example in `muography.jl`.
 
-In many muography scenarios, the traversed medium is not a single pure material. An aquifer, for example, consists of rock with varying degrees of water saturation. Rather than defining a new material table for every possible mixture, DiffPumas.jl supports **runtime material mixtures**: arbitrary combinations of loaded materials, specified by mass fractions.
+### 8.1 Aquifer muography example
 
-### 8.2 The `MaterialMixture` Type
+Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, air layer above to the primary sampling altitude. The rock is **layered** (no tessellation); materials are Standard Rock, Water, and Air. The **vadose zone** (z = 900–1000 m) is rock with 10% air; the **aquifer** is a layer (e.g. z = 400–600 m) with a rock–water mixture.
 
-A mixture is represented by:
-
-```julia
-struct MaterialMixture
-    materials::Vector{Int}       # Material indices into PhysicsTables
-    fractions::Vector{Float64}   # Mass fractions (sum to 1)
-end
+```
+                    PRIMARY_ALTITUDE
+    ════════════════════════════════════════════════════════
+                         |
+                    AIR LAYER
+                         |
+    ──────────────────────────────────────── z = 1000 m (rock surface)
+                         |
+              VADOSE ZONE (rock + 10% air, z = 900–1000 m)
+                         |
+    ──────────────────────────────────────── z = 600 m
+                         |
+                    AQUIFER LAYER (rock–water mixture)
+                    z = 400–600 m
+                         |
+    ──────────────────────────────────────── z = 400 m
+                         |
+                    ROCK
+                         |
+                         |      ╱ incoming muon
+                         |    ╱   at zenith angle θ
+                         |  ╱
+                         |╱
+    ─────────────────────●─────────────────── z = 0 (Detector, 1000 m depth)
 ```
 
-A convenience constructor wraps a single material index for backward compatibility:
+**Baseline flux.** Integrated flux vs rock depth and zenith angle (e.g. 0–1000 m in 100 m steps, 0°–60° in 2° steps) with a uniform rock layer per depth, using the two-layer geometry and `compute_flux` as in the basic usage.
 
-```julia
-MaterialMixture(material::Int) = MaterialMixture([material], [1.0])
-```
+**Aquifer scans.** The script runs: water fraction 0% to 90% at fixed depth and aquifer extent; fixed 90% water with increasing aquifer size; aquifer layer moved vertically and along the zenith direction. Flux response to location, size, and water content of the anomaly is illustrated.
 
-### 8.3 Physics for Mixtures
+**Rock-to-water sweep.** A 200 m thick aquifer (z = 400–600 m) with water fraction swept 0% to 100% in steps; effective density $\rho_{\text{eff}} = \sum_i f_i \rho_i$. Resulting flux curves show the characteristic increase as rock is replaced by lighter water.
 
-#### 8.3.1 Continuous Processes (CSDA)
-
-For continuous energy loss, the effective stopping power of a mixture is the mass-fraction-weighted sum of per-material stopping powers:
-
-$$
-\left(\frac{dE}{dX}\right)_{\text{mix}} = \sum_i f_i \left(\frac{dE}{dX}\right)_i
-$$
-
-where $f_i$ is the mass fraction of material $i$. This applies to both total CSDA stopping power and the mixed-mode soft stopping power.
-
-Similarly, straggling variance is additive:
-
-$$
-\Omega^2_{\text{mix}} = \sum_i f_i \, \Omega^2_i
-$$
-
-Since precomputed range tables $R(E)$ are only available for individual materials, the mixture range is approximated by scaling the dominant material's range by the ratio of stopping powers:
-
-$$
-R_{\text{mix}}(E) \approx R_{\text{dom}}(E) \cdot \frac{(dE/dX)_{\text{dom}}}{(dE/dX)_{\text{mix}}}
-$$
-
-This is accurate for the small steps (1% of range) used in the transport loops.
-
-#### 8.3.2 Discrete Events (DEL, EHS)
-
-For discrete interactions, the total cross-section is the weighted sum:
-
-$$
-\sigma_{\text{mix}} = \sum_i f_i \, \sigma_i(E)
-$$
-
-When a discrete event occurs, the interacting material is sampled with probability:
-
-$$
-P(\text{material } i) = \frac{f_i \, \sigma_i(E)}{\sigma_{\text{mix}}}
-$$
-
-The sampled material's cross-section tables are then used to determine the energy transfer, process type (bremsstrahlung, pair production, photonuclear), and other event properties.
-
-#### 8.3.3 Scattering
-
-The transport mean free path for soft multiple scattering follows a harmonic-mean weighting:
-
-$$
-\frac{1}{\lambda_{\text{mix}}} = \sum_i \frac{f_i}{\lambda_i}
-$$
-
-This reflects the additive nature of scattering probabilities.
-
-### 8.4 Example: Aquifer Rock-to-Water Sweep
-
-The `muography.jl` example includes Part 3, which demonstrates mixture support with a geologically motivated scenario:
-
-1. **Aquifer region** (z = 400m to 600m): The water fraction sweeps from 0% (pure rock) to 100% (pure water) in 10% increments
-2. **Shallow zone** (depth < 100m, z > 900m): An additional 10% air is mixed in, representing the unsaturated vadose zone
-3. **Effective density**: Computed as $\rho_{\text{eff}} = \sum_i f_i \rho_i$, e.g. 50% rock + 50% water gives $\rho \approx 1825$ kg/m³
-
-The resulting flux curves show the progressive effect of replacing dense rock with lighter water, producing a characteristic increase in transmitted muon flux.
+**Implementation.** Layers use `MaterialMixture` (Section 4.5.2); segment grammage $X = \rho_{\text{eff}} \cdot L$. Transport applies the mixture physics of Section 4.5.3 (weighted stopping power, straggling, DEL/EHS, scattering) at runtime from single-material tables.
 
 ## 9. Conclusions and Future Work
 
