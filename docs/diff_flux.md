@@ -531,10 +531,10 @@ Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, ai
               VADOSE ZONE (rock + 10% air, z = 900–1000 m)
                          |
     ──────────────────────────────────────── z = 600 m
-                         |
-                    AQUIFER LAYER (rock–water mixture)
-                    z = 400–600 m
-                         |
+                         |  ┌─────────────────────────┐
+                    ROCK │  │ AQUIFER (rock–water mix)│
+                    CUBE │  │ z = 400–600 m           │
+                         |  └─────────────────────────┘
     ──────────────────────────────────────── z = 400 m
                          |
                     ROCK
