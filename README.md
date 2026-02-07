@@ -12,6 +12,7 @@ A Julia port of the [PUMAS](https://github.com/niess/pumas) library for transpor
 - **Scattering**: Multiple Coulomb scattering with nuclear form factors
 - **Radiative Processes**: Bremsstrahlung, pair production, photonuclear interactions
 - **Particle Types**: Muon (μ±) and tau (τ±) leptons
+- **Mixed materials**: Runtime material mixtures via mass fractions (e.g. rock–water–air for aquifer muography); weighted stopping power, straggling, DEL/EHS, and scattering
 
 ## Installation
 
@@ -153,6 +154,28 @@ flux, grad = compute_flux_gradient(
 println("Flux: $flux")
 println("Gradient: $grad")
 ```
+
+### Material Mixtures
+
+```julia
+using DiffPumas
+using DiffPumas.Types: MaterialMixture
+using DiffPumas.Pumas: load_or_create_physics
+using DiffPumas.Physics: get_material_index
+
+physics = load_or_create_physics("materials.pumas")
+rock_idx = get_material_index(physics, "StandardRock")
+water_idx = get_material_index(physics, "Water")
+
+# Single material (backward compatible)
+mix_pure = MaterialMixture(rock_idx)
+
+# Rock–water mixture: 50% rock + 50% water
+mix_aquifer = MaterialMixture([rock_idx, water_idx], [0.5, 0.5])
+# Effective density ρ_eff = 0.5*2650 + 0.5*1000 ≈ 1825 kg/m³
+```
+
+See `examples/muography.jl` for aquifer flux calculations with layered mixtures.
 
 ## Physics Models
 
