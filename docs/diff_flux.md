@@ -375,65 +375,25 @@ $$
 
 This reflects the additive nature of scattering probabilities.
 
-## 5. Implementation
+## 5. Implementation, Tessellated Geometry, and Validation
 
-### 5.1 Validation Against PUMAS
+DiffPumas.jl matches the physics of the PUMAS C library: physics tables (range, stopping power, proper time) are loaded from PUMAS binary dumps, the dual-mode transport (STRAGGLED below 100 GeV, MIXED above) matches exactly, and integrated flux agrees within statistical uncertainty (relative difference typically < 0.1%).
 
-DiffPumas.jl is designed to match the physics of the PUMAS C library (Physics Utility for Muon and tau Active Simulation). Key validation points include:
+### 5.1 Automatic Differentiation and Direct CSDA
 
-1. **Physics tables**: Range, stopping power, and proper time tables are loaded from PUMAS binary dumps
-2. **Energy thresholds**: The dual-mode transport (STRAGGLED below 100 GeV, MIXED above) matches PUMAS exactly
-3. **Flux computation**: Integrated flux values agree within statistical uncertainty
-
-For pure CSDA transport (no straggling, no scattering), the relative difference between DiffPumas.jl and PUMAS C is typically < 0.1%.
-
-### 5.2 Automatic Differentiation with Zygote.jl
-
-[Zygote.jl](https://github.com/FluxML/Zygote.jl) is Julia's source-to-source automatic differentiation system. Unlike numerical differentiation (finite differences) or symbolic differentiation, AD computes exact derivatives by applying the chain rule to the program's computational graph.
-
-For a function $f: \mathbb{R}^n \rightarrow \mathbb{R}$, Zygote computes the gradient:
+[Zygote.jl](https://github.com/FluxML/Zygote.jl) computes exact gradients in time comparable to evaluating the function (the "cheap gradient principle"). The iterative transport algorithm (step-by-step energy loss) is poorly suited for AD: control flow depends on state, many small steps accumulate error, and discrete decisions (which cell, which material) are non-differentiable. We use a **Direct CSDA** formulation that computes flux in closed form: (1) precompute geometry—trace the ray through cells, recording segment lengths (non-differentiable); (2) compute physics—for each segment, energy change and weight from range tables (differentiable). For $N$ segments with grammages $\{X_1, \ldots, X_N\}$:
 
 $$
-\nabla f = \left(\frac{\partial f}{\partial x_1}, \ldots, \frac{\partial f}{\partial x_n}\right)
-$$
-
-in time comparable to evaluating $f$ itself (the "cheap gradient principle").
-
-### 5.3 Direct CSDA for Differentiable Transport
-
-The iterative transport algorithm (step-by-step energy loss with boundary checking) presents challenges for AD:
-- Control flow depends on state (energy, position)
-- Many small steps accumulate numerical error
-- Discrete decisions (which cell, which material) are non-differentiable
-
-We developed a **Direct CSDA** algorithm that computes the flux in closed form:
-
-1. **Precompute geometry**: Trace the ray through cells, recording segment lengths (non-differentiable)
-2. **Compute physics**: For each segment, compute energy change and weight using range tables (differentiable)
-
-For a trajectory passing through $N$ segments with grammages $\{X_1, \ldots, X_N\}$:
-
-$$
-K_{\text{final}} = R^{-1}\left(R(K_{\text{initial}}) + \sum_{i=1}^N X_i\right)
-$$
-
-$$
-w_{\text{total}} = \prod_{i=1}^N \frac{|dE/dX|_{K_{i+1}}}{|dE/dX|_{K_i}} \cdot P_{\text{decay},i}
-$$
-
-The flux is then:
-
-$$
+K_{\text{final}} = R^{-1}\left(R(K_{\text{initial}}) + \sum_{i=1}^N X_i\right), \quad
+w_{\text{total}} = \prod_{i=1}^N \frac{|dE/dX|_{K_{i+1}}}{|dE/dX|_{K_i}} \cdot P_{\text{decay},i}, \quad
 \Phi = w_{\text{total}} \cdot \Phi_{\text{Gaisser}}(\cos\theta, K_{\text{final}})
 $$
 
-This formulation allows Zygote to differentiate through the physics tables (which are implemented with differentiable interpolation) while keeping the geometric ray tracing separate.
+Zygote differentiates through the physics tables (differentiable interpolation); geometric ray tracing stays separate.
 
-## 6. Tessellated Geometry Example
+### 5.2 Tessellated Geometry Example
 
-### 6.1 The diff_flux_cube.jl Example
-
-To demonstrate gradient computation with spatially-varying properties, we implemented a tessellated rock volume:
+Gradient computation with spatially-varying properties uses a tessellated rock cube divided into $n_x \times n_y \times n_z$ cells, each with density $\rho_{ijk}$:
 
 ```
                     PRIMARY_ALTITUDE (1000m)
@@ -450,47 +410,11 @@ To demonstrate gradient computation with spatially-varying properties, we implem
     ─────────────────────●─────────────────── z = 0 (Detector)
 ```
 
-The rock volume is divided into $n_x \times n_y \times n_z$ cells, each with its own density $\rho_{ijk}$.
+For each Monte Carlo sample: sample trajectory parameters ($\theta$, $\phi$, $(x_0, y_0)$), trace through cells (path length per cell), compute flux via Direct CSDA, and accumulate gradients $\partial\Phi/\partial\rho_{ijk}$. The gradient gives sensitivity to density changes in cell $(i,j,k)$—negative (higher density → fewer muons), dominated by bottom cells and central regions. Applications: tomographic inversion, sensitivity analysis, experiment optimization.
 
-### 6.2 Ray Tracing Algorithm
+### 5.3 Validation
 
-For each Monte Carlo sample:
-
-1. **Sample trajectory parameters**: zenith angle $\theta$, azimuth $\phi$, starting position $(x_0, y_0)$
-2. **Trace through cells**: Compute which cells the trajectory intersects and the path length in each
-3. **Compute flux**: Use Direct CSDA with cell-specific densities
-4. **Accumulate gradients**: Zygote differentiates the flux with respect to all cell densities
-
-The ray tracing respects cell boundaries:
-
-```julia
-function trace_cube_path(geo, elevation, azimuth, start_x, start_y)
-    # Compute direction vector
-    # For each cell intersection:
-    #   - Find distance to next boundary
-    #   - Record (cell_index, distance) segment
-    # Return segments and exit position
-end
-```
-
-### 6.3 Gradient Interpretation
-
-The gradient $\partial\Phi/\partial\rho_{ijk}$ represents the sensitivity of the total flux to density changes in cell $(i,j,k)$. Key observations:
-
-1. **Negative gradients**: Higher density means more energy loss, fewer muons reach the detector
-2. **Bottom cells dominate**: All trajectories pass through bottom layers, making them most sensitive
-3. **Central cells**: Higher sensitivity than edge cells due to geometric acceptance
-
-These gradients enable:
-- **Tomographic inversion**: Reconstruct density distribution from flux measurements
-- **Sensitivity analysis**: Identify which regions most affect the measurement
-- **Optimization**: Design experiments to maximize information content
-
-## 7. Results and Validation
-
-### 7.1 Flux Comparison
-
-For pure CSDA transport (no straggling, no scattering), the Direct CSDA method matches the iterative detailed transport within 0.03%:
+For pure CSDA transport (no straggling, no scattering), Direct CSDA matches detailed transport within 0.03%:
 
 | Method | Integrated Flux (m⁻² s⁻¹ sr⁻¹) |
 |--------|-------------------------------|
@@ -498,25 +422,13 @@ For pure CSDA transport (no straggling, no scattering), the Direct CSDA method m
 | Direct CSDA | 2.895 × 10⁻¹ |
 | Relative difference | 0.03% |
 
-### 7.2 Gradient Validation
+Zygote gradients agree with finite differences $\partial\Phi/\partial\rho \approx [\Phi(\rho+\epsilon) - \Phi(\rho-\epsilon)]/(2\epsilon)$. For typical rock (~2650 kg/m³, ~100 m thickness), $\partial\Phi/\partial\rho \sim -10^{-5}$ to $-10^{-6}$ m⁻² s⁻¹ sr⁻¹ (kg/m³)⁻¹.
 
-Gradients computed by Zygote AD agree with finite difference estimates:
-
-$$
-\frac{\partial\Phi}{\partial\rho} \approx \frac{\Phi(\rho + \epsilon) - \Phi(\rho - \epsilon)}{2\epsilon}
-$$
-
-For typical rock densities (~2650 kg/m³) and thicknesses (~100 m), the gradient is:
-
-$$
-\frac{\partial\Phi}{\partial\rho} \sim -10^{-5} \text{ to } -10^{-6} \text{ m}^{-2}\text{s}^{-1}\text{sr}^{-1}\text{(kg/m}^3\text{)}^{-1}
-$$
-
-## 8. Material Mixtures and Aquifer Muography Example
+## 6. Material Mixtures and Aquifer Muography Example
 
 Section 4.5 defines runtime material mixtures (type and physics). This section describes the aquifer muography example in `muography.jl`.
 
-### 8.1 Aquifer muography example
+### 6.1 Aquifer muography example
 
 Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, air layer above to the primary sampling altitude. The rock is **layered** (no tessellation); materials are Standard Rock, Water, and Air. The **vadose zone** (z = 900–1000 m) is rock with 10% air; the **aquifer** is a layer (e.g. z = 400–600 m) with a rock–water mixture.
 
@@ -530,12 +442,10 @@ Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, ai
                          |
               VADOSE ZONE (rock + 10% air, z = 900–1000 m)
                          |
-    ──────────────────────────────────────── z = 600 m
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ vadose ends
                          |  ┌─────────────────────────┐
                     ROCK │  │ AQUIFER (rock–water mix)│
-                    CUBE │  │ z = 400–600 m           │
-                         |  └─────────────────────────┘
-    ──────────────────────────────────────── z = 400 m
+                    CUBE │  └─────────────────────────┘
                          |
                     ROCK
                          |
@@ -554,9 +464,9 @@ Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, ai
 
 **Implementation.** Layers use `MaterialMixture` (Section 4.5.2); segment grammage $X = \rho_{\text{eff}} \cdot L$. Transport applies the mixture physics of Section 4.5.3 (weighted stopping power, straggling, DEL/EHS, scattering) at runtime from single-material tables.
 
-## 9. Conclusions and Future Work
+## 7. Conclusions and Future Work
 
-### 9.1 Summary
+### 7.1 Summary
 
 DiffPumas.jl successfully implements differentiable muon transport by:
 
@@ -566,7 +476,7 @@ DiffPumas.jl successfully implements differentiable muon transport by:
 4. **Supporting runtime material mixtures** with physically correct weighted stopping powers, straggling, cross-sections, and scattering
 5. **Full discrete angular scattering** matching PUMAS C: process-specific DEL polar angle sampling (bremsstrahlung/Tsai DDCS, pair production, photonuclear kinematics, ionisation) and elastic hard scattering (EHS) with screened Coulomb/Wentzel angular distribution, both activated alongside soft multiple Coulomb scattering
 
-### 9.2 Limitations and Future Directions
+### 7.2 Limitations and Future Directions
 
 The current Direct CSDA approach assumes deterministic energy loss. To fully match the detailed transport with straggling, DEL events, and scattering, we need to:
 
