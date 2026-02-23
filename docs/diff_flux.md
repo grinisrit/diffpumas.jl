@@ -12,11 +12,11 @@ Cosmic ray muons are produced in the upper atmosphere through the decay of charg
 
 We consider a simplified two-layer geometry consisting of:
 
-1. **Air layer**: From the rock-air interface at altitude $z = h$ to the primary sampling altitude $z = H$ (typically 1000 m)
+1. **Air layer**: From the rock-air interface at altitude $z = h$ to the primary sampling altitude $z = H$ (30 000 m)
 2. **Rock layer**: From the detector position at $z = 0$ to the rock-air interface at $z = h$
 
 ```
-                    PRIMARY_ALTITUDE (H = 1000 m)
+                    PRIMARY_ALTITUDE (H = 30 000 m)
     ════════════════════════════════════════════════════════
                          |
                     AIR LAYER
@@ -427,13 +427,64 @@ $$
 
 This reflects the additive nature of scattering probabilities.
 
-### 4.5 Material Mixtures
+### 4.5 Composite Materials
 
-#### 4.5.1 Motivation
+#### 4.5.1 Definition-Time Composites
 
-In many muography scenarios, the traversed medium is not a single pure material. An aquifer, for example, consists of rock with varying degrees of water saturation. Rather than defining a new material table for every possible mixture, DiffPumas.jl supports **runtime material mixtures**: arbitrary combinations of loaded materials, specified by mass fractions.
+A `CompositeMaterial` is a named combination of `BaseMaterial`s with mass fractions, defined in the Material Description File (MDF XML). For example:
 
-#### 4.5.2 The `MaterialMixture` Type
+```xml
+<composite name="PorousWetRock">
+    <component name="StandardRock" fraction="0.8"/>
+    <component name="Air"          fraction="0.1"/>
+    <component name="Water"        fraction="0.1"/>
+</composite>
+```
+
+Composites are resolved at physics-table creation time. Each composite receives its own `MaterialTable` with fully precomputed tables (stopping power, range, proper time, Coulomb scattering parameters), exactly as PUMAS C handles them.
+
+#### 4.5.2 Composite Table Construction
+
+Given a composite with $N_c$ components at mass fractions $f_j$:
+
+**Stopping power.** The composite stopping power is the mass-fraction-weighted sum of component stopping powers:
+
+$$
+\left(\frac{dE}{dX}\right)_{\text{comp}} = \sum_j f_j \left(\frac{dE}{dX}\right)_j
+$$
+
+This applies to both CSDA and mixed-mode stopping powers. Straggling variance, ionisation, bremsstrahlung, pair production, photonuclear, and total cross-section tables are formed identically.
+
+**Range and proper time.** The composite range table is obtained by trapezoidal integration of $1/(dE/dX)_{\text{comp}}$ over the reference energy grid — the same procedure used for single materials:
+
+$$
+R_{\text{comp}}(E_k) = R_{\text{comp}}(E_{k-1}) + \frac{E_k - E_{k-1}}{\tfrac{1}{2}\bigl[(dE/dX)_k + (dE/dX)_{k-1}\bigr]}
+$$
+
+**Density.** The composite density follows the PUMAS C harmonic-mean formula:
+
+$$
+\rho_{\text{comp}} = \frac{\sum_j f_j}{\sum_j f_j / \rho_j}
+$$
+
+**Coulomb scattering.** The composite is flattened to its constituent atomic elements: for each element $e$ shared across components, the elemental fraction is $w_e = \sum_j f_j \cdot w_{e,j}$ (summing over all components that contain element $e$). An effective Z/A and mean excitation energy $I$ are computed from these combined elemental fractions using the Sternheimer–Bragg rule:
+
+$$
+(Z/A)_{\text{comp}} = \sum_e \frac{Z_e}{A_e} w_e', \qquad
+\ln I_{\text{comp}} = \frac{\sum_e \frac{Z_e}{A_e} w_e' \ln I_e}{(Z/A)_{\text{comp}}}
+$$
+
+where $w_e'$ are the normalised elemental fractions. The PUMAS Coulomb scattering routine then computes transport path, elastic path, and screening parameters from this synthetic material.
+
+After construction, a composite material is indistinguishable from a single material in the transport engine — it has its own index in `PhysicsTables` and all table lookups proceed identically.
+
+### 4.6 Material Mixtures
+
+#### 4.6.1 Motivation
+
+In many muography scenarios, the traversed medium is not a single pure material. An aquifer, for example, consists of rock with varying degrees of water saturation. Rather than defining a new composite for every possible combination, DiffPumas.jl supports **runtime material mixtures**: arbitrary combinations of loaded materials (including composites), specified by mass fractions.
+
+#### 4.6.2 The `MaterialMixture` Type
 
 A mixture is represented by:
 
@@ -450,9 +501,11 @@ A convenience constructor wraps a single material index for backward compatibili
 MaterialMixture(material::Int) = MaterialMixture([material], [1.0])
 ```
 
-#### 4.5.3 Physics for Mixtures
+#### 4.6.3 Physics for Mixtures
 
-##### 4.5.3.1 Continuous Processes (CSDA)
+Mixture physics is designed to follow exactly the same procedure as composites and single materials. The key difference is that tables are built lazily at runtime rather than at load time.
+
+##### 4.6.3.1 Continuous Processes (CSDA)
 
 For continuous energy loss, the effective stopping power of a mixture is the mass-fraction-weighted sum of per-material stopping powers:
 
@@ -468,15 +521,15 @@ $$
 \Omega^2_{\text{mix}} = \sum_i f_i \, \Omega^2_i
 $$
 
-Since precomputed range tables $R(E)$ are only available for individual materials, the mixture range is approximated by scaling the dominant material's range by the ratio of stopping powers:
+**Integrated range and proper time tables.** Rather than approximating the range from a dominant material, mixtures build their own `MixtureTable` containing fully integrated CSDA and mixed-mode range tables as well as the CSDA proper time table. The integration follows the same trapezoidal procedure used for composites (Section 4.5.2):
 
 $$
-R_{\text{mix}}(E) \approx R_{\text{dom}}(E) \cdot \frac{(dE/dX)_{\text{dom}}}{(dE/dX)_{\text{mix}}}
+R_{\text{mix}}(E_k) = R_{\text{mix}}(E_{k-1}) + \frac{E_k - E_{k-1}}{\tfrac{1}{2}\bigl[(dE/dX)^{\text{mix}}_k + (dE/dX)^{\text{mix}}_{k-1}\bigr]}
 $$
 
-This is accurate for the small steps (1% of range) used in the transport loops.
+These tables are lazily computed on first use and thread-safely cached (keyed by physics instance, material indices, and fractions). Once built, range lookups and energy inversions for a mixture use the same `interpolate_table_fast` and binary-search routines as single materials and composites, giving identical numerical behaviour.
 
-##### 4.5.3.2 Discrete Events (DEL, EHS)
+##### 4.6.3.2 Discrete Events (DEL, EHS)
 
 For discrete interactions, the total cross-section is the weighted sum:
 
@@ -492,19 +545,47 @@ $$
 
 The sampled material's cross-section tables are then used to determine the energy transfer, process type (bremsstrahlung, pair production, photonuclear), and other event properties.
 
-##### 4.5.3.3 Scattering
+##### 4.6.3.3 Scattering
 
-The transport mean free path for soft multiple scattering follows a harmonic-mean weighting:
+The soft multiple scattering transport path follows harmonic-mean weighting (Section 4.4.5):
 
 $$
-\frac{1}{\lambda_{\text{mix}}} = \sum_i \frac{f_i}{\lambda_i}
+\frac{1}{\lambda_{1,\text{mix}}} = \sum_i \frac{f_i}{\lambda_{1,i}}
 $$
 
-This reflects the additive nature of scattering probabilities.
+For elastic hard scattering (EHS) and its Wentzel sampling, mixtures use **effective screening parameters** computed as fraction-weighted averages of the per-material values:
+
+$$
+\mu_{0,\text{mix}}(E) = \sum_i f_i \, \mu_{0,i}(E)
+$$
+
+$$
+f_{\text{spin},\text{mix}}(E) = \sum_i f_i \, f_{\text{spin},i}(E)
+$$
+
+$$
+(Z/A)_{\text{mix}} = \sum_i f_i \, (Z/A)_i
+$$
+
+The effective $(Z/A)_{\text{mix}}$ determines the target mass $M = A_{\text{eff}} \cdot m_n$ used in the centre-of-mass to laboratory frame transformation. With these three effective parameters, the Wentzel sampling for a mixture (inverse-CDF draw from the screened Coulomb envelope, spin-factor rejection, CM→Lab boost) follows precisely the same algorithm as for a single material or composite (Section 4.3.6).
+
+##### 4.6.3.4 Summary: Mixture vs Composite
+
+| Aspect | Composite | Mixture |
+|--------|-----------|---------|
+| Definition | MDF XML at load time | Runtime, arbitrary fractions |
+| Stopping power | Precomputed table | Weighted sum of component tables |
+| Range / proper time | Precomputed table | Lazily integrated, cached table |
+| Coulomb (soft MCS) | Precomputed $\lambda_1$ | Harmonic-mean $1/\lambda_1$ |
+| EHS screening | Precomputed from flattened elements | Weighted-average $\mu_0$, $f_{\text{spin}}$, $Z/A$ |
+| DEL / EHS events | Single-material tables | Weighted cross-section, sampled material |
+| Table lookup speed | Direct index | Same (after lazy build) |
+
+In CSDA mode (range, inverse range, proper time) the two approaches are numerically equivalent: both integrate the same mixture stopping power over the same energy grid. The scattering treatment differs slightly — composites use exact atomic-element-level Coulomb computation while mixtures use effective weighted parameters — but for typical geological mixtures the difference is negligible.
 
 ## 5. Implementation, Tessellated Geometry, and Validation
 
-DiffPumas.jl matches the physics of the PUMAS C library: physics tables (range, stopping power, proper time) are loaded from PUMAS binary dumps, the dual-mode transport (STRAGGLED below 100 GeV, MIXED above) matches exactly, and integrated flux agrees within statistical uncertainty (relative difference typically < 0.1%).
+DiffPumas.jl matches the physics of the PUMAS C library: physics tables (range, stopping power, proper time) are loaded from PUMAS binary dumps or built from dE/dx data, the dual-mode transport (STRAGGLED below 100 GeV, MIXED above) matches exactly, and integrated flux agrees within statistical uncertainty (relative difference typically < 0.1%). Composite materials defined in MDF XML receive precomputed tables identical to base materials (Section 4.5); runtime mixtures lazily build equivalent tables on first use (Section 4.6).
 
 ### 5.1 Automatic Differentiation and Direct CSDA
 
@@ -523,7 +604,7 @@ Zygote differentiates through the physics tables (differentiable interpolation);
 Gradient computation with spatially-varying properties uses a tessellated rock cube divided into $n_x \times n_y \times n_z$ cells, each with density $\rho_{ijk}$:
 
 ```
-                    PRIMARY_ALTITUDE (1000m)
+                    PRIMARY_ALTITUDE (30 000 m)
     ════════════════════════════════════════════════════════
                          |
                     AIR LAYER
@@ -551,31 +632,40 @@ For pure CSDA transport (no straggling, no scattering), Direct CSDA matches deta
 
 Zygote gradients agree with finite differences $\partial\Phi/\partial\rho \approx [\Phi(\rho+\epsilon) - \Phi(\rho-\epsilon)]/(2\epsilon)$. For typical rock (~2650 kg/m³, ~100 m thickness), $\partial\Phi/\partial\rho \sim -10^{-5}$ to $-10^{-6}$ m⁻² s⁻¹ sr⁻¹ (kg/m³)⁻¹.
 
-## 6. Material Mixtures and Aquifer Muography Example
+## 6. Muography Example (`muography.jl`)
 
-Section 4.5 defines runtime material mixtures (type and physics). This section describes the aquifer muography example in `muography.jl`.
+Sections 4.5–4.6 define composites and runtime mixtures. This section describes the muography example script.
 
-### 6.1 Aquifer muography example
+### 6.1 Part 1: Baseline Studies
 
-Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, air layer above to the primary sampling altitude. The rock is **layered** (no tessellation); materials are Standard Rock, Water, and Air. The **vadose zone** (z = 900–1000 m) is rock with 10% air; the **aquifer** is a layer (e.g. z = 400–600 m) with a rock–water mixture.
+Rock depths are derived from the StandardRock range table ($d_{\max} = R_{\max} / \rho$, 11 linearly spaced levels). Zenith angles span 0°–60° in 2° steps. All three subscenarios use the two-layer geometry (`TwoLayerGeometry`).
+
+- **1.1 Flux vs zenith angle.** For each depth, compute integrated flux (energy-averaged via log-uniform sampling) at each zenith angle. One curve per depth.
+- **1.2 Zenith angle scattering variance.** For each (depth, zenith) pair, run backward MC trajectories and record the final zenith $\theta_f$ at primary altitude. Plot $\mathrm{Var}(\theta_f - \theta_{\text{det}})$ vs zenith, one curve per depth, quantifying the angular spread due to multiple scattering.
+- **1.3 Flux vs zenith at fixed energy.** At 1000 m depth, for each of 100 log-spaced energies between $E_{\min}$ and $E_{\max}$, compute flux vs zenith. One curve per energy.
+
+### 6.2 Part 2: Aquifer Detection
+
+Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, air layer above to PRIMARY_ALTITUDE (30 000 m). Materials: Standard Rock, Water, Air, PorousWetRock (precomputed composite from `materials.xml`).
+
+The top 100 m (z = 900–1000 m) is **porous wet rock**, represented by the `PorousWetRock` composite. The aquifer is a 100 m cube embedded in the rock, containing a three-component `MaterialMixture` of Water, Rock, and PorousWetRock with configurable water fraction.
 
 ```
-                    PRIMARY_ALTITUDE
+                    PRIMARY_ALTITUDE (30 000 m)
     ════════════════════════════════════════════════════════
                          |
                     AIR LAYER
                          |
     ──────────────────────────────────────── z = 1000 m (rock surface)
                          |
-              VADOSE ZONE (rock + 10% air, z = 900–1000 m)
+        POROUS WET ROCK (composite, z = 900–1000 m)
                          |
-    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ vadose ends
+    ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
                          |  ┌─────────────────────────┐
                          │  │ AQUIFER (rock–water mix)│
                          │  └─────────────────────────┘
                          |
                     ROCK |
-                         |
                          |      ╱ incoming muon
                          |    ╱   at zenith angle θ
                          |  ╱
@@ -583,13 +673,9 @@ Fixed geometry: detector at 1000 m depth (z = 0), rock surface at z = 1000 m, ai
     ─────────────────────●─────────────────── z = 0 (Detector, 1000 m depth)
 ```
 
-**Baseline flux.** Integrated flux vs rock depth and zenith angle (e.g. 0–1000 m in 100 m steps, 0°–60° in 2° steps) with a uniform rock layer per depth, using the two-layer geometry and `compute_flux` as in the basic usage.
+**Aquifer scans.** The script sweeps: water fraction 0%–90% at fixed depth and extent; fixed 90% water with increasing aquifer size; aquifer moved vertically and along the y-axis (azimuth sampled uniformly). The simulation cube is centred along y (x from −50 to +50 m).
 
-**Aquifer scans.** The script runs: water fraction 0% to 90% at fixed depth and aquifer extent; fixed 90% water with increasing aquifer size; aquifer layer moved vertically and along the zenith direction. Flux response to location, size, and water content of the anomaly is illustrated.
-
-**Rock-to-water sweep.** A 200 m thick aquifer (z = 400–600 m) with water fraction swept 0% to 100% in steps; effective density $\rho_{\text{eff}} = \sum_i f_i \rho_i$. Resulting flux curves show the characteristic increase as rock is replaced by lighter water.
-
-**Implementation.** Layers use `MaterialMixture` (Section 4.5.2); segment grammage $X = \rho_{\text{eff}} \cdot L$. Transport applies the mixture physics of Section 4.5.3 (weighted stopping power, straggling, DEL/EHS, scattering) at runtime from single-material tables.
+**Implementation.** Cells use `MaterialMixture` (Section 4.6.2); in the shallow+aquifer overlap region the mixture consists of `[PorousWetRock, Rock, Water]`. Transport applies the mixture physics of Section 4.6.3 (integrated range tables, weighted scattering parameters, DEL/EHS with material sampling) at runtime.
 
 ## 7. Conclusions and Future Work
 
@@ -600,10 +686,11 @@ DiffPumas.jl successfully implements differentiable muon transport by:
 1. Accurately reproducing PUMAS physics for flux computation
 2. Enabling automatic differentiation through the Direct CSDA formulation
 3. Supporting tessellated geometries with per-cell gradients
-4. **Supporting runtime material mixtures** with physically correct weighted stopping powers, straggling, cross-sections, and scattering
-5. **Full scattering matching PUMAS C**:
+4. **Precomputed composite materials** matching PUMAS C: composites defined in MDF XML receive their own `MaterialTable` with fully integrated range, proper time, and Coulomb scattering tables (Section 4.5)
+5. **Runtime material mixtures** with physics aligned to composites: lazily integrated range/proper time tables, weighted-average scattering parameters, and per-material DEL/EHS sampling (Section 4.6)
+6. **Full scattering matching PUMAS C**:
    - Soft MSC with exact trapezoidal $\bar\mu = \frac{1}{4}\ell(\lambda_1^{-1,\text{start}} + \lambda_1^{-1,\text{end}})$ formula and rejection sampling
-   - EHS with Wentzel sampling, spin rejection, and CM→Lab frame transformation
+   - EHS with Wentzel sampling, spin rejection, and CM→Lab frame transformation — extended to mixtures via effective screening parameter, spin factor, and Z/A
    - DEL angular deflection (bremsstrahlung/Tsai DDCS, pair production, photonuclear kinematics, ionisation)
    - DEL/EHS competition by interaction length comparison
    - Scattering-aware step size limiting ($\ell_{\text{scat}} = \varepsilon_{\text{acc}} / (\rho/\lambda_1)$)
@@ -623,8 +710,6 @@ The current Direct CSDA approach assumes deterministic energy loss. To fully mat
 3. **Handle scattering differentiably**: Scattering changes trajectory directions, coupling geometric and physics computations
 
 4. **Extend to 3D tomography**: Full inversion of density distributions from multi-angle flux measurements
-
-5. **Precomputed mixture tables**: For frequently used mixtures, precompute range and energy tables to avoid the dominant-material approximation in range lookups
 
 The framework established here provides a foundation for these extensions, enabling gradient-based optimization for muon tomography applications.
 

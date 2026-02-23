@@ -3,9 +3,10 @@
 muography.jl - Muon flux muography simulation with aquifer detection
 
 This script demonstrates muography techniques:
-1. Baseline flux vs zenith angle for various rock depths (0-1000m, step 100m)
-   - Zenith angles: 0° to 60° in 2° steps
-   - One line per depth in 2D interactive plot
+1. Baseline studies (depths derived from the StandardRock range table)
+   1.1 Flux vs zenith angle for various rock depths (one line per depth)
+   1.2 Zenith angle scattering variance vs depth for each detector zenith
+   1.3 Flux vs zenith at 1000m depth for 100 fixed energies (one curve per energy)
 2. Aquifer detection using water material in a cubic rock volume (detector at 1000m)
    Materials: Standard Rock (2650 kg/m³), Water (1000 kg/m³), PorousWetRock (composite).
    Top 100m: porous wet rock (precomputed PorousWetRock composite from materials.xml).
@@ -16,7 +17,7 @@ This script demonstrates muography techniques:
    - 2.2b: Moving 90% water aquifer (100m cube) along y (zenith direction) at 100m depth
 
 Geometry:
-    - Part 1: Variable rock thickness (0-1000m)
+    - Part 1: Rock thickness from material range table (11 levels, 0 to max)
     - Part 2: Detector at 1000m depth (z=0), rock cube above
     - Air layer above rock to PRIMARY_ALTITUDE
 
@@ -45,6 +46,7 @@ using DiffPumas.Loader: print_physics_summary
 using DiffPumas.Geometry: PRIMARY_ALTITUDE, compute_air_grammage, compute_flux
 using DiffPumas.Geometry: compute_decay_weight_from_path, locals_air_at_altitude
 using DiffPumas.Geometry: transport_backward_step, transport_backward_step_full, transport_backward_step_mixed
+using DiffPumas.Geometry: compute_flux_single_with_state, TwoLayerGeometry
 using DiffPumas.GaisserFlux: flux_gccly
 using DiffPumas.Types: State, Vec3, MaterialMixture, is_single_material, single_material
 using DiffPumas.Materials: STANDARD_ROCK, AIR, WATER, CompositeMaterial, composite_density
@@ -62,12 +64,27 @@ const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
 # =============================================================================
 
 """
-    compute_flux_vs_angle(physics, depths, zeniths; kwargs...)
+    rock_depths_from_table(physics, rock_idx; n_depths=11)
+
+Derive rock depth values (in metres) from the material range table.
+Returns `n_depths` depths linearly spaced from 0 to the maximum CSDA
+range divided by reference density.
+"""
+function rock_depths_from_table(physics, rock_idx::Int; n_depths::Int = 11)
+    table = physics.tables[rock_idx]
+    max_grammage = table.csda_range[end]        # kg/m²
+    max_depth    = max_grammage / table.density  # m
+    return collect(range(0.0, max_depth; length=n_depths))
+end
+
+"""
+    compute_flux_vs_angle(physics, rock_idx, depths, zeniths; kwargs...)
 
 Compute integrated muon flux for each depth and zenith angle.
-Similar to flux_comparison.jl but without the C code comparison.
+Rock density is taken from the material table.
 """
 function compute_flux_vs_angle(physics,
+                                rock_idx::Int,
                                 depths::Vector{Float64},
                                 zeniths::Vector{Float64};
                                 n_samples::Int = 1000,
@@ -77,42 +94,43 @@ function compute_flux_vs_angle(physics,
                                 energy_min::Float64 = 1e-3,
                                 energy_max::Float64 = 1e9,
                                 verbose::Bool = true)
-    
+
+    rock_density = Float64(physics.tables[rock_idx].density)
     n_depths = length(depths)
     n_zeniths = length(zeniths)
-    
+
     flux_grid = zeros(n_depths, n_zeniths)
     sigma_grid = zeros(n_depths, n_zeniths)
-    
+
     n_total = n_depths * n_zeniths
     n_done = 0
-    
+
     for (d_idx, depth) in enumerate(depths)
         for (z_idx, zenith) in enumerate(zeniths)
             n_done += 1
             elevation = zenith_to_elevation(zenith)
-            
+
             if verbose && (n_done % 10 == 0 || n_done == 1)
                 @info "[$n_done/$n_total] depth=$(depth)m, θ=$(zenith)°"
             end
-            
-            flux, sigma = compute_flux(physics, 2650.0, depth, elevation,
+
+            flux, sigma = compute_flux(physics, rock_density, depth, elevation,
                                        energy_min, energy_max;
                                        n_samples=n_samples,
                                        straggling=straggling,
                                        scattering=scattering,
                                        energy_threshold_low=energy_threshold_low)
-            
+
             flux_grid[d_idx, z_idx] = flux
             sigma_grid[d_idx, z_idx] = sigma
         end
     end
-    
+
     return flux_grid, sigma_grid
 end
 
 """
-    create_flux_vs_angle_plot(depths, zeniths, flux_grid, sigma_grid; output_path)
+    create_flux_vs_angle_plot(depths, zeniths, flux_grid, sigma_grid; output_path, title)
 
 Create interactive 2D plot: flux vs zenith angle, one line per depth.
 """
@@ -122,23 +140,21 @@ function create_flux_vs_angle_plot(depths::Vector{Float64},
                                     sigma_grid::Matrix{Float64};
                                     output_path::String,
                                     title::String = "Muon Flux vs Zenith Angle")
-    
+
     traces = GenericTrace[]
-    
-    # Color scale from light to dark
+
     n_depths = length(depths)
     colors = ["hsl($(round(Int, 240 - 240 * i / n_depths)), 70%, 50%)" for i in 1:n_depths]
-    
+
     for (d_idx, depth) in enumerate(depths)
         flux_values = flux_grid[d_idx, :]
         sigma_values = sigma_grid[d_idx, :]
-        
-        # Main line
+
         trace = scatter(
             x = zeniths,
             y = flux_values,
             mode = "lines+markers",
-            name = "$(Int(depth))m",
+            name = "$(round(depth; digits=0))m",
             line = attr(color = colors[d_idx], width = 2),
             marker = attr(size = 6),
             error_y = attr(
@@ -150,7 +166,7 @@ function create_flux_vs_angle_plot(depths::Vector{Float64},
         )
         push!(traces, trace)
     end
-    
+
     layout = Layout(
         title = title,
         xaxis = attr(
@@ -170,13 +186,260 @@ function create_flux_vs_angle_plot(depths::Vector{Float64},
         height = 700,
         hovermode = "closest"
     )
-    
+
     fig = Plot(traces, layout)
-    
+
     mkpath(dirname(output_path))
     savefig(fig, output_path)
     println("Saved plot: $output_path")
-    
+
+    return fig
+end
+
+# --- Part 1.2: Zenith angle scattering variance ---
+
+"""
+    compute_zenith_variance(physics, rock_idx, depths, zeniths; kwargs...)
+
+For each (depth, zenith), run `n_samples` backward MC trajectories and
+collect the final zenith angle at primary altitude.  Return the variance
+of (θ_final − θ_detector) for each grid point.
+"""
+function compute_zenith_variance(physics,
+                                  rock_idx::Int,
+                                  air_idx::Int,
+                                  depths::Vector{Float64},
+                                  zeniths::Vector{Float64};
+                                  n_samples::Int = 1000,
+                                  straggling::Bool = true,
+                                  scattering::Bool = true,
+                                  energy_threshold_low::Float64 = 100.0,
+                                  energy_min::Float64 = 1e-3,
+                                  energy_max::Float64 = 1e9,
+                                  seed::Int = 42,
+                                  verbose::Bool = true)
+
+    rock_density = Float64(physics.tables[rock_idx].density)
+    n_depths  = length(depths)
+    n_zeniths = length(zeniths)
+
+    var_grid = zeros(n_depths, n_zeniths)
+    rk = log(energy_max / energy_min)
+
+    n_total = n_depths * n_zeniths
+    n_done  = 0
+
+    for (d_idx, depth) in enumerate(depths)
+        for (z_idx, zenith) in enumerate(zeniths)
+            n_done += 1
+            if verbose && (n_done % 10 == 0 || n_done == 1)
+                @info "[zenith-var $n_done/$n_total] depth=$(round(depth;digits=0))m, θ=$(zenith)°"
+            end
+
+            elevation = zenith_to_elevation(zenith)
+            geometry  = TwoLayerGeometry{Float64}(depth, rock_density, rock_idx, air_idx)
+            rng = Random.MersenneTwister(seed)
+
+            delta_sum  = 0.0
+            delta2_sum = 0.0
+            n_valid    = 0
+
+            for _ in 1:n_samples
+                kf = rk > 0.0 ? energy_min * exp(rk * rand(rng)) : energy_min
+                charge = rand(rng) > 0.5 ? 1.0 : -1.0
+
+                _, zenith_final = compute_flux_single_with_state(
+                    physics, geometry, kf, elevation, charge;
+                    rng=rng, straggling=straggling, scattering=scattering,
+                    energy_threshold_low=energy_threshold_low)
+
+                if !isnan(zenith_final)
+                    δ = zenith_final - zenith
+                    delta_sum  += δ
+                    delta2_sum += δ * δ
+                    n_valid    += 1
+                end
+            end
+
+            if n_valid > 1
+                mean_δ = delta_sum / n_valid
+                var_grid[d_idx, z_idx] = delta2_sum / n_valid - mean_δ^2
+            end
+        end
+    end
+
+    return var_grid
+end
+
+"""
+    create_zenith_variance_plot(depths, zeniths, var_grid; output_path)
+
+Plot scattering variance vs zenith angle, one curve per depth.
+"""
+function create_zenith_variance_plot(depths::Vector{Float64},
+                                      zeniths::Vector{Float64},
+                                      var_grid::Matrix{Float64};
+                                      output_path::String,
+                                      title::String = "Part 1.2: Zenith Angle Scattering Variance")
+
+    traces = GenericTrace[]
+    n_depths = length(depths)
+    colors = ["hsl($(round(Int, 240 - 240 * i / n_depths)), 70%, 50%)" for i in 1:n_depths]
+
+    for (d_idx, depth) in enumerate(depths)
+        trace = scatter(
+            x = zeniths,
+            y = var_grid[d_idx, :],
+            mode = "lines+markers",
+            name = "$(round(depth; digits=0))m",
+            line = attr(color = colors[d_idx], width = 2),
+            marker = attr(size = 5)
+        )
+        push!(traces, trace)
+    end
+
+    layout = Layout(
+        title = title,
+        xaxis = attr(title = "Zenith Angle θ (°)",
+                     range = [minimum(zeniths) - 1, maximum(zeniths) + 1]),
+        yaxis = attr(title = "Var(θ_final − θ_detector)  (deg²)", type = "log"),
+        legend = attr(title = attr(text = "Rock Depth"), x = 1.02, y = 1.0),
+        width = 1000, height = 700,
+        hovermode = "closest"
+    )
+
+    fig = Plot(traces, layout)
+    mkpath(dirname(output_path))
+    savefig(fig, output_path)
+    println("Saved plot: $output_path")
+    return fig
+end
+
+# --- Part 1.3: Flux vs zenith for fixed energies at 1000m depth ---
+
+"""
+    compute_flux_fixed_energy(physics, rock_idx, air_idx, depth, zeniths; kwargs...)
+
+At a single `depth`, for each of `n_energies` log-spaced energy levels
+and each zenith angle, run `n_samples` backward MC trajectories (charge-
+averaged) and return the mean flux.
+
+Returns `(energies, flux_grid, sigma_grid)` where the grids are
+`[n_zeniths, n_energies]`.
+"""
+function compute_flux_fixed_energy(physics,
+                                    rock_idx::Int,
+                                    air_idx::Int,
+                                    depth::Float64,
+                                    zeniths::Vector{Float64};
+                                    n_samples::Int = 100,
+                                    n_energies::Int = 100,
+                                    straggling::Bool = true,
+                                    scattering::Bool = true,
+                                    energy_threshold_low::Float64 = 100.0,
+                                    energy_min::Float64 = 1e-3,
+                                    energy_max::Float64 = 1e9,
+                                    seed::Int = 42,
+                                    verbose::Bool = true)
+
+    rock_density = Float64(physics.tables[rock_idx].density)
+    energies = exp.(range(log(energy_min), log(energy_max); length=n_energies))
+    geometry = TwoLayerGeometry{Float64}(depth, rock_density, rock_idx, air_idx)
+
+    n_z = length(zeniths)
+    n_e = length(energies)
+
+    flux_grid  = zeros(n_z, n_e)
+    sigma_grid = zeros(n_z, n_e)
+
+    total = n_z * n_e
+    done  = 0
+
+    for (z_idx, zenith) in enumerate(zeniths)
+        elevation = zenith_to_elevation(zenith)
+        for (e_idx, kf) in enumerate(energies)
+            done += 1
+            if verbose && (done % 500 == 0 || done == 1)
+                @info "[fixed-E $done/$total] θ=$(zenith)°, E=$(round(kf;sigdigits=3)) GeV"
+            end
+
+            rng = Random.MersenneTwister(seed + e_idx)
+            w_sum  = 0.0
+            w2_sum = 0.0
+
+            for _ in 1:n_samples
+                charge = rand(rng) > 0.5 ? 1.0 : -1.0
+                wf = 2.0
+
+                fw, _ = compute_flux_single_with_state(
+                    physics, geometry, kf, elevation, charge;
+                    rng=rng, straggling=straggling, scattering=scattering,
+                    energy_threshold_low=energy_threshold_low)
+                wi = wf * fw
+                w_sum  += wi
+                w2_sum += wi * wi
+            end
+
+            flux_avg = w_sum / n_samples
+            variance = (w2_sum / n_samples) - flux_avg^2
+            sigma = sqrt(max(variance, 0.0) / n_samples)
+
+            flux_grid[z_idx, e_idx]  = flux_avg
+            sigma_grid[z_idx, e_idx] = sigma
+        end
+    end
+
+    return energies, flux_grid, sigma_grid
+end
+
+"""
+    create_flux_fixed_energy_plot(energies, zeniths, flux_grid; depth, output_path)
+
+Plot flux vs zenith angle at a fixed depth, one curve per energy level.
+Shows a representative subset of ~12 energy curves from the 100 available.
+"""
+function create_flux_fixed_energy_plot(energies::Vector{Float64},
+                                        zeniths::Vector{Float64},
+                                        flux_grid::Matrix{Float64};
+                                        depth::Float64,
+                                        output_path::String,
+                                        n_curves::Int = 12)
+
+    traces = GenericTrace[]
+    n_e = length(energies)
+    step = max(1, n_e ÷ n_curves)
+    sel = 1:step:n_e
+    n_sel = length(sel)
+    colors = ["hsl($(round(Int, 0 + 270 * i / n_sel)), 75%, 45%)" for i in 1:n_sel]
+
+    for (ci, e_idx) in enumerate(sel)
+        e_val = energies[e_idx]
+        label = e_val >= 1.0 ? @sprintf("%.1f GeV", e_val) : @sprintf("%.1e GeV", e_val)
+        trace = scatter(
+            x = zeniths,
+            y = flux_grid[:, e_idx],
+            mode = "lines+markers",
+            name = label,
+            line = attr(color = colors[ci], width = 2),
+            marker = attr(size = 4)
+        )
+        push!(traces, trace)
+    end
+
+    layout = Layout(
+        title = "Part 1.3: Flux vs Zenith at $(round(Int, depth))m depth (fixed energies)",
+        xaxis = attr(title = "Zenith Angle θ (°)",
+                     range = [minimum(zeniths) - 1, maximum(zeniths) + 1]),
+        yaxis = attr(title = "Flux (m⁻² s⁻¹ sr⁻¹)", type = "log"),
+        legend = attr(title = attr(text = "Energy"), x = 1.02, y = 1.0),
+        width = 1000, height = 700,
+        hovermode = "closest"
+    )
+
+    fig = Plot(traces, layout)
+    mkpath(dirname(output_path))
+    savefig(fig, output_path)
+    println("Saved plot: $output_path")
     return fig
 end
 
@@ -1109,19 +1372,24 @@ function main()
         println(" Part 1: Baseline Flux vs Zenith Angle")
         println("=" ^ 60)
         println()
-        
-        # Depths from 0m to 1000m in 100m steps
-        depths = collect(0.0:100.0:1000.0)
-        # Zenith angles from 0° to 45° in 5° steps
+
+        rock_density = Float64(physics.tables[rock_idx].density)
+        depths  = rock_depths_from_table(physics, rock_idx; n_depths=11)
         zeniths = collect(0.0:2.0:60.0)
-        
-        println("Computing flux for $(length(depths)) depths × $(length(zeniths)) angles...")
-        println("  Depths: $(Int.(depths))m")
-        println("  Zeniths: $(zeniths)°")
+
+        println("Rock density from table: $(round(rock_density; digits=1)) kg/m³")
+        println("Depths derived from CSDA range table (11 levels):")
+        println("  ", join([@sprintf("%.0f", d) for d in depths], ", "), " m")
+        println("Zeniths: $(zeniths)°")
         println()
-        
+
+        # --- 1.1  Flux vs angle (original) ---
+        println("-" ^ 40)
+        println(" Part 1.1: Flux vs Zenith Angle")
+        println("-" ^ 40)
+
         flux_grid, sigma_grid = compute_flux_vs_angle(
-            physics, depths, zeniths;
+            physics, rock_idx, depths, zeniths;
             n_samples=args.n_samples,
             straggling=args.straggling,
             scattering=args.scattering,
@@ -1129,13 +1397,53 @@ function main()
             energy_min=args.energy_min,
             energy_max=args.energy_max
         )
-        
-        # Create plot
+
         create_flux_vs_angle_plot(depths, zeniths, flux_grid, sigma_grid;
-                                   output_path=joinpath(args.output_dir, "part1_flux_vs_angle.html"),
-                                   title="Part 1: Muon Flux vs Zenith Angle by Rock Depth")
-        
+                                   output_path=joinpath(args.output_dir, "part1_1_flux_vs_angle.html"),
+                                   title="Part 1.1: Muon Flux vs Zenith Angle by Rock Depth")
         println()
+
+        # --- 1.2  Zenith angle scattering variance ---
+        println("-" ^ 40)
+        println(" Part 1.2: Zenith Angle Scattering Variance")
+        println("-" ^ 40)
+
+        var_grid = compute_zenith_variance(
+            physics, rock_idx, air_idx, depths, zeniths;
+            n_samples=args.n_samples,
+            straggling=args.straggling,
+            scattering=args.scattering,
+            energy_threshold_low=args.energy_threshold_low,
+            energy_min=args.energy_min,
+            energy_max=args.energy_max
+        )
+
+        create_zenith_variance_plot(depths, zeniths, var_grid;
+            output_path=joinpath(args.output_dir, "part1_2_zenith_variance.html"))
+        println()
+
+        # --- 1.3  Flux vs zenith for fixed energies (at 1000m depth) ---
+        println("-" ^ 40)
+        println(" Part 1.3: Flux vs Zenith (fixed energies, 1000m depth)")
+        println("-" ^ 40)
+
+        depth_1_3 = 1000.0
+        energies_1_3, flux_fe, _ = compute_flux_fixed_energy(
+            physics, rock_idx, air_idx, depth_1_3, zeniths;
+            n_samples=args.n_samples,
+            n_energies=100,
+            straggling=args.straggling,
+            scattering=args.scattering,
+            energy_threshold_low=args.energy_threshold_low,
+            energy_min=args.energy_min,
+            energy_max=args.energy_max
+        )
+
+        create_flux_fixed_energy_plot(energies_1_3, zeniths, flux_fe;
+            depth=depth_1_3,
+            output_path=joinpath(args.output_dir, "part1_3_flux_vs_zenith_fixed_energy.html"))
+        println()
+
         println("Part 1 complete!")
     end
     

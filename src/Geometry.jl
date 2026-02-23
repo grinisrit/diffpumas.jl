@@ -30,6 +30,7 @@ export run_backward_mc
 export PRIMARY_ALTITUDE, compute_air_grammage, compute_rock_grammage
 export compute_decay_weight_from_path
 export transport_backward_step, transport_backward_step_full, transport_backward_step_mixed
+export compute_flux_single_with_state
 
 # Primary altitude for sampling (m)
 const PRIMARY_ALTITUDE = 3e4
@@ -738,6 +739,61 @@ function compute_flux_single(physics::PhysicsTables{T},
         return final_state.weight * flux
     else
         return zero(T)
+    end
+end
+
+"""
+    compute_flux_single_with_state(physics, geometry, energy_final, elevation, charge; ...)
+
+Like `compute_flux_single` but also returns the final zenith angle (degrees)
+at primary altitude. Returns `(flux_weight, zenith_final)` where `zenith_final`
+is `NaN` if the particle did not reach the primary altitude.
+"""
+function compute_flux_single_with_state(physics::PhysicsTables{T},
+                                        geometry::TwoLayerGeometry{T},
+                                        energy_final::T,
+                                        elevation::T,
+                                        charge::T;
+                                        rng::Union{AbstractRNG, Nothing} = nothing,
+                                        straggling::Bool = false,
+                                        scattering::Bool = false,
+                                        energy_threshold_low::T = T(100.0)) where T<:Real
+
+    theta = (T(90) - elevation) * T(π) / T(180)
+    cos_theta = cos(theta)
+    sin_theta = sin(theta)
+
+    state = State{T}(
+        charge = charge,
+        energy = energy_final,
+        distance = zero(T),
+        grammage = zero(T),
+        time = zero(T),
+        weight = one(T),
+        position = Vec3{T}(0, 0, 0),
+        direction = Vec3{T}(-sin_theta, 0, -cos_theta),
+        decayed = false
+    )
+
+    energy_threshold = T(1e12)
+
+    final_state = transport_backward_through_geometry(physics, geometry, state, energy_threshold;
+                                                      rng=rng, straggling=straggling, scattering=scattering,
+                                                      energy_threshold_low=energy_threshold_low)
+
+    if final_state.position[3] >= PRIMARY_ALTITUDE - T(1.0)
+        cos_theta_final = -final_state.direction[3]
+        cos_theta_final = clamp(cos_theta_final, zero(T), one(T))
+
+        if cos_theta_final <= zero(T)
+            return zero(T), T(NaN)
+        end
+
+        zenith_final = acos(cos_theta_final) * T(180) / T(π)
+        flux = flux_gccly(cos_theta_final, final_state.energy, charge)
+        return final_state.weight * flux, zenith_final
+    else
+        return zero(T), T(NaN)
     end
 end
 
