@@ -11,7 +11,9 @@ module Physics
 using ..Constants
 using ..Types
 using ..Materials
+using ..Materials: compute_dcs_integral
 using ..DEDXLoader
+using ..Coulomb: compute_coulomb_tables!
 using LinearAlgebra
 using ChainRulesCore
 using Random
@@ -129,27 +131,6 @@ function coulomb_spin_factor(mass::T, kinetic::T) where T<:Real
 end
 
 """
-    coulomb_screening_angle(Z, A, mass, kinetic)
-
-Compute the Molière screening angle for Coulomb scattering.
-Based on PUMAS coulomb_screening_parameters().
-"""
-function coulomb_screening_angle(Z::T, A::T, mass::T, kinetic::T) where T<:Real
-    # Atomic form factor screening radius (Thomas-Fermi model)
-    # a_TF = 0.885 * a_0 * Z^(-1/3) where a_0 is Bohr radius
-    a_TF = T(0.885) * T(BOHR_RADIUS) * Z^(-one(T)/T(3))
-    
-    # Momentum
-    p = sqrt(kinetic * (kinetic + T(2) * mass))
-    
-    # Screening angle
-    # μ_0 ≈ (ℏ / (p * a_TF))^2
-    screening = (T(HBAR_C) / (p * a_TF))^2
-    
-    return screening
-end
-
-"""
     create_material_table_from_dedx(dedx_data, material, particle, mass, settings)
 
 Create a MaterialTable from loaded PUMAS dE/dx data.
@@ -189,23 +170,35 @@ function create_material_table_from_dedx(dedx::DEDXData, material::BaseMaterial,
         csda_time[i] = csda_time[i-1] + dK / (dedx_avg * β_mid * gamma_mid)
     end
     
-    # Mixed stopping power (soft processes only)
-    # For cutoff ε, soft stopping = ionization + ε * (radiative total)
+    # Mixed stopping power and straggling via per-element DCS integration.
+    # mixed_dEdX = CSDA_dEdX - Σ hard DEL energy loss above cutoff
+    # straggling = Σ per-element electronic straggling (from ionisation DCS mode=2)
     cutoff = settings.cutoff
     mixed_stopping = zeros(T, n)
     mixed_range = zeros(T, n)
-    
+    straggling = zeros(T, n)
+    npts_mix = 180
+
     for i in 1:n
-        K = energies[i]
-        radiative = brems[i] + pair[i] + photo[i]
-        
-        # Soft stopping power = total - hard part
-        # Hard DEL threshold at cutoff * K
-        # For simplicity, use: mixed = ionization + cutoff fraction of radiative
-        mixed_stopping[i] = ionization[i] + cutoff * radiative
+        K = Float64(energies[i])
+        hard_loss = 0.0
+        strag_val = 0.0
+        if K >= 1e-3
+            for (elem, frac) in zip(material.elements, material.fractions)
+                for proc in (:bremsstrahlung, :pair_production, :photonuclear)
+                    hard_loss += frac * compute_dcs_integral(proc, elem.Z, elem.A, elem.I,
+                        Float64(mass), K, Float64(cutoff), 1.0, 1; npoints=npts_mix)
+                end
+                hard_loss += frac * compute_dcs_integral(:ionisation, elem.Z, elem.A, elem.I,
+                    Float64(mass), K, Float64(cutoff), 1.0, 1; npoints=npts_mix)
+                strag_val += frac * compute_dcs_integral(:ionisation, elem.Z, elem.A, elem.I,
+                    Float64(mass), K, 0.0, Float64(cutoff), 2; npoints=npts_mix)
+            end
+        end
+        mixed_stopping[i] = max(csda_stopping[i] - T(hard_loss), T(1e-20))
+        straggling[i] = T(strag_val)
     end
-    
-    # Compute mixed range by integration
+
     mixed_range[1] = energies[1] / mixed_stopping[1]
     for i in 2:n
         dK = energies[i] - energies[i-1]
@@ -213,106 +206,49 @@ function create_material_table_from_dedx(dedx::DEDXData, material::BaseMaterial,
         mixed_range[i] = mixed_range[i-1] + dK / dedx_avg
     end
     
-    # Straggling (Bohr-Bethe model)
-    # Ω² = 4π N_A r_e² m_e c² Z/A × W_max × (1 - β²/2)
-    # K_L = 4π N_A r_e² m_e c² ≈ 0.1535 MeV cm²/g = 1.535e-5 GeV kg⁻¹ m²
-    straggling = zeros(T, n)
-    for i in 1:n
-        K = energies[i]
-        gamma = one(T) + K / mass
-        β² = one(T) - one(T) / gamma^2
-        β = sqrt(β²)
-        
-        K_L = T(1.535e-5) * dedx.ZoA
-        W_max = 2 * T(ELECTRON_MASS) * β² * gamma^2 / (one(T) + 2*gamma*T(ELECTRON_MASS)/mass)
-        straggling[i] = K_L * W_max * (one(T) - β² / 2)
-    end
-    
     # Cross-section for hard DEL events
-    # Computed from radiative stopping power and cutoff
+    # Computed via Gauss quadrature DCS integration per element (matching PUMAS compute_cel_and_del)
     cross_section = zeros(T, n)
+    npts = 180
     for i in 1:n
-        K = energies[i]
-        if K > T(0.01)  # Only significant above ~10 MeV
-            radiative = brems[i] + pair[i] + photo[i]
-            # σ ≈ (1/K) × ∫ dσ/dq dq ≈ radiative / (ε * K) where ε ~ cutoff
-            # Simplified cross-section estimate
-            cross_section[i] = radiative / (cutoff * K + T(1e-10))
+        K = Float64(energies[i])
+        K < 1e-3 && continue
+        cs_total = 0.0
+        for (elem, frac) in zip(material.elements, material.fractions)
+            for proc in (:bremsstrahlung, :pair_production, :photonuclear)
+                cs_total += frac * compute_dcs_integral(proc, elem.Z, elem.A, elem.I,
+                    Float64(mass), K, Float64(cutoff), 1.0, 0; npoints=npts)
+            end
+            cs_total += frac * compute_dcs_integral(:ionisation, elem.Z, elem.A, elem.I,
+                Float64(mass), K, Float64(cutoff), 1.0, 0; npoints=npts)
         end
+        cross_section[i] = T(cs_total)
     end
     
-    # Elastic scattering (Coulomb) parameters
-    # First transport path length (λ₁)
-    Z_eff = sum(e.Z * f for (e, f) in zip(material.elements, material.fractions))
-    A_eff = sum(e.A * f for (e, f) in zip(material.elements, material.fractions))
-    
-    elastic_path_arr = zeros(T, n)
-    elastic_cutoff_arr = zeros(T, n)
+    # Coulomb scattering tables — computed from first principles
     transport_path = zeros(T, n)
+    elastic_path_arr = zeros(T, n)
     screening_param = zeros(T, n)
     spin_factor_arr = zeros(T, n)
     magnetic_rotation = zeros(T, n)
-    
+    elastic_cutoff_arr = zeros(T, n)
+
+    compute_coulomb_tables!(material, Float64(mass),
+        settings.elastic_ratio, settings.cutoff,
+        Float64.(energies), Float64.(csda_range),
+        Float64(dedx.ZoA), Float64(material.I), Float64(material.density),
+        transport_path, elastic_path_arr, screening_param)
+
     for i in 1:n
         K = energies[i]
         gamma = one(T) + K / mass
         β² = one(T) - one(T) / gamma^2
         β = sqrt(β²)
-        p = sqrt(K * (K + 2mass))  # Momentum in GeV/c
-        
-        # Spin correction factor
-        fspin = coulomb_spin_factor(mass, K)
-        spin_factor_arr[i] = fspin
-        
-        # Screening parameter (Thomas-Fermi screening)
-        μ0 = coulomb_screening_angle(T(Z_eff), T(A_eff), mass, K)
-        screening_param[i] = μ0
-        
-        # Elastic cutoff angle (below which scattering is "soft")
-        # θ_c ≈ √(μ0) typically ~0.01-0.1 rad for GeV muons
-        elastic_cutoff_arr[i] = sqrt(max(μ0, T(1e-6)))
-        
-        # ============================================================
-        # FIRST TRANSPORT MEAN FREE PATH (λ₁)
-        # ============================================================
-        # This is computed from the Coulomb scattering transport coefficient.
-        # PUMAS uses a complex multi-parameter screened potential, but for
-        # matching purposes we use an empirical formula calibrated to PUMAS.
-        #
-        # From PUMAS test: λ₁ ≈ 2269 g/cm² at 1 GeV for standard rock (Z=11)
-        # The scaling is approximately: λ₁ ∝ p² * β² / (Z² * Coulomb_log)
-        #
-        # Using empirical fit to PUMAS values:
-        # λ₁ ≈ TRANSPORT_COEFF * p² * β² / Z²  [in g/cm²]
-        # Calibrated to give λ₁ = 2269 g/cm² at 1 GeV for Z=11
-        # ============================================================
-        
-        # Coulomb logarithm (slowly varying with energy)
-        # L ≈ ln(2 * m_μ * β * γ / (m_e * Z^(1/3)))
-        coulomb_log = max(log(T(2) * mass * β * gamma / (T(ELECTRON_MASS) * Z_eff^(one(T)/T(3)))), T(1))
-        
-        # Empirical coefficient calibrated to PUMAS test values
-        # At 1 GeV for rock (Z=11): transport_path = 2269 g/cm²
-        # p = 1.1 GeV, β² = 0.99, coulomb_log ≈ 7.6, fspin ≈ 0.15
-        # 2269 = C * 1.21 * 0.99 / (121 * 7.6 * 1.15) = C * 1.2 / 1058
-        # C = 2269 * 1058 / 1.2 ≈ 2.0e6
-        TRANSPORT_COEFF = T(2.0e6)  # g/cm², calibrated to PUMAS
-        
-        # First transport path in g/cm²
-        p_gev = p  # momentum in GeV/c
-        lb1_gcm2 = TRANSPORT_COEFF * p_gev^2 * β² / (Z_eff^2 * coulomb_log * (one(T) + fspin))
-        
-        # Convert to kg/m²
-        transport_path[i] = lb1_gcm2 * T(10)  # g/cm² -> kg/m²
-        
-        # Elastic mean free path for HARD scattering (above cutoff angle)
-        # Hard scattering is rare - EHS MFP >> transport path
-        # Use empirical relationship: λ_hard ≈ λ₁ / elastic_ratio
-        # where elastic_ratio ≈ 0.05 is the fraction of hard scatters
-        # Set to zero to use the fallback formula in compute_ehs_mean_free_path
-        elastic_path_arr[i] = zero(T)
-        
-        # Magnetic rotation (Larmor factor)
+        p = sqrt(K * (K + 2mass))
+        spin_factor_arr[i] = coulomb_spin_factor(mass, K)
+        mu0 = screening_param[i]
+        elastic_cutoff_arr[i] = mu0 < T(1e-8) ? T(2) * sqrt(max(mu0, zero(T))) :
+            acos(max(one(T) - T(2) * mu0, -one(T)))
         magnetic_rotation[i] = LARMOR_FACTOR / (β * p)
     end
     
@@ -366,77 +302,54 @@ function create_material_table_empirical(material::BaseMaterial, particle::Parti
     A_eff = sum(e.A * f for (e, f) in zip(material.elements, material.fractions))
     ZoA = material.ZoA
     
-    # Compute properties at each energy
+    # Compute component stopping powers, cross-sections, etc. via full DCS integration
+    cutoff = settings.cutoff
+    npts_emp = 180
+    x_low = 1e-6   # lower integration bound as fraction of K
+
     for i in 1:n
-        K = energies[i]
-        gamma = one(T) + K / mass
+        K_f = Float64(energies[i])
+        K_t = energies[i]
+        gamma = one(T) + K_t / mass
         β² = one(T) - one(T) / (gamma^2)
         β = sqrt(β²)
-        p = sqrt(K * (K + 2mass))
-        
-        # Ionization stopping power (Bethe formula)
-        I = material.I > 0 ? material.I : T(136e-9)  # Default ~136 eV for rock
-        W_max = 2 * T(ELECTRON_MASS) * β² * gamma^2 / (one(T) + 2*gamma*T(ELECTRON_MASS)/mass)
-        
-        if W_max > I
-            bethe_log = log(W_max / I) - β²
-            bethe_log = max(bethe_log, one(T))
-        else
-            bethe_log = one(T)
+        p = sqrt(K_t * (K_t + 2mass))
+
+        # Per-element DCS integration for full energy loss (mode=1, x: 0..1)
+        ion_val = 0.0; brem_val = 0.0; pair_val = 0.0; photo_val = 0.0
+        hard_loss = 0.0; cs_total = 0.0; strag_val = 0.0
+        if K_f >= 1e-6
+            for (elem, frac) in zip(material.elements, material.fractions)
+                Zf = Float64(elem.Z); Af = Float64(elem.A); If = Float64(elem.I)
+                mf = Float64(mass)
+                ion_val += frac * compute_dcs_integral(:ionisation, Zf, Af, If, mf, K_f, x_low, 1.0, 1; npoints=npts_emp)
+                brem_val += frac * compute_dcs_integral(:bremsstrahlung, Zf, Af, If, mf, K_f, x_low, 1.0, 1; npoints=npts_emp)
+                pair_val += frac * compute_dcs_integral(:pair_production, Zf, Af, If, mf, K_f, x_low, 1.0, 1; npoints=npts_emp)
+                photo_val += frac * compute_dcs_integral(:photonuclear, Zf, Af, If, mf, K_f, x_low, 1.0, 1; npoints=npts_emp)
+
+                for proc in (:bremsstrahlung, :pair_production, :photonuclear, :ionisation)
+                    hard_loss += frac * compute_dcs_integral(proc, Zf, Af, If, mf, K_f, Float64(cutoff), 1.0, 1; npoints=npts_emp)
+                    cs_total += frac * compute_dcs_integral(proc, Zf, Af, If, mf, K_f, Float64(cutoff), 1.0, 0; npoints=npts_emp)
+                end
+                strag_val += frac * compute_dcs_integral(:ionisation, Zf, Af, If, mf, K_f, 0.0, Float64(cutoff), 2; npoints=npts_emp)
+            end
         end
-        
-        # K_ion = 0.307 MeV cm²/g * Z/A = 3.07e-5 GeV/(kg/m²) * Z/A
-        K_ion = T(3.07e-5) * ZoA
-        ionization[i] = K_ion * bethe_log / β²
-        
-        # Radiative stopping powers (proportional to energy at high E)
-        # dE/dx_rad ≈ b * E where b ≈ 4.6e-6 /(g/cm²) = 4.6e-8 /(kg/m²) for rock
-        b_rad = T(4.6e-8) * (Z_eff / T(11))^2
-        brems[i] = b_rad * K * T(0.45)  # Bremsstrahlung ~45% of radiative
-        pair[i] = b_rad * K * T(0.45)   # Pair production ~45% of radiative
-        photo[i] = b_rad * K * T(0.10)  # Photonuclear ~10% of radiative
-        
-        # Total CSDA stopping power
-        csda_stopping[i] = ionization[i] + brems[i] + pair[i] + photo[i]
-        
-        # Mixed stopping (soft only)
-        cutoff = settings.cutoff
-        radiative = brems[i] + pair[i] + photo[i]
-        mixed_stopping[i] = ionization[i] + cutoff * radiative
-        
-        # Straggling
-        K_L = T(1.535e-5) * ZoA
-        straggling[i] = K_L * W_max * (one(T) - β² / 2)
-        
-        # Cross-section
-        if K > T(0.01)
-            cross_section[i] = radiative / (cutoff * K + T(1e-10))
-        end
-        
-        # Scattering parameters - Coulomb scattering transport coefficient
-        fspin = coulomb_spin_factor(mass, K)
-        spin_factor_arr[i] = fspin
-        
-        μ0 = coulomb_screening_angle(T(Z_eff), T(A_eff), mass, K)
-        screening_param[i] = μ0
-        
-        elastic_cutoff[i] = sqrt(max(μ0, T(1e-6)))
-        
-        # First transport mean free path (λ₁) - empirical formula matched to PUMAS
-        # λ₁ ∝ p² * β² / (Z² * Coulomb_log)
-        coulomb_log = max(log(T(2) * mass * β * gamma / (T(ELECTRON_MASS) * Z_eff^(one(T)/T(3)))), T(1))
-        TRANSPORT_COEFF = T(2.0e6)  # g/cm², calibrated to PUMAS
-        p_gev = p  # momentum in GeV/c
-        lb1_gcm2 = TRANSPORT_COEFF * p_gev^2 * β² / (Z_eff^2 * coulomb_log * (one(T) + fspin))
-        transport_path[i] = lb1_gcm2 * T(10)  # g/cm² -> kg/m²
-        
-        # Elastic mean free path for HARD scattering - use fallback formula
-        # Set to zero to trigger fallback in compute_ehs_mean_free_path
-        elastic_path_arr[i] = zero(T)
-        
+
+        # Electronic stopping from Fano model
+        elec_stop = Float64(electronic_stopping_power(material, Float64(mass), K_f))
+        ionization[i] = T(elec_stop)
+        brems[i] = T(brem_val)
+        pair[i] = T(pair_val)
+        photo[i] = T(photo_val)
+        csda_stopping[i] = T(elec_stop + brem_val + pair_val + photo_val)
+        mixed_stopping[i] = max(csda_stopping[i] - T(hard_loss), T(1e-20))
+        straggling[i] = T(strag_val)
+        cross_section[i] = T(cs_total)
+
+        spin_factor_arr[i] = coulomb_spin_factor(mass, K_t)
         magnetic_rotation[i] = LARMOR_FACTOR / (β * p)
     end
-    
+
     # Compute ranges by integration
     csda_range[1] = energies[1] / csda_stopping[1]
     mixed_range[1] = energies[1] / mixed_stopping[1]
@@ -444,11 +357,10 @@ function create_material_table_empirical(material::BaseMaterial, particle::Parti
         dK = energies[i] - energies[i-1]
         dedx_avg = (csda_stopping[i] + csda_stopping[i-1]) / 2
         csda_range[i] = csda_range[i-1] + dK / dedx_avg
-        
         dedx_mixed_avg = (mixed_stopping[i] + mixed_stopping[i-1]) / 2
         mixed_range[i] = mixed_range[i-1] + dK / dedx_mixed_avg
     end
-    
+
     # Compute proper time by integration
     for i in 2:n
         K = energies[i]
@@ -457,13 +369,25 @@ function create_material_table_empirical(material::BaseMaterial, particle::Parti
         gamma_prev = one(T) + K_prev / mass
         β = sqrt(one(T) - one(T) / gamma^2)
         β_prev = sqrt(one(T) - one(T) / gamma_prev^2)
-        
         gamma_mid = (gamma + gamma_prev) / 2
         β_mid = (β + β_prev) / 2
-        
         dedx_avg = (csda_stopping[i] + csda_stopping[i-1]) / 2
         dK = K - K_prev
         csda_time[i] = csda_time[i-1] + dK / (dedx_avg * β_mid * gamma_mid)
+    end
+
+    # Coulomb scattering tables — computed from first principles
+    ZoA_val = Float64(ZoA)
+    compute_coulomb_tables!(material, Float64(mass),
+        settings.elastic_ratio, settings.cutoff,
+        Float64.(energies), Float64.(csda_range),
+        ZoA_val, Float64(material.I), Float64(material.density),
+        transport_path, elastic_path_arr, screening_param)
+
+    for i in 1:n
+        mu0 = screening_param[i]
+        elastic_cutoff[i] = mu0 < T(1e-8) ? T(2) * sqrt(max(mu0, zero(T))) :
+            acos(max(one(T) - T(2) * mu0, -one(T)))
     end
     
     return MaterialTable{T}(
@@ -527,6 +451,7 @@ function create_physics(particle::Particle = MUON;
     
     return PhysicsTables{Float64}(particle, mass, ctau, settings, material_dict, tables)
 end
+
 
 """
     get_material_index(physics, name)

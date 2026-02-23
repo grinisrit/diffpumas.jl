@@ -187,46 +187,78 @@ end
         end
     end
     
-    # Check for discrete events (DEL)
+    # Sample both DEL and EHS; the event with shorter interaction length wins
+    # This matches PUMAS C transport_limit where DEL and EHS compete
     del_process = 0
     del_occurred_flag = false
-    if mode == :straggled
-        del_occurred, X_del, k_del, process = sample_del_event(
+    ehs_occurred_flag = false
+    ehs_kinetic = zero(T)
+    
+    del_occurred = false
+    X_del = T(Inf)
+    k_del = zero(T)
+    del_proc = 0
+    
+    ehs_occurred = false
+    X_ehs = T(Inf)
+    k_ehs = zero(T)
+    
+    if mode == :straggled && !hit_energy_limit
+        del_occurred, X_del_s, k_del_s, del_proc_s = sample_del_event(
             physics, mix, ki, kf, dX, Xi, ratio, rng; backward=true
         )
+        if del_occurred && k_del_s > ki
+            X_del = X_del_s
+            k_del = k_del_s
+            del_proc = del_proc_s
+        else
+            del_occurred = false
+        end
         
-        if del_occurred && k_del > ki
-            kf = k_del
-            dX = X_del
-            del_process = process
-            del_occurred_flag = true
-            if process == 1
-                event = EVENT_VERTEX_BREMSSTRAHLUNG
-            elseif process == 2
-                event = EVENT_VERTEX_PAIR_CREATION
+        if scattering
+            ehs_occurred, X_ehs_s, k_ehs_s = sample_ehs_event(
+                physics, mix, ki, kf, dX, Xi, ratio, rng; backward=true
+            )
+            if ehs_occurred && k_ehs_s > zero(T)
+                X_ehs = X_ehs_s
+                k_ehs = k_ehs_s
             else
-                event = EVENT_VERTEX_PHOTONUCLEAR
+                ehs_occurred = false
             end
         end
     end
     
-    # Check for elastic hard scattering (EHS) events
-    # In PUMAS C, EHS is sampled alongside DEL; the event with the shorter
-    # interaction length wins. Here, if a DEL already occurred (truncating
-    # the step), we skip EHS for this step.  Otherwise we sample EHS over
-    # the full step grammage.
-    ehs_occurred_flag = false
-    ehs_kinetic = zero(T)
-    if mode == :straggled && scattering && !del_occurred_flag && !hit_energy_limit
-        ehs_occurred, X_ehs, k_ehs = sample_ehs_event(
-            physics, mix, ki, kf, dX, Xi, ratio, rng; backward=true
-        )
-        if ehs_occurred && k_ehs > zero(T)
-            ehs_occurred_flag = true
-            ehs_kinetic = k_ehs
-            event = EVENT_VERTEX_COULOMB
+    # Whichever event has shorter interaction length wins
+    if del_occurred && ehs_occurred
+        if X_del <= X_ehs
+            ehs_occurred = false
+        else
+            del_occurred = false
         end
     end
+    
+    if del_occurred
+        kf = k_del
+        dX = X_del
+        del_process = del_proc
+        del_occurred_flag = true
+        if del_proc == 1
+            event = EVENT_VERTEX_BREMSSTRAHLUNG
+        elseif del_proc == 2
+            event = EVENT_VERTEX_PAIR_CREATION
+        else
+            event = EVENT_VERTEX_PHOTONUCLEAR
+        end
+    end
+    
+    if ehs_occurred
+        ehs_occurred_flag = true
+        ehs_kinetic = k_ehs
+        event = EVENT_VERTEX_COULOMB
+    end
+    
+    # Recompute step distance from actual grammage (needed for MSC and position update)
+    actual_step = dX / density
     
     # Scattering: DEL angular deflection + EHS deflection + soft MCS
     # Matches PUMAS C: direction updates require scattering == PUMAS_MODE_MIXED
@@ -234,15 +266,11 @@ end
     if scattering
         # DEL angular deflection (applied first, matching PUMAS C transport_do_del)
         if del_occurred_flag && del_process > 0
-            # polar_del_angle expects ki > kf (forward sense)
-            # In backward mode kf > ki, so pass (kf, ki)
-            ki_polar = kf  # higher energy
+            ki_polar = kf  # higher energy (backward)
             kf_polar = ki  # lower energy
-            # Determine which material to use for element lookup
             if is_single_material(mix)
                 mat_idx = single_material(mix)
             else
-                # Use the material that was sampled for the DEL event
                 mat_idx = sample_mixture_material(physics, mix, ki, rng)
             end
             mu_del = polar_del_angle(physics, mat_idx, del_process, ki_polar, kf_polar, rng)
@@ -252,7 +280,6 @@ end
         end
         
         # EHS angular deflection (large-angle Coulomb scatter)
-        # sample_scattering_angle returns mu = 0.5*(1 - cos(theta))
         if ehs_occurred_flag
             mu_ehs = sample_scattering_angle(physics, mix, ehs_kinetic, rng)
             if mu_ehs > zero(T)
@@ -261,14 +288,12 @@ end
         end
         
         # Soft multiple scattering (MSC)
-        mu_soft = sample_soft_scattering(physics, mix, ki, dX, rng)
+        # PUMAS C: ilb1 = 0.25 * step * (invlb1_start + invlb1_end)
+        mu_soft = sample_soft_scattering(physics, mix, ki, kf, actual_step, density, rng)
         if mu_soft > zero(T)
             new_direction = rotate_direction(new_direction, mu_soft, rng)
         end
     end
-    
-    # Recompute step distance from actual grammage
-    actual_step = dX / density
     
     # Proper time update
     gamma_i = one(T) + ki / mass
@@ -521,15 +546,24 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             
             # Adaptive step sizing for accuracy
             # PUMAS C uses DEFAULT_ACCURACY = 1E-02 (1% of range)
-            # step_loc = accuracy * density * Xtot (see pumas.c line 6337)
             Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
             
-            # Use 1% of range to match PUMAS C accuracy
-            # This is critical for correct physics approximations
-            max_grammage_frac = T(0.01)
-            
-            max_grammage_step = max_grammage_frac * Xi
+            accuracy = T(0.01)
+            max_grammage_step = accuracy * Xi
             max_geometric_step = max_grammage_step / max(density, T(1e-6))
+            
+            # PUMAS C: when scattering is MIXED, also limit by transport path
+            # stepT = accuracy / invlb1  (pumas.c line 6349)
+            if use_scattering
+                lb1 = property_transport_path(physics, material, state.energy)
+                if lb1 > zero(T)
+                    invlb1 = density / lb1
+                    if invlb1 > zero(T)
+                        step_scattering = accuracy / invlb1
+                        max_geometric_step = min(max_geometric_step, step_scattering)
+                    end
+                end
+            end
             
             # For non-uniform air, also limit by density change
             if z >= geometry.rock_thickness

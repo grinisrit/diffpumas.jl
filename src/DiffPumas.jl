@@ -76,6 +76,7 @@ include("Constants.jl")
 include("Types.jl")
 include("Materials.jl")
 include("DEDXLoader.jl")
+include("Coulomb.jl")
 include("Physics.jl")
 include("Transport.jl")
 include("Context.jl")
@@ -91,6 +92,7 @@ using .Constants
 using .Types
 using .Materials
 using .DEDXLoader
+using .Coulomb
 using .Physics
 using .Transport
 using .Context

@@ -541,23 +541,20 @@ function main()
         println()
     end
     
-    # Load or create physics
+    # Load or create physics (scattering tables computed from first principles)
     println("Loading physics tables...")
     if reload_physics && isfile(PHYSICS_DUMP)
         @info "Removing existing physics dump for reload..."
         rm(PHYSICS_DUMP)
     end
-    if !isfile(PHYSICS_DUMP)
-        @info "Physics dump not found, creating..."
+    physics = isfile(PHYSICS_DUMP) ? load_physics(PHYSICS_DUMP) : nothing
+    if physics === nothing
+        isfile(PHYSICS_DUMP) && rm(PHYSICS_DUMP; force=true)
+        @info "Creating new physics tables..."
         physics = create_physics(MUON; n_energies=200, K_min=1e-3, K_max=1e9)
         save_physics(physics, PHYSICS_DUMP)
-    else
-        physics = load_physics(PHYSICS_DUMP)
     end
     
-    if physics === nothing
-        error("Failed to load physics!")
-    end
     println("✓ Physics loaded")
     println()
     

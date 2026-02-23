@@ -51,7 +51,6 @@ function load_or_create_physics(dump_path::String; verbose::Bool=true)
         verbose && println("  Dump file: $(dump_path)")
         physics = load_physics(dump_path)
         if physics !== nothing
-            # Verify dump has all required materials (StandardRock, Air, Water)
             required = ["StandardRock", "Air", "Water"]
             missing_mats = filter(m -> !haskey(physics.materials, m), required)
             if isempty(missing_mats)
@@ -60,7 +59,6 @@ function load_or_create_physics(dump_path::String; verbose::Bool=true)
             else
                 verbose && println("⚠ Dump missing materials: $(join(missing_mats, ", ")). Recreating...")
                 rm(dump_path; force=true)
-                # Fall through to creation below
             end
         end
     end

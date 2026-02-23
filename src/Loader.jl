@@ -165,9 +165,13 @@ function parse_mdf(filepath::String)
                 I_material = if I_override !== nothing
                     I_override
                 else
-                    # Use weighted average (simplified)
+                    # Bragg additivity with logarithmic weighting:
+                    # ln(I) = Σ (w_i Z_i/A_i) ln(I_i) / Σ (w_i Z_i/A_i)
                     total_f = sum(fractions)
-                    sum(e.I * f for (e, f) in zip(mat_elements, fractions)) / total_f
+                    nf = fractions ./ total_f
+                    zoa_sum = sum(e.Z / e.A * f for (e, f) in zip(mat_elements, nf))
+                    ln_I = sum(e.Z / e.A * f * log(e.I) for (e, f) in zip(mat_elements, nf)) / zoa_sum
+                    exp(ln_I)
                 end
                 
                 mat = BaseMaterial(mat_name, density, I_material, mat_elements, fractions)

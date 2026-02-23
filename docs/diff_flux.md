@@ -262,36 +262,170 @@ $$
 
 In addition to radiative DEL events, muons can undergo rare large-angle Coulomb scatters off nuclei. These **elastic hard scattering (EHS)** events are distinct from the many soft Coulomb scatterings that are treated collectively as multiple Coulomb scattering (MCS, Section 4.4).
 
+**Mean free path.** The EHS mean free path $\lambda_{\text{EHS}}$ is loaded from PUMAS physics tables (the `elastic_path` property), which encodes the momentum-dependent hard-scattering cross-section:
+
+$$
+\lambda_{\text{EHS}}(K) = \frac{\Lambda_b(K)}{p^2}
+$$
+
+where $\Lambda_b$ is the tabulated hard-scattering path parameter and $p$ is the muon momentum. The tabulated values account for the full multi-element screened Coulomb DCS above the cutoff angle $\mu_0$.
+
 **Sampling.** EHS events are sampled with the same acceptance-rejection approach used for DEL:
 
-1. Compute the EHS mean free path $\lambda_{\text{EHS}}$ at the lower energy of the step. This is derived from the first transport mean free path $\lambda_1$ and the elastic ratio parameter: $\lambda_{\text{EHS}} \approx \lambda_1 / \varepsilon_{\text{elastic}}$
-2. Sample the interaction grammage: $X_{\text{EHS}} = -\lambda_{\text{EHS}} \ln(\zeta)$
+1. Look up the EHS mean free path $\lambda_{\text{EHS}}(K)$ at the current energy
+2. Sample the interaction grammage: $X_{\text{EHS}} = -\lambda_{\text{EHS}} \ln(\zeta)$, where $\zeta \sim \mathrm{Uniform}(0,1)$
 3. If $X_{\text{EHS}} < \Delta X$ (the step grammage), the event occurs
-4. Apply acceptance correction based on the energy-dependent MFP at the actual interaction energy
+4. Apply acceptance correction: accept with probability $\lambda_{\text{EHS}}(K_{\min}) / \lambda_{\text{EHS}}(K_{\text{actual}})$
 
-**Angular distribution.** When an EHS event occurs, the scattering angle $\mu = \tfrac{1}{2}(1 - \cos\theta)$ is sampled from a screened Coulomb (Wentzel) distribution:
+**Angular distribution.** When an EHS event occurs, the scattering angle is sampled in the centre-of-mass frame from a screened Coulomb (Wentzel) distribution:
 
 $$
-\frac{d\sigma}{d\mu} \propto \frac{1}{(A + \mu)^2} \cdot (1 - f_{\text{spin}} \cdot \mu)
+\frac{d\sigma}{d\mu_1} \propto \frac{1}{(A + \mu_1)^2} \cdot (1 - f_{\text{spin}} \cdot \mu_1)
 $$
 
-where $A = \mu_0 / 4$ is the screening parameter derived from the Thomas-Fermi atomic radius and $f_{\text{spin}}$ is the spin correction factor for the muon. The sampling uses inverse-CDF sampling from the envelope $1/(A + \mu)^2$ with spin-factor rejection.
+where $A = \mu_0 / 4$ is the screening parameter, $\mu_0$ is the elastic cutoff angle from PUMAS tables, and $f_{\text{spin}} = K(E + m) / E^2$ is the spin correction factor. The sampling uses inverse-CDF sampling from the Wentzel envelope:
 
-**Priority.** In each transport step, DEL and EHS are sampled independently. If a DEL event already occurred (truncating the step), EHS is skipped for that step — the DEL takes priority since it already determined the step's interaction grammage. Conversely, if no DEL occurred, EHS is checked over the full step.
+$$
+\mu_1 = \frac{(A + \mu_0)(A + 1)}{A + 1 - \zeta(1 - \mu_0)} - A, \qquad \zeta \sim \mathrm{Uniform}(0,1)
+$$
+
+followed by spin-factor rejection: accept if $U \le 1 - f_{\text{spin}} \mu_1$. The accepted $\mu_1$ is then transformed from CM to Lab frame (Section 4.3.7).
+
+**Competition.** Both DEL and EHS interaction lengths are sampled at the start of each step. The event with the shorter grammage wins; the other is discarded. This matches PUMAS C `transport_limit`, where both are computed upfront and the closer one determines the step's vertex.
 
 **Direction update ordering.** Within the scattering block, deflections are applied in order: (1) DEL angular deflection, (2) EHS angular deflection, (3) soft MCS. All three accumulate on the direction vector before the position update.
 
+#### 4.3.7 EHS Centre-of-Mass to Laboratory Frame Transformation
+
+The Wentzel sampling described above produces a scattering parameter $\mu_1$ in the centre-of-mass (CM) frame. For heavy targets the CM and Lab frames differ appreciably. PUMAS converts via the Lorentz boost.
+
+Let the projectile (muon, mass $m$) scatter off a target nucleus (mass $M$) with lab kinetic energy $K$. The Mandelstam variable is:
+
+$$
+s = m^2 + M^2 + 2(K + m)M
+$$
+
+The CM kinetic energy is:
+
+$$
+K_0 = \frac{s - (m + M)^2}{2\sqrt{s}}
+$$
+
+Denote $E_{\mathrm{CM}} = K_0 + m$, $\,p_{\mathrm{CM}} = \sqrt{K_0(K_0 + 2m)}$, and $E_{\mathrm{lab}} = K + m$, $\,p_{\mathrm{lab}} = \sqrt{K(K + 2m)}$. The boost parameters are:
+
+$$
+\gamma_{\mathrm{CM}} = \frac{E_{\mathrm{lab}} E_{\mathrm{CM}} + p_{\mathrm{lab}} p_{\mathrm{CM}}}{m\sqrt{s}}, \qquad
+\tau = \frac{E_{\mathrm{lab}} p_{\mathrm{CM}} - E_{\mathrm{CM}} p_{\mathrm{lab}}}{p_{\mathrm{lab}} p_{\mathrm{CM}}}
+$$
+
+For $\mu_1 > 10^{-6}$ the lab-frame scattering parameter is obtained from the exact formula:
+
+$$
+a = \gamma_{\mathrm{CM}}(\tau + 1 - 2\mu_1), \qquad
+\cos\hat\theta = \frac{a}{\sqrt{4\mu_1(1 - \mu_1) + a^2}}, \qquad
+\mu_{\mathrm{lab}} = \tfrac{1}{2}(1 - \cos\hat\theta)
+$$
+
+For small angles ($\mu_1 \le 10^{-6}$) the asymptotic limit avoids cancellation:
+
+$$
+\mu_{\mathrm{lab}} = \frac{\mu_1}{\bigl[\gamma_{\mathrm{CM}}(1 + \tau)\bigr]^2}
+$$
+
 ### 4.4 Multiple Coulomb Scattering
 
-As muons traverse matter, they undergo many small-angle Coulomb scatterings. The cumulative effect is described by Molière theory. The RMS scattering angle after traversing thickness $X$ is approximately:
+As muons traverse matter, they undergo many small-angle Coulomb scatterings. The cumulative angular deflection is described by the first transport mean free path $\lambda_1$, which encodes the scattering power of the medium.
+
+#### 4.4.1 First Transport Mean Free Path
+
+The inverse first transport mean free path $1/\lambda_1$ (units: m²/kg) sums three contributions:
 
 $$
-\theta_{\text{rms}} = \frac{13.6 \text{ MeV}}{\beta c p} \sqrt{\frac{X}{X_0}} \left[1 + 0.038 \ln\left(\frac{X}{X_0}\right)\right]
+\frac{1}{\lambda_1} = \frac{1}{\lambda_1^{\text{el}}} + \frac{1}{\lambda_1^{\text{rad}}} + \frac{1}{\lambda_1^{\text{e}}}
 $$
 
-where $X_0$ is the radiation length of the material.
+- **$1/\lambda_1^{\text{el}}$**: Elastic (nuclear Coulomb) contribution. Computed by PUMAS from the full screened nuclear DCS integrated over scattering angle up to the hard-scattering cutoff $\mu_0$, with CM→Lab transformation and nuclear form factors for each atomic element.
+- **$1/\lambda_1^{\text{rad}}$**: Radiative contributions from bremsstrahlung, pair production, and photonuclear soft collisions (below the DEL cutoff).
+- **$1/\lambda_1^{\text{e}}$**: Electronic (ionisation) transverse transport, computed from the restricted Møller/Mott cross-section up to the DEL energy cutoff $\nu = \varepsilon K$ (MIXED mode) or $\nu = K$ (CSDA mode).
 
-Scattering causes trajectories to deviate from straight lines, affecting both the path length through matter and the apparent arrival direction at the detector.
+The mode dependence enters through the electronic and radiative terms: MIXED mode integrates soft processes up to the DEL cutoff $\varepsilon K$, while CSDA mode integrates to the full kinematic limit.
+
+DiffPumas loads the exact PUMAS $\lambda_1$ values via a CSV table produced by the `dump-scattering` utility, avoiding the need to reimplement the full Coulomb DCS integration.
+
+#### 4.4.2 Soft MSC Angle Sampling
+
+At each transport step, the soft multiple scattering deflection is sampled following PUMAS (pumas.c lines 6913–6922). Given a step of distance $\ell$ (metres) through a medium of density $\rho$ (kg/m³):
+
+1. Compute the inverse transport paths at the step's start and end energies:
+
+$$
+\frac{1}{\lambda_1^{\text{start}}} = \frac{\rho}{\lambda_1(K_{\text{start}})}, \qquad
+\frac{1}{\lambda_1^{\text{end}}} = \frac{\rho}{\lambda_1(K_{\text{end}})}
+$$
+
+2. Compute the scattering strength parameter using the trapezoidal rule:
+
+$$
+\bar\mu = \tfrac{1}{4}\,\ell\,\Bigl(\lambda_1^{-1,\text{start}} + \lambda_1^{-1,\text{end}}\Bigr)
+$$
+
+   The factor $\frac{1}{4}$ arises from the relationship $\langle\mu\rangle = \frac{1}{2}\langle 1-\cos\theta\rangle = \frac{X}{2\lambda_1}$ combined with the trapezoidal averaging factor $\frac{1}{2}$.
+
+3. Clamp: if $\bar\mu > 1$, set $\bar\mu = 1$ (isotropic limit).
+
+4. Sample $\mu$ from the exponential distribution with rejection:
+
+$$
+\mu = -\bar\mu\,\ln(U), \quad U \sim \mathrm{Uniform}(0,1)
+$$
+
+   Reject and re-sample if $\mu > 1$. This is the exact PUMAS algorithm; for small $\bar\mu$ the rejection probability is negligible.
+
+The sampled $\mu = \frac{1}{2}(1 - \cos\theta)$ is passed to the direction rotation.
+
+#### 4.4.3 Step Size Limitation from Scattering
+
+When scattering is active, PUMAS limits the step size to keep the scattering angle small per step. In addition to the energy-loss-based limit $\ell_{\max} = \varepsilon_{\text{acc}} \cdot R(K) / \rho$, the step is also limited by:
+
+$$
+\ell_{\text{scat}} = \frac{\varepsilon_{\text{acc}}}{\rho / \lambda_1(K)}
+$$
+
+where $\varepsilon_{\text{acc}} = 0.01$ is the accuracy parameter. The actual step is:
+
+$$
+\ell = \min\bigl(\ell_{\text{boundary}},\; \ell_{\max},\; \ell_{\text{scat}}\bigr)
+$$
+
+This ensures that $\bar\mu \lesssim \varepsilon_{\text{acc}}$ per step, maintaining the validity of the small-angle approximation.
+
+#### 4.4.4 Direction Rotation
+
+Given a deflection parameter $\mu$ and azimuthal angle $\phi \sim \mathrm{Uniform}(-\pi, \pi)$, the direction vector $\hat{d}$ is rotated as follows.
+
+Compute:
+
+$$
+\cos\theta = 1 - 2\mu, \qquad \sin\theta = \sqrt{4\mu(1-\mu)}
+$$
+
+Construct an orthonormal basis $(\hat{u}_0, \hat{u}_1, \hat{d})$ where $\hat{u}_0$ is chosen as the co-vector with the largest component of $\hat{d}$ projected out, and $\hat{u}_1 = \hat{u}_0 \times \hat{d}$. Then:
+
+$$
+\hat{d}' = \cos\theta\,\hat{d} + \sin\theta\,(\cos\phi\,\hat{u}_0 + \sin\phi\,\hat{u}_1)
+$$
+
+This matches PUMAS `step_rotate_direction` exactly.
+
+#### 4.4.5 Mixture Transport Path
+
+For a material mixture with mass fractions $f_i$, the inverse transport path follows harmonic-mean weighting:
+
+$$
+\frac{1}{\lambda_{1,\text{mix}}} = \sum_i \frac{f_i}{\lambda_{1,i}}
+$$
+
+This reflects the additive nature of scattering probabilities.
 
 ### 4.5 Material Mixtures
 
@@ -467,7 +601,13 @@ DiffPumas.jl successfully implements differentiable muon transport by:
 2. Enabling automatic differentiation through the Direct CSDA formulation
 3. Supporting tessellated geometries with per-cell gradients
 4. **Supporting runtime material mixtures** with physically correct weighted stopping powers, straggling, cross-sections, and scattering
-5. **Full discrete angular scattering** matching PUMAS C: process-specific DEL polar angle sampling (bremsstrahlung/Tsai DDCS, pair production, photonuclear kinematics, ionisation) and elastic hard scattering (EHS) with screened Coulomb/Wentzel angular distribution, both activated alongside soft multiple Coulomb scattering
+5. **Full scattering matching PUMAS C**:
+   - Soft MSC with exact trapezoidal $\bar\mu = \frac{1}{4}\ell(\lambda_1^{-1,\text{start}} + \lambda_1^{-1,\text{end}})$ formula and rejection sampling
+   - EHS with Wentzel sampling, spin rejection, and CM→Lab frame transformation
+   - DEL angular deflection (bremsstrahlung/Tsai DDCS, pair production, photonuclear kinematics, ionisation)
+   - DEL/EHS competition by interaction length comparison
+   - Scattering-aware step size limiting ($\ell_{\text{scat}} = \varepsilon_{\text{acc}} / (\rho/\lambda_1)$)
+   - Exact PUMAS transport path tables loaded from C library dump
 
 ### 7.2 Limitations and Future Directions
 

@@ -335,11 +335,12 @@ Returns mean free path in kg/m².
     
     @inbounds table = physics.tables[material]
     
-    # Get tabulated elastic path (primary source)
-    elastic_path = interpolate_table(kinetic, table.energies, table.elastic_path)
+    # Elastic path is stored as Lb = lb_h * p² (PUMAS convention)
+    Lb = interpolate_table(kinetic, table.energies, table.elastic_path)
+    p2 = kinetic * (kinetic + T(2) * physics.mass)
     
-    if elastic_path > zero(T) && elastic_path < T(EHS_PATH_MAX)
-        return elastic_path
+    if Lb > zero(T) && Lb < T(EHS_PATH_MAX) * p2
+        return Lb / p2
     end
     
     # Fallback: compute from first principles
@@ -434,41 +435,55 @@ end
     sample_scattering_angle(physics, material, kinetic, rng; mu0=nothing)
 
 Sample the polar scattering angle mu = 0.5*(1 - cos(theta)) for an EHS event.
-Uses Coulomb scattering with screening based on PUMAS implementation.
+Matches PUMAS C `transport_do_ehs`:
+1. Sample mu1 in CM frame from Wentzel envelope with spin rejection
+2. Transform from CM to Lab frame
 
-Returns mu (0 = forward, 1 = backward).
+Returns mu in lab frame (0 = forward, 1 = backward).
 """
 @inline function sample_scattering_angle(physics::PhysicsTables{T}, material::Int,
                                   kinetic::T, rng::AbstractRNG;
                                   mu0::Union{T, Nothing} = nothing) where T<:Real
     
     mass = physics.mass
-    gamma = one(T) + kinetic / mass
-    beta2 = one(T) - one(T) / gamma^2
+    gamma_lab = one(T) + kinetic / mass
     p2 = kinetic * (kinetic + T(2) * mass)
     
-    # Get cutoff angle (screening parameter) from table or compute
     table = physics.tables[material]
     if mu0 === nothing
-        # Use tabulated or computed screening parameter
         mu0 = interpolate_table(kinetic, table.energies, table.screening_parameter)
         mu0 = max(mu0, T(1e-12))
     end
     
-    # Screening parameter for nuclear form factor
-    # A ≈ mu0 / 4 following Molière
+    # Effective target mass (use mean A for composite material)
+    A_target = table.ZoA > zero(T) ? one(T) / table.ZoA : T(22.0)
+    M_target = A_target * T(NEUTRON_MASS)
+    
+    # CM frame parameters (PUMAS coulomb_frame_parameters)
+    # kinetic0 = kinetic energy in CM frame
+    s = mass^2 + M_target^2 + T(2) * (kinetic + mass) * M_target
+    kinetic0 = (s - (mass + M_target)^2) / (T(2) * sqrt(s))
+    
+    # gamma_CM and tau for CM→Lab transformation
+    E_cm = kinetic0 + mass
+    p_cm = sqrt(max(kinetic0 * (kinetic0 + T(2) * mass), zero(T)))
+    E_lab = kinetic + mass
+    p_lab = sqrt(max(p2, zero(T)))
+    
+    gamma_CM = (p_lab > zero(T) && p_cm > zero(T)) ? (E_lab * E_cm + p_lab * p_cm) / (mass * sqrt(s)) : one(T)
+    tau = (p_lab > zero(T) && p_cm > zero(T)) ? (E_lab * p_cm - E_cm * p_lab) / (p_lab * p_cm) : zero(T)
+    
+    # Wentzel screening parameter
     A = mu0 / T(4)
     
-    # Precompute spin factor (outside loop for efficiency)
     fspin = interpolate_table(kinetic, table.energies, table.spin_factor)
     
-    # Precompute constants for sampling
     A_plus_mu0 = A + mu0
     A_plus_1 = A + one(T)
     one_minus_mu0 = one(T) - mu0
     
-    # Sample from Wentzel-like distribution: dσ/dμ ∝ 1/(A + μ)²
-    # Using inverse CDF: μ = A * (A + 1) / (A + 1 - ξ * (1 - μ0)) - A
+    # Sample mu1 in CM frame (Wentzel + spin rejection)
+    mu1 = mu0
     @inbounds for _ in 1:100
         zeta = rand(rng)
         tmp = A_plus_1 - zeta * one_minus_mu0
@@ -477,95 +492,141 @@ Returns mu (0 = forward, 1 = backward).
             continue
         end
         
-        mu1 = A_plus_mu0 * A_plus_1 / tmp - A
-        mu1 = clamp(mu1, mu0, one(T))
+        mu1_trial = A_plus_mu0 * A_plus_1 / tmp - A
+        mu1_trial = clamp(mu1_trial, mu0, one(T))
         
-        # Spin correction factor rejection
-        if rand(rng) <= one(T) - fspin * mu1
-            return mu1
+        if rand(rng) <= one(T) - fspin * mu1_trial
+            mu1 = mu1_trial
+            break
         end
     end
     
-    # Fallback: return small angle
-    return mu0
+    # CM → Lab frame transformation (PUMAS transport_do_ehs lines 5874-5884)
+    if mu1 > T(1e-6)
+        a = gamma_CM * (tau + one(T) - T(2) * mu1)
+        ct_h = a / sqrt(T(4) * mu1 * (one(T) - mu1) + a * a)
+        mu = T(0.5) * (one(T) - ct_h)
+    else
+        d = gamma_CM * (one(T) + tau)
+        mu = mu1 / (d * d)
+    end
+    
+    return clamp(mu, zero(T), one(T))
+end
+
+"""
+    sample_msc_angle(physics, material, kinetic_start, kinetic_end, step_distance, density, rng)
+
+Sample the multiple scattering angle for soft scattering.
+Matches PUMAS C implementation exactly (pumas.c lines 6913-6922):
+
+    ilb1 = 0.25 * step * (invlb1_start + invlb1_end)
+    if ilb1 > 1: ilb1 = 1
+    do { mu = -ilb1 * log(random); } while (mu > 1);
+
+Where invlb1 = density / transport_path(energy).
+
+# Arguments
+- `kinetic_start`: Energy at start of step (before step)
+- `kinetic_end`: Energy at end of step (after step)
+- `step_distance`: Step distance in metres
+- `density`: Material density in kg/m³
+
+Returns mu = 0.5*(1 - cos(theta)).
+"""
+@inline function sample_msc_angle(physics::PhysicsTables{T}, material::Int,
+                          kinetic_start::T, kinetic_end::T,
+                          step_distance::T, density::T,
+                          rng::AbstractRNG) where T<:Real
+    
+    @inbounds begin
+        if step_distance <= zero(T) || density <= zero(T)
+            return zero(T)
+        end
+        
+        table = physics.tables[material]
+        
+        lb1_start = interpolate_table(kinetic_start, table.energies, table.transport_path)
+        invlb1_start = (lb1_start > zero(T)) ? density / lb1_start : zero(T)
+        
+        if kinetic_end > zero(T)
+            lb1_end = interpolate_table(kinetic_end, table.energies, table.transport_path)
+            invlb1_end = (lb1_end > zero(T)) ? density / lb1_end : zero(T)
+        else
+            invlb1_end = invlb1_start
+        end
+        
+        if invlb1_start <= zero(T) && invlb1_end <= zero(T)
+            return zero(T)
+        end
+        
+        # PUMAS C: ilb1 = 0.25 * step * (invlb1 + context_->step_invlb1)
+        ilb1 = T(0.25) * step_distance * (invlb1_start + invlb1_end)
+        
+        if ilb1 < T(1e-12)
+            return zero(T)
+        end
+        
+        if ilb1 > one(T)
+            ilb1 = one(T)
+        end
+        
+        # PUMAS C rejection sampling: do { mu = -ilb1*log(rand()); } while (mu > 1);
+        for _ in 1:1000
+            u = rand(rng)
+            if u < T(1e-300)
+                continue
+            end
+            mu = -ilb1 * log(u)
+            if mu <= one(T)
+                return max(mu, zero(T))
+            end
+        end
+        
+        return ilb1
+    end
 end
 
 """
     sample_msc_angle(physics, material, kinetic, grammage, rng)
 
-Sample the multiple scattering angle for soft scattering.
-Uses PUMAS-style exponential sampling matching C implementation.
-
-The formula: mu = -invlb1 * grammage * 0.25 * log(rand()) with rejection for mu > 1
-
-Returns mu = 0.5*(1 - cos(theta)).
+Legacy 3-argument form. Approximates PUMAS by using same energy for start/end
+and converting grammage to step_distance with the material's reference density.
+Prefer the 6-argument form when density and step_distance are available.
 """
 @inline function sample_msc_angle(physics::PhysicsTables{T}, material::Int,
                           kinetic::T, grammage::T, rng::AbstractRNG) where T<:Real
-    
     @inbounds begin
         if grammage <= zero(T) || kinetic <= zero(T)
             return zero(T)
         end
         
-        # Get transport path from table
         table = physics.tables[material]
-        lb1 = interpolate_table(kinetic, table.energies, table.transport_path)
+        density = table.density
+        step_distance = (density > zero(T)) ? grammage / density : zero(T)
         
-        if lb1 <= zero(T)
-            return zero(T)
-        end
-        
-        # Compute ilb1 = grammage / transport_path
-        # PUMAS uses: ilb1 = 0.5 * step * (invlb1_start + invlb1_end)
-        # For backward mode where energy increases, transport_path increases,
-        # so invlb1_end < invlb1_start. The effective coefficient is < 1.
-        # Use 0.1 as a conservative estimate to avoid over-scattering
-        # (can be tuned to match PUMAS better)
-        ilb1 = T(0.1) * grammage / lb1
-        
-        # Skip scattering if ilb1 is negligibly small
-        if ilb1 < T(1e-8)
-            return zero(T)
-        end
-        
-        # Cap ilb1 at 1 as in PUMAS
-        if ilb1 > one(T)
-            ilb1 = one(T)
-        end
-        
-        # For small ilb1, use simple exponential approximation
-        # For larger ilb1, use truncated exponential
-        if ilb1 < T(0.1)
-            # Simple exponential: E[mu] ≈ ilb1
-            # mu = -ilb1 * log(rand())
-            u = rand(rng)
-            if u < T(1e-12)
-                u = T(1e-12)
-            end
-            mu = -ilb1 * log(u)
-            # Cap at 1 (rejection would be needed, but for small ilb1 this is rare)
-            if mu > one(T)
-                mu = ilb1  # Use mean value as fallback
-            end
-        else
-            # Truncated exponential using inverse CDF
-            u = rand(rng)
-            inv_ilb1 = one(T) / ilb1
-            exp_factor = one(T) - exp(-inv_ilb1)
-            mu = -ilb1 * log(one(T) - u * exp_factor)
-        end
-        
-        # Ensure mu is in valid range
-        return min(max(mu, zero(T)), one(T))
+        return sample_msc_angle(physics, material, kinetic, kinetic,
+                                step_distance, density, rng)
     end
+end
+
+"""
+    sample_soft_scattering(physics, material, kinetic_start, kinetic_end, step_distance, density, rng)
+
+Sample soft multiple scattering angle using the full PUMAS trapezoidal formula.
+"""
+@inline function sample_soft_scattering(physics::PhysicsTables{T}, material::Int,
+                               kinetic_start::T, kinetic_end::T,
+                               step_distance::T, density::T,
+                               rng::AbstractRNG) where T<:Real
+    return sample_msc_angle(physics, material, kinetic_start, kinetic_end,
+                            step_distance, density, rng)
 end
 
 """
     sample_soft_scattering(physics, material, kinetic, grammage, rng)
 
-Sample soft multiple scattering angle for a given grammage step.
-Alias for sample_msc_angle for backward compatibility.
+Legacy form for backward compatibility.
 """
 @inline sample_soft_scattering(physics::PhysicsTables{T}, material::Int,
                                kinetic::T, grammage::T, rng::AbstractRNG) where T<:Real = 
@@ -1133,10 +1194,66 @@ and that material's tables are used for the energy transfer and process identifi
 end
 
 """
-    sample_soft_scattering(physics, mix::MaterialMixture, kinetic, grammage, rng)
+    sample_soft_scattering(physics, mix::MaterialMixture, kinetic_start, kinetic_end, step_distance, density, rng)
 
 Sample soft multiple scattering angle for a material mixture.
-Uses the mixture transport path (harmonic mean).
+Full PUMAS trapezoidal formula.
+"""
+@inline function sample_soft_scattering(physics::PhysicsTables{T}, mix::MaterialMixture,
+                               kinetic_start::T, kinetic_end::T,
+                               step_distance::T, density::T,
+                               rng::AbstractRNG) where T<:Real
+    if is_single_material(mix)
+        return sample_soft_scattering(physics, single_material(mix),
+                                      kinetic_start, kinetic_end,
+                                      step_distance, density, rng)
+    end
+
+    if step_distance <= zero(T) || density <= zero(T)
+        return zero(T)
+    end
+
+    lb1_start = property_transport_path(physics, mix, kinetic_start)
+    invlb1_start = (lb1_start > zero(T)) ? density / lb1_start : zero(T)
+
+    if kinetic_end > zero(T)
+        lb1_end = property_transport_path(physics, mix, kinetic_end)
+        invlb1_end = (lb1_end > zero(T)) ? density / lb1_end : zero(T)
+    else
+        invlb1_end = invlb1_start
+    end
+
+    if invlb1_start <= zero(T) && invlb1_end <= zero(T)
+        return zero(T)
+    end
+
+    ilb1 = T(0.25) * step_distance * (invlb1_start + invlb1_end)
+
+    if ilb1 < T(1e-12)
+        return zero(T)
+    end
+    if ilb1 > one(T)
+        ilb1 = one(T)
+    end
+
+    for _ in 1:1000
+        u = rand(rng)
+        if u < T(1e-300)
+            continue
+        end
+        mu = -ilb1 * log(u)
+        if mu <= one(T)
+            return max(mu, zero(T))
+        end
+    end
+
+    return ilb1
+end
+
+"""
+    sample_soft_scattering(physics, mix::MaterialMixture, kinetic, grammage, rng)
+
+Legacy form for backward compatibility.
 """
 @inline function sample_soft_scattering(physics::PhysicsTables{T}, mix::MaterialMixture,
                                kinetic::T, grammage::T, rng::AbstractRNG) where T<:Real
@@ -1148,39 +1265,12 @@ Uses the mixture transport path (harmonic mean).
         return zero(T)
     end
 
-    # Mixture transport path (harmonic mean)
     lb1 = property_transport_path(physics, mix, kinetic)
+    density = (lb1 > zero(T)) ? grammage / (grammage / lb1 * lb1 + T(1e-30)) : zero(T)
+    step_distance = (density > zero(T)) ? grammage / density : zero(T)
 
-    if lb1 <= zero(T)
-        return zero(T)
-    end
-
-    ilb1 = T(0.1) * grammage / lb1
-
-    if ilb1 < T(1e-8)
-        return zero(T)
-    end
-    if ilb1 > one(T)
-        ilb1 = one(T)
-    end
-
-    if ilb1 < T(0.1)
-        u = rand(rng)
-        if u < T(1e-12)
-            u = T(1e-12)
-        end
-        mu = -ilb1 * log(u)
-        if mu > one(T)
-            mu = ilb1
-        end
-    else
-        u = rand(rng)
-        inv_ilb1 = one(T) / ilb1
-        exp_factor = one(T) - exp(-inv_ilb1)
-        mu = -ilb1 * log(one(T) - u * exp_factor)
-    end
-
-    return min(max(mu, zero(T)), one(T))
+    return sample_soft_scattering(physics, mix, kinetic, kinetic,
+                                  step_distance, density, rng)
 end
 
 """
