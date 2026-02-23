@@ -3,9 +3,9 @@
 muography.jl - Muon flux muography simulation with aquifer detection
 
 This script demonstrates muography techniques:
-1. Baseline studies (depths derived from the StandardRock range table)
+1. Baseline studies (0–1000m depth in 100m steps, density from physics table)
    1.1 Flux vs zenith angle for various rock depths (one line per depth)
-   1.2 Zenith angle scattering variance vs depth for each detector zenith
+   1.2 Zenith angle scattering std. deviation vs zenith for each depth
    1.3 Flux vs zenith at 1000m depth for 100 fixed energies (one curve per energy)
 2. Aquifer detection using water material in a cubic rock volume (detector at 1000m)
    Materials: Standard Rock (2650 kg/m³), Water (1000 kg/m³), PorousWetRock (composite).
@@ -17,7 +17,7 @@ This script demonstrates muography techniques:
    - 2.2b: Moving 90% water aquifer (100m cube) along y (zenith direction) at 100m depth
 
 Geometry:
-    - Part 1: Rock thickness from material range table (11 levels, 0 to max)
+    - Part 1: Rock thickness 0–1000m in 100m steps, density from physics table
     - Part 2: Detector at 1000m depth (z=0), rock cube above
     - Air layer above rock to PRIMARY_ALTITUDE
 
@@ -63,19 +63,6 @@ const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
 # Part 1: Baseline flux vs angle for various depths
 # =============================================================================
 
-"""
-    rock_depths_from_table(physics, rock_idx; n_depths=11)
-
-Derive rock depth values (in metres) from the material range table.
-Returns `n_depths` depths linearly spaced from 0 to the maximum CSDA
-range divided by reference density.
-"""
-function rock_depths_from_table(physics, rock_idx::Int; n_depths::Int = 11)
-    table = physics.tables[rock_idx]
-    max_grammage = table.csda_range[end]        # kg/m²
-    max_depth    = max_grammage / table.density  # m
-    return collect(range(0.0, max_depth; length=n_depths))
-end
 
 """
     compute_flux_vs_angle(physics, rock_idx, depths, zeniths; kwargs...)
@@ -196,16 +183,16 @@ function create_flux_vs_angle_plot(depths::Vector{Float64},
     return fig
 end
 
-# --- Part 1.2: Zenith angle scattering variance ---
+# --- Part 1.2: Zenith angle scattering standard deviation ---
 
 """
-    compute_zenith_variance(physics, rock_idx, depths, zeniths; kwargs...)
+    compute_zenith_std(physics, rock_idx, depths, zeniths; kwargs...)
 
 For each (depth, zenith), run `n_samples` backward MC trajectories and
-collect the final zenith angle at primary altitude.  Return the variance
-of (θ_final − θ_detector) for each grid point.
+collect the final zenith angle at primary altitude.  Return the standard
+deviation of (θ_final − θ_detector) for each grid point.
 """
-function compute_zenith_variance(physics,
+function compute_zenith_std(physics,
                                   rock_idx::Int,
                                   air_idx::Int,
                                   depths::Vector{Float64},
@@ -223,7 +210,7 @@ function compute_zenith_variance(physics,
     n_depths  = length(depths)
     n_zeniths = length(zeniths)
 
-    var_grid = zeros(n_depths, n_zeniths)
+    std_grid = zeros(n_depths, n_zeniths)
     rk = log(energy_max / energy_min)
 
     n_total = n_depths * n_zeniths
@@ -263,24 +250,24 @@ function compute_zenith_variance(physics,
 
             if n_valid > 1
                 mean_δ = delta_sum / n_valid
-                var_grid[d_idx, z_idx] = delta2_sum / n_valid - mean_δ^2
+                std_grid[d_idx, z_idx] = sqrt(max(delta2_sum / n_valid - mean_δ^2, 0.0))
             end
         end
     end
 
-    return var_grid
+    return std_grid
 end
 
 """
-    create_zenith_variance_plot(depths, zeniths, var_grid; output_path)
+    create_zenith_std_plot(depths, zeniths, std_grid; output_path)
 
-Plot scattering variance vs zenith angle, one curve per depth.
+Plot scattering standard deviation vs zenith angle, one curve per depth.
 """
-function create_zenith_variance_plot(depths::Vector{Float64},
-                                      zeniths::Vector{Float64},
-                                      var_grid::Matrix{Float64};
-                                      output_path::String,
-                                      title::String = "Part 1.2: Zenith Angle Scattering Variance")
+function create_zenith_std_plot(depths::Vector{Float64},
+                                 zeniths::Vector{Float64},
+                                 std_grid::Matrix{Float64};
+                                 output_path::String,
+                                 title::String = "Part 1.2: Zenith Angle Scattering Std. Dev.")
 
     traces = GenericTrace[]
     n_depths = length(depths)
@@ -289,7 +276,7 @@ function create_zenith_variance_plot(depths::Vector{Float64},
     for (d_idx, depth) in enumerate(depths)
         trace = scatter(
             x = zeniths,
-            y = var_grid[d_idx, :],
+            y = std_grid[d_idx, :],
             mode = "lines+markers",
             name = "$(round(depth; digits=0))m",
             line = attr(color = colors[d_idx], width = 2),
@@ -302,7 +289,7 @@ function create_zenith_variance_plot(depths::Vector{Float64},
         title = title,
         xaxis = attr(title = "Zenith Angle θ (°)",
                      range = [minimum(zeniths) - 1, maximum(zeniths) + 1]),
-        yaxis = attr(title = "Var(θ_final − θ_detector)  (deg²)", type = "log"),
+        yaxis = attr(title = "σ(θ_final − θ_detector)  (deg)", type = "log"),
         legend = attr(title = attr(text = "Rock Depth"), x = 1.02, y = 1.0),
         width = 1000, height = 700,
         hovermode = "closest"
@@ -956,7 +943,7 @@ end
 Run Part 2.1: Water-fraction sweep and hole enlargement.
 
 Part 2.1a: Fixed 100m aquifer at 500m depth; sweep water fraction from 0% to 90%.
-Part 2.1b: 90% water aquifer; enlarge from 100m to 500m.
+Part 2.1b: 90% water aquifer; enlarge upward from 100m to 500m.
 
 Top 100m is porous wet rock (PorousWetRock composite).
 """
@@ -983,9 +970,10 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int,
     
     cube = MuographyCube(rock_thickness, cube_width_x, cube_width_y, cell_size, rock_idx, air_idx)
     
-    println("Cube geometry:")
+    println("Simulation domain:")
     println("  Rock thickness: $(rock_thickness)m")
-    println("  Cube width: $(cube_width_x)m (x) × $(cube_width_y)m (y)")
+    println("  Domain: x ∈ [-$(cube_width_x/2), $(cube_width_x/2)]m, " *
+            "y ∈ [-$(cube_width_y/2), $(cube_width_y/2)]m")
     println("  Cell size: $(cell_size)m")
     println("  Grid: $(cube.nx) × $(cube.ny) × $(cube.nz)")
     println()
@@ -1054,10 +1042,10 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int,
         cell_materials=mats_bl)
     push!(scenarios_hole, ("Baseline", flux_bl, sigma_bl))
     
-    # Enlarge: half-size from 50m to 250m.  Aquifer grows downward from 500m.
+    # Enlarge: half-size from 50m to 250m.  Aquifer grows upward from 500m.
     for half_size in 50.0:50.0:250.0
         size = 2 * half_size
-        center_z = aquifer_depth - half_size         # top stays at 500m
+        center_z = aquifer_depth + half_size         # bottom stays at 500m
         hs = (50.0, half_size, half_size)             # x stays 100m; y & z grow
         center = (0.0, 0.0, center_z)
         
@@ -1079,7 +1067,7 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int,
     create_aquifer_plot(zeniths, scenarios_hole;
                         output_path=joinpath(output_dir, "part2_1b_hole_enlargement.html"),
                         title="Part 2.1b: Flux vs Angle - 90% Water Aquifer Enlargement<br>" *
-                              "<sub>Top at 500m, enlarging downward; porous wet rock above 900m</sub>")
+                              "<sub>Bottom at 500m, enlarging upward; porous wet rock above 900m</sub>")
     
     println()
     println("Part 2.1 complete!")
@@ -1123,9 +1111,10 @@ function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int,
     
     cube = MuographyCube(rock_thickness, cube_width_x, cube_width_y, cell_size, rock_idx, air_idx)
     
-    println("Cube geometry:")
+    println("Simulation domain:")
     println("  Rock thickness: $(rock_thickness)m")
-    println("  Cube width: $(cube_width_x)m (x) × $(cube_width_y)m (y)")
+    println("  Domain: x ∈ [-$(cube_width_x/2), $(cube_width_x/2)]m, " *
+            "y ∈ [-$(cube_width_y/2), $(cube_width_y/2)]m")
     println("  Cell size: $(cell_size)m")
     println("  Grid: $(cube.nx) × $(cube.ny) × $(cube.nz)")
     println()
@@ -1374,12 +1363,11 @@ function main()
         println()
 
         rock_density = Float64(physics.tables[rock_idx].density)
-        depths  = rock_depths_from_table(physics, rock_idx; n_depths=11)
+        depths  = collect(0.0:100.0:1000.0)
         zeniths = collect(0.0:2.0:60.0)
 
         println("Rock density from table: $(round(rock_density; digits=1)) kg/m³")
-        println("Depths derived from CSDA range table (11 levels):")
-        println("  ", join([@sprintf("%.0f", d) for d in depths], ", "), " m")
+        println("Depths: $(Int.(depths))m")
         println("Zeniths: $(zeniths)°")
         println()
 
@@ -1403,12 +1391,12 @@ function main()
                                    title="Part 1.1: Muon Flux vs Zenith Angle by Rock Depth")
         println()
 
-        # --- 1.2  Zenith angle scattering variance ---
+        # --- 1.2  Zenith angle scattering std. deviation ---
         println("-" ^ 40)
-        println(" Part 1.2: Zenith Angle Scattering Variance")
+        println(" Part 1.2: Zenith Angle Scattering Std. Dev.")
         println("-" ^ 40)
 
-        var_grid = compute_zenith_variance(
+        std_grid = compute_zenith_std(
             physics, rock_idx, air_idx, depths, zeniths;
             n_samples=args.n_samples,
             straggling=args.straggling,
@@ -1418,8 +1406,8 @@ function main()
             energy_max=args.energy_max
         )
 
-        create_zenith_variance_plot(depths, zeniths, var_grid;
-            output_path=joinpath(args.output_dir, "part1_2_zenith_variance.html"))
+        create_zenith_std_plot(depths, zeniths, std_grid;
+            output_path=joinpath(args.output_dir, "part1_2_zenith_std.html"))
         println()
 
         # --- 1.3  Flux vs zenith for fixed energies (at 1000m depth) ---
