@@ -346,38 +346,49 @@ For CSDA transport, dE/dX is the weighted sum of each material's stopping power.
 For discrete events (DEL, scattering), one material is sampled according to
 its fraction-weighted cross-section, then that material's physics is used.
 
+Can be constructed directly from indices, or resolved from a `CompositeMaterial`
+definition via `MaterialMixture(physics, composite)`.
+
 # Fields
+- `name::String`: Human-readable name (empty for anonymous mixtures)
 - `materials::Vector{Int}`: Material indices into PhysicsTables
 - `fractions::Vector{Float64}`: Mass fractions (must sum to 1)
 """
 struct MaterialMixture
+    name::String
     materials::Vector{Int}
     fractions::Vector{Float64}
 
-    function MaterialMixture(materials::Vector{Int}, fractions::Vector{Float64})
+    function MaterialMixture(name::String, materials::Vector{Int}, fractions::Vector{Float64})
         @assert length(materials) == length(fractions) "materials and fractions must have same length"
         total = sum(fractions)
         if total > 0
-            new(materials, fractions ./ total)
+            new(name, materials, fractions ./ total)
         else
-            new(materials, fractions)
+            new(name, materials, fractions)
         end
     end
 end
 
-# Convenience: wrap a single material index
-MaterialMixture(material::Int) = MaterialMixture([material], [1.0])
+MaterialMixture(materials::Vector{Int}, fractions::Vector{Float64}) =
+    MaterialMixture("", materials, fractions)
 
-# Number of components
+MaterialMixture(material::Int) = MaterialMixture("", [material], [1.0])
+
 Base.length(m::MaterialMixture) = length(m.materials)
 
-# Check if mixture is a single material (fast path)
 is_single_material(m::MaterialMixture) = length(m.materials) == 1
 
-# Get the single material index (only valid when is_single_material)
 single_material(m::MaterialMixture) = m.materials[1]
 
 export is_single_material, single_material
+
+function Base.show(io::IO, m::MaterialMixture)
+    label = isempty(m.name) ? "MaterialMixture" : "MaterialMixture(\"$(m.name)\")"
+    parts = ["mat=$(m.materials[j]) $(round(m.fractions[j]*100; digits=1))%"
+             for j in eachindex(m.materials)]
+    print(io, label, "[", join(parts, ", "), "]")
+end
 
 end # module Types
 

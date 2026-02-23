@@ -130,7 +130,8 @@ export MaterialMixture, is_single_material, single_material
 
 # Export Materials
 export AtomicElement, BaseMaterial, CompositeMaterial
-export ELEMENTS, MATERIALS, STANDARD_ROCK, AIR, WATER
+export ELEMENTS, MATERIALS, COMPOSITES, STANDARD_ROCK, AIR, WATER
+export effective_density, composite_density, resolve_mixture, flatten_to_base_material
 export electronic_stopping_power, electronic_density_effect
 export elastic_dcs, elastic_path, electronic_dcs
 export dcs_bremsstrahlung_ssr, dcs_pair_production_ssr, dcs_photonuclear_drss
@@ -140,7 +141,7 @@ export DEDXData, load_dedx_file, find_dedx_file, PUMAS_MATERIALS_PATH
 
 # Export Physics
 export PhysicsSettings, PhysicsTables, MaterialTable
-export create_physics, create_energy_grid, get_material_index
+export create_physics, create_composite_table, create_energy_grid, get_material_index
 export property_range, property_stopping_power, property_kinetic_energy
 export property_proper_time, property_cross_section, property_transport_path
 export interpolate_table, sample_mixture_material
@@ -156,7 +157,7 @@ export random_uniform, random_exponential
 
 # Export Loader
 export load_physics, save_physics, load_or_create_physics
-export parse_mdf, print_physics_summary
+export parse_mdf, parse_mdf_composites, print_physics_summary
 
 # Export GaisserFlux
 export flux_gaisser, flux_gccly, charge_fraction, cos_theta_star

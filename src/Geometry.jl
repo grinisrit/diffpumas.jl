@@ -32,7 +32,7 @@ export compute_decay_weight_from_path
 export transport_backward_step, transport_backward_step_full, transport_backward_step_mixed
 
 # Primary altitude for sampling (m)
-const PRIMARY_ALTITUDE = 1e3
+const PRIMARY_ALTITUDE = 3e4
 
 """
     TwoLayerGeometry{T}

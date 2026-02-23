@@ -13,7 +13,8 @@ using SpecialFunctions
 using ChainRulesCore
 
 export AtomicElement, BaseMaterial, CompositeMaterial
-export ELEMENTS, MATERIALS, STANDARD_ROCK, AIR, WATER
+export ELEMENTS, MATERIALS, COMPOSITES, STANDARD_ROCK, AIR, WATER
+export effective_density, composite_density, resolve_mixture, flatten_to_base_material
 export electronic_stopping_power, electronic_density_effect
 export elastic_dcs, elastic_path, electronic_dcs
 export dcs_bremsstrahlung_ssr, dcs_pair_production_ssr, dcs_photonuclear_drss
@@ -59,6 +60,23 @@ struct BaseMaterial
     end
 end
 
+"""
+    CompositeMaterial
+
+A named combination of `BaseMaterial`s with mass fractions.
+This is the *definition-time* counterpart of `MaterialMixture`:
+it stores the recipe (base materials + fractions) before physics
+tables are loaded.
+
+Use `resolve_mixture(physics, composite)` or the convenience constructor
+`MaterialMixture(physics, composite)` to obtain the runtime
+`MaterialMixture` suitable for transport.
+
+# Fields
+- `name::String`: Human-readable identifier (e.g. "WetRock")
+- `components::Vector{BaseMaterial}`: Constituent base materials
+- `fractions::Vector{Float64}`: Mass fractions (normalised to sum to 1)
+"""
 struct CompositeMaterial
     name::String
     components::Vector{BaseMaterial}
@@ -68,6 +86,21 @@ struct CompositeMaterial
         total = sum(fractions)
         new(name, components, fractions ./ total)
     end
+end
+
+"""
+    effective_density(c::CompositeMaterial)
+
+Mass-fraction-weighted density: `ρ_eff = Σ f_i ρ_i`.
+"""
+effective_density(c::CompositeMaterial) =
+    sum(f * m.density for (f, m) in zip(c.fractions, c.components))
+
+function Base.show(io::IO, c::CompositeMaterial)
+    parts = ["$(comp.name) $(round(f*100; digits=1))%"
+             for (comp, f) in zip(c.components, c.fractions)]
+    print(io, "CompositeMaterial(\"$(c.name)\")[", join(parts, " + "),
+          ", ρ_eff=$(round(effective_density(c); digits=1)) kg/m³]")
 end
 
 const STANDARD_ROCK = BaseMaterial(
@@ -94,6 +127,8 @@ const MATERIALS = Dict{String, BaseMaterial}(
     "Air" => AIR,
     "Water" => WATER
 )
+
+const COMPOSITES = Dict{String, CompositeMaterial}()
 
 # ============================================================================
 # Gauss-Legendre quadrature (exact PUMAS coefficients up to N=12)
@@ -1001,6 +1036,108 @@ function elastic_path(order::Int, Z::Real, A::Real, m::Real, K::T) where T<:Real
     end
     n = AVOGADRO_NUMBER / (A * 1e-3)
     return 1 / (n * integral)
+end
+
+# ============================================================================
+# Composite flattening (matching PUMAS C compute_composite_weights/ZoA/MEE)
+# ============================================================================
+
+"""
+    composite_density(c::CompositeMaterial)
+
+Compute composite density using the PUMAS C harmonic-mean formula
+(volume-fraction averaging): `ρ = Σf_i / Σ(f_i / ρ_i)`.
+
+This matches `compute_composite_density` in pumas.c.
+"""
+function composite_density(c::CompositeMaterial)
+    rho_inv = 0.0
+    nrm = 0.0
+    for (f, m) in zip(c.fractions, c.components)
+        rho_inv += f / m.density
+        nrm += f
+    end
+    return nrm / rho_inv
+end
+
+"""
+    flatten_to_base_material(c::CompositeMaterial)
+
+Flatten a `CompositeMaterial` into a synthetic `BaseMaterial` by merging all
+component atomic elements with combined mass fractions.  Computes effective
+ZoA and mean excitation energy I from the flattened composition, matching
+PUMAS C `compute_composite_weights` + `compute_ZoA` + `compute_MEE`.
+
+The density is the PUMAS C harmonic mean (`composite_density`).
+"""
+function flatten_to_base_material(c::CompositeMaterial)
+    elem_fracs = Dict{String, Tuple{AtomicElement, Float64}}()
+
+    for (comp_frac, mat) in zip(c.fractions, c.components)
+        for (elem, ef) in zip(mat.elements, mat.fractions)
+            combined = comp_frac * ef
+            if haskey(elem_fracs, elem.name)
+                old_elem, old_f = elem_fracs[elem.name]
+                elem_fracs[elem.name] = (old_elem, old_f + combined)
+            else
+                elem_fracs[elem.name] = (elem, combined)
+            end
+        end
+    end
+
+    elements = AtomicElement[]
+    fractions = Float64[]
+    for (elem, f) in values(elem_fracs)
+        push!(elements, elem)
+        push!(fractions, f)
+    end
+
+    total = sum(fractions)
+    norm_fractions = fractions ./ total
+
+    ZoA = sum(e.Z / e.A * f for (e, f) in zip(elements, norm_fractions))
+    ln_I_num = sum(e.Z / e.A * f * log(e.I) for (e, f) in zip(elements, norm_fractions))
+    I = exp(ln_I_num / ZoA)
+
+    density = composite_density(c)
+
+    return BaseMaterial(c.name, density, I, elements, fractions)
+end
+
+# ============================================================================
+# CompositeMaterial → MaterialMixture resolution
+# ============================================================================
+
+"""
+    resolve_mixture(materials_dict::Dict{String,Int}, composite::CompositeMaterial)
+
+Resolve a `CompositeMaterial` into a `MaterialMixture` by mapping each
+component's name to its index in the physics tables.
+
+`materials_dict` maps material names to their 1-based index in `PhysicsTables`,
+matching the `physics.materials` field produced by `create_physics`.
+
+# Example
+```julia
+physics = load_or_create_physics(MUON; mdf_path="materials.xml")
+mix = resolve_mixture(physics.materials, WetRock)
+```
+"""
+function resolve_mixture(materials_dict::Dict{String,Int},
+                         composite::CompositeMaterial)
+    indices = Int[]
+    fracs   = Float64[]
+    for (comp, f) in zip(composite.components, composite.fractions)
+        idx = get(materials_dict, comp.name, nothing)
+        if idx === nothing
+            error("Material \"$(comp.name)\" (component of composite " *
+                  "\"$(composite.name)\") not found in physics tables. " *
+                  "Available: $(collect(keys(materials_dict)))")
+        end
+        push!(indices, idx)
+        push!(fracs, f)
+    end
+    return MaterialMixture(composite.name, indices, fracs)
 end
 
 end # module Materials

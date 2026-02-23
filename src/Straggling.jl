@@ -1333,12 +1333,10 @@ end
 """
     sample_scattering_angle(physics, mix::MaterialMixture, kinetic, rng; mu0=nothing)
 
-Sample EHS polar scattering angle for a material mixture.
-Picks the material with the largest mass fraction (dominant material) and
-delegates to the single-material sampler. This is appropriate because the
-screening parameter and spin factor are material-dependent table lookups;
-using the dominant material gives a good approximation for the Wentzel
-distribution shape.
+Sample EHS polar scattering angle for a material mixture using
+fraction-weighted screening parameter, spin factor, and Z/A.
+This matches how a precomputed composite table stores these quantities
+(computed from the flattened atomic composition).
 """
 @inline function sample_scattering_angle(physics::PhysicsTables{T}, mix::MaterialMixture,
                                   kinetic::T, rng::AbstractRNG;
@@ -1346,14 +1344,61 @@ distribution shape.
     if is_single_material(mix)
         return sample_scattering_angle(physics, single_material(mix), kinetic, rng; mu0=mu0)
     end
-    # Use the dominant material for the angular distribution shape
-    dom_idx = 1
-    @inbounds for j in 2:length(mix.materials)
-        if mix.fractions[j] > mix.fractions[dom_idx]
-            dom_idx = j
+
+    mass = physics.mass
+    p2 = kinetic * (kinetic + T(2) * mass)
+
+    if mu0 === nothing
+        mu0 = property_screening(physics, mix, kinetic)
+    end
+
+    ZoA_mix = mixture_ZoA(physics, mix)
+    A_target = ZoA_mix > zero(T) ? one(T) / ZoA_mix : T(22.0)
+    M_target = A_target * T(NEUTRON_MASS)
+
+    s = mass^2 + M_target^2 + T(2) * (kinetic + mass) * M_target
+    kinetic0 = (s - (mass + M_target)^2) / (T(2) * sqrt(s))
+
+    E_cm = kinetic0 + mass
+    p_cm = sqrt(max(kinetic0 * (kinetic0 + T(2) * mass), zero(T)))
+    E_lab = kinetic + mass
+    p_lab = sqrt(max(p2, zero(T)))
+
+    gamma_CM = (p_lab > zero(T) && p_cm > zero(T)) ? (E_lab * E_cm + p_lab * p_cm) / (mass * sqrt(s)) : one(T)
+    tau = (p_lab > zero(T) && p_cm > zero(T)) ? (E_lab * p_cm - E_cm * p_lab) / (p_lab * p_cm) : zero(T)
+
+    A = mu0 / T(4)
+    fspin = property_spin_factor(physics, mix, kinetic)
+
+    A_plus_mu0 = A + mu0
+    A_plus_1 = A + one(T)
+    one_minus_mu0 = one(T) - mu0
+
+    mu1 = mu0
+    @inbounds for _ in 1:100
+        zeta = rand(rng)
+        tmp = A_plus_1 - zeta * one_minus_mu0
+        if tmp <= zero(T)
+            continue
+        end
+        mu1_trial = A_plus_mu0 * A_plus_1 / tmp - A
+        mu1_trial = clamp(mu1_trial, mu0, one(T))
+        if rand(rng) <= one(T) - fspin * mu1_trial
+            mu1 = mu1_trial
+            break
         end
     end
-    return sample_scattering_angle(physics, mix.materials[dom_idx], kinetic, rng; mu0=mu0)
+
+    if mu1 > T(1e-6)
+        a = gamma_CM * (tau + one(T) - T(2) * mu1)
+        ct_h = a / sqrt(T(4) * mu1 * (one(T) - mu1) + a * a)
+        mu = T(0.5) * (one(T) - ct_h)
+    else
+        d = gamma_CM * (one(T) + tau)
+        mu = mu1 / (d * d)
+    end
+
+    return clamp(mu, zero(T), one(T))
 end
 
 end # module Straggling

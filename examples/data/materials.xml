@@ -38,4 +38,10 @@
     <component name="StandardRock" fraction="0.5"/>
     <component name="Water" fraction="0.5"/>
   </composite>
+
+  <composite name="PorousWetRock">
+    <component name="StandardRock" fraction="0.5"/>
+    <component name="Water" fraction="0.4"/>
+    <component name="Air" fraction="0.1"/>
+  </composite>
 </pumas>

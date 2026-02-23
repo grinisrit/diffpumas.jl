@@ -7,19 +7,17 @@ This script demonstrates muography techniques:
    - Zenith angles: 0° to 60° in 2° steps
    - One line per depth in 2D interactive plot
 2. Aquifer detection using water material in a cubic rock volume (detector at 1000m)
-   Materials: Standard Rock (2650 kg/m³), Water (1000 kg/m³), Air (1.205 kg/m³).
-   Shallow air: all cells within 100m of the surface get 10% air mixed in.
+   Materials: Standard Rock (2650 kg/m³), Water (1000 kg/m³), PorousWetRock (composite).
+   Top 100m: porous wet rock (precomputed PorousWetRock composite from materials.xml).
    - 2.1a: Water fraction sweep from 0% (pure rock) to 90% (always ≥10% rock)
-            at 500m depth, 50m × 50m × 50m aquifer
-   - 2.1b: 90% water aquifer, enlarge from 50m to 500m at 500m depth
-   - 2.2a: Moving 90% water aquifer (50m cube) vertically from detector to surface
-   - 2.2b: Moving 90% water aquifer (50m cube) along y (zenith direction) at 100m depth
-3. Rock-to-water sweep with material mixtures (max 90% water) for a 200m-thick
-   aquifer at z=[400,600]m
+            at 500m depth, 100m × 100m × 100m aquifer
+   - 2.1b: 90% water aquifer, enlarge from 100m to 500m at 500m depth
+   - 2.2a: Moving 90% water aquifer (100m cube) vertically from detector to surface
+   - 2.2b: Moving 90% water aquifer (100m cube) along y (zenith direction) at 100m depth
 
 Geometry:
     - Part 1: Variable rock thickness (0-1000m)
-    - Part 2 & 3: Detector at 1000m depth (z=0), rock cube above
+    - Part 2: Detector at 1000m depth (z=0), rock cube above
     - Air layer above rock to PRIMARY_ALTITUDE
 
 Usage:
@@ -34,7 +32,7 @@ Options:
     --energy-max FLOAT        Maximum energy in GeV (default: 1e9)
     --no-straggling           Disable straggling
     --no-scattering           Disable scattering
-    --part INT                Run only part 1, 2, 3 or all (default: all)
+    --part INT                Run only part 1, 2 or all (default: all)
 
 Example:
     julia --project=. examples/muography.jl --output-dir examples/muography --samples 2000
@@ -49,7 +47,7 @@ using DiffPumas.Geometry: compute_decay_weight_from_path, locals_air_at_altitude
 using DiffPumas.Geometry: transport_backward_step, transport_backward_step_full, transport_backward_step_mixed
 using DiffPumas.GaisserFlux: flux_gccly
 using DiffPumas.Types: State, Vec3, MaterialMixture, is_single_material, single_material
-using DiffPumas.Materials: STANDARD_ROCK, AIR, WATER
+using DiffPumas.Materials: STANDARD_ROCK, AIR, WATER, CompositeMaterial, composite_density
 using DiffPumas: zenith_to_elevation, sample_energy_loguniform
 using DiffPumas.Pumas: load_or_create_physics
 using PlotlyJS
@@ -57,6 +55,7 @@ using Printf
 using Random
 
 const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
+const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
 
 # =============================================================================
 # Part 1: Baseline flux vs angle for various depths
@@ -215,15 +214,20 @@ end
 
 function MuographyCube(rock_thickness::T, width::T, cell_size::T,
                         rock_material::Int, air_material::Int) where T<:Real
-    x_min = -width / 2
-    x_max = width / 2
-    y_min = -width / 2
-    y_max = width / 2
+    return MuographyCube(rock_thickness, width, width, cell_size, rock_material, air_material)
+end
+
+function MuographyCube(rock_thickness::T, width_x::T, width_y::T, cell_size::T,
+                        rock_material::Int, air_material::Int) where T<:Real
+    x_min = -width_x / 2
+    x_max = width_x / 2
+    y_min = -width_y / 2
+    y_max = width_y / 2
     z_min = T(0)
     z_max = rock_thickness
     
-    nx = Int(ceil(width / cell_size))
-    ny = Int(ceil(width / cell_size))
+    nx = Int(ceil(width_x / cell_size))
+    ny = Int(ceil(width_y / cell_size))
     nz = Int(ceil(rock_thickness / cell_size))
     
     return MuographyCube{T}(x_min, x_max, y_min, y_max, z_min, z_max,
@@ -327,13 +331,10 @@ function compute_flux_cube_single(physics, cube::MuographyCube{T},
     cos_theta = cos(theta)
     sin_theta = sin(theta)
     
-    # Fix azimuth to 0 to keep trajectory in x=0 plane (along y-axis)
-    # With azimuth = 0: dir_x = 0, dir_y = sin_theta, dir_z = cos_theta
-    # This ensures the trajectory stays in the x=0 plane when there's no scattering
-    azimuth = zero(T)
+    azimuth = T(2π) * rand(rng)
     
-    dir_x = sin_theta * sin(azimuth)  # = 0 (stays in x=0 plane)
-    dir_y = sin_theta * cos(azimuth)  # = sin_theta (along y-axis)
+    dir_x = sin_theta * sin(azimuth)
+    dir_y = sin_theta * cos(azimuth)
     dir_z = cos_theta
     
     state = State{T}(
@@ -551,34 +552,31 @@ function compute_cube_flux_vs_angle(physics, cube::MuographyCube{T},
 end
 
 """
-    create_cell_config(cube, rock_idx, water_idx, air_idx,
-                       aquifer_center, aquifer_half_size, water_fraction;
-                       shallow_air_fraction=0.10, shallow_depth=100.0,
-                       rock_density=2650.0, water_density=1000.0,
-                       air_density_surface=1.205)
+    create_cell_config(cube, rock_idx, water_idx, porous_wet_rock_idx,
+                       porous_density, aquifer_center, aquifer_half_size,
+                       water_fraction; shallow_depth=100.0, ...)
 
-Create per-cell density and MaterialMixture arrays.
+Create per-cell density and material arrays.
 
-The aquifer region (box around `aquifer_center` with `aquifer_half_size`) has its
-rock replaced by `water_fraction` water (by mass).  Everywhere within
-`shallow_depth` of the surface (z > rock_thickness - shallow_depth) an additional
-`shallow_air_fraction` of air is mixed in (both inside and outside the aquifer).
-
-Effective density per cell: sum(f_i * rho_i).
+The shallow zone (top `shallow_depth` metres) uses the precomputed
+`PorousWetRock` composite (single material index, no runtime mixing).
+The aquifer region replaces rock with variable water fractions using
+`MaterialMixture`.  In the overlap (aquifer inside the shallow zone)
+a three-component mixture of PorousWetRock + Rock + Water is used.
 
 # Returns
 - `(densities::Vector{T}, materials::Vector{MaterialMixture})`
 """
 function create_cell_config(cube::MuographyCube{T},
-                            rock_idx::Int, water_idx::Int, air_idx::Int,
+                            rock_idx::Int, water_idx::Int,
+                            porous_wet_rock_idx::Int,
+                            porous_density::T,
                             aquifer_center::Tuple{T,T,T},
                             aquifer_half_size::Tuple{T,T,T},
                             water_fraction::T;
-                            shallow_air_fraction::T = T(0.10),
                             shallow_depth::T = T(100),
                             rock_density::T = T(2650),
-                            water_density::T = T(1000),
-                            air_density_surface::T = T(1.205)) where T<:Real
+                            water_density::T = T(1000)) where T<:Real
 
     n = num_cells(cube)
     densities = fill(rock_density, n)
@@ -597,48 +595,30 @@ function create_cell_config(cube::MuographyCube{T},
                 in_aquifer = abs(cx - ax) <= hx && abs(cy - ay) <= hy && abs(cz - az) <= hz
                 in_shallow = shallow_depth > zero(T) && cz >= shallow_z_threshold
 
-                # Start with pure rock
-                rock_frac = one(T)
-                water_frac = zero(T)
-                air_frac = zero(T)
-
-                # Replace rock with water inside aquifer (always keep ≥10% rock)
-                if in_aquifer
-                    wf_clamped = min(water_fraction, T(0.9))
-                    water_frac = wf_clamped
-                    rock_frac = one(T) - wf_clamped
-                end
-
-                # Add shallow air everywhere in the shallow zone
                 if in_shallow
-                    air_frac = shallow_air_fraction
-                    remaining = one(T) - air_frac
-                    rock_frac *= remaining
-                    water_frac *= remaining
-                end
+                    materials[idx] = MaterialMixture(porous_wet_rock_idx)
+                    densities[idx] = porous_density
 
-                # Build the mixture and effective density
-                if water_frac > zero(T) && air_frac > zero(T)
-                    materials[idx] = MaterialMixture(
-                        [rock_idx, water_idx, air_idx],
-                        [rock_frac, water_frac, air_frac])
-                    densities[idx] = rock_frac * rock_density +
-                                     water_frac * water_density +
-                                     air_frac * air_density_surface
-                elseif water_frac > zero(T)
+                    if in_aquifer && water_fraction > zero(T)
+                        wf_clamped = min(water_fraction, T(0.9))
+                        porous_frac = (one(T) - wf_clamped) * T(0.5)
+                        rock_frac   = (one(T) - wf_clamped) * T(0.5)
+                        materials[idx] = MaterialMixture(
+                            [porous_wet_rock_idx, rock_idx, water_idx],
+                            [porous_frac, rock_frac, wf_clamped])
+                        densities[idx] = porous_frac * porous_density +
+                                         rock_frac * rock_density +
+                                         wf_clamped * water_density
+                    end
+                elseif in_aquifer && water_fraction > zero(T)
+                    wf_clamped = min(water_fraction, T(0.9))
+                    rock_frac = one(T) - wf_clamped
                     materials[idx] = MaterialMixture(
                         [rock_idx, water_idx],
-                        [rock_frac, water_frac])
+                        [rock_frac, wf_clamped])
                     densities[idx] = rock_frac * rock_density +
-                                     water_frac * water_density
-                elseif air_frac > zero(T)
-                    materials[idx] = MaterialMixture(
-                        [rock_idx, air_idx],
-                        [rock_frac, air_frac])
-                    densities[idx] = rock_frac * rock_density +
-                                     air_frac * air_density_surface
+                                     wf_clamped * water_density
                 end
-                # else: stays pure rock at rock_density (the default)
             end
         end
     end
@@ -712,12 +692,13 @@ end
 """
 Run Part 2.1: Water-fraction sweep and hole enlargement.
 
-Part 2.1a: Fixed 50m aquifer at 500m depth; sweep water fraction from 0% to 100%.
-Part 2.1b: 90% water aquifer; enlarge from 50m to 500m.
+Part 2.1a: Fixed 100m aquifer at 500m depth; sweep water fraction from 0% to 90%.
+Part 2.1b: 90% water aquifer; enlarge from 100m to 500m.
 
-Shallow air (10%) is mixed into all cells within 100m of the surface.
+Top 100m is porous wet rock (PorousWetRock composite).
 """
-function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
+function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int,
+                      porous_idx::Int, porous_density::Float64;
                       n_samples::Int = 1000,
                       straggling::Bool = true,
                       scattering::Bool = true,
@@ -733,29 +714,30 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     println()
     
     rock_thickness = 1000.0
-    cube_width = 500.0
+    cube_width_x = 100.0
+    cube_width_y = 500.0
     cell_size = 10.0
     
-    cube = MuographyCube(rock_thickness, cube_width, cell_size, rock_idx, air_idx)
+    cube = MuographyCube(rock_thickness, cube_width_x, cube_width_y, cell_size, rock_idx, air_idx)
     
     println("Cube geometry:")
     println("  Rock thickness: $(rock_thickness)m")
-    println("  Cube width: $(cube_width)m")
+    println("  Cube width: $(cube_width_x)m (x) × $(cube_width_y)m (y)")
     println("  Cell size: $(cell_size)m")
     println("  Grid: $(cube.nx) × $(cube.ny) × $(cube.nz)")
     println()
     
     zeniths = collect(0.0:2.0:60.0)
     
-    # Aquifer at 500m depth: z=[450, 500], centered at z=475
+    # Aquifer at 500m depth: z=[450, 500], centered at z=450
     aquifer_depth = 500.0
-    aquifer_hs = (25.0, 25.0, 25.0)  # 50m cube
-    aquifer_center = (0.0, 0.0, aquifer_depth - aquifer_hs[3])  # center at (0,0,475)
+    aquifer_hs = (50.0, 50.0, 50.0)  # 100m cube
+    aquifer_center = (0.0, 0.0, aquifer_depth - aquifer_hs[3])  # center at (0,0,450)
     
     # -------------------------------------------------------------------------
     # Part 2.1a: Sweep water fraction from 0% (pure rock) to 90% (max water)
     # -------------------------------------------------------------------------
-    println("Part 2.1a: Water-fraction sweep at 500m depth (50m × 50m × 50m)")
+    println("Part 2.1a: Water-fraction sweep at 500m depth (100m × 100m × 100m)")
     println("-" ^ 50)
     
     scenarios_water = Tuple{String, Vector{Float64}, Vector{Float64}}[]
@@ -764,7 +746,8 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
         wf = Float64(water_pct) / 100.0
         
         densities, cell_mats = create_cell_config(
-            cube, rock_idx, water_idx, air_idx,
+            cube, rock_idx, water_idx,
+            porous_idx, porous_density,
             aquifer_center, aquifer_hs, wf)
         
         label = if water_pct == 0
@@ -786,10 +769,10 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     create_aquifer_plot(zeniths, scenarios_water;
                         output_path=joinpath(output_dir, "part2_1a_water_fraction.html"),
                         title="Part 2.1a: Flux vs Angle - Water Fraction at 500m<br>" *
-                              "<sub>50m cube, 0-90% water (≥10% rock), shallow 10% air above 900m</sub>")
+                              "<sub>100m cube, 0-90% water (≥10% rock), porous wet rock above 900m</sub>")
     
     # -------------------------------------------------------------------------
-    # Part 2.1b: 90% water aquifer, enlarge from 50m to 500m
+    # Part 2.1b: 90% water aquifer, enlarge from 100m to 500m
     # -------------------------------------------------------------------------
     println()
     println("Part 2.1b: Hole enlargement with 90% water aquifer")
@@ -797,10 +780,10 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     
     scenarios_hole = Tuple{String, Vector{Float64}, Vector{Float64}}[]
     
-    # Re-use baseline from sweep
     densities_bl, mats_bl = create_cell_config(
-        cube, rock_idx, water_idx, air_idx,
-        aquifer_center, aquifer_hs, 0.0)  # 0% water = baseline
+        cube, rock_idx, water_idx,
+        porous_idx, porous_density,
+        aquifer_center, aquifer_hs, 0.0)
     flux_bl, sigma_bl = compute_cube_flux_vs_angle(
         physics, cube, densities_bl, zeniths;
         n_samples=n_samples, straggling=straggling, scattering=scattering,
@@ -808,16 +791,17 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
         cell_materials=mats_bl)
     push!(scenarios_hole, ("Baseline", flux_bl, sigma_bl))
     
-    # Enlarge: half-size from 25m to 250m.  Aquifer grows downward from 500m.
-    for half_size in 25.0:25.0:250.0
+    # Enlarge: half-size from 50m to 250m.  Aquifer grows downward from 500m.
+    for half_size in 50.0:50.0:250.0
         size = 2 * half_size
         center_z = aquifer_depth - half_size         # top stays at 500m
-        hs = (25.0, half_size, half_size)             # x stays 50m; y & z grow
+        hs = (50.0, half_size, half_size)             # x stays 100m; y & z grow
         center = (0.0, 0.0, center_z)
         
         densities, cell_mats = create_cell_config(
-            cube, rock_idx, water_idx, air_idx,
-            center, hs, 0.9)  # 90% water (10% rock retained)
+            cube, rock_idx, water_idx,
+            porous_idx, porous_density,
+            center, hs, 0.9)
         
         @info "Computing hole=$(Int(size))m (90% water)..."
         flux, sigma = compute_cube_flux_vs_angle(
@@ -832,7 +816,7 @@ function run_part2_1(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     create_aquifer_plot(zeniths, scenarios_hole;
                         output_path=joinpath(output_dir, "part2_1b_hole_enlargement.html"),
                         title="Part 2.1b: Flux vs Angle - 90% Water Aquifer Enlargement<br>" *
-                              "<sub>Top at 500m, enlarging downward; shallow 10% air above 900m</sub>")
+                              "<sub>Top at 500m, enlarging downward; porous wet rock above 900m</sub>")
     
     println()
     println("Part 2.1 complete!")
@@ -845,17 +829,16 @@ end
 """
 Run Part 2.2: Move a 90% water aquifer vertically and horizontally.
 
-Geometry note: In backward MC the particle starts at (0, 0, 0) and the motion
-direction is (+dir_x, +dir_y, +dir_z) where dir_y = sin(theta) > 0 for
-positive zenith angles.  So the muon trajectory crosses positive-y territory.
-A muon at zenith angle theta and altitude z crosses the y-axis at
-    y(z) = z * tan(theta)
+Geometry note: In backward MC the particle starts at (0, 0, 0) and the muon
+trajectory crosses the y-z plane at varying y depending on zenith angle and
+azimuth.  With random azimuth sampling, all directions contribute.
 Part 2.2b places the aquifer at 100m depth and sweeps it along y so the flux
 bump scans across zenith angles.
 
-Shallow air (10%) is mixed into all cells within 100m of the surface.
+Top 100m is porous wet rock (PorousWetRock composite).
 """
-function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
+function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int,
+                      porous_idx::Int, porous_density::Float64;
                       n_samples::Int = 1000,
                       straggling::Bool = true,
                       scattering::Bool = true,
@@ -871,25 +854,27 @@ function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     println()
     
     rock_thickness = 1000.0
-    cube_width = 1100.0  # Wide enough for horizontal displacement
+    cube_width_x = 100.0
+    cube_width_y = 1100.0
     cell_size = 10.0
     
-    cube = MuographyCube(rock_thickness, cube_width, cell_size, rock_idx, air_idx)
+    cube = MuographyCube(rock_thickness, cube_width_x, cube_width_y, cell_size, rock_idx, air_idx)
     
     println("Cube geometry:")
     println("  Rock thickness: $(rock_thickness)m")
-    println("  Cube width: $(cube_width)m")
+    println("  Cube width: $(cube_width_x)m (x) × $(cube_width_y)m (y)")
     println("  Cell size: $(cell_size)m")
     println("  Grid: $(cube.nx) × $(cube.ny) × $(cube.nz)")
     println()
     
     zeniths = collect(0.0:2.0:60.0)
-    aquifer_hs = (25.0, 25.0, 25.0)  # 50m cube
+    aquifer_hs = (50.0, 50.0, 50.0)  # 100m cube
     
-    # ---- Baseline (no aquifer, with shallow air) ----------------------------
+    # ---- Baseline (no aquifer, with porous wet rock) -------------------------
     densities_bl, mats_bl = create_cell_config(
-        cube, rock_idx, water_idx, air_idx,
-        (0.0, 0.0, -1000.0),  # put aquifer outside the cube (no effect)
+        cube, rock_idx, water_idx,
+        porous_idx, porous_density,
+        (0.0, 0.0, -1000.0),
         aquifer_hs, 0.0)
     flux_baseline, sigma_baseline = compute_cube_flux_vs_angle(
         physics, cube, densities_bl, zeniths;
@@ -899,7 +884,7 @@ function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     
     # -------------------------------------------------------------------------
     # Part 2.2a: Move 90% water aquifer vertically (y=0, x=0)
-    # z from 25m to 975m (i.e. depth 50m to 1000m)
+    # z from 50m to 950m (i.e. depth 100m to 1000m)
     # -------------------------------------------------------------------------
     println("Part 2.2a: Moving 90% water aquifer vertically (on-axis)")
     println("-" ^ 50)
@@ -912,10 +897,11 @@ function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
         center = (0.0, 0.0, center_z)
         
         densities, cell_mats = create_cell_config(
-            cube, rock_idx, water_idx, air_idx,
-            center, aquifer_hs, 0.9)  # 90% water (10% rock retained)
+            cube, rock_idx, water_idx,
+            porous_idx, porous_density,
+            center, aquifer_hs, 0.9)
         
-        @info "Computing depth=$(Int(depth))m  (z=[$(Int(depth-50)),$(Int(depth))]m) ..."
+        @info "Computing depth=$(Int(depth))m  (z=[$(Int(depth-100)),$(Int(depth))]m) ..."
         flux, sigma = compute_cube_flux_vs_angle(
             physics, cube, densities, zeniths;
             n_samples=n_samples, straggling=straggling, scattering=scattering,
@@ -928,14 +914,14 @@ function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     create_aquifer_plot(zeniths, scenarios_vert;
                         output_path=joinpath(output_dir, "part2_2a_vertical_movement.html"),
                         title="Part 2.2a: Flux vs Angle - 90% Water Aquifer Moving Vertically<br>" *
-                              "<sub>50m cube, on-axis (x=y=0); shallow 10% air above 900m</sub>")
+                              "<sub>100m cube, on-axis (x=y=0); porous wet rock above 900m</sub>")
     
     # -------------------------------------------------------------------------
-    # Part 2.2b: Aquifer at z=[50,100] (100m depth), move along +y
+    # Part 2.2b: Aquifer at z=[50,150] (100m depth), move along +y
     #
-    # A muon at zenith θ crosses altitude z=75 at y = 75 * tan(θ).
+    # A muon at zenith θ crosses altitude z=100 at y = 100 * tan(θ).
     # By placing the aquifer at that y we expect a flux bump near θ.
-    # Sweep y_center from 0 to ~150m so the bump scans across angles.
+    # Sweep y_center from 0 to ~200m so the bump scans across angles.
     # -------------------------------------------------------------------------
     println()
     println("Part 2.2b: Moving 90% water aquifer along y (zenith direction) at 100m depth")
@@ -944,17 +930,18 @@ function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     scenarios_horiz = Tuple{String, Vector{Float64}, Vector{Float64}}[]
     push!(scenarios_horiz, ("Baseline", flux_baseline, sigma_baseline))
     
-    aquifer_z_center = 75.0  # z=[50,100]
+    aquifer_z_center = 100.0  # z=[50,150]
     
-    for y_center in 0.0:25.0:150.0
+    for y_center in 0.0:50.0:200.0
         center = (0.0, y_center, aquifer_z_center)
         
         # Which zenith angle does this correspond to?
         theta_expected = atand(y_center / aquifer_z_center)
         
         densities, cell_mats = create_cell_config(
-            cube, rock_idx, water_idx, air_idx,
-            center, aquifer_hs, 0.9)  # 90% water (10% rock retained)
+            cube, rock_idx, water_idx,
+            porous_idx, porous_density,
+            center, aquifer_hs, 0.9)
         
         @info "Computing y_center=$(Int(y_center))m (θ≈$(@sprintf("%.0f",theta_expected))°) ..."
         flux, sigma = compute_cube_flux_vs_angle(
@@ -969,93 +956,12 @@ function run_part2_2(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
     create_aquifer_plot(zeniths, scenarios_horiz;
                         output_path=joinpath(output_dir, "part2_2b_horizontal_movement.html"),
                         title="Part 2.2b: Flux vs Angle - 90% Water Aquifer Moving Along y<br>" *
-                              "<sub>50m cube at z=[50,100]m (100m depth); shallow 10% air above 900m</sub>")
+                              "<sub>100m cube at z=[50,150]m (100m depth); porous wet rock above 900m</sub>")
     
     println()
     println("Part 2.2 complete!")
 end
 
-# =============================================================================
-# Part 3: Rock-to-Water Sweep with Shallow Air Mix (Material Mixtures)
-# =============================================================================
-
-"""
-Run Part 3: Aquifer with rock-to-water material sweep.
-Water fraction goes from 0% (100% rock) to 90% (max water, 10% rock retained).
-200m-thick aquifer at z=[400,600]m.  Shallow 10% air above 900m (everywhere).
-Uses `create_cell_config` (same as Part 2).
-"""
-function run_part3(physics, rock_idx::Int, air_idx::Int, water_idx::Int;
-                    n_samples::Int = 1000,
-                    straggling::Bool = true,
-                    scattering::Bool = true,
-                    energy_threshold_low::Float64 = 100.0,
-                    energy_min::Float64 = 1e-3,
-                    energy_max::Float64 = 1e9,
-                    output_dir::String)
-
-    println()
-    println("=" ^ 60)
-    println(" Part 3: Rock-to-Water Sweep with Material Mixtures")
-    println("=" ^ 60)
-    println()
-
-    rock_thickness = 1000.0
-    cube_width = 500.0
-    cell_size = 10.0
-
-    cube = MuographyCube(rock_thickness, cube_width, cell_size, rock_idx, air_idx)
-
-    println("Cube geometry:")
-    println("  Rock thickness: $(rock_thickness)m")
-    println("  Cube width: $(cube_width)m")
-    println("  Cell size: $(cell_size)m")
-    println("  Grid: $(cube.nx) x $(cube.ny) x $(cube.nz)")
-    println()
-
-    zeniths = collect(0.0:2.0:60.0)
-
-    # Aquifer occupies z = 400m to 600m (200m thick centred at 500m)
-    # Represented as a box: center z=500, half-size z=100
-    aquifer_center = (0.0, 0.0, 500.0)
-    aquifer_hs = (250.0, 250.0, 100.0)  # covers full cube width, 200m in z
-
-    # -------------------------------------------------------------------------
-    # Sweep from 0% water (pure rock) to 90% water in 10% steps
-    # -------------------------------------------------------------------------
-    scenarios = Tuple{String, Vector{Float64}, Vector{Float64}}[]
-
-    for water_pct in 0:10:90
-        water_frac = Float64(water_pct) / 100.0
-
-        densities, cell_mats = create_cell_config(
-            cube, rock_idx, water_idx, air_idx,
-            aquifer_center, aquifer_hs, water_frac)
-
-        label = if water_pct == 0
-            "100% rock (baseline)"
-        else
-            "$(100 - water_pct)% rock + $(water_pct)% water"
-        end
-
-        @info "Computing mixture: $label ..."
-        flux, sigma = compute_cube_flux_vs_angle(
-            physics, cube, densities, zeniths;
-            n_samples=n_samples, straggling=straggling, scattering=scattering,
-            energy_threshold_low=energy_threshold_low, energy_min=energy_min, energy_max=energy_max,
-            cell_materials=cell_mats)
-
-        push!(scenarios, (label, flux, sigma))
-    end
-
-    create_aquifer_plot(zeniths, scenarios;
-                        output_path=joinpath(output_dir, "part3_rock_to_water_sweep.html"),
-                        title="Part 3: Aquifer Rock-to-Water Sweep (max 90% water)<br>" *
-                              "<sub>z=[400,600]m, shallow (z>900m) gets 10% air (everywhere)</sub>")
-
-    println()
-    println("Part 3 complete!")
-end
 
 # =============================================================================
 # Main
@@ -1161,8 +1067,8 @@ function main()
     # Create output directory
     mkpath(args.output_dir)
     
-    # Load physics
-    physics = load_or_create_physics(args.dump_path)
+    # Load physics (composites from MDF get precomputed tables)
+    physics = load_or_create_physics(args.dump_path; mdf_path=DEFAULT_MDF)
     if physics === nothing
         println("ERROR: Failed to load physics")
         return 1
@@ -1170,10 +1076,12 @@ function main()
     print_physics_summary(physics)
     println()
     
-    # Get material indices
+    # Get material indices (base + composites)
     rock_idx = get_material_index(physics, "StandardRock")
     air_idx = get_material_index(physics, "Air")
     water_idx = get_material_index(physics, "Water")
+    porous_idx = get_material_index(physics, "PorousWetRock")
+    wet_rock_idx = get_material_index(physics, "WetRock")
     
     if rock_idx == -1 || air_idx == -1
         println("ERROR: Required materials (StandardRock, Air) not found")
@@ -1184,8 +1092,15 @@ function main()
     end
     
     println("Material indices: rock=$rock_idx, air=$air_idx, water=$water_idx")
+    if wet_rock_idx != -1
+        println("  WetRock (composite): $wet_rock_idx")
+    end
+    if porous_idx != -1
+        println("  PorousWetRock (composite): $porous_idx " *
+                "(density=$(round(physics.tables[porous_idx].density; digits=1)) kg/m³)")
+    end
     println()
-    
+
     # =========================================================================
     # Part 1: Baseline flux vs angle for various depths
     # =========================================================================
@@ -1224,11 +1139,15 @@ function main()
         println("Part 1 complete!")
     end
     
+    # Composite density from precomputed table (used by Parts 2 & 3)
+    p_density = porous_idx != -1 ? Float64(physics.tables[porous_idx].density) : 2650.0
+
     # =========================================================================
-    # Part 2: Water aquifer detection (requires Water material)
+    # Part 2: Water aquifer detection (requires Water + PorousWetRock)
     # =========================================================================
-    if (args.part == 0 || args.part == 2) && water_idx != -1
-        run_part2_1(physics, rock_idx, air_idx, water_idx;
+    if (args.part == 0 || args.part == 2) && water_idx != -1 && porous_idx != -1
+        run_part2_1(physics, rock_idx, air_idx, water_idx,
+                    porous_idx, p_density;
                     n_samples=args.n_samples,
                     straggling=args.straggling,
                     scattering=args.scattering,
@@ -1237,7 +1156,8 @@ function main()
                     energy_max=args.energy_max,
                     output_dir=args.output_dir)
         
-        run_part2_2(physics, rock_idx, air_idx, water_idx;
+        run_part2_2(physics, rock_idx, air_idx, water_idx,
+                    porous_idx, p_density;
                     n_samples=args.n_samples,
                     straggling=args.straggling,
                     scattering=args.scattering,
@@ -1247,19 +1167,6 @@ function main()
                     output_dir=args.output_dir)
     end
     
-    # =========================================================================
-    # Part 3: Rock-to-Water Sweep with Material Mixtures
-    # =========================================================================
-    if (args.part == 0 || args.part == 3) && water_idx != -1
-        run_part3(physics, rock_idx, air_idx, water_idx;
-                  n_samples=args.n_samples,
-                  straggling=args.straggling,
-                  scattering=args.scattering,
-                  energy_threshold_low=args.energy_threshold_low,
-                  energy_min=args.energy_min,
-                  energy_max=args.energy_max,
-                  output_dir=args.output_dir)
-    end
     
     println()
     println("=" ^ 60)

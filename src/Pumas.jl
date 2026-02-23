@@ -34,24 +34,36 @@ Convention:
 zenith_to_elevation(zenith::Float64) = 90.0 - zenith
 
 """
-    load_or_create_physics(dump_path; verbose=true)
+    load_or_create_physics(dump_path; mdf_path=nothing, verbose=true)
 
 Load physics tables from dump file, or create new ones if not found.
+When `mdf_path` is provided, `<composite>` elements in the MDF get their
+own precomputed tables (matching PUMAS C).
 
 # Arguments
 - `dump_path`: Path to the .pumas binary dump file
+- `mdf_path`: Path to MDF XML file (optional; composites are parsed from here)
 - `verbose`: Print status messages (default: true)
 
 # Returns
 - PhysicsTables object, or nothing if loading fails
 """
-function load_or_create_physics(dump_path::String; verbose::Bool=true)
+function load_or_create_physics(dump_path::String;
+                                mdf_path::Union{String, Nothing}=nothing,
+                                verbose::Bool=true)
     if isfile(dump_path)
         verbose && println("Loading physics from binary dump...")
         verbose && println("  Dump file: $(dump_path)")
         physics = load_physics(dump_path)
         if physics !== nothing
             required = ["StandardRock", "Air", "Water"]
+            if mdf_path !== nothing
+                mats_by_name = Dict{String,BaseMaterial}(
+                    "StandardRock" => STANDARD_ROCK, "Air" => AIR, "Water" => WATER)
+                for c in Loader.parse_mdf_composites(mdf_path; materials_by_name=mats_by_name)
+                    push!(required, c.name)
+                end
+            end
             missing_mats = filter(m -> !haskey(physics.materials, m), required)
             if isempty(missing_mats)
                 verbose && println("✓ Physics loaded successfully ($(length(physics.tables)) materials)")
@@ -64,8 +76,18 @@ function load_or_create_physics(dump_path::String; verbose::Bool=true)
     end
     
     verbose && println("Physics dump not found, creating new physics tables...")
+
+    comps = CompositeMaterial[]
+    if mdf_path !== nothing
+        mats_by_name = Dict{String,BaseMaterial}(
+            "StandardRock" => STANDARD_ROCK, "Air" => AIR, "Water" => WATER)
+        comps = Loader.parse_mdf_composites(mdf_path; materials_by_name=mats_by_name)
+        verbose && println("  Parsed $(length(comps)) composites from $(mdf_path)")
+    end
+
     physics = create_physics(MUON; n_energies=200, K_min=1e-3, K_max=1e9,
-                              materials=[STANDARD_ROCK, AIR, WATER])
+                              materials=[STANDARD_ROCK, AIR, WATER],
+                              composites=comps)
     mkpath(dirname(dump_path))
     save_physics(physics, dump_path)
     verbose && println("✓ Physics tables created and saved to $(dump_path)")

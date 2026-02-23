@@ -19,10 +19,12 @@ using ChainRulesCore
 using Random
 
 export PhysicsSettings, PhysicsTables
-export create_physics, property_range, property_stopping_power
+export create_physics, create_composite_table
+export property_range, property_stopping_power
 export property_kinetic_energy, property_proper_time
 export property_cross_section, property_transport_path
 export property_straggling, property_elastic_path
+export property_screening, property_spin_factor, mixture_ZoA
 export interpolate_table, get_material_index
 export load_physics_from_dedx
 
@@ -401,26 +403,143 @@ function create_material_table_empirical(material::BaseMaterial, particle::Parti
 end
 
 """
+    create_composite_table(composite, component_tables, component_fractions, particle, mass, settings)
+
+Build a `MaterialTable` for a composite material by weighted combination of
+already-computed component tables, matching PUMAS C `compute_composite_tables`.
+
+Stopping power, straggling, cross-section, and per-process stopping powers are
+mass-fraction-weighted sums.  Range and proper time are reintegrated from the
+combined stopping power.  Coulomb scattering is computed from the flattened
+atomic composition via `compute_coulomb_tables!`.
+"""
+function create_composite_table(composite::CompositeMaterial,
+                                component_tables::Vector{MaterialTable{T}},
+                                component_fractions::Vector{Float64},
+                                particle::Particle, mass::T,
+                                settings::PhysicsSettings) where T<:Real
+
+    ref = component_tables[1]
+    n = length(ref.energies)
+    energies = copy(ref.energies)
+    log_energies = copy(ref.log_energies)
+
+    csda_stopping = zeros(T, n)
+    mixed_stopping = zeros(T, n)
+    straggling_arr = zeros(T, n)
+    cross_section = zeros(T, n)
+    ionization = zeros(T, n)
+    brems = zeros(T, n)
+    pair = zeros(T, n)
+    photo = zeros(T, n)
+
+    for (tbl, f) in zip(component_tables, component_fractions)
+        fT = T(f)
+        @inbounds for i in 1:n
+            csda_stopping[i] += fT * tbl.csda_stopping_power[i]
+            mixed_stopping[i] += fT * tbl.mixed_stopping_power[i]
+            straggling_arr[i] += fT * tbl.straggling[i]
+            cross_section[i] += fT * tbl.cross_section[i]
+            ionization[i] += fT * tbl.ionization[i]
+            brems[i] += fT * tbl.bremsstrahlung[i]
+            pair[i] += fT * tbl.pair_production[i]
+            photo[i] += fT * tbl.photonuclear[i]
+        end
+    end
+
+    csda_range = zeros(T, n)
+    csda_range[1] = energies[1] / csda_stopping[1]
+    for i in 2:n
+        dK = energies[i] - energies[i-1]
+        dedx_avg = (csda_stopping[i] + csda_stopping[i-1]) / 2
+        csda_range[i] = csda_range[i-1] + dK / dedx_avg
+    end
+
+    mixed_range = zeros(T, n)
+    mixed_range[1] = energies[1] / mixed_stopping[1]
+    for i in 2:n
+        dK = energies[i] - energies[i-1]
+        dedx_avg = (mixed_stopping[i] + mixed_stopping[i-1]) / 2
+        mixed_range[i] = mixed_range[i-1] + dK / dedx_avg
+    end
+
+    csda_time = zeros(T, n)
+    for i in 2:n
+        K = energies[i]
+        K_prev = energies[i-1]
+        gamma = one(T) + K / mass
+        gamma_prev = one(T) + K_prev / mass
+        beta = sqrt(one(T) - one(T) / gamma^2)
+        beta_prev = sqrt(one(T) - one(T) / gamma_prev^2)
+        gamma_mid = (gamma + gamma_prev) / 2
+        beta_mid = (beta + beta_prev) / 2
+        dedx_avg = (csda_stopping[i] + csda_stopping[i-1]) / 2
+        dK = K - K_prev
+        csda_time[i] = csda_time[i-1] + dK / (dedx_avg * beta_mid * gamma_mid)
+    end
+
+    flat_mat = flatten_to_base_material(composite)
+    density = flat_mat.density
+    I_val = flat_mat.I
+    ZoA_val = flat_mat.ZoA
+
+    transport_path = zeros(T, n)
+    elastic_path_arr = zeros(T, n)
+    screening_param = zeros(T, n)
+    spin_factor_arr = zeros(T, n)
+    magnetic_rotation = zeros(T, n)
+    elastic_cutoff_arr = zeros(T, n)
+
+    compute_coulomb_tables!(flat_mat, Float64(mass),
+        settings.elastic_ratio, settings.cutoff,
+        Float64.(energies), Float64.(csda_range),
+        Float64(ZoA_val), Float64(I_val), Float64(density),
+        transport_path, elastic_path_arr, screening_param)
+
+    for i in 1:n
+        K = energies[i]
+        gamma = one(T) + K / mass
+        beta_sq = one(T) - one(T) / gamma^2
+        beta = sqrt(beta_sq)
+        p = sqrt(K * (K + 2mass))
+        spin_factor_arr[i] = coulomb_spin_factor(mass, K)
+        mu0 = screening_param[i]
+        elastic_cutoff_arr[i] = mu0 < T(1e-8) ? T(2) * sqrt(max(mu0, zero(T))) :
+            acos(max(one(T) - T(2) * mu0, -one(T)))
+        magnetic_rotation[i] = LARMOR_FACTOR / (beta * p)
+    end
+
+    return MaterialTable{T}(
+        composite.name, density, I_val, T(ZoA_val),
+        energies, log_energies, csda_stopping, csda_range, csda_time,
+        mixed_stopping, mixed_range, straggling_arr,
+        ionization, brems, pair, photo,
+        cross_section, transport_path, elastic_path_arr, elastic_cutoff_arr,
+        magnetic_rotation, screening_param, spin_factor_arr
+    )
+end
+
+"""
     create_physics(particle; kwargs...)
 
 Create physics tables for a given particle type.
 Automatically loads PUMAS dE/dx tables if available.
+Composites get their own precomputed tables (matching PUMAS C).
 """
 function create_physics(particle::Particle = MUON;
                         n_energies::Int = 200,
                         K_min::Float64 = 1e-3,  # GeV
                         K_max::Float64 = 1e9,   # GeV
                         materials::Vector{BaseMaterial} = [STANDARD_ROCK, AIR],
+                        composites::Vector{CompositeMaterial} = CompositeMaterial[],
                         settings::PhysicsSettings = PhysicsSettings())
     
-    # Set particle properties
     mass, ctau = if particle == MUON
         MUON_MASS, MUON_C_TAU
     else
         TAU_MASS, TAU_C_TAU
     end
     
-    # Create material tables
     material_dict = Dict{String, Int}()
     tables = MaterialTable{Float64}[]
     
@@ -429,7 +548,6 @@ function create_physics(particle::Particle = MUON;
     for (i, mat) in enumerate(materials)
         material_dict[mat.name] = i
         
-        # Try to load from PUMAS materials
         dedx_path = find_dedx_file(mat.name, particle_sym; base_path=settings.dedx_path)
         
         if isfile(dedx_path)
@@ -447,6 +565,26 @@ function create_physics(particle::Particle = MUON;
             energies = create_energy_grid(n_energies, K_min, K_max)
             push!(tables, create_material_table_empirical(mat, particle, mass, energies, settings))
         end
+    end
+    
+    # Build precomputed tables for composites (matching PUMAS C)
+    for comp in composites
+        comp_tables = MaterialTable{Float64}[]
+        for base_mat in comp.components
+            idx = get(material_dict, base_mat.name, nothing)
+            if idx === nothing
+                error("Component material \"$(base_mat.name)\" of composite " *
+                      "\"$(comp.name)\" not found in base materials. " *
+                      "Available: $(collect(keys(material_dict)))")
+            end
+            push!(comp_tables, tables[idx])
+        end
+        comp_idx = length(tables) + 1
+        material_dict[comp.name] = comp_idx
+        @info "Building composite table for $(comp.name) " *
+              "($(join(["$(c.name) $(round(f*100;digits=1))%" for (c,f) in zip(comp.components, comp.fractions)], " + ")))"
+        push!(tables, create_composite_table(comp, comp_tables, comp.fractions,
+                                              particle, mass, settings))
     end
     
     return PhysicsTables{Float64}(particle, mass, ctau, settings, material_dict, tables)
@@ -673,6 +811,21 @@ Get integrated proper time for given energy.
 end
 
 """
+    property_proper_time(physics, mode, mix::MaterialMixture, energy)
+
+Mixture proper time from cached integrated table.
+"""
+@inline function property_proper_time(physics::PhysicsTables{T}, mode::EnergyLossMode,
+                              mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_proper_time(physics, mode, single_material(mix), energy)
+    end
+    mtbl = get_mixture_table(physics, mix)
+    log_energy = log(energy)
+    return interpolate_table_fast(energy, log_energy, mtbl.energies, mtbl.log_energies, mtbl.csda_proper_time)
+end
+
+"""
     property_cross_section(physics, material, energy)
 
 Get total cross-section for hard events.
@@ -754,10 +907,113 @@ end
 # =============================================================================
 # Mixture-aware property functions
 # =============================================================================
-# For a MaterialMixture, continuous properties (stopping power, straggling)
-# are weighted sums over components. Range/energy inversion is not directly
-# available for mixtures (no precomputed table), so we provide dEdX-based
-# stepping helpers instead.
+# Continuous properties (stopping power, straggling, cross-section) are
+# fraction-weighted sums computed at query time.
+#
+# Range, inverse-range, and proper time require integrated tables.
+# A MixtureTable is built lazily the first time one of these is needed
+# for a given mixture, then cached globally.  The integration uses the
+# same trapezoidal rule as create_composite_table / create_material_table_empirical,
+# so the result is identical to a precomputed composite table.
+# =============================================================================
+
+"""
+    MixtureTable{T}
+
+Cached integrated tables for a `MaterialMixture`, built from the reference
+energy grid of the underlying `PhysicsTables`.  Makes `property_range`,
+`property_kinetic_energy`, and `property_proper_time` for mixtures exact
+(same procedure as for precomputed composite / base material tables).
+"""
+struct MixtureTable{T<:Real}
+    energies::Vector{T}
+    log_energies::Vector{T}
+    csda_range::Vector{T}
+    mixed_range::Vector{T}
+    csda_proper_time::Vector{T}
+end
+
+const _MIXTURE_TABLE_CACHE = Dict{Tuple{UInt64, Vector{Int}, Vector{Float64}}, MixtureTable{Float64}}()
+const _MIXTURE_TABLE_LOCK  = ReentrantLock()
+
+"""
+    _mixture_cache_key(physics, mix)
+
+Deterministic cache key: (objectid of physics, materials, fractions).
+"""
+@inline function _mixture_cache_key(physics::PhysicsTables{T}, mix::MaterialMixture) where T
+    return (objectid(physics), mix.materials, mix.fractions)
+end
+
+"""
+    build_mixture_table(physics, mix)
+
+Build CSDA/mixed range and proper-time tables for a `MaterialMixture` by
+trapezoidal integration of the mixture stopping power over the reference
+energy grid — exactly the same procedure used for precomputed composite
+and base-material tables.
+"""
+function build_mixture_table(physics::PhysicsTables{T}, mix::MaterialMixture) where T<:Real
+    ref = physics.tables[1]
+    n = length(ref.energies)
+    energies = ref.energies
+    log_energies = ref.log_energies
+    mass = physics.mass
+
+    csda_range = zeros(T, n)
+    mixed_range = zeros(T, n)
+    csda_time = zeros(T, n)
+
+    csda_stop_prev = property_stopping_power(physics, ENERGY_LOSS_CSDA, mix, energies[1])
+    mixed_stop_prev = property_stopping_power(physics, ENERGY_LOSS_MIXED, mix, energies[1])
+
+    csda_range[1] = energies[1] / csda_stop_prev
+    mixed_range[1] = energies[1] / mixed_stop_prev
+
+    for i in 2:n
+        K = energies[i]
+        K_prev = energies[i-1]
+        dK = K - K_prev
+
+        csda_stop = property_stopping_power(physics, ENERGY_LOSS_CSDA, mix, K)
+        mixed_stop = property_stopping_power(physics, ENERGY_LOSS_MIXED, mix, K)
+
+        csda_range[i] = csda_range[i-1] + dK / ((csda_stop + csda_stop_prev) / 2)
+        mixed_range[i] = mixed_range[i-1] + dK / ((mixed_stop + mixed_stop_prev) / 2)
+
+        gamma = one(T) + K / mass
+        gamma_prev = one(T) + K_prev / mass
+        beta = sqrt(one(T) - one(T) / gamma^2)
+        beta_prev = sqrt(one(T) - one(T) / gamma_prev^2)
+        dedx_avg = (csda_stop + csda_stop_prev) / 2
+        csda_time[i] = csda_time[i-1] + dK / (dedx_avg * ((beta + beta_prev) / 2) * ((gamma + gamma_prev) / 2))
+
+        csda_stop_prev = csda_stop
+        mixed_stop_prev = mixed_stop
+    end
+
+    return MixtureTable{T}(copy(energies), copy(log_energies),
+                           csda_range, mixed_range, csda_time)
+end
+
+"""
+    get_mixture_table(physics, mix)
+
+Retrieve or build the cached `MixtureTable` for a given mixture.
+Thread-safe via a ReentrantLock.
+"""
+function get_mixture_table(physics::PhysicsTables{T}, mix::MaterialMixture) where T<:Real
+    key = _mixture_cache_key(physics, mix)
+    tbl = get(_MIXTURE_TABLE_CACHE, key, nothing)
+    tbl !== nothing && return tbl::MixtureTable{Float64}
+    lock(_MIXTURE_TABLE_LOCK) do
+        tbl = get(_MIXTURE_TABLE_CACHE, key, nothing)
+        tbl !== nothing && return tbl::MixtureTable{Float64}
+        tbl = build_mixture_table(physics, mix)
+        _MIXTURE_TABLE_CACHE[key] = tbl
+        return tbl
+    end
+end
 
 """
     property_stopping_power(physics, mode, mix::MaterialMixture, energy)
@@ -830,65 +1086,112 @@ Mixture transport path: inverse of weighted sum of inverse transport paths.
 end
 
 """
+    property_screening(physics, mix::MaterialMixture, energy)
+
+Mixture screening parameter: fraction-weighted sum of per-material
+screening parameters.  This replaces the old dominant-material
+approximation and matches how a precomputed composite table stores
+its screening parameter (computed from the flattened composition).
+"""
+@inline function property_screening(physics::PhysicsTables{T}, mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_screening(physics, single_material(mix), energy)
+    end
+    mu0 = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        mu0 += T(mix.fractions[j]) * property_screening(physics, mix.materials[j], energy)
+    end
+    return max(mu0, T(1e-12))
+end
+
+"""
+    property_spin_factor(physics, mix::MaterialMixture, energy)
+
+Mixture spin factor: fraction-weighted sum of per-material spin factors.
+"""
+@inline function property_spin_factor(physics::PhysicsTables{T}, mix::MaterialMixture, energy::T) where T<:Real
+    if is_single_material(mix)
+        return property_spin_factor(physics, single_material(mix), energy)
+    end
+    sf = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        sf += T(mix.fractions[j]) * property_spin_factor(physics, mix.materials[j], energy)
+    end
+    return sf
+end
+
+"""
+    mixture_ZoA(physics, mix::MaterialMixture)
+
+Effective Z/A for a mixture: fraction-weighted sum of per-material Z/A.
+Used for the effective target mass in CM-frame scattering calculations.
+"""
+@inline function mixture_ZoA(physics::PhysicsTables{T}, mix::MaterialMixture) where T<:Real
+    if is_single_material(mix)
+        @inbounds return physics.tables[single_material(mix)].ZoA
+    end
+    zoa = zero(T)
+    @inbounds for j in eachindex(mix.materials)
+        zoa += T(mix.fractions[j]) * physics.tables[mix.materials[j]].ZoA
+    end
+    return zoa
+end
+
+"""
     property_range(physics, mode, mix::MaterialMixture, energy)
 
-Approximate mixture range from effective stopping power.
-For single material falls back to exact table. For mixtures, integrates
-1/dEdX_mix numerically (trapezoidal) over a small energy grid.
+Mixture range from cached integrated table — same procedure as for
+precomputed composite / base-material tables.
 """
 @inline function property_range(physics::PhysicsTables{T}, mode::EnergyLossMode,
                         mix::MaterialMixture, energy::T) where T<:Real
     if is_single_material(mix)
         return property_range(physics, mode, single_material(mix), energy)
     end
-    # Use dominant-material range scaled by ratio of stopping powers
-    # This is a fast approximation: X_mix ≈ X_dom * (dEdX_dom / dEdX_mix)
-    # Pick the material with the largest fraction
-    dom_idx = 1
-    @inbounds for j in 2:length(mix.materials)
-        if mix.fractions[j] > mix.fractions[dom_idx]
-            dom_idx = j
-        end
-    end
-    dom_mat = mix.materials[dom_idx]
-    X_dom = property_range(physics, mode, dom_mat, energy)
-    dedx_dom = property_stopping_power(physics, mode, dom_mat, energy)
-    dedx_mix = property_stopping_power(physics, mode, mix, energy)
-    if dedx_mix > zero(T) && dedx_dom > zero(T)
-        return X_dom * dedx_dom / dedx_mix
-    end
-    return X_dom
+    mtbl = get_mixture_table(physics, mix)
+    range_table = mode == ENERGY_LOSS_MIXED ? mtbl.mixed_range : mtbl.csda_range
+    log_energy = log(energy)
+    return interpolate_table_fast(energy, log_energy, mtbl.energies, mtbl.log_energies, range_table)
 end
 
 """
     property_kinetic_energy(physics, mode, mix::MaterialMixture, range)
 
-Approximate inverse range lookup for mixture.
-Uses dominant-material table with stopping-power ratio scaling.
+Inverse range lookup for mixture via cached integrated table — same
+binary-search + log-space interpolation as for single materials.
 """
 @inline function property_kinetic_energy(physics::PhysicsTables{T}, mode::EnergyLossMode,
                                  mix::MaterialMixture, range::T) where T<:Real
     if is_single_material(mix)
         return property_kinetic_energy(physics, mode, single_material(mix), range)
     end
-    # Pick the dominant material and scale the range
-    dom_idx = 1
-    @inbounds for j in 2:length(mix.materials)
-        if mix.fractions[j] > mix.fractions[dom_idx]
-            dom_idx = j
+    mtbl = get_mixture_table(physics, mix)
+    range_table = mode == ENERGY_LOSS_MIXED ? mtbl.mixed_range : mtbl.csda_range
+
+    n = length(range_table)
+    @inbounds if range <= range_table[1]
+        return mtbl.energies[1]
+    elseif range >= range_table[n]
+        return mtbl.energies[n]
+    end
+
+    lo, hi = 1, n
+    @inbounds while lo < hi - 1
+        mid = (lo + hi) >> 1
+        if range < range_table[mid]
+            hi = mid
+        else
+            lo = mid
         end
     end
-    dom_mat = mix.materials[dom_idx]
-    # First guess: use dominant table directly (range is roughly correct)
-    E_guess = property_kinetic_energy(physics, mode, dom_mat, range)
-    # Refine: compute actual mixture range at that energy, then adjust
-    X_mix = property_range(physics, mode, mix, E_guess)
-    if X_mix > zero(T)
-        # Scale the range and re-invert
-        adjusted_range = range * property_range(physics, mode, dom_mat, E_guess) / X_mix
-        return property_kinetic_energy(physics, mode, dom_mat, adjusted_range)
+    i = lo
+
+    @inbounds begin
+        t = (range - range_table[i]) / (range_table[i+1] - range_table[i])
+        log_E = mtbl.log_energies[i] + t * (mtbl.log_energies[i+1] - mtbl.log_energies[i])
     end
-    return E_guess
+
+    return exp(log_E)
 end
 
 """
