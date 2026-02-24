@@ -38,20 +38,41 @@ const PRIMARY_ALTITUDE = 3e4
 """
     TwoLayerGeometry{T}
 
-Simple two-layer geometry with rock and air layers.
-The rock layer has configurable thickness and density.
+Layered geometry with rock, air, and an optional shallow porous layer.
+
+When `porous_material > 0`, the top `porous_thickness` metres of the rock
+column (i.e. z ∈ [rock_thickness − porous_thickness, rock_thickness)) use
+`porous_material` / `porous_density` instead of the bulk rock.
 
 # Fields
-- `rock_thickness::T`: Rock layer thickness in m
-- `rock_density::T`: Rock density in kg/m³
+- `rock_thickness::T`: Total rock column thickness in m
+- `rock_density::T`: Bulk rock density in kg/m³
 - `rock_material::Int`: Material index for rock
 - `air_material::Int`: Material index for air
+- `porous_material::Int`: Material index for shallow porous layer (≤0 to disable)
+- `porous_density::T`: Density of the porous layer in kg/m³
+- `porous_thickness::T`: Thickness of the porous layer in m
 """
 struct TwoLayerGeometry{T<:Real}
     rock_thickness::T
     rock_density::T
     rock_material::Int
     air_material::Int
+    porous_material::Int
+    porous_density::T
+    porous_thickness::T
+    primary_altitude::T
+end
+
+function TwoLayerGeometry{T}(rock_thickness, rock_density, rock_material, air_material,
+                              porous_material, porous_density, porous_thickness) where T<:Real
+    TwoLayerGeometry{T}(rock_thickness, rock_density, rock_material, air_material,
+                        porous_material, porous_density, porous_thickness, T(PRIMARY_ALTITUDE))
+end
+
+function TwoLayerGeometry{T}(rock_thickness, rock_density, rock_material, air_material) where T<:Real
+    TwoLayerGeometry{T}(rock_thickness, rock_density, rock_material, air_material,
+                        -1, zero(T), zero(T), T(PRIMARY_ALTITUDE))
 end
 
 """
@@ -449,6 +470,7 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
                                              energy_threshold_low::T = T(100.0)) where T<:Real
     
     state = initial_state
+    primary_alt = geometry.primary_altitude
     
     # PUMAS-style dual mode transport with energy limit triggers
     ENERGY_THRESHOLD_LOW = energy_threshold_low  # Mode switch threshold (default 100 GeV)
@@ -464,7 +486,7 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             break
         end
         
-        if z >= PRIMARY_ALTITUDE - eps(T)
+        if z >= primary_alt - eps(T)
             # Reached primary altitude - success!
             break
         end
@@ -502,7 +524,7 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             z = state.position[3]
             
             # Check boundary conditions
-            if z < zero(T) || z >= PRIMARY_ALTITUDE - eps(T)
+            if z < zero(T) || z >= primary_alt - eps(T)
                 break
             end
             
@@ -519,15 +541,24 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             uz_motion = -state.direction[3]
             
             # Determine medium and step size
+            has_porous = geometry.porous_material > 0 && geometry.porous_thickness > zero(T)
+            porous_z = has_porous ? geometry.rock_thickness - geometry.porous_thickness : geometry.rock_thickness
+
             if z < geometry.rock_thickness
-                material = geometry.rock_material
-                density = geometry.rock_density
-                
-                # Step to rock-air interface
+                if has_porous && z >= porous_z
+                    material = geometry.porous_material
+                    density = geometry.porous_density
+                else
+                    material = geometry.rock_material
+                    density = geometry.rock_density
+                end
+
                 if uz_motion > eps(T)
-                    step_to_boundary = (geometry.rock_thickness - z) / uz_motion
+                    next_boundary = (has_porous && z < porous_z) ? porous_z : geometry.rock_thickness
+                    step_to_boundary = (next_boundary - z) / uz_motion
                 elseif uz_motion < -eps(T)
-                    step_to_boundary = -z / uz_motion
+                    prev_boundary = (has_porous && z >= porous_z) ? porous_z : zero(T)
+                    step_to_boundary = (prev_boundary - z) / uz_motion
                 else
                     step_to_boundary = T(1000.0)
                 end
@@ -535,9 +566,8 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
                 material = geometry.air_material
                 density = locals_air_at_altitude(z).density
                 
-                # Step to primary altitude or rock-air interface
                 if uz_motion > eps(T)
-                    step_to_boundary = (PRIMARY_ALTITUDE - z) / uz_motion
+                    step_to_boundary = (primary_alt - z) / uz_motion
                 elseif uz_motion < -eps(T)
                     step_to_boundary = (geometry.rock_thickness - z) / uz_motion
                 else
@@ -720,7 +750,7 @@ function compute_flux_single(physics::PhysicsTables{T},
                                                       energy_threshold_low=energy_threshold_low)
     
     # Check if reached primary altitude
-    if final_state.position[3] >= PRIMARY_ALTITUDE - T(1.0)
+    if final_state.position[3] >= geometry.primary_altitude - T(1.0)
         # Get the cos(theta) of the final direction (for flux evaluation)
         # In backward MC, the "incoming" direction at primary altitude
         # is opposite to what we traced
@@ -781,7 +811,7 @@ function compute_flux_single_with_state(physics::PhysicsTables{T},
                                                       rng=rng, straggling=straggling, scattering=scattering,
                                                       energy_threshold_low=energy_threshold_low)
 
-    if final_state.position[3] >= PRIMARY_ALTITUDE - T(1.0)
+    if final_state.position[3] >= geometry.primary_altitude - T(1.0)
         cos_theta_final = -final_state.direction[3]
         cos_theta_final = clamp(cos_theta_final, zero(T), one(T))
 
@@ -798,7 +828,7 @@ function compute_flux_single_with_state(physics::PhysicsTables{T},
 end
 
 """
-    compute_flux(physics, rock_density, rock_thickness, elevation, energy_min, energy_max; n_samples, seed, straggling, scattering, energy_threshold_low)
+    compute_flux(physics, rock_density, rock_thickness, elevation, energy_min, energy_max; n_samples, seed, straggling, scattering, energy_threshold_low, porous_material, porous_density, porous_thickness)
 
 Compute integrated muon flux using backward Monte Carlo.
 
@@ -814,6 +844,10 @@ Compute integrated muon flux using backward Monte Carlo.
 - `straggling`: Enable energy straggling (default: true)
 - `scattering`: Enable full scattering model (default: true)
 - `energy_threshold_low`: Energy threshold for mode switching in GeV (default: 100.0)
+- `porous_material`: Material index for shallow porous layer (≤0 to disable, default: -1)
+- `porous_density`: Density of the porous layer in kg/m³ (default: 0)
+- `porous_thickness`: Thickness of the porous layer in m (default: 0)
+- `primary_altitude`: Altitude at which the primary flux is sampled in m (default: PRIMARY_ALTITUDE)
 
 # Returns
 - `flux`: Average flux in m⁻² s⁻¹ sr⁻¹
@@ -829,7 +863,11 @@ function compute_flux(physics::PhysicsTables{T},
                       seed::Int = 42,
                       straggling::Bool = true,
                       scattering::Bool = true,
-                      energy_threshold_low::T = T(100.0)) where T<:Real
+                      energy_threshold_low::T = T(100.0),
+                      porous_material::Int = -1,
+                      porous_density::T = zero(T),
+                      porous_thickness::T = zero(T),
+                      primary_altitude::T = T(PRIMARY_ALTITUDE)) where T<:Real
     
     rng = Random.MersenneTwister(seed)
     
@@ -844,7 +882,9 @@ function compute_flux(physics::PhysicsTables{T},
         air_idx = length(physics.tables)
     end
     
-    geometry = TwoLayerGeometry{T}(rock_thickness, rock_density, rock_idx, air_idx)
+    geometry = TwoLayerGeometry{T}(rock_thickness, rock_density, rock_idx, air_idx,
+                                   porous_material, porous_density, porous_thickness,
+                                   primary_altitude)
     
     # Integration bounds (log-uniform sampling)
     rk = log(energy_max / energy_min)
@@ -1055,7 +1095,8 @@ function compute_flux_csda_direct(physics::PhysicsTables{T},
                                   rock_thickness::T,
                                   elevation::T,
                                   energy_initial::T,
-                                  charge::T) where T<:Real
+                                  charge::T;
+                                  primary_altitude::T = T(PRIMARY_ALTITUDE)) where T<:Real
     
     # Convert elevation (degrees from horizontal) to cos(zenith)
     elevation_rad = deg2rad(elevation)
@@ -1094,7 +1135,7 @@ function compute_flux_csda_direct(physics::PhysicsTables{T},
     # =========================================================================
     # Step 2: Transport through AIR layer
     # =========================================================================
-    X_air = compute_air_grammage(rock_thickness, PRIMARY_ALTITUDE, cos_theta)
+    X_air = compute_air_grammage(rock_thickness, primary_altitude, cos_theta)
     
     # Range at start of air (convert from rock energy to air range)
     X_initial_air = property_range(physics, ENERGY_LOSS_CSDA, air_material, energy_after_rock)
@@ -1116,7 +1157,7 @@ function compute_flux_csda_direct(physics::PhysicsTables{T},
     weight_air = dedx_final_air / dedx_initial_air
     
     # Decay weight through air (path length from rock top to primary altitude)
-    path_air = (PRIMARY_ALTITUDE - rock_thickness) / cos_theta_safe
+    path_air = (primary_altitude - rock_thickness) / cos_theta_safe
     E_avg_air = (energy_after_rock + energy_final) / 2
     decay_air = compute_decay_weight_from_path(physics, path_air, E_avg_air)
     

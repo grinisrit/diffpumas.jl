@@ -206,10 +206,12 @@ function compute_julia_flux_grid(physics,
             
             # Use provided straggling and scattering settings
             # compute_flux now returns (flux, sigma) with proper variance calculation
+            # primary_altitude=1e3 matches C code's PRIMARY_ALTITUDE = 1E+03
             flux, sigma = compute_flux(physics, 2650.0, thickness, elevation, 
                                energy_min, energy_max; n_samples=n_samples,
                                straggling=straggling, scattering=scattering,
-                               energy_threshold_low=energy_threshold_low)
+                               energy_threshold_low=energy_threshold_low,
+                               primary_altitude=1e3)
             
             results[(thickness, zenith)] = (flux, sigma)
         end

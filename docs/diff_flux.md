@@ -638,7 +638,9 @@ Sections 4.5–4.6 define composites and runtime mixtures. This section describe
 
 ### 6.1 Part 1: Baseline Studies
 
-Rock depths span 0–1000 m in 100 m steps; density is read from the physics table. Zenith angles span 0°–60° in 2° steps. All three subscenarios use the two-layer geometry (`TwoLayerGeometry`).
+Rock depths span 0–1000 m in 100 m steps; density is read from the physics table. Zenith angles span 0°–60° in 2° steps. All three subscenarios use the layered geometry (`TwoLayerGeometry`).
+
+The top 100 m of the rock column uses the **PorousWetRock** composite (precomputed in `materials.xml`), matching the shallow-layer treatment in Part 2. Below this shallow zone the material is Standard Rock; above the rock surface is the exponential air profile up to PRIMARY_ALTITUDE.
 
 - **1.1 Flux vs zenith angle.** For each depth, compute integrated flux (energy-averaged via log-uniform sampling) at each zenith angle. One curve per depth.
 - **1.2 Zenith angle scattering variance.** For each (depth, zenith) pair, run backward MC trajectories and record the final zenith $\theta_f$ at primary altitude. Plot $\mathrm{Var}(\theta_f - \theta_{\text{det}})$ vs zenith, one curve per depth, quantifying the angular spread due to multiple scattering.

@@ -2,14 +2,16 @@
 """
 muography.jl - Muon flux muography simulation with aquifer detection
 
+Materials: Standard Rock (2650 kg/m³), Water (1000 kg/m³), PorousWetRock (composite).
+Top 100m: porous wet rock (precomputed PorousWetRock composite from materials.xml).
+
 This script demonstrates muography techniques:
 1. Baseline studies (0–1000m depth in 100m steps, density from physics table)
+   Top 100m of rock column uses PorousWetRock composite.
    1.1 Flux vs zenith angle for various rock depths (one line per depth)
    1.2 Zenith angle scattering std. deviation vs zenith for each depth
    1.3 Flux vs zenith at 1000m depth for 100 fixed energies (one curve per energy)
 2. Aquifer detection using water material in a cubic rock volume (detector at 1000m)
-   Materials: Standard Rock (2650 kg/m³), Water (1000 kg/m³), PorousWetRock (composite).
-   Top 100m: porous wet rock (precomputed PorousWetRock composite from materials.xml).
    - 2.1a: Water fraction sweep from 0% (pure rock) to 90% (always ≥10% rock)
             at 500m depth, 100m × 100m × 100m aquifer
    - 2.1b: 90% water aquifer, enlarge from 100m to 500m at 500m depth
@@ -17,8 +19,8 @@ This script demonstrates muography techniques:
    - 2.2b: Moving 90% water aquifer (100m cube) along y (zenith direction) at 100m depth
 
 Geometry:
-    - Part 1: Rock thickness 0–1000m in 100m steps, density from physics table
-    - Part 2: Detector at 1000m depth (z=0), rock cube above
+    - Part 1: Rock thickness 0–1000m in 100m steps; top 100m is PorousWetRock
+    - Part 2: Detector at 1000m depth (z=0), rock cube above; top 100m is PorousWetRock
     - Air layer above rock to PRIMARY_ALTITUDE
 
 Usage:
@@ -65,10 +67,13 @@ const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
 
 
 """
-    compute_flux_vs_angle(physics, rock_idx, depths, zeniths; kwargs...)
+    compute_flux_vs_angle(physics, rock_idx, depths, zeniths; porous_material=-1, porous_density=0.0, porous_thickness=0.0, kwargs...)
 
 Compute integrated muon flux for each depth and zenith angle.
 Rock density is taken from the material table.
+
+When `porous_material > 0`, the top `porous_thickness` metres of the rock
+column use the porous material instead of bulk rock.
 """
 function compute_flux_vs_angle(physics,
                                 rock_idx::Int,
@@ -80,6 +85,9 @@ function compute_flux_vs_angle(physics,
                                 energy_threshold_low::Float64 = 100.0,
                                 energy_min::Float64 = 1e-3,
                                 energy_max::Float64 = 1e9,
+                                porous_material::Int = -1,
+                                porous_density::Float64 = 0.0,
+                                porous_thickness::Float64 = 0.0,
                                 verbose::Bool = true)
 
     rock_density = Float64(physics.tables[rock_idx].density)
@@ -106,7 +114,10 @@ function compute_flux_vs_angle(physics,
                                        n_samples=n_samples,
                                        straggling=straggling,
                                        scattering=scattering,
-                                       energy_threshold_low=energy_threshold_low)
+                                       energy_threshold_low=energy_threshold_low,
+                                       porous_material=porous_material,
+                                       porous_density=porous_density,
+                                       porous_thickness=porous_thickness)
 
             flux_grid[d_idx, z_idx] = flux
             sigma_grid[d_idx, z_idx] = sigma
@@ -186,11 +197,14 @@ end
 # --- Part 1.2: Zenith angle scattering standard deviation ---
 
 """
-    compute_zenith_std(physics, rock_idx, depths, zeniths; kwargs...)
+    compute_zenith_std(physics, rock_idx, air_idx, depths, zeniths; porous_material=-1, porous_density=0.0, porous_thickness=0.0, kwargs...)
 
 For each (depth, zenith), run `n_samples` backward MC trajectories and
 collect the final zenith angle at primary altitude.  Return the standard
 deviation of (θ_final − θ_detector) for each grid point.
+
+When `porous_material > 0`, the top `porous_thickness` metres of the rock
+column use the porous material instead of bulk rock.
 """
 function compute_zenith_std(physics,
                                   rock_idx::Int,
@@ -203,6 +217,9 @@ function compute_zenith_std(physics,
                                   energy_threshold_low::Float64 = 100.0,
                                   energy_min::Float64 = 1e-3,
                                   energy_max::Float64 = 1e9,
+                                  porous_material::Int = -1,
+                                  porous_density::Float64 = 0.0,
+                                  porous_thickness::Float64 = 0.0,
                                   seed::Int = 42,
                                   verbose::Bool = true)
 
@@ -224,7 +241,8 @@ function compute_zenith_std(physics,
             end
 
             elevation = zenith_to_elevation(zenith)
-            geometry  = TwoLayerGeometry{Float64}(depth, rock_density, rock_idx, air_idx)
+            geometry  = TwoLayerGeometry{Float64}(depth, rock_density, rock_idx, air_idx,
+                                                  porous_material, porous_density, porous_thickness)
             rng = Random.MersenneTwister(seed)
 
             delta_sum  = 0.0
@@ -305,7 +323,7 @@ end
 # --- Part 1.3: Flux vs zenith for fixed energies at 1000m depth ---
 
 """
-    compute_flux_fixed_energy(physics, rock_idx, air_idx, depth, zeniths; kwargs...)
+    compute_flux_fixed_energy(physics, rock_idx, air_idx, depth, zeniths; porous_material=-1, porous_density=0.0, porous_thickness=0.0, kwargs...)
 
 At a single `depth`, for each of `n_energies` log-spaced energy levels
 and each zenith angle, run `n_samples` backward MC trajectories (charge-
@@ -313,6 +331,9 @@ averaged) and return the mean flux.
 
 Returns `(energies, flux_grid, sigma_grid)` where the grids are
 `[n_zeniths, n_energies]`.
+
+When `porous_material > 0`, the top `porous_thickness` metres of the rock
+column use the porous material instead of bulk rock.
 """
 function compute_flux_fixed_energy(physics,
                                     rock_idx::Int,
@@ -326,12 +347,16 @@ function compute_flux_fixed_energy(physics,
                                     energy_threshold_low::Float64 = 100.0,
                                     energy_min::Float64 = 1e-3,
                                     energy_max::Float64 = 1e9,
+                                    porous_material::Int = -1,
+                                    porous_density::Float64 = 0.0,
+                                    porous_thickness::Float64 = 0.0,
                                     seed::Int = 42,
                                     verbose::Bool = true)
 
     rock_density = Float64(physics.tables[rock_idx].density)
     energies = exp.(range(log(energy_min), log(energy_max); length=n_energies))
-    geometry = TwoLayerGeometry{Float64}(depth, rock_density, rock_idx, air_idx)
+    geometry = TwoLayerGeometry{Float64}(depth, rock_density, rock_idx, air_idx,
+                                         porous_material, porous_density, porous_thickness)
 
     n_z = length(zeniths)
     n_e = length(energies)
@@ -1340,7 +1365,7 @@ function main()
         return 1
     end
     if water_idx == -1
-        println("WARNING: Water material not found; Parts 2 and 3 will be skipped")
+        println("WARNING: Water material not found; Part 2 will be skipped")
     end
     
     println("Material indices: rock=$rock_idx, air=$air_idx, water=$water_idx")
@@ -1352,6 +1377,10 @@ function main()
                 "(density=$(round(physics.tables[porous_idx].density; digits=1)) kg/m³)")
     end
     println()
+
+    # Composite density from precomputed table (used by Parts 1 & 2)
+    p_density = porous_idx != -1 ? Float64(physics.tables[porous_idx].density) : 0.0
+    shallow_depth = 100.0
 
     # =========================================================================
     # Part 1: Baseline flux vs angle for various depths
@@ -1367,6 +1396,10 @@ function main()
         zeniths = collect(0.0:2.0:60.0)
 
         println("Rock density from table: $(round(rock_density; digits=1)) kg/m³")
+        if porous_idx != -1
+            println("Porous wet rock layer: top $(Int(shallow_depth))m " *
+                    "(density=$(round(p_density; digits=1)) kg/m³)")
+        end
         println("Depths: $(Int.(depths))m")
         println("Zeniths: $(zeniths)°")
         println()
@@ -1383,7 +1416,10 @@ function main()
             scattering=args.scattering,
             energy_threshold_low=args.energy_threshold_low,
             energy_min=args.energy_min,
-            energy_max=args.energy_max
+            energy_max=args.energy_max,
+            porous_material=porous_idx,
+            porous_density=p_density,
+            porous_thickness=shallow_depth
         )
 
         create_flux_vs_angle_plot(depths, zeniths, flux_grid, sigma_grid;
@@ -1403,7 +1439,10 @@ function main()
             scattering=args.scattering,
             energy_threshold_low=args.energy_threshold_low,
             energy_min=args.energy_min,
-            energy_max=args.energy_max
+            energy_max=args.energy_max,
+            porous_material=porous_idx,
+            porous_density=p_density,
+            porous_thickness=shallow_depth
         )
 
         create_zenith_std_plot(depths, zeniths, std_grid;
@@ -1424,7 +1463,10 @@ function main()
             scattering=args.scattering,
             energy_threshold_low=args.energy_threshold_low,
             energy_min=args.energy_min,
-            energy_max=args.energy_max
+            energy_max=args.energy_max,
+            porous_material=porous_idx,
+            porous_density=p_density,
+            porous_thickness=shallow_depth
         )
 
         create_flux_fixed_energy_plot(energies_1_3, zeniths, flux_fe;
@@ -1434,9 +1476,6 @@ function main()
 
         println("Part 1 complete!")
     end
-    
-    # Composite density from precomputed table (used by Parts 2 & 3)
-    p_density = porous_idx != -1 ? Float64(physics.tables[porous_idx].density) : 2650.0
 
     # =========================================================================
     # Part 2: Water aquifer detection (requires Water + PorousWetRock)
