@@ -84,6 +84,7 @@ include("GaisserFlux.jl")
 include("Straggling.jl")
 include("Loader.jl")
 include("Geometry.jl")
+include("Turtle.jl")
 include("Plotting.jl")
 include("Pumas.jl")
 
@@ -100,6 +101,7 @@ using .GaisserFlux
 using .Straggling
 using .Loader
 using .Geometry
+using .Turtle
 using .Plotting
 using .Pumas
 
@@ -175,6 +177,24 @@ export compute_flux_csda_direct, compute_flux_differentiable_csda, compute_flux_
 export run_backward_mc, locals_rock, locals_air
 export PRIMARY_ALTITUDE, compute_air_grammage, compute_rock_grammage
 export compute_decay_weight_from_path
+
+# Export Turtle
+export ecef_from_geodetic, ecef_to_geodetic
+export ecef_from_horizontal, ecef_to_horizontal
+export LambertProjection, UTMProjection, parse_projection
+export projection_project, projection_unproject
+export ElevationMap, MapInfo
+export map_create, map_load, map_dump, map_fill, map_node
+export map_elevation, map_gradient, map_meta, map_projection
+export ElevationStack, stack_create, stack_elevation, stack_gradient, stack_load
+export Stepper, StepperSample
+export stepper_create, stepper_step, stepper_position
+export stepper_add_flat, stepper_add_map, stepper_add_stack, stepper_add_layer
+export stepper_geoid_set, stepper_geoid_get
+export stepper_range_get, stepper_range_set
+export stepper_slope_get, stepper_slope_set
+export stepper_resolution_get, stepper_resolution_set, stepper_reset
+export load_hgt, load_asc, load_grd
 
 # Export Plotting
 export plot_trajectories, plot_transport_path

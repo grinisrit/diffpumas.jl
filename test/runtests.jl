@@ -152,6 +152,116 @@ using LinearAlgebra
         # Note: gradient might be zero or very small for this simple test
     end
     
+    @testset "Turtle ECEF" begin
+        using DiffPumas.Turtle
+
+        # Round-trip: geodetic -> ECEF -> geodetic
+        lat0, lon0, alt0 = 45.764, 2.955, 500.0
+        ecef = ecef_from_geodetic(lat0, lon0, alt0)
+        lat1, lon1, alt1 = ecef_to_geodetic(ecef)
+
+        @test lat1 ≈ lat0 atol=1e-6
+        @test lon1 ≈ lon0 atol=1e-6
+        @test alt1 ≈ alt0 atol=0.01
+
+        # Pole test
+        ecef_pole = ecef_from_geodetic(90.0, 0.0, 0.0)
+        lat_p, lon_p, alt_p = ecef_to_geodetic(ecef_pole)
+        @test lat_p ≈ 90.0 atol=1e-6
+        @test alt_p ≈ 0.0 atol=0.1
+
+        # Horizontal direction round-trip
+        dir = ecef_from_horizontal(lat0, lon0, 26.0, 5.0)
+        az, el = ecef_to_horizontal(lat0, lon0, dir)
+        @test az ≈ 26.0 atol=1e-4
+        @test el ≈ 5.0 atol=1e-4
+
+        # Vertical direction
+        dir_up = ecef_from_horizontal(0.0, 0.0, 0.0, 90.0)
+        az_u, el_u = ecef_to_horizontal(0.0, 0.0, dir_up)
+        @test el_u ≈ 90.0 atol=1e-4
+    end
+
+    @testset "Turtle Projections" begin
+        using DiffPumas.Turtle
+
+        # UTM round-trip (zone 31N, centre of France)
+        proj = UTMProjection(31, 'N')
+        lat0, lon0 = 45.764, 2.955
+        x, y = projection_project(proj, lat0, lon0)
+        lat1, lon1 = projection_unproject(proj, x, y)
+        @test lat1 ≈ lat0 atol=1e-6
+        @test lon1 ≈ lon0 atol=1e-6
+
+        # Lambert 93 round-trip
+        lproj = LambertProjection("93")
+        x2, y2 = projection_project(lproj, lat0, lon0)
+        lat2, lon2 = projection_unproject(lproj, x2, y2)
+        @test lat2 ≈ lat0 atol=1e-4
+        @test lon2 ≈ lon0 atol=1e-4
+
+        # Parse projection string
+        p1 = parse_projection("UTM 31N")
+        @test p1 isa UTMProjection
+        p2 = parse_projection("Lambert 93")
+        @test p2 isa LambertProjection
+    end
+
+    @testset "Turtle ElevationMap" begin
+        using DiffPumas.Turtle
+
+        info = MapInfo(11, 11, (0.0, 10.0), (0.0, 10.0), (0.0, 100.0))
+        m = map_create(info)
+
+        # Fill with a plane z = x + 2*y
+        for ix in 0:10
+            for iy in 0:10
+                map_fill(m, ix, iy, Float64(ix + 2 * iy))
+            end
+        end
+
+        # Check node retrieval
+        x, y, z = map_node(m, 5, 3)
+        @test x ≈ 5.0
+        @test y ≈ 3.0
+        @test z ≈ 11.0
+
+        # Check interpolation
+        elev, inside = map_elevation(m, 5.5, 3.5)
+        @test inside
+        @test elev ≈ 12.5 atol=0.01
+
+        # Check outside
+        _, outside = map_elevation(m, -1.0, 5.0)
+        @test !outside
+
+        # Check gradient (should be ~(1, 2) for z = x + 2y)
+        gx, gy, gin = map_gradient(m, 5.0, 5.0)
+        @test gin
+        @test gx ≈ 1.0 atol=0.2
+        @test gy ≈ 2.0 atol=0.2
+    end
+
+    @testset "Turtle Stepper" begin
+        using DiffPumas.Turtle
+
+        s = stepper_create()
+        @test stepper_slope_get(s) ≈ 0.4
+        @test stepper_resolution_get(s) ≈ 0.01
+        @test stepper_range_get(s) ≈ 1.0
+
+        stepper_add_flat(s, 0.0)
+        stepper_slope_set(s, 1.0)
+
+        # Position on the flat surface at equator
+        pos, didx = stepper_position(s, 0.0, 0.0, 1.0, 0)
+        @test didx >= 0
+
+        # Step at the position (no direction = just sample)
+        sample, ds = stepper_step(s, pos)
+        @test ds >= 0.0
+    end
+
     @testset "Loader" begin
         physics = create_physics(MUON; n_energies=20, K_min=0.1, K_max=1e3)
         
