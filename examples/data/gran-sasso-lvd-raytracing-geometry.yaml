@@ -1,0 +1,855 @@
+schema_version: 1
+dataset_name: gran_sasso_lvd_raytracing_geometry
+source_pdf: "Doc - 09.09.2025 - 13-04.pdf"
+source_type: scanned_pdf_manual_extraction
+notes:
+  - "Distances and interval boundaries are approximate where derived from blurred profile axes."
+  - "The original report uses 4 effective material classes for A/Z/rho calculations."
+  - "Visible debris or morainic cover is kept as a separate interval label here, but it maps to the report's effective sandstone_marl class for transport properties."
+
+coordinate_convention:
+  detector_reference: "Gran Sasso underground laboratories / LVD reference point used in the report sections"
+  section_definition:
+    right_side_corresponds_to_phi: true
+    left_side_corresponds_to_phi_plus_180_deg: true
+  units:
+    distance: km
+    elevation: m
+    density: g_cm3
+
+formation_code_map:
+  Sb: "Scisti bituminosi"
+  Dl: "Dolomie"
+  Cm: "Calcare massiccio"
+  Co: "Corniola"
+  Va: "Verde ammonitico"
+  Ce: "Calcareniti ad entrochi"
+  Ma: "Maiolica"
+  Cr: "Calciruditi a rudiste"
+  Sr: "Scaglia rossa"
+  Sc: "Scaglia cinerea"
+  Cn: "Calcareniti macroforam."
+  Crv: "Calcareniti a Marne rosse e verdi"
+  Crn: "Calcareniti a spicole di spugne"
+  Cg: "Calcareniti a glauconite"
+  Mc: "Marne con cerrogna"
+  Mo: "Marne ad orbulina"
+  La6: "Laga Flysch"
+  La7: "Laga Flysch"
+  Dt: "Detrito eluviale"
+  Mo1: "Depositi morenici"
+  Mo2: "Depositi morenici"
+  Mo3: "Depositi morenici"
+
+effective_material_classes:
+  limestone:
+    density_g_cm3: 2.71
+    mean_Z: 11.43
+    mean_A: 22.90
+    included_formations: [Sb, Dl, Cm, Co, Ce, Ma, Cr, Cn, Cg]
+  limestone_marl:
+    density_g_cm3: 2.60
+    mean_Z: 10.94
+    mean_A: 21.96
+    included_formations: [Va, Sr, Sc, Crv, Crn]
+  marl:
+    density_g_cm3: 2.55
+    mean_Z: 10.49
+    mean_A: 21.12
+    included_formations: [Mc, Mo]
+  sandstone_marl:
+    density_g_cm3: 2.50
+    mean_Z: 10.34
+    mean_A: 20.76
+    included_formations: [La6, La7, Dt, Mo1, Mo2, Mo3]
+
+visual_material_aliases:
+  debris:
+    description: "Visible detrital or morainic cover in the profile figures"
+    effective_class_for_transport: sandstone_marl
+    typical_formations: [Dt, Mo1, Mo2, Mo3]
+
+sections:
+  - id: 1
+    name: "Section 1"
+    direction: "NW-SE"
+    phi_deg: 135.0
+    sides:
+      left:
+        label: NW
+        max_distance_km: 15.0
+        topographic_anchors:
+          - description: "Crosses M. Aquila"
+            elevation_m: 2500
+            side: NW
+            distance_km_from_detector: null
+            approximate: true
+          - description: "Highest point of the profile at about 1 km NW of the laboratories"
+            elevation_m: 2500
+            side: NW
+            distance_km_from_detector: 1.0
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 5.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 5.0
+            end_km: 7.0
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone
+            confidence: medium
+          - start_km: 7.0
+            end_km: 15.0
+            material_mode: surface_dominant
+            visual_material: debris
+            effective_material: sandstone_marl
+            underlying_bedrock_uncertain: true
+            confidence: low
+      right:
+        label: SE
+        max_distance_km: 14.6
+        topographic_anchors:
+          - description: "Campo Imperatore dominates the trace"
+            side: SE
+            distance_range_km: [1.0, 9.0]
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.0
+            end_km: 10.0
+            material_mode: surface_dominant
+            visual_material: debris
+            effective_material: sandstone_marl
+            notes: "Campo Imperatore interval; prose says roughly 1 to 9 km, chart suggests closer to 9-10 km."
+            confidence: low
+          - start_km: 10.0
+            end_km: 14.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 14.0
+            end_km: 14.6
+            material_mode: surface_dominant
+            visual_material: debris
+            effective_material: sandstone_marl
+            underlying_bedrock_uncertain: true
+            confidence: low
+
+  - id: 2
+    name: "Section 2"
+    direction: "S-N"
+    phi_deg: 0.0
+    sides:
+      left:
+        label: S
+        max_distance_km: 13.0
+        topographic_anchors:
+          - description: "Crosses M. Scindarella near the tunnel"
+            elevation_m: 2300
+            side: S
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.0
+            end_km: 3.5
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone
+            confidence: medium
+          - start_km: 3.5
+            end_km: 10.5
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 10.5
+            end_km: 13.0
+            material_mode: mixed
+            components: [limestone, sandstone_marl]
+            dominant_visual_material: limestone
+            notes: "Outer wedge may include surficial cover."
+            confidence: low
+      right:
+        label: N
+        max_distance_km: 9.4
+        topographic_anchors:
+          - description: "Crosses eastern declivities of Corno Grande"
+            elevation_m: 2400
+            side: N
+            distance_km_from_detector: 2.0
+            approximate: true
+          - description: "Profile descends toward Pietracamela valley and farther NE toward Teramo"
+            side: N
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 2.3
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 2.3
+            end_km: 3.4
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone_marl
+            confidence: medium
+          - start_km: 3.4
+            end_km: 5.2
+            material_mode: homogeneous
+            visual_material: sandstone_marl
+            effective_material: sandstone_marl
+            confidence: high
+          - start_km: 5.2
+            end_km: 9.4
+            material_mode: homogeneous
+            visual_material: marl
+            effective_material: marl
+            confidence: high
+
+  - id: 3
+    name: "Section 3"
+    direction: "W-E"
+    phi_deg: 90.0
+    sides:
+      left:
+        label: W
+        max_distance_km: 25.0
+        topographic_anchors:
+          - description: "Crosses declivities of M. Portella"
+            elevation_m: 2400
+            side: W
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 2.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 2.0
+            end_km: 4.0
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone_marl
+            confidence: medium
+          - start_km: 4.0
+            end_km: 10.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: high
+          - start_km: 10.0
+            end_km: 15.0
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone
+            confidence: medium
+          - start_km: 15.0
+            end_km: 25.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+      right:
+        label: E
+        max_distance_km: 11.0
+        topographic_anchors:
+          - description: "Crosses northern declivities of M. Brancastello"
+            elevation_m: 2400
+            side: E
+            distance_km_from_detector: 5.0
+            approximate: true
+          - description: "Crosses declivities of M. Prena"
+            elevation_m: 2300
+            side: E
+            distance_km_from_detector: null
+            approximate: true
+          - description: "Crosses declivities of M. Camicia"
+            elevation_m: 2500
+            side: E
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.5
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.5
+            end_km: 4.0
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone_marl
+            confidence: medium
+          - start_km: 4.0
+            end_km: 10.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 10.0
+            end_km: 11.0
+            material_mode: mixed
+            components: [limestone_marl, marl]
+            dominant_visual_material: marl
+            confidence: medium
+
+  - id: 4
+    name: "Section 4"
+    direction: "WSW-ENE"
+    phi_deg: 67.5
+    sides:
+      left:
+        label: WSW
+        max_distance_km: 7.0
+        topographic_anchors:
+          - description: "Maximum height linked to declivities of M. Aquila"
+            side: WSW
+            elevation_m: null
+            approximate: true
+          - description: "Crosses south declivity of M. Portella"
+            side: WSW
+            elevation_m: 2400
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.5
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.5
+            end_km: 4.5
+            material_mode: mixed
+            components: [limestone, limestone_marl]
+            dominant_visual_material: limestone
+            confidence: medium
+          - start_km: 4.5
+            end_km: 7.0
+            material_mode: surface_dominant
+            visual_material: debris
+            effective_material: sandstone_marl
+            underlying_bedrock_uncertain: true
+            confidence: low
+      right:
+        label: ENE
+        max_distance_km: 3.25
+        topographic_anchors: []
+        intervals:
+          - start_km: 0.0
+            end_km: 1.2
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.2
+            end_km: 2.2
+            material_mode: mixed
+            components: [limestone_marl, marl]
+            dominant_visual_material: limestone_marl
+            confidence: medium
+          - start_km: 2.2
+            end_km: 3.25
+            material_mode: homogeneous
+            visual_material: sandstone_marl
+            effective_material: sandstone_marl
+            confidence: high
+
+  - id: 5
+    name: "Section 5"
+    direction: "NNW-SSE"
+    phi_deg: 157.5
+    sides:
+      left:
+        label: NNW
+        max_distance_km: 9.4
+        topographic_anchors:
+          - description: "Crosses Corno Grande"
+            elevation_m: 2900
+            side: NNW
+            distance_km_from_detector: 2.0
+            approximate: true
+          - description: "Crosses Corno Piccolo"
+            elevation_m: 2800
+            side: NNW
+            distance_km_from_detector: 3.0
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 4.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 4.0
+            end_km: 5.0
+            material_mode: mixed
+            components: [limestone_marl, marl]
+            dominant_visual_material: limestone_marl
+            confidence: medium
+          - start_km: 5.0
+            end_km: 9.4
+            material_mode: homogeneous
+            visual_material: sandstone_marl
+            effective_material: sandstone_marl
+            confidence: medium
+      right:
+        label: SSE
+        max_distance_km: 8.6
+        topographic_anchors:
+          - description: "Crosses Campo Imperatore"
+            side: SSE
+            distance_range_km: [1.0, 2.0]
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.0
+            end_km: 3.0
+            material_mode: mixed
+            components: [debris, limestone_marl, sandstone_marl]
+            dominant_visual_material: debris
+            effective_material_hint: sandstone_marl
+            confidence: low
+          - start_km: 3.0
+            end_km: 8.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 8.0
+            end_km: 8.6
+            material_mode: homogeneous
+            visual_material: sandstone_marl
+            effective_material: sandstone_marl
+            confidence: low
+
+  - id: 6
+    name: "Section 6"
+    direction: "SSW-NNE"
+    phi_deg: 22.5
+    sides:
+      left:
+        label: SSW
+        max_distance_km: 9.0
+        topographic_anchors:
+          - description: "Maximum height linked to M. Aquila"
+            side: SSW
+            elevation_m: null
+            approximate: true
+          - description: "Farthest SSW reaches detriti eluviali of the Aquila valley"
+            side: SSW
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.0
+            material_mode: homogeneous
+            visual_material: sandstone_marl
+            effective_material: sandstone_marl
+            notes: "Left of fault psi1."
+            confidence: medium
+          - start_km: 1.0
+            end_km: 3.2
+            material_mode: mixed
+            components: [limestone_marl, marl]
+            dominant_visual_material: limestone_marl
+            confidence: low
+          - start_km: 3.2
+            end_km: 8.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 8.0
+            end_km: 9.0
+            material_mode: mixed
+            components: [debris, sandstone_marl]
+            dominant_visual_material: debris
+            effective_material_hint: sandstone_marl
+            confidence: low
+      right:
+        label: NNE
+        max_distance_km: 3.0
+        topographic_anchors: []
+        intervals:
+          - start_km: 0.0
+            end_km: 1.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.0
+            end_km: 2.2
+            material_mode: mixed
+            components: [marl, limestone_marl]
+            dominant_visual_material: marl
+            confidence: medium
+          - start_km: 2.2
+            end_km: 3.0
+            material_mode: homogeneous
+            visual_material: sandstone_marl
+            effective_material: sandstone_marl
+            confidence: medium
+
+  - id: 7
+    name: "Section 7"
+    direction: "WNW-ESE"
+    phi_deg: 112.5
+    sides:
+      left:
+        label: WNW
+        max_distance_km: 15.25
+        topographic_anchors:
+          - description: "This is the longest section"
+            total_length_km: 35.0
+            approximate: true
+          - description: "Crosses western part of the wide plain of Teramo"
+            side: WNW
+            distance_km_from_detector: null
+            approximate: true
+          - description: "Laga Flysch valley covers part of the section"
+            side: WNW
+            distance_range_km: [10.0, 15.0]
+            approximate: true
+          - description: "Trace passes very near M. Aquila"
+            elevation_m: 2400
+            side: WNW
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 3.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 3.0
+            end_km: 10.0
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone
+            confidence: medium
+          - start_km: 10.0
+            end_km: 15.25
+            material_mode: mixed
+            components: [sandstone_marl, marl, limestone_marl]
+            dominant_visual_material: sandstone_marl
+            confidence: medium
+      right:
+        label: ESE
+        max_distance_km: 20.0
+        topographic_anchors:
+          - description: "Southern declivities of M. Brancastello"
+            elevation_m: null
+            side: ESE
+            distance_km_from_detector: 4.0
+            approximate: true
+          - description: "Declivities of M. Prena"
+            elevation_m: null
+            side: ESE
+            distance_km_from_detector: 7.0
+            approximate: true
+          - description: "M. Camicia lies near the trace but about 2 km off it"
+            side: ESE
+            distance_km_from_detector: 11.0
+            approximate: true
+          - description: "Crosses farthest north of Campo Imperatore"
+            side: ESE
+            distance_range_km: [10.0, 16.5]
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 4.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 4.0
+            end_km: 10.0
+            material_mode: mixed
+            components: [limestone_marl, marl, limestone]
+            dominant_visual_material: limestone_marl
+            notes: "Local dolomite present around 7 to 9-10 km."
+            confidence: medium
+          - start_km: 10.0
+            end_km: 20.0
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            notes: "Least legible side in the scan."
+            confidence: low
+
+  - id: 8
+    name: "Section 8"
+    direction: "NE-SW"
+    phi_deg: null
+    tunnel_aligned: true
+    sides:
+      left:
+        label: SW
+        max_distance_km: 6.0
+        topographic_anchors:
+          - description: "Crosses local valley on the SW side"
+            side: SW
+            elevation_m: 980
+            distance_km_from_detector: null
+            approximate: true
+          - description: "SW chain corresponds to declivities of M. Aragna"
+            side: SW
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.5
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.5
+            end_km: 3.5
+            material_mode: mixed
+            components: [limestone, limestone_marl, marl]
+            dominant_visual_material: limestone
+            confidence: medium
+          - start_km: 3.5
+            end_km: 4.2
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 4.2
+            end_km: 6.0
+            material_mode: mixed
+            components: [sandstone_marl, debris]
+            dominant_visual_material: sandstone_marl
+            effective_material_hint: sandstone_marl
+            confidence: low
+      right:
+        label: NE
+        max_distance_km: 3.2
+        topographic_anchors:
+          - description: "Ends in the valley where the town of Teramo rises"
+            side: NE
+            distance_km_from_detector: null
+            approximate: true
+          - description: "NE chain contains the tunnel"
+            side: NE
+            distance_km_from_detector: null
+            approximate: true
+        intervals:
+          - start_km: 0.0
+            end_km: 1.5
+            material_mode: homogeneous
+            visual_material: limestone
+            effective_material: limestone
+            confidence: medium
+          - start_km: 1.5
+            end_km: 2.6
+            material_mode: mixed
+            components: [limestone_marl, marl]
+            dominant_visual_material: limestone_marl
+            confidence: medium
+          - start_km: 2.6
+            end_km: 3.2
+            material_mode: homogeneous
+            visual_material: sandstone_marl
+            effective_material: sandstone_marl
+            confidence: medium
+
+summary_properties_by_section:
+  - section_id: 1
+    phi_deg: 135.0
+    side: left
+    side_label: NW
+    values:
+      - theta_deg: 90
+        A_mean: 21.58
+        A_error: 0.60
+        Z_mean: 10.76
+        Z_error: 0.30
+        rho_mean_g_cm3: 2.58
+        rho_error_g_cm3: 0.07
+      - theta_deg: 80
+        A_mean: 22.82
+        A_error: 0.89
+        Z_mean: 11.39
+        Z_error: 0.44
+        rho_mean_g_cm3: 2.70
+        rho_error_g_cm3: 0.10
+      - theta_deg: 70
+        A_mean: 22.90
+        A_error: 0.36
+        Z_mean: 11.43
+        Z_error: 0.18
+        rho_mean_g_cm3: 2.71
+        rho_error_g_cm3: 0.04
+  - section_id: 1
+    phi_deg: 135.0
+    side: right
+    side_label: SE
+    values:
+      - theta_deg: 90
+        A_mean: 22.75
+        A_error: 0.59
+        Z_mean: 11.36
+        Z_error: 0.30
+        rho_mean_g_cm3: 2.70
+        rho_error_g_cm3: 0.07
+      - theta_deg: 80
+        A_mean: 22.01
+        A_error: 0.75
+        Z_mean: 10.98
+        Z_error: 0.37
+        rho_mean_g_cm3: 2.62
+        rho_error_g_cm3: 0.09
+      - theta_deg: 70
+        A_mean: 22.08
+        A_error: 1.16
+        Z_mean: 11.02
+        Z_error: 0.58
+        rho_mean_g_cm3: 2.63
+        rho_error_g_cm3: 0.14
+
+  - section_id: 2
+    phi_deg: 0.0
+    side: left
+    side_label: S
+    values:
+      - {theta_deg: 90, A_mean: 22.65, A_error: 0.17, Z_mean: 11.63, Z_error: 0.08, rho_mean_g_cm3: 2.68, rho_error_g_cm3: 0.02}
+      - {theta_deg: 80, A_mean: 22.90, A_error: 0.29, Z_mean: 11.43, Z_error: 0.14, rho_mean_g_cm3: 2.71, rho_error_g_cm3: 0.03}
+      - {theta_deg: 70, A_mean: 22.29, A_error: 1.03, Z_mean: 11.11, Z_error: 0.52, rho_mean_g_cm3: 2.63, rho_error_g_cm3: 0.12}
+  - section_id: 2
+    phi_deg: 0.0
+    side: right
+    side_label: N
+    values:
+      - {theta_deg: 90, A_mean: 21.30, A_error: 0.32, Z_mean: 10.59, Z_error: 0.16, rho_mean_g_cm3: 2.56, rho_error_g_cm3: 0.04}
+      - {theta_deg: 80, A_mean: 22.30, A_error: 2.06, Z_mean: 11.12, Z_error: 1.02, rho_mean_g_cm3: 2.65, rho_error_g_cm3: 0.24}
+      - {theta_deg: 70, A_mean: 22.90, A_error: 0.41, Z_mean: 11.43, Z_error: 0.20, rho_mean_g_cm3: 2.71, rho_error_g_cm3: 0.05}
+
+  - section_id: 3
+    phi_deg: 90.0
+    side: left
+    side_label: W
+    values:
+      - {theta_deg: 90, A_mean: 22.84, A_error: 0.18, Z_mean: 11.40, Z_error: 0.09, rho_mean_g_cm3: 2.70, rho_error_g_cm3: 0.02}
+      - {theta_deg: 80, A_mean: 22.79, A_error: 0.69, Z_mean: 11.37, Z_error: 0.34, rho_mean_g_cm3: 2.69, rho_error_g_cm3: 0.08}
+      - {theta_deg: 70, A_mean: 22.85, A_error: 1.63, Z_mean: 11.40, Z_error: 0.81, rho_mean_g_cm3: 2.70, rho_error_g_cm3: 0.19}
+  - section_id: 3
+    phi_deg: 90.0
+    side: right
+    side_label: E
+    values:
+      - {theta_deg: 90, A_mean: 22.34, A_error: 1.51, Z_mean: 11.13, Z_error: 0.78, rho_mean_g_cm3: 2.65, rho_error_g_cm3: 0.19}
+      - {theta_deg: 80, A_mean: 22.59, A_error: 0.72, Z_mean: 11.27, Z_error: 0.36, rho_mean_g_cm3: 2.67, rho_error_g_cm3: 0.08}
+      - {theta_deg: 70, A_mean: 22.90, A_error: 0.39, Z_mean: 11.43, Z_error: 0.20, rho_mean_g_cm3: 2.71, rho_error_g_cm3: 0.05}
+
+  - section_id: 4
+    phi_deg: 67.5
+    side: left
+    side_label: WSW
+    values:
+      - {theta_deg: 90, A_mean: 22.43, A_error: 0.73, Z_mean: 11.19, Z_error: 0.36, rho_mean_g_cm3: 2.66, rho_error_g_cm3: 0.09}
+      - {theta_deg: 80, A_mean: 22.67, A_error: 1.12, Z_mean: 11.31, Z_error: 0.56, rho_mean_g_cm3: 2.68, rho_error_g_cm3: 0.13}
+      - {theta_deg: 70, A_mean: 22.53, A_error: 1.64, Z_mean: 11.24, Z_error: 0.82, rho_mean_g_cm3: 2.67, rho_error_g_cm3: 0.19}
+  - section_id: 4
+    phi_deg: 67.5
+    side: right
+    side_label: ENE
+    values:
+      - {theta_deg: 90, A_mean: 21.67, A_error: 1.54, Z_mean: 10.79, Z_error: 0.77, rho_mean_g_cm3: 2.59, rho_error_g_cm3: 0.18}
+      - {theta_deg: 80, A_mean: 22.45, A_error: 2.04, Z_mean: 11.21, Z_error: 1.02, rho_mean_g_cm3: 2.66, rho_error_g_cm3: 0.24}
+      - {theta_deg: 70, A_mean: 22.90, A_error: 0.65, Z_mean: 11.43, Z_error: 0.33, rho_mean_g_cm3: 2.71, rho_error_g_cm3: 0.08}
+
+  - section_id: 5
+    phi_deg: 157.5
+    side: left
+    side_label: NNW
+    values:
+      - {theta_deg: 90, A_mean: 21.54, A_error: 0.47, Z_mean: 10.74, Z_error: 0.24, rho_mean_g_cm3: 2.57, rho_error_g_cm3: 0.06}
+      - {theta_deg: 80, A_mean: 22.72, A_error: 0.70, Z_mean: 11.34, Z_error: 0.35, rho_mean_g_cm3: 2.69, rho_error_g_cm3: 0.08}
+      - {theta_deg: 70, A_mean: 22.87, A_error: 0.82, Z_mean: 11.42, Z_error: 0.41, rho_mean_g_cm3: 2.71, rho_error_g_cm3: 0.10}
+  - section_id: 5
+    phi_deg: 157.5
+    side: right
+    side_label: SSE
+    values:
+      - {theta_deg: 90, A_mean: 22.82, A_error: 0.74, Z_mean: 11.39, Z_error: 0.34, rho_mean_g_cm3: 2.70, rho_error_g_cm3: 0.09}
+      - {theta_deg: 80, A_mean: 21.98, A_error: 1.15, Z_mean: 10.96, Z_error: 0.57, rho_mean_g_cm3: 2.61, rho_error_g_cm3: 0.14}
+      - {theta_deg: 70, A_mean: 21.87, A_error: 1.52, Z_mean: 10.89, Z_error: 0.76, rho_mean_g_cm3: 2.60, rho_error_g_cm3: 0.18}
+
+  - section_id: 6
+    phi_deg: 22.5
+    side: left
+    side_label: SSW
+    values:
+      - {theta_deg: 90, A_mean: 22.64, A_error: 0.49, Z_mean: 11.29, Z_error: 0.24, rho_mean_g_cm3: 2.69, rho_error_g_cm3: 0.06}
+      - {theta_deg: 80, A_mean: 22.46, A_error: 1.49, Z_mean: 11.20, Z_error: 0.74, rho_mean_g_cm3: 2.65, rho_error_g_cm3: 0.18}
+      - {theta_deg: 70, A_mean: 22.51, A_error: 2.10, Z_mean: 11.23, Z_error: 1.05, rho_mean_g_cm3: 2.67, rho_error_g_cm3: 0.25}
+  - section_id: 6
+    phi_deg: 22.5
+    side: right
+    side_label: NNE
+    values:
+      - {theta_deg: 90, A_mean: 22.48, A_error: 1.51, Z_mean: 11.20, Z_error: 0.75, rho_mean_g_cm3: 2.67, rho_error_g_cm3: 0.18}
+      - {theta_deg: 80, A_mean: 21.79, A_error: 1.57, Z_mean: 10.84, Z_error: 0.78, rho_mean_g_cm3: 2.61, rho_error_g_cm3: 0.19}
+      - {theta_deg: 70, A_mean: 22.48, A_error: 1.23, Z_mean: 11.16, Z_error: 0.61, rho_mean_g_cm3: 2.65, rho_error_g_cm3: 0.14}
+
+  - section_id: 7
+    phi_deg: 112.5
+    side: left
+    side_label: WNW
+    values:
+      - {theta_deg: 90, A_mean: 21.95, A_error: 0.40, Z_mean: 10.95, Z_error: 0.20, rho_mean_g_cm3: 2.60, rho_error_g_cm3: 0.05}
+      - {theta_deg: 80, A_mean: 22.78, A_error: 0.99, Z_mean: 11.36, Z_error: 0.49, rho_mean_g_cm3: 2.69, rho_error_g_cm3: 0.12}
+      - {theta_deg: 70, A_mean: 22.87, A_error: 1.10, Z_mean: 11.42, Z_error: 0.55, rho_mean_g_cm3: 2.70, rho_error_g_cm3: 0.13}
+  - section_id: 7
+    phi_deg: 112.5
+    side: right
+    side_label: ESE
+    values:
+      - {theta_deg: 90, A_mean: 22.80, A_error: 0.31, Z_mean: 11.38, Z_error: 0.15, rho_mean_g_cm3: 2.70, rho_error_g_cm3: 0.04}
+      - {theta_deg: 80, A_mean: 22.84, A_error: 1.21, Z_mean: 11.40, Z_error: 0.60, rho_mean_g_cm3: 2.70, rho_error_g_cm3: 0.14}
+      - {theta_deg: 70, A_mean: 22.28, A_error: 1.10, Z_mean: 11.11, Z_error: 0.55, rho_mean_g_cm3: 2.65, rho_error_g_cm3: 0.13}
+
+  - section_id: 8
+    phi_deg: null
+    side: left
+    side_label: SW
+    values:
+      - {theta_deg: 90, A_mean: 22.46, A_error: 1.26, Z_mean: 11.20, Z_error: 0.63, rho_mean_g_cm3: 2.67, rho_error_g_cm3: 0.15}
+      - {theta_deg: 80, A_mean: 22.44, A_error: 1.69, Z_mean: 11.19, Z_error: 0.84, rho_mean_g_cm3: 2.66, rho_error_g_cm3: 0.20}
+      - {theta_deg: 70, A_mean: 22.37, A_error: 1.59, Z_mean: 11.16, Z_error: 0.79, rho_mean_g_cm3: 2.65, rho_error_g_cm3: 0.19}
+  - section_id: 8
+    phi_deg: null
+    side: right
+    side_label: NE
+    values:
+      - {theta_deg: 90, A_mean: 21.59, A_error: 2.59, Z_mean: 10.74, Z_error: 1.28, rho_mean_g_cm3: 2.59, rho_error_g_cm3: 0.31}
+      - {theta_deg: 80, A_mean: 22.47, A_error: 2.30, Z_mean: 11.21, Z_error: 1.15, rho_mean_g_cm3: 2.67, rho_error_g_cm3: 0.27}
+      - {theta_deg: 70, A_mean: 22.78, A_error: 2.02, Z_mean: 11.37, Z_error: 1.01, rho_mean_g_cm3: 2.70, rho_error_g_cm3: 0.24}
