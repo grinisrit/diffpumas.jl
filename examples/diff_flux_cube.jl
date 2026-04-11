@@ -43,6 +43,12 @@ Options:
     --n-angles INT            Number of zenith angle points (default: 20)
     --samples, -n INT         Number of energy samples per angle (default: 20)
     --threshold FLOAT         Energy threshold for mode switching in GeV (default: 100.0)
+    --threshold-scan-low FLOAT
+                              Lower multiplicative factor for transport systematic
+                              threshold scan (default: 0.5)
+    --threshold-scan-high FLOAT
+                              Upper multiplicative factor for transport systematic
+                              threshold scan (default: 2.0)
     --no-straggling           Disable straggling in detailed transport (default: enabled)
     --no-scattering           Disable scattering in detailed transport (default: enabled)
     --nx INT                  Number of cells in x direction (default: 3)
@@ -837,9 +843,10 @@ function compute_flux_detailed(physics, geo::CubeGeometry{T},
                                straggling::Bool=true,
                                scattering::Bool=true,
                                energy_threshold_low::T=T(100.0),
+                               seed::Int=42,
                                verbose::Bool=true) where T<:Real
     
-    rng = MersenneTwister(42)
+    rng = MersenneTwister(seed)
     
     d_zenith = zenith_max - zenith_min
     n_total = n_angles * n_samples
@@ -877,6 +884,114 @@ function compute_flux_detailed(physics, geo::CubeGeometry{T},
     sigma = sqrt(max(zero(T), variance))
     
     return flux, sigma
+end
+
+function compute_flux_detailed_budget(physics, geo::CubeGeometry{T},
+                                      cell_densities::Vector{T},
+                                      zenith_min::T, zenith_max::T,
+                                      energy_min::T, energy_max::T,
+                                      n_angles::Int, n_samples::Int;
+                                      straggling::Bool=true,
+                                      scattering::Bool=true,
+                                      energy_threshold_low::T=T(100.0),
+                                      threshold_factors::Tuple{Float64,Float64}=(0.5, 2.0),
+                                      verbose::Bool=true) where T<:Real
+    function evaluate(variation)
+        return compute_flux_detailed(
+            physics,
+            geo,
+            cell_densities,
+            zenith_min,
+            zenith_max,
+            energy_min,
+            energy_max,
+            n_angles,
+            n_samples;
+            straggling = variation.straggling,
+            scattering = variation.scattering,
+            energy_threshold_low = variation.energy_threshold_low,
+            seed = variation.seed,
+            verbose = false,
+        )
+    end
+
+    verbose && println("Running transport uncertainty budget...")
+    return estimate_transport_uncertainty(
+        evaluate;
+        straggling = straggling,
+        scattering = scattering,
+        energy_threshold_low = energy_threshold_low,
+        seed = 42,
+        threshold_factors = threshold_factors,
+    )
+end
+
+function summary_output_path(output_path::String)
+    root, _ = splitext(output_path)
+    return root * "_uncertainty.html"
+end
+
+function create_flux_uncertainty_summary_plot(detailed_budget,
+                                              flux_csda::Float64,
+                                              output_path::String)
+    labels = ["Detailed transport", "Direct CSDA"]
+    flux_values = [detailed_budget.value, flux_csda]
+    total_sigma = [detailed_budget.sigma_total, 0.0]
+    mc_sigma = [detailed_budget.sigma_mc, 0.0]
+    hover_text = [
+        @sprintf(
+            "%s<br>Flux=%.5e<br>MC=%.2f%%<br>Transport syst=%.2f%%<br>Total=%.2f%%",
+            labels[1],
+            detailed_budget.value,
+            100 * detailed_budget.sigma_mc / max(abs(detailed_budget.value), 1e-30),
+            100 * detailed_budget.sigma_syst / max(abs(detailed_budget.value), 1e-30),
+            100 * detailed_budget.sigma_total / max(abs(detailed_budget.value), 1e-30),
+        ),
+        @sprintf(
+            "%s<br>Flux=%.5e<br>Relative difference vs detailed=%.2f%%",
+            labels[2],
+            flux_csda,
+            100 * abs(flux_csda - detailed_budget.value) / max(abs(detailed_budget.value), 1e-30),
+        ),
+    ]
+
+    traces = GenericTrace[
+        scatter(
+            x = labels,
+            y = flux_values,
+            mode = "markers",
+            marker = attr(size = 13, color = "rgba(220,120,30,0.95)"),
+            error_y = attr(type = "data", array = total_sigma, visible = true,
+                           color = "rgba(220,120,30,0.95)", thickness = 1.6),
+            text = hover_text,
+            hovertemplate = "%{text}<extra></extra>",
+            name = "Flux with total uncertainty",
+        ),
+        scatter(
+            x = labels,
+            y = flux_values,
+            mode = "markers",
+            marker = attr(size = 9, color = "rgba(40,110,220,0.95)"),
+            error_y = attr(type = "data", array = mc_sigma, visible = true,
+                           color = "rgba(40,110,220,0.95)", thickness = 1.2),
+            hoverinfo = "skip",
+            name = "MC uncertainty only",
+        ),
+    ]
+
+    layout = Layout(
+        title = "Cube Flux Uncertainty Summary",
+        xaxis = attr(title = "Configuration"),
+        yaxis = attr(title = "Flux (m⁻² s⁻¹ sr⁻¹)", type = "log"),
+        width = 900,
+        height = 600,
+    )
+
+    fig = Plot(traces, layout)
+    mkpath(dirname(output_path))
+    savefig(fig, output_path)
+    println("Uncertainty summary saved to: $output_path")
+    return fig
 end
 
 """
@@ -1024,6 +1139,8 @@ function parse_commandline()
     n_angles = 20
     n_samples = 20
     energy_threshold_low = 100.0
+    threshold_scan_low = 0.5
+    threshold_scan_high = 2.0
     straggling = true
     scattering = true
     nx = 3
@@ -1074,6 +1191,14 @@ function parse_commandline()
             i + 1 <= length(ARGS) || error("--threshold requires a value")
             energy_threshold_low = parse(Float64, ARGS[i + 1])
             i += 2
+        elseif arg == "--threshold-scan-low"
+            i + 1 <= length(ARGS) || error("--threshold-scan-low requires a value")
+            threshold_scan_low = parse(Float64, ARGS[i + 1])
+            i += 2
+        elseif arg == "--threshold-scan-high"
+            i + 1 <= length(ARGS) || error("--threshold-scan-high requires a value")
+            threshold_scan_high = parse(Float64, ARGS[i + 1])
+            i += 2
         elseif arg == "--no-straggling"
             straggling = false
             i += 1
@@ -1115,6 +1240,7 @@ function parse_commandline()
         n_angles = n_angles,
         n_samples = n_samples,
         energy_threshold_low = energy_threshold_low,
+        threshold_factors = (threshold_scan_low, threshold_scan_high),
         straggling = straggling,
         scattering = scattering,
         nx = nx,
@@ -1142,6 +1268,7 @@ function main()
     println("  Zenith range:    $(args.zenith_min)° - $(args.zenith_max)°")
     println("  Energy range:    $(args.energy_min) - $(args.energy_max) GeV")
     println("  Threshold:       $(args.energy_threshold_low) GeV")
+    println("  Threshold scan:  ×$(args.threshold_factors[1]) / ×$(args.threshold_factors[2])")
     println("  Straggling:      $strag_str")
     println("  Scattering:      $scat_str")
     println("  Samples:         $(args.n_angles) angles × $(args.n_samples) energies = $(args.n_angles * args.n_samples)")
@@ -1212,7 +1339,7 @@ function main()
     println("=" ^ 60)
     println()
     
-    flux_detailed, sigma_detailed = compute_flux_detailed(
+    detailed_budget = compute_flux_detailed_budget(
         physics, geo, cell_densities,
         args.zenith_min, args.zenith_max,
         args.energy_min, args.energy_max,
@@ -1220,13 +1347,22 @@ function main()
         straggling=args.straggling,
         scattering=args.scattering,
         energy_threshold_low=args.energy_threshold_low,
+        threshold_factors=args.threshold_factors,
         verbose=true
     )
+    flux_detailed = detailed_budget.value
+    sigma_detailed = detailed_budget.sigma_mc
     
     println()
     println("Detailed Transport Results:")
     println("-" ^ 40)
-    @printf("  Integrated flux: %.5e ± %.2e m⁻² s⁻¹ sr⁻¹\n", flux_detailed, sigma_detailed)
+    @printf("  Integrated flux: %.5e m⁻² s⁻¹ sr⁻¹\n", flux_detailed)
+    @printf("  MC error:        %.2e (%.2f%%)\n", sigma_detailed,
+            100 * sigma_detailed / max(abs(flux_detailed), 1e-30))
+    @printf("  Transport syst:  %.2e (%.2f%%)\n", detailed_budget.sigma_syst,
+            100 * detailed_budget.sigma_syst / max(abs(flux_detailed), 1e-30))
+    @printf("  Total:           %.2e (%.2f%%)\n", detailed_budget.sigma_total,
+            100 * detailed_budget.sigma_total / max(abs(flux_detailed), 1e-30))
     
     # =========================================================================
     # Part 2: Direct CSDA with Gradient Computation
@@ -1308,6 +1444,7 @@ function main()
     
     mkpath(dirname(args.output_path))
     create_cube_visualization(geo, gradients, cell_densities, args.output_path; top_layer_only=false)
+    create_flux_uncertainty_summary_plot(detailed_budget, flux_csda, summary_output_path(args.output_path))
     
     println()
     println("=" ^ 60)

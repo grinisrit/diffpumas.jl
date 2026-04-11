@@ -18,8 +18,8 @@ venv
 .venv/
 .cursorrules
 *.code-workspace
+.julia*
 
 # pumas
 examples/data/*.pumas
 examples/data/*.html
-examples/data/*.csv

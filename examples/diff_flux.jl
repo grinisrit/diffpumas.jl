@@ -55,6 +55,14 @@ Options:
     --n-angles INT            Number of zenith angle points (default: 100)
     --samples, -n INT         Number of energy samples per angle (default: 100)
     --threshold FLOAT         Energy threshold for mode switching in GeV (default: 100.0)
+    --threshold-scan-low FLOAT
+                              Lower multiplicative factor for transport systematic
+                              threshold scan (default: 0.5)
+    --threshold-scan-high FLOAT
+                              Upper multiplicative factor for transport systematic
+                              threshold scan (default: 2.0)
+    --output, -o PATH         Output HTML summary path
+                              (default: examples/data/diff_flux_uncertainty.html)
     --no-straggling           Disable straggling in Part 1 (default: enabled)
     --no-scattering           Disable scattering in Part 1 (default: enabled)
 
@@ -80,8 +88,10 @@ using DiffPumas.Pumas: load_or_create_physics
 using Printf
 using Random
 using Zygote
+using PlotlyJS
 
 const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
+const DEFAULT_OUTPUT = joinpath(@__DIR__, "data", "diff_flux_uncertainty.html")
 
 function parse_commandline()
     dump_path = DEFAULT_DUMP
@@ -94,8 +104,11 @@ function parse_commandline()
     n_angles = 100
     n_samples = 100
     energy_threshold_low = 100.0  # Mode switch at 100 GeV (like PUMAS C)
+    threshold_scan_low = 0.5
+    threshold_scan_high = 2.0
     straggling = true   # Enable straggling by default for Part 1
     scattering = true   # Enable scattering by default for Part 1
+    output_path = DEFAULT_OUTPUT
     
     i = 1
     while i <= length(ARGS)
@@ -140,6 +153,18 @@ function parse_commandline()
             i + 1 <= length(ARGS) || error("--threshold requires a value")
             energy_threshold_low = parse(Float64, ARGS[i + 1])
             i += 2
+        elseif arg == "--threshold-scan-low"
+            i + 1 <= length(ARGS) || error("--threshold-scan-low requires a value")
+            threshold_scan_low = parse(Float64, ARGS[i + 1])
+            i += 2
+        elseif arg == "--threshold-scan-high"
+            i + 1 <= length(ARGS) || error("--threshold-scan-high requires a value")
+            threshold_scan_high = parse(Float64, ARGS[i + 1])
+            i += 2
+        elseif arg == "--output" || arg == "-o"
+            i + 1 <= length(ARGS) || error("--output requires a path")
+            output_path = ARGS[i + 1]
+            i += 2
         elseif arg == "--no-straggling"
             straggling = false
             i += 1
@@ -165,8 +190,10 @@ function parse_commandline()
         n_angles = n_angles,
         n_samples = n_samples,
         energy_threshold_low = energy_threshold_low,
+        threshold_factors = (threshold_scan_low, threshold_scan_high),
         straggling = straggling,
-        scattering = scattering
+        scattering = scattering,
+        output_path = output_path
     )
 end
 
@@ -189,9 +216,10 @@ function compute_integrated_flux_mc(physics, geometry::TwoLayerGeometry{Float64}
                                     straggling::Bool=false,
                                     scattering::Bool=false,
                                     energy_threshold_low::Float64=0.0,
+                                    seed::Int=42,
                                     verbose::Bool=true)
     
-    rng = MersenneTwister(42)
+    rng = MersenneTwister(seed)
     
     d_zenith = zenith_max - zenith_min
     n_total = n_angles * n_samples
@@ -241,6 +269,45 @@ function compute_integrated_flux_mc(physics, geometry::TwoLayerGeometry{Float64}
     sigma = sqrt(max(0.0, variance))
     
     return flux, sigma
+end
+
+function compute_integrated_flux_budget(physics, geometry::TwoLayerGeometry{Float64},
+                                        zenith_min::Float64, zenith_max::Float64,
+                                        energy_min::Float64, energy_max::Float64,
+                                        n_angles::Int, n_samples::Int;
+                                        straggling::Bool=false,
+                                        scattering::Bool=false,
+                                        energy_threshold_low::Float64=0.0,
+                                        threshold_factors::Tuple{Float64,Float64}=(0.5, 2.0),
+                                        seed::Int=42,
+                                        verbose::Bool=true)
+    function evaluate(variation)
+        return compute_integrated_flux_mc(
+            physics,
+            geometry,
+            zenith_min,
+            zenith_max,
+            energy_min,
+            energy_max,
+            n_angles,
+            n_samples;
+            straggling = variation.straggling,
+            scattering = variation.scattering,
+            energy_threshold_low = variation.energy_threshold_low,
+            seed = variation.seed,
+            verbose = false,
+        )
+    end
+
+    verbose && println("Running transport uncertainty budget...")
+    return estimate_transport_uncertainty(
+        evaluate;
+        straggling = straggling,
+        scattering = scattering,
+        energy_threshold_low = energy_threshold_low,
+        seed = seed,
+        threshold_factors = threshold_factors,
+    )
 end
 
 """
@@ -397,6 +464,71 @@ function compute_integrated_flux_gradient_direct_csda(physics, rock_density::Flo
     return flux, sigma, grad_density
 end
 
+function create_uncertainty_summary_plot(detailed_budget,
+                                         flux_csda::Float64,
+                                         sigma_csda::Float64,
+                                         output_path::String)
+    labels = ["Detailed transport", "Direct CSDA"]
+    flux_values = [detailed_budget.value, flux_csda]
+    total_sigma = [detailed_budget.sigma_total, sigma_csda]
+    mc_sigma = [detailed_budget.sigma_mc, sigma_csda]
+    hover_text = [
+        @sprintf(
+            "%s<br>Flux=%.5e<br>MC=%.2f%%<br>Transport syst=%.2f%%<br>Total=%.2f%%",
+            labels[1],
+            detailed_budget.value,
+            100 * detailed_budget.sigma_mc / max(abs(detailed_budget.value), 1e-30),
+            100 * detailed_budget.sigma_syst / max(abs(detailed_budget.value), 1e-30),
+            100 * detailed_budget.sigma_total / max(abs(detailed_budget.value), 1e-30),
+        ),
+        @sprintf(
+            "%s<br>Flux=%.5e<br>MC=%.2f%%<br>Transport syst=0.00%%<br>Total=%.2f%%",
+            labels[2],
+            flux_csda,
+            100 * sigma_csda / max(abs(flux_csda), 1e-30),
+            100 * sigma_csda / max(abs(flux_csda), 1e-30),
+        ),
+    ]
+
+    traces = GenericTrace[
+        scatter(
+            x = labels,
+            y = flux_values,
+            mode = "markers",
+            marker = attr(size = 13, color = "rgba(220,120,30,0.95)"),
+            error_y = attr(type = "data", array = total_sigma, visible = true,
+                           color = "rgba(220,120,30,0.95)", thickness = 1.6),
+            text = hover_text,
+            hovertemplate = "%{text}<extra></extra>",
+            name = "Flux with total uncertainty",
+        ),
+        scatter(
+            x = labels,
+            y = flux_values,
+            mode = "markers",
+            marker = attr(size = 9, color = "rgba(40,110,220,0.95)"),
+            error_y = attr(type = "data", array = mc_sigma, visible = true,
+                           color = "rgba(40,110,220,0.95)", thickness = 1.2),
+            hoverinfo = "skip",
+            name = "MC uncertainty only",
+        ),
+    ]
+
+    layout = Layout(
+        title = "Integrated Flux Uncertainty Summary",
+        xaxis = attr(title = "Configuration"),
+        yaxis = attr(title = "Flux (m⁻² s⁻¹ sr⁻¹)", type = "log"),
+        width = 900,
+        height = 600,
+    )
+
+    fig = Plot(traces, layout)
+    mkpath(dirname(output_path))
+    savefig(fig, output_path)
+    println("Summary plot saved to: $output_path")
+    return fig
+end
+
 function main()
     args = parse_commandline()
     
@@ -415,6 +547,8 @@ function main()
     println("  Samples/angle:   $(args.n_samples)")
     println("  Total samples:   $(args.n_angles * args.n_samples)")
     println("  Threshold:       $(args.energy_threshold_low) GeV")
+    println("  Threshold scan:  ×$(args.threshold_factors[1]) / ×$(args.threshold_factors[2])")
+    println("  Output summary:  $(args.output_path)")
     println()
     println("Physics modes:")
     println("  PART 1: Detailed transport (straggling=$(args.straggling), scattering=$(args.scattering))")
@@ -464,17 +598,26 @@ function main()
     println("Running Monte Carlo integration...")
     println("-" ^ 40)
     
-    flux_strag, sigma_strag = compute_integrated_flux_mc(physics, geometry,
+    detailed_budget = compute_integrated_flux_budget(physics, geometry,
         args.zenith_min, args.zenith_max, args.energy_min, args.energy_max,
         args.n_angles, args.n_samples;
         straggling=args.straggling, scattering=args.scattering,
-        energy_threshold_low=args.energy_threshold_low, verbose=true)
+        energy_threshold_low=args.energy_threshold_low,
+        threshold_factors=args.threshold_factors,
+        verbose=true)
+    flux_strag = detailed_budget.value
+    sigma_strag = detailed_budget.sigma_mc
     
     println()
     println("Results (detailed transport):")
     println("-" ^ 40)
-    @printf("  Integrated flux:    %.5e ± %.5e m⁻² s⁻¹ sr⁻¹\n", flux_strag, sigma_strag)
-    @printf("  Relative error:     %.2f%%\n", 100 * sigma_strag / max(flux_strag, 1e-30))
+    @printf("  Integrated flux:    %.5e m⁻² s⁻¹ sr⁻¹\n", flux_strag)
+    @printf("  MC error:           %.5e (%.2f%%)\n", sigma_strag,
+            100 * sigma_strag / max(flux_strag, 1e-30))
+    @printf("  Transport syst:     %.5e (%.2f%%)\n", detailed_budget.sigma_syst,
+            100 * detailed_budget.sigma_syst / max(flux_strag, 1e-30))
+    @printf("  Total uncertainty:  %.5e (%.2f%%)\n", detailed_budget.sigma_total,
+            100 * detailed_budget.sigma_total / max(flux_strag, 1e-30))
     
     # Compute gradient using finite differences
     println()
@@ -641,6 +784,7 @@ function main()
     println()
     println("=" ^ 60)
     println("Done!")
+    create_uncertainty_summary_plot(detailed_budget, flux_csda, sigma_csda, args.output_path)
     return 0
 end
 

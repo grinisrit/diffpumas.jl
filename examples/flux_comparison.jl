@@ -18,6 +18,12 @@ Usage:
 Options:
     --recompute          Force recomputation of C results (default: use cached)
     --samples N, -n N    Number of Monte Carlo samples per point (default: 10000)
+    --threshold-scan-low N
+                        Lower multiplicative factor for transport systematic
+                        threshold scan (default: 0.5)
+    --threshold-scan-high N
+                        Upper multiplicative factor for transport systematic
+                        threshold scan (default: 2.0)
 """
 
 using DiffPumas
@@ -35,6 +41,13 @@ const PUMAS_DIR = joinpath(dirname(@__DIR__), "..", "pumas")
 const C_EXECUTABLE = joinpath(PUMAS_DIR, "build", "example-geometry")
 const CACHE_FILE = joinpath(@__DIR__, "data", "flux_comparison.xml")
 const PHYSICS_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
+
+budget_tuple(result) = (
+    flux = result.value,
+    sigma_mc = result.sigma_mc,
+    sigma_syst = result.sigma_syst,
+    sigma_total = result.sigma_total,
+)
 
 """
     run_c_example(thickness, zenith, energy_min, energy_max)
@@ -187,13 +200,14 @@ function compute_julia_flux_grid(physics,
                                   zeniths::Vector{Float64};
                                   n_samples::Int = 10000,
                                   energy_threshold_low::Float64 = 100.0,
+                                  threshold_factors::Tuple{Float64,Float64} = (0.5, 2.0),
                                   straggling::Bool = true,
                                   scattering::Bool = true)
     
     energy_min = 1e-3
     energy_max = 1e9
     
-    results = Dict{Tuple{Float64,Float64}, Tuple{Float64,Float64}}()
+    results = Dict{Tuple{Float64,Float64}, Any}()
     
     n_total = length(thicknesses) * length(zeniths)
     n_done = 0
@@ -204,16 +218,16 @@ function compute_julia_flux_grid(physics,
             elevation = zenith_to_elevation(zenith)
             @info "[$n_done/$n_total] Running Julia: thickness=$thickness m, θ=$(zenith)°"
             
-            # Use provided straggling and scattering settings
-            # compute_flux now returns (flux, sigma) with proper variance calculation
-            # primary_altitude=1e3 matches C code's PRIMARY_ALTITUDE = 1E+03
-            flux, sigma = compute_flux(physics, 2650.0, thickness, elevation, 
-                               energy_min, energy_max; n_samples=n_samples,
-                               straggling=straggling, scattering=scattering,
-                               energy_threshold_low=energy_threshold_low,
-                               primary_altitude=1e3)
-            
-            results[(thickness, zenith)] = (flux, sigma)
+            budget = compute_flux_uncertainty(physics, 2650.0, thickness, elevation,
+                                              energy_min, energy_max;
+                                              n_samples=n_samples,
+                                              straggling=straggling,
+                                              scattering=scattering,
+                                              energy_threshold_low=energy_threshold_low,
+                                              threshold_factors=threshold_factors,
+                                              primary_altitude=1e3)
+
+            results[(thickness, zenith)] = budget_tuple(budget)
         end
     end
     
@@ -235,15 +249,34 @@ function create_comparison_plot(c_results::Dict, julia_results::Dict,
     # Create matrices for surface plots
     c_flux = zeros(n_z, n_t)
     julia_flux = zeros(n_z, n_t)
+    julia_upper = zeros(n_z, n_t)
+    julia_lower = zeros(n_z, n_t)
+    julia_hover = Matrix{String}(undef, n_z, n_t)
     
     for (i, zen) in enumerate(zeniths)
         for (j, thick) in enumerate(thicknesses)
             key = (thick, zen)
             c_f = get(c_results, key, (NaN, NaN))[1]
-            j_f = get(julia_results, key, (NaN, NaN))[1]
+            j_result = get(julia_results, key, nothing)
+            j_f = j_result === nothing ? NaN : j_result.flux
+            j_sigma_mc = j_result === nothing ? NaN : j_result.sigma_mc
+            j_sigma_syst = j_result === nothing ? NaN : j_result.sigma_syst
+            j_sigma_total = j_result === nothing ? NaN : j_result.sigma_total
             
             c_flux[i, j] = c_f > 0 ? log10(c_f) : NaN
             julia_flux[i, j] = j_f > 0 ? log10(j_f) : NaN
+            julia_upper[i, j] = (j_f > 0 && isfinite(j_sigma_total)) ? log10(j_f + j_sigma_total) : NaN
+            julia_lower[i, j] = (j_f > 0 && isfinite(j_sigma_total) && j_f > j_sigma_total) ?
+                                log10(j_f - j_sigma_total) : NaN
+            julia_hover[i, j] = @sprintf(
+                "Thickness=%.0f m<br>θ=%.0f°<br>DiffPumas flux=%.5e<br>MC=%.2f%%<br>Transport syst=%.2f%%<br>Total=%.2f%%",
+                thick,
+                zen,
+                j_f,
+                100 * j_sigma_mc / max(abs(j_f), 1e-30),
+                100 * j_sigma_syst / max(abs(j_f), 1e-30),
+                100 * j_sigma_total / max(abs(j_f), 1e-30),
+            )
         end
     end
     
@@ -265,7 +298,29 @@ function create_comparison_plot(c_results::Dict, julia_results::Dict,
         name = "DiffPumas (Julia)",
         colorscale = "Oranges",
         showscale = false,
-        opacity = 0.8
+        opacity = 0.8,
+        text = julia_hover,
+        hovertemplate = "%{text}<extra></extra>"
+    )
+
+    trace_julia_upper = surface(
+        x = thicknesses,
+        y = zeniths,
+        z = julia_upper,
+        name = "DiffPumas total +1σ",
+        colorscale = "Oranges",
+        showscale = false,
+        opacity = 0.22
+    )
+
+    trace_julia_lower = surface(
+        x = thicknesses,
+        y = zeniths,
+        z = julia_lower,
+        name = "DiffPumas total -1σ",
+        colorscale = "Oranges",
+        showscale = false,
+        opacity = 0.22
     )
     
     layout_flux = Layout(
@@ -279,7 +334,7 @@ function create_comparison_plot(c_results::Dict, julia_results::Dict,
         height = 700
     )
     
-    plot_flux = Plot([trace_c, trace_julia], layout_flux)
+    plot_flux = Plot([trace_c, trace_julia_upper, trace_julia_lower, trace_julia], layout_flux)
     
     return plot_flux
 end
@@ -301,7 +356,8 @@ function create_comparison_table(c_results::Dict, julia_results::Dict)
     for key in sort(collect(keys(c_results)))
         thickness, zenith = key
         c_flux, _ = c_results[key]
-        j_flux, _ = get(julia_results, key, (NaN, NaN))
+        j_result = get(julia_results, key, nothing)
+        j_flux = j_result === nothing ? NaN : j_result.flux
         
         ratio = (c_flux > 0 && j_flux > 0 && isfinite(c_flux) && isfinite(j_flux)) ? 
                 j_flux / c_flux : NaN
@@ -324,17 +380,25 @@ function save_detailed_flux_table_csv(c_results::Dict, julia_results::Dict, csv_
     
     open(csv_path, "w") do io
         # Write CSV header
-        println(io, "Thickness (m),Zenith θ (°),Julia Flux (m⁻²s⁻¹sr⁻¹),Julia σ (%),C Flux (m⁻²s⁻¹sr⁻¹),C σ (%),Diff (%)")
+        println(io, "Thickness (m),Zenith θ (°),Julia Flux (m⁻²s⁻¹sr⁻¹),Julia MC σ (%),Julia Transport σ (%),Julia Total σ (%),C Flux (m⁻²s⁻¹sr⁻¹),C σ (%),Diff (%)")
         
         # Write data rows
         for key in sort(collect(keys(c_results)))
             thickness, zenith = key
             c_flux, c_sigma = c_results[key]
-            j_flux, j_sigma = get(julia_results, key, (NaN, NaN))
+            j_result = get(julia_results, key, nothing)
+            j_flux = j_result === nothing ? NaN : j_result.flux
+            j_sigma_mc = j_result === nothing ? NaN : j_result.sigma_mc
+            j_sigma_syst = j_result === nothing ? NaN : j_result.sigma_syst
+            j_sigma_total = j_result === nothing ? NaN : j_result.sigma_total
             
             # Calculate relative errors in percentage
-            j_sigma_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma)) ? 
-                          (j_sigma / j_flux) * 100.0 : NaN
+            j_sigma_mc_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma_mc)) ?
+                             (j_sigma_mc / j_flux) * 100.0 : NaN
+            j_sigma_syst_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma_syst)) ?
+                               (j_sigma_syst / j_flux) * 100.0 : NaN
+            j_sigma_total_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma_total)) ?
+                                (j_sigma_total / j_flux) * 100.0 : NaN
             c_sigma_pct = (c_flux > 0 && isfinite(c_flux) && isfinite(c_sigma)) ? 
                           (c_sigma / c_flux) * 100.0 : NaN
             
@@ -344,12 +408,14 @@ function save_detailed_flux_table_csv(c_results::Dict, julia_results::Dict, csv_
             
             # Format values for CSV
             j_flux_str = isfinite(j_flux) ? string(j_flux) : "NaN"
-            j_sigma_pct_str = isfinite(j_sigma_pct) ? string(j_sigma_pct) : "NaN"
+            j_sigma_mc_pct_str = isfinite(j_sigma_mc_pct) ? string(j_sigma_mc_pct) : "NaN"
+            j_sigma_syst_pct_str = isfinite(j_sigma_syst_pct) ? string(j_sigma_syst_pct) : "NaN"
+            j_sigma_total_pct_str = isfinite(j_sigma_total_pct) ? string(j_sigma_total_pct) : "NaN"
             c_flux_str = isfinite(c_flux) ? string(c_flux) : "NaN"
             c_sigma_pct_str = isfinite(c_sigma_pct) ? string(c_sigma_pct) : "NaN"
             diff_pct_str = isfinite(diff_pct) ? string(diff_pct) : "NaN"
             
-            println(io, "$thickness,$zenith,$j_flux_str,$j_sigma_pct_str,$c_flux_str,$c_sigma_pct_str,$diff_pct_str")
+            println(io, "$thickness,$zenith,$j_flux_str,$j_sigma_mc_pct_str,$j_sigma_syst_pct_str,$j_sigma_total_pct_str,$c_flux_str,$c_sigma_pct_str,$diff_pct_str")
         end
     end
     
@@ -367,18 +433,26 @@ function create_detailed_flux_table(c_results::Dict, julia_results::Dict)
     println("  Detailed Flux Comparison: Values, Relative Errors, and Differences")
     println("=" ^ 120)
     println()
-    println("| Thick | θ  | Julia Flux    | Julia σ% | C Flux        | C σ%   | Diff %  |")
-    println("| (m)   | (°)| (m⁻²s⁻¹sr⁻¹)  |          | (m⁻²s⁻¹sr⁻¹)  |        |         |")
-    println("|-------|----|---------------|----------|---------------|--------|---------|")
+    println("| Thick | θ  | Julia Flux    | Julia MC% | Julia Syst% | Julia Total% | C Flux        | C σ%   | Diff %  |")
+    println("| (m)   | (°)| (m⁻²s⁻¹sr⁻¹)  |           |             |              | (m⁻²s⁻¹sr⁻¹)  |        |         |")
+    println("|-------|----|---------------|-----------|-------------|--------------|---------------|--------|---------|")
     
     for key in sort(collect(keys(c_results)))
         thickness, zenith = key
         c_flux, c_sigma = c_results[key]
-        j_flux, j_sigma = get(julia_results, key, (NaN, NaN))
+        j_result = get(julia_results, key, nothing)
+        j_flux = j_result === nothing ? NaN : j_result.flux
+        j_sigma_mc = j_result === nothing ? NaN : j_result.sigma_mc
+        j_sigma_syst = j_result === nothing ? NaN : j_result.sigma_syst
+        j_sigma_total = j_result === nothing ? NaN : j_result.sigma_total
         
         # Calculate relative errors in percentage
-        j_sigma_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma)) ? 
-                      (j_sigma / j_flux) * 100.0 : NaN
+        j_sigma_mc_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma_mc)) ?
+                         (j_sigma_mc / j_flux) * 100.0 : NaN
+        j_sigma_syst_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma_syst)) ?
+                           (j_sigma_syst / j_flux) * 100.0 : NaN
+        j_sigma_total_pct = (j_flux > 0 && isfinite(j_flux) && isfinite(j_sigma_total)) ?
+                            (j_sigma_total / j_flux) * 100.0 : NaN
         c_sigma_pct = (c_flux > 0 && isfinite(c_flux) && isfinite(c_sigma)) ? 
                       (c_sigma / c_flux) * 100.0 : NaN
         
@@ -388,11 +462,12 @@ function create_detailed_flux_table(c_results::Dict, julia_results::Dict)
         
         # Format output
         if isfinite(j_flux) && isfinite(c_flux)
-            @printf("| %5.0f | %3.0f | %13.5e | %8.2f | %13.5e | %6.2f | %7.2f |\n",
-                    thickness, zenith, j_flux, j_sigma_pct, c_flux, c_sigma_pct, diff_pct)
+            @printf("| %5.0f | %3.0f | %13.5e | %9.2f | %11.2f | %12.2f | %13.5e | %6.2f | %7.2f |\n",
+                    thickness, zenith, j_flux, j_sigma_mc_pct, j_sigma_syst_pct,
+                    j_sigma_total_pct, c_flux, c_sigma_pct, diff_pct)
         else
-            @printf("| %5.0f | %3.0f | %13s | %8s | %13s | %6s | %7s |\n",
-                    thickness, zenith, "NaN", "NaN", "NaN", "NaN", "NaN")
+            @printf("| %5.0f | %3.0f | %13s | %9s | %11s | %12s | %13s | %6s | %7s |\n",
+                    thickness, zenith, "NaN", "NaN", "NaN", "NaN", "NaN", "NaN", "NaN")
         end
     end
     
@@ -404,6 +479,8 @@ function parse_commandline()
     recompute = false
     reload_physics = false
     energy_threshold_low = 100.0
+    threshold_scan_low = 0.5
+    threshold_scan_high = 2.0
     output_path = nothing  # Default will be set in main()
     straggling = true
     scattering = true
@@ -422,6 +499,12 @@ function parse_commandline()
             --threshold N        Energy threshold for mode switching in GeV (default: 100.0)
                                 Below threshold: STRAGGLED + MIXED scattering
                                 Above threshold: MIXED energy loss, no scattering
+            --threshold-scan-low N
+                                Lower multiplicative factor for transport systematic threshold scan
+                                (default: 0.5)
+            --threshold-scan-high N
+                                Upper multiplicative factor for transport systematic threshold scan
+                                (default: 2.0)
             --no-straggling      Disable energy straggling (default: enabled)
             --no-scattering      Disable scattering (default: enabled)
             --output PATH, -o PATH
@@ -464,6 +547,20 @@ function parse_commandline()
             else
                 error("--threshold requires a value")
             end
+        elseif arg == "--threshold-scan-low"
+            if i + 1 <= length(ARGS)
+                threshold_scan_low = parse(Float64, ARGS[i + 1])
+                i += 2
+            else
+                error("--threshold-scan-low requires a value")
+            end
+        elseif arg == "--threshold-scan-high"
+            if i + 1 <= length(ARGS)
+                threshold_scan_high = parse(Float64, ARGS[i + 1])
+                i += 2
+            else
+                error("--threshold-scan-high requires a value")
+            end
         elseif arg == "--output" || arg == "-o"
             if i + 1 <= length(ARGS)
                 output_path = ARGS[i + 1]
@@ -483,6 +580,12 @@ function parse_commandline()
         elseif startswith(arg, "--threshold=")
             energy_threshold_low = parse(Float64, split(arg, "=")[2])
             i += 1
+        elseif startswith(arg, "--threshold-scan-low=")
+            threshold_scan_low = parse(Float64, split(arg, "=")[2])
+            i += 1
+        elseif startswith(arg, "--threshold-scan-high=")
+            threshold_scan_high = parse(Float64, split(arg, "=")[2])
+            i += 1
         elseif startswith(arg, "--output=")
             output_path = split(arg, "=", limit=2)[2]
             i += 1
@@ -491,12 +594,13 @@ function parse_commandline()
         end
     end
     
-    return n_samples, recompute, reload_physics, energy_threshold_low, output_path, straggling, scattering
+    return n_samples, recompute, reload_physics, energy_threshold_low,
+           (threshold_scan_low, threshold_scan_high), output_path, straggling, scattering
 end
 
 function main()
     # Parse command line
-    n_samples, recompute, reload_physics, energy_threshold_low, output_path, straggling, scattering = parse_commandline()
+    n_samples, recompute, reload_physics, energy_threshold_low, threshold_factors, output_path, straggling, scattering = parse_commandline()
     
     # Set default output path if not provided
     if output_path === nothing
@@ -518,6 +622,7 @@ function main()
     end
     println("Monte Carlo samples: $n_samples")
     println("Energy threshold: $energy_threshold_low GeV")
+    println("Threshold scan: ×$(threshold_factors[1]) / ×$(threshold_factors[2])")
     if straggling && scattering
         println("  Below threshold: STRAGGLED + MIXED scattering")
         println("  Above threshold: MIXED energy loss, no scattering")
@@ -583,6 +688,7 @@ function main()
     julia_results = compute_julia_flux_grid(physics, thicknesses, zeniths; 
                                             n_samples=n_samples,
                                             energy_threshold_low=energy_threshold_low,
+                                            threshold_factors=threshold_factors,
                                             straggling=straggling,
                                             scattering=scattering)
     println()

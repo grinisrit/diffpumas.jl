@@ -26,6 +26,12 @@ Options:
     --dump, -d PATH           Path to physics binary dump file
     --samples, -n INT         Number of MC samples per point (default: 1000)
     --threshold FLOAT         Energy threshold for mode switching (default: 100.0)
+    --threshold-scan-low FLOAT
+                              Lower multiplicative factor for transport systematic
+                              threshold scan (default: 0.5)
+    --threshold-scan-high FLOAT
+                              Upper multiplicative factor for transport systematic
+                              threshold scan (default: 2.0)
     --energy-min FLOAT        Minimum energy in GeV (default: 1e-3)
     --energy-max FLOAT        Maximum energy in GeV (default: 1e9)
     --no-straggling           Disable straggling
@@ -54,6 +60,89 @@ using Random
 const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
 const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
 
+struct FluxScenario
+    name::String
+    flux::Vector{Float64}
+    sigma_mc::Vector{Float64}
+    sigma_syst::Vector{Float64}
+    sigma_total::Vector{Float64}
+end
+
+function add_uncertainty_bands!(traces::Vector{GenericTrace},
+                                x_values,
+                                flux_values,
+                                sigma_syst,
+                                sigma_total;
+                                hue::Int,
+                                legendgroup::String)
+    total_upper = flux_values .+ sigma_total
+    total_lower = max.(flux_values .- sigma_total, 1e-30)
+    syst_upper = flux_values .+ sigma_syst
+    syst_lower = max.(flux_values .- sigma_syst, 1e-30)
+
+    transparent = "rgba(0,0,0,0)"
+    total_fill = "hsla($(hue), 70%, 50%, 0.08)"
+    syst_fill = "hsla($(hue), 70%, 50%, 0.16)"
+
+    push!(traces, scatter(
+        x = x_values, y = total_upper,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        legendgroup = legendgroup,
+        hoverinfo = "skip",
+        showlegend = false
+    ))
+    push!(traces, scatter(
+        x = x_values, y = total_lower,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        fill = "tonexty",
+        fillcolor = total_fill,
+        legendgroup = legendgroup,
+        hoverinfo = "skip",
+        showlegend = false
+    ))
+    push!(traces, scatter(
+        x = x_values, y = syst_upper,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        legendgroup = legendgroup,
+        hoverinfo = "skip",
+        showlegend = false
+    ))
+    push!(traces, scatter(
+        x = x_values, y = syst_lower,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        fill = "tonexty",
+        fillcolor = syst_fill,
+        legendgroup = legendgroup,
+        hoverinfo = "skip",
+        showlegend = false
+    ))
+end
+
+function build_flux_hover_text(x_values,
+                               flux_values,
+                               sigma_mc,
+                               sigma_syst,
+                               sigma_total;
+                               x_label::String = "θ")
+    texts = String[]
+    for (x, flux, mc, syst, total) in zip(x_values, flux_values, sigma_mc, sigma_syst, sigma_total)
+        push!(texts, @sprintf(
+            "%s=%.1f°<br>Flux=%.5e m^-2 s^-1 sr^-1<br>MC=%.2f%%<br>Transport syst=%.2f%%<br>Total=%.2f%%",
+            x_label,
+            x,
+            flux,
+            100 * mc / max(abs(flux), 1e-30),
+            100 * syst / max(abs(flux), 1e-30),
+            100 * total / max(abs(flux), 1e-30),
+        ))
+    end
+    return texts
+end
+
 # =============================================================================
 # Part 1: Baseline flux vs angle for various depths
 # =============================================================================
@@ -68,6 +157,7 @@ function compute_flux_vs_angle(physics,
                                 energy_threshold_low::Float64 = 100.0,
                                 energy_min::Float64 = 1e-3,
                                 energy_max::Float64 = 1e9,
+                                threshold_factors::Tuple{Float64,Float64} = (0.5, 2.0),
                                 porous_material::Int = -1,
                                 porous_density::Float64 = 0.0,
                                 porous_thickness::Float64 = 0.0,
@@ -78,7 +168,9 @@ function compute_flux_vs_angle(physics,
     n_zeniths = length(zeniths)
 
     flux_grid = zeros(n_depths, n_zeniths)
-    sigma_grid = zeros(n_depths, n_zeniths)
+    sigma_mc_grid = zeros(n_depths, n_zeniths)
+    sigma_syst_grid = zeros(n_depths, n_zeniths)
+    sigma_total_grid = zeros(n_depths, n_zeniths)
 
     n_total = n_depths * n_zeniths
     n_done = 0
@@ -92,48 +184,63 @@ function compute_flux_vs_angle(physics,
                 @info "[$n_done/$n_total] depth=$(depth)m, θ=$(zenith)°"
             end
 
-            flux, sigma = compute_flux(physics, rock_density, depth, elevation,
-                                       energy_min, energy_max;
-                                       n_samples=n_samples,
-                                       straggling=straggling,
-                                       scattering=scattering,
-                                       energy_threshold_low=energy_threshold_low,
-                                       porous_material=porous_material,
-                                       porous_density=porous_density,
-                                       porous_thickness=porous_thickness)
+            budget = compute_flux_uncertainty(physics, rock_density, depth, elevation,
+                                              energy_min, energy_max;
+                                              n_samples=n_samples,
+                                              straggling=straggling,
+                                              scattering=scattering,
+                                              energy_threshold_low=energy_threshold_low,
+                                              threshold_factors=threshold_factors,
+                                              porous_material=porous_material,
+                                              porous_density=porous_density,
+                                              porous_thickness=porous_thickness)
 
-            flux_grid[d_idx, z_idx] = flux
-            sigma_grid[d_idx, z_idx] = sigma
+            flux_grid[d_idx, z_idx] = budget.value
+            sigma_mc_grid[d_idx, z_idx] = budget.sigma_mc
+            sigma_syst_grid[d_idx, z_idx] = budget.sigma_syst
+            sigma_total_grid[d_idx, z_idx] = budget.sigma_total
         end
     end
 
-    return flux_grid, sigma_grid
+    return flux_grid, sigma_mc_grid, sigma_syst_grid, sigma_total_grid
 end
 
 function create_flux_vs_angle_plot(depths::Vector{Float64},
                                     zeniths::Vector{Float64},
                                     flux_grid::Matrix{Float64},
-                                    sigma_grid::Matrix{Float64};
+                                    sigma_mc_grid::Matrix{Float64},
+                                    sigma_syst_grid::Matrix{Float64},
+                                    sigma_total_grid::Matrix{Float64};
                                     output_path::String,
                                     title::String = "Muon Flux vs Zenith Angle")
 
     traces = GenericTrace[]
 
     n_depths = length(depths)
-    colors = ["hsl($(round(Int, 240 - 240 * i / n_depths)), 70%, 50%)" for i in 1:n_depths]
+    hues = [round(Int, 240 - 240 * i / n_depths) for i in 1:n_depths]
 
     for (d_idx, depth) in enumerate(depths)
         flux_values = flux_grid[d_idx, :]
-        sigma_values = sigma_grid[d_idx, :]
+        sigma_mc_values = sigma_mc_grid[d_idx, :]
+        sigma_syst_values = sigma_syst_grid[d_idx, :]
+        sigma_total_values = sigma_total_grid[d_idx, :]
+        legendgroup = "depth-$(round(Int, depth))"
+
+        add_uncertainty_bands!(traces, zeniths, flux_values, sigma_syst_values, sigma_total_values;
+                               hue=hues[d_idx], legendgroup=legendgroup)
 
         trace = scatter(
             x = zeniths, y = flux_values,
             mode = "lines+markers",
             name = "$(round(depth; digits=0))m",
-            line = attr(color = colors[d_idx], width = 2),
+            line = attr(color = "hsl($(hues[d_idx]), 70%, 50%)", width = 2),
             marker = attr(size = 6),
-            error_y = attr(type = "data", array = sigma_values,
-                           visible = true, color = colors[d_idx])
+            legendgroup = legendgroup,
+            text = build_flux_hover_text(zeniths, flux_values, sigma_mc_values,
+                                         sigma_syst_values, sigma_total_values),
+            hovertemplate = "%{text}<extra>$(round(depth; digits=0))m</extra>",
+            error_y = attr(type = "data", array = sigma_mc_values,
+                           visible = true, color = "hsl($(hues[d_idx]), 70%, 50%)")
         )
         push!(traces, trace)
     end
@@ -277,6 +384,7 @@ function compute_flux_fixed_energy(physics,
                                     energy_threshold_low::Float64 = 100.0,
                                     energy_min::Float64 = 1e-3,
                                     energy_max::Float64 = 1e9,
+                                    threshold_factors::Tuple{Float64,Float64} = (0.5, 2.0),
                                     porous_material::Int = -1,
                                     porous_density::Float64 = 0.0,
                                     porous_thickness::Float64 = 0.0,
@@ -285,14 +393,14 @@ function compute_flux_fixed_energy(physics,
 
     rock_density = Float64(physics.tables[rock_idx].density)
     energies = exp.(range(log(energy_min), log(energy_max); length=n_energies))
-    geometry = TwoLayerGeometry{Float64}(depth, rock_density, rock_idx, air_idx,
-                                         porous_material, porous_density, porous_thickness)
 
     n_z = length(zeniths)
     n_e = length(energies)
 
-    flux_grid  = zeros(n_z, n_e)
-    sigma_grid = zeros(n_z, n_e)
+    flux_grid = zeros(n_z, n_e)
+    sigma_mc_grid = zeros(n_z, n_e)
+    sigma_syst_grid = zeros(n_z, n_e)
+    sigma_total_grid = zeros(n_z, n_e)
 
     total = n_z * n_e
     done  = 0
@@ -305,38 +413,34 @@ function compute_flux_fixed_energy(physics,
                 @info "[fixed-E $done/$total] θ=$(zenith)°, E=$(round(kf;sigdigits=3)) GeV"
             end
 
-            rng = Random.MersenneTwister(seed + e_idx)
-            w_sum  = 0.0
-            w2_sum = 0.0
+            budget = compute_flux_uncertainty(physics, rock_density, depth, elevation,
+                                              kf, kf;
+                                              n_samples=n_samples,
+                                              seed=seed + e_idx,
+                                              straggling=straggling,
+                                              scattering=scattering,
+                                              energy_threshold_low=energy_threshold_low,
+                                              threshold_factors=threshold_factors,
+                                              porous_material=porous_material,
+                                              porous_density=porous_density,
+                                              porous_thickness=porous_thickness)
 
-            for _ in 1:n_samples
-                charge = rand(rng) > 0.5 ? 1.0 : -1.0
-                wf = 2.0
-
-                fw, _ = compute_flux_single_with_state(
-                    physics, geometry, kf, elevation, charge;
-                    rng=rng, straggling=straggling, scattering=scattering,
-                    energy_threshold_low=energy_threshold_low)
-                wi = wf * fw
-                w_sum  += wi
-                w2_sum += wi * wi
-            end
-
-            flux_avg = w_sum / n_samples
-            variance = (w2_sum / n_samples) - flux_avg^2
-            sigma = sqrt(max(variance, 0.0) / n_samples)
-
-            flux_grid[z_idx, e_idx]  = flux_avg
-            sigma_grid[z_idx, e_idx] = sigma
+            flux_grid[z_idx, e_idx] = budget.value
+            sigma_mc_grid[z_idx, e_idx] = budget.sigma_mc
+            sigma_syst_grid[z_idx, e_idx] = budget.sigma_syst
+            sigma_total_grid[z_idx, e_idx] = budget.sigma_total
         end
     end
 
-    return energies, flux_grid, sigma_grid
+    return energies, flux_grid, sigma_mc_grid, sigma_syst_grid, sigma_total_grid
 end
 
 function create_flux_fixed_energy_plot(energies::Vector{Float64},
                                         zeniths::Vector{Float64},
-                                        flux_grid::Matrix{Float64};
+                                        flux_grid::Matrix{Float64},
+                                        sigma_mc_grid::Matrix{Float64},
+                                        sigma_syst_grid::Matrix{Float64},
+                                        sigma_total_grid::Matrix{Float64};
                                         depth::Float64,
                                         output_path::String,
                                         n_curves::Int = 12)
@@ -346,17 +450,31 @@ function create_flux_fixed_energy_plot(energies::Vector{Float64},
     step = max(1, n_e ÷ n_curves)
     sel = 1:step:n_e
     n_sel = length(sel)
-    colors = ["hsl($(round(Int, 0 + 270 * i / n_sel)), 75%, 45%)" for i in 1:n_sel]
+    hues = [round(Int, 270 * i / n_sel) for i in 1:n_sel]
 
     for (ci, e_idx) in enumerate(sel)
         e_val = energies[e_idx]
         label = e_val >= 1.0 ? @sprintf("%.1f GeV", e_val) : @sprintf("%.1e GeV", e_val)
+        legendgroup = "energy-$(e_idx)"
+        flux_values = flux_grid[:, e_idx]
+        sigma_mc_values = sigma_mc_grid[:, e_idx]
+        sigma_syst_values = sigma_syst_grid[:, e_idx]
+        sigma_total_values = sigma_total_grid[:, e_idx]
+
+        add_uncertainty_bands!(traces, zeniths, flux_values, sigma_syst_values, sigma_total_values;
+                               hue=hues[ci], legendgroup=legendgroup)
         trace = scatter(
-            x = zeniths, y = flux_grid[:, e_idx],
+            x = zeniths, y = flux_values,
             mode = "lines+markers",
             name = label,
-            line = attr(color = colors[ci], width = 2),
-            marker = attr(size = 4)
+            line = attr(color = "hsl($(hues[ci]), 75%, 45%)", width = 2),
+            marker = attr(size = 4),
+            legendgroup = legendgroup,
+            text = build_flux_hover_text(zeniths, flux_values, sigma_mc_values,
+                                         sigma_syst_values, sigma_total_values),
+            hovertemplate = "%{text}<extra>$label</extra>",
+            error_y = attr(type = "data", array = sigma_mc_values,
+                           visible = true, color = "hsl($(hues[ci]), 75%, 45%)")
         )
         push!(traces, trace)
     end
@@ -587,36 +705,69 @@ function compute_cube_flux_vs_angle(physics, cube::MuographyCube{T},
                                      energy_threshold_low::Float64 = 100.0,
                                      energy_min::Float64 = 1e-3,
                                      energy_max::Float64 = 1e9,
+                                     threshold_factors::Tuple{Float64,Float64} = (0.5, 2.0),
                                      verbose::Bool = true,
                                      cell_materials::Union{Vector{MaterialMixture}, Nothing} = nothing) where T<:Real
 
-    rng = MersenneTwister(42)
     n_zeniths = length(zeniths)
     flux_values = zeros(n_zeniths)
-    sigma_values = zeros(n_zeniths)
+    sigma_mc_values = zeros(n_zeniths)
+    sigma_syst_values = zeros(n_zeniths)
+    sigma_total_values = zeros(n_zeniths)
 
     for (z_idx, zenith) in enumerate(zeniths)
-        elevation = T(90) - zenith
         verbose && @info "Computing zenith=$(zenith)°..."
 
-        w_sum = zero(T); w2_sum = zero(T)
-        for _ in 1:n_samples
-            kf, w_energy = sample_energy_loguniform(Float64(energy_min), Float64(energy_max), rng)
-            charge = rand(rng) > 0.5 ? T(1) : T(-1)
-            flux_single = compute_flux_cube_single(physics, cube, cell_densities,
-                elevation, T(kf), charge; rng=rng, straggling=straggling, scattering=scattering,
-                energy_threshold_low=T(energy_threshold_low), cell_materials=cell_materials)
-            wi = T(2) * T(w_energy) * flux_single
-            w_sum += wi; w2_sum += wi * wi
+        function evaluate(variation)
+            rng = MersenneTwister(variation.seed)
+            elevation = T(90) - zenith
+            w_sum = zero(T)
+            w2_sum = zero(T)
+
+            for _ in 1:n_samples
+                kf, w_energy = sample_energy_loguniform(Float64(energy_min), Float64(energy_max), rng)
+                charge = rand(rng) > 0.5 ? T(1) : T(-1)
+                flux_single = compute_flux_cube_single(
+                    physics,
+                    cube,
+                    cell_densities,
+                    elevation,
+                    T(kf),
+                    charge;
+                    rng = rng,
+                    straggling = variation.straggling,
+                    scattering = variation.scattering,
+                    energy_threshold_low = variation.energy_threshold_low,
+                    cell_materials = cell_materials,
+                )
+                wi = T(2) * T(w_energy) * flux_single
+                w_sum += wi
+                w2_sum += wi * wi
+            end
+
+            n = T(n_samples)
+            flux = w_sum / n
+            variance = (w2_sum / n - flux^2) / max(one(T), n - one(T))
+            sigma = sqrt(max(zero(T), variance))
+            return Float64(flux), Float64(sigma)
         end
 
-        n = T(n_samples)
-        flux_values[z_idx] = w_sum / n
-        variance = (w2_sum / n - (w_sum / n)^2) / max(one(T), n - one(T))
-        sigma_values[z_idx] = sqrt(max(zero(T), variance))
+        budget = estimate_transport_uncertainty(
+            evaluate;
+            straggling = straggling,
+            scattering = scattering,
+            energy_threshold_low = T(energy_threshold_low),
+            seed = 42 + z_idx,
+            threshold_factors = threshold_factors,
+        )
+
+        flux_values[z_idx] = budget.value
+        sigma_mc_values[z_idx] = budget.sigma_mc
+        sigma_syst_values[z_idx] = budget.sigma_syst
+        sigma_total_values[z_idx] = budget.sigma_total
     end
 
-    return flux_values, sigma_values
+    return flux_values, sigma_mc_values, sigma_syst_values, sigma_total_values
 end
 
 function create_cell_config(cube::MuographyCube{T},
@@ -673,17 +824,25 @@ function create_cell_config(cube::MuographyCube{T},
 end
 
 function create_aquifer_plot(zeniths::Vector{Float64},
-                              scenarios::Vector{Tuple{String, Vector{Float64}, Vector{Float64}}};
+                              scenarios::Vector{FluxScenario};
                               output_path::String, title::String)
     traces = GenericTrace[]
     n_scenarios = length(scenarios)
-    colors = ["hsl($(round(Int, 360 * i / n_scenarios)), 70%, 50%)" for i in 0:n_scenarios-1]
+    hues = [round(Int, 360 * i / n_scenarios) for i in 0:n_scenarios-1]
 
-    for (idx, (name, flux, sigma)) in enumerate(scenarios)
-        trace = scatter(x = zeniths, y = flux, mode = "lines+markers",
-            name = name, line = attr(color = colors[idx], width = 2),
+    for (idx, scenario) in enumerate(scenarios)
+        legendgroup = "scenario-$(idx)"
+        add_uncertainty_bands!(traces, zeniths, scenario.flux, scenario.sigma_syst, scenario.sigma_total;
+                               hue=hues[idx], legendgroup=legendgroup)
+        trace = scatter(x = zeniths, y = scenario.flux, mode = "lines+markers",
+            name = scenario.name, line = attr(color = "hsl($(hues[idx]), 70%, 50%)", width = 2),
             marker = attr(size = 6),
-            error_y = attr(type = "data", array = sigma, visible = true, color = colors[idx]))
+            legendgroup = legendgroup,
+            text = build_flux_hover_text(zeniths, scenario.flux, scenario.sigma_mc,
+                                         scenario.sigma_syst, scenario.sigma_total),
+            hovertemplate = "%{text}<extra>$(scenario.name)</extra>",
+            error_y = attr(type = "data", array = scenario.sigma_mc, visible = true,
+                           color = "hsl($(hues[idx]), 70%, 50%)"))
         push!(traces, trace)
     end
 
@@ -707,7 +866,7 @@ end
 
 function run_part2_1(physics, rock_idx, air_idx, water_idx, porous_idx, porous_density;
                       n_samples, straggling, scattering, energy_threshold_low,
-                      energy_min, energy_max, output_dir)
+                      energy_min, energy_max, threshold_factors, output_dir)
     println()
     println("=" ^ 60)
     println(" Part 2.1: Water-Fraction Sweep and Hole Enlargement")
@@ -725,18 +884,18 @@ function run_part2_1(physics, rock_idx, air_idx, water_idx, porous_idx, porous_d
 
     println("Part 2.1a: Water-fraction sweep at 500m depth")
     println("-" ^ 50)
-    scenarios_water = Tuple{String, Vector{Float64}, Vector{Float64}}[]
+    scenarios_water = FluxScenario[]
     for water_pct in 0:10:90
         wf = Float64(water_pct) / 100.0
         densities, cell_mats = create_cell_config(cube, rock_idx, water_idx,
             porous_idx, porous_density, aquifer_center, aquifer_hs, wf)
         label = water_pct == 0 ? "Baseline (100% rock)" : "$(water_pct)% water"
         @info "Computing $label..."
-        flux, sigma = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
+        flux, sigma_mc, sigma_syst, sigma_total = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
             n_samples=n_samples, straggling=straggling, scattering=scattering,
             energy_threshold_low=energy_threshold_low, energy_min=energy_min,
-            energy_max=energy_max, cell_materials=cell_mats)
-        push!(scenarios_water, (label, flux, sigma))
+            energy_max=energy_max, threshold_factors=threshold_factors, cell_materials=cell_mats)
+        push!(scenarios_water, FluxScenario(label, flux, sigma_mc, sigma_syst, sigma_total))
     end
     create_aquifer_plot(zeniths, scenarios_water;
         output_path=joinpath(output_dir, "part2_1a_water_fraction.html"),
@@ -745,14 +904,14 @@ function run_part2_1(physics, rock_idx, air_idx, water_idx, porous_idx, porous_d
 
     println("\nPart 2.1b: Hole enlargement with 90% water aquifer")
     println("-" ^ 50)
-    scenarios_hole = Tuple{String, Vector{Float64}, Vector{Float64}}[]
+    scenarios_hole = FluxScenario[]
     densities_bl, mats_bl = create_cell_config(cube, rock_idx, water_idx,
         porous_idx, porous_density, aquifer_center, aquifer_hs, 0.0)
-    flux_bl, sigma_bl = compute_cube_flux_vs_angle(physics, cube, densities_bl, zeniths;
+    flux_bl, sigma_bl_mc, sigma_bl_syst, sigma_bl_total = compute_cube_flux_vs_angle(physics, cube, densities_bl, zeniths;
         n_samples=n_samples, straggling=straggling, scattering=scattering,
         energy_threshold_low=energy_threshold_low, energy_min=energy_min,
-        energy_max=energy_max, cell_materials=mats_bl)
-    push!(scenarios_hole, ("Baseline", flux_bl, sigma_bl))
+        energy_max=energy_max, threshold_factors=threshold_factors, cell_materials=mats_bl)
+    push!(scenarios_hole, FluxScenario("Baseline", flux_bl, sigma_bl_mc, sigma_bl_syst, sigma_bl_total))
 
     for half_size in 50.0:50.0:250.0
         sz = 2 * half_size
@@ -762,11 +921,11 @@ function run_part2_1(physics, rock_idx, air_idx, water_idx, porous_idx, porous_d
         densities, cell_mats = create_cell_config(cube, rock_idx, water_idx,
             porous_idx, porous_density, center, hs, 0.9)
         @info "Computing hole=$(Int(sz))m (90% water)..."
-        flux, sigma = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
+        flux, sigma_mc, sigma_syst, sigma_total = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
             n_samples=n_samples, straggling=straggling, scattering=scattering,
             energy_threshold_low=energy_threshold_low, energy_min=energy_min,
-            energy_max=energy_max, cell_materials=cell_mats)
-        push!(scenarios_hole, ("$(Int(sz))m aquifer", flux, sigma))
+            energy_max=energy_max, threshold_factors=threshold_factors, cell_materials=cell_mats)
+        push!(scenarios_hole, FluxScenario("$(Int(sz))m aquifer", flux, sigma_mc, sigma_syst, sigma_total))
     end
     create_aquifer_plot(zeniths, scenarios_hole;
         output_path=joinpath(output_dir, "part2_1b_hole_enlargement.html"),
@@ -777,7 +936,7 @@ end
 
 function run_part2_2(physics, rock_idx, air_idx, water_idx, porous_idx, porous_density;
                       n_samples, straggling, scattering, energy_threshold_low,
-                      energy_min, energy_max, output_dir)
+                      energy_min, energy_max, threshold_factors, output_dir)
     println()
     println("=" ^ 60)
     println(" Part 2.2: Moving 90% Water Aquifer")
@@ -793,16 +952,17 @@ function run_part2_2(physics, rock_idx, air_idx, water_idx, porous_idx, porous_d
 
     densities_bl, mats_bl = create_cell_config(cube, rock_idx, water_idx,
         porous_idx, porous_density, (0.0, 0.0, -1000.0), aquifer_hs, 0.0)
-    flux_baseline, sigma_baseline = compute_cube_flux_vs_angle(
+    flux_baseline, sigma_baseline_mc, sigma_baseline_syst, sigma_baseline_total = compute_cube_flux_vs_angle(
         physics, cube, densities_bl, zeniths;
         n_samples=n_samples, straggling=straggling, scattering=scattering,
         energy_threshold_low=energy_threshold_low, energy_min=energy_min,
-        energy_max=energy_max, cell_materials=mats_bl)
+        energy_max=energy_max, threshold_factors=threshold_factors, cell_materials=mats_bl)
 
     println("Part 2.2a: Moving 90% water aquifer vertically (on-axis)")
     println("-" ^ 50)
-    scenarios_vert = Tuple{String, Vector{Float64}, Vector{Float64}}[]
-    push!(scenarios_vert, ("Baseline", flux_baseline, sigma_baseline))
+    scenarios_vert = FluxScenario[]
+    push!(scenarios_vert, FluxScenario("Baseline", flux_baseline, sigma_baseline_mc,
+                                       sigma_baseline_syst, sigma_baseline_total))
 
     for depth in 100.0:100.0:1000.0
         center_z = depth - aquifer_hs[3]
@@ -810,11 +970,11 @@ function run_part2_2(physics, rock_idx, air_idx, water_idx, porous_idx, porous_d
         densities, cell_mats = create_cell_config(cube, rock_idx, water_idx,
             porous_idx, porous_density, center, aquifer_hs, 0.9)
         @info "Computing depth=$(Int(depth))m ..."
-        flux, sigma = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
+        flux, sigma_mc, sigma_syst, sigma_total = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
             n_samples=n_samples, straggling=straggling, scattering=scattering,
             energy_threshold_low=energy_threshold_low, energy_min=energy_min,
-            energy_max=energy_max, cell_materials=cell_mats)
-        push!(scenarios_vert, ("depth=$(Int(depth))m", flux, sigma))
+            energy_max=energy_max, threshold_factors=threshold_factors, cell_materials=cell_mats)
+        push!(scenarios_vert, FluxScenario("depth=$(Int(depth))m", flux, sigma_mc, sigma_syst, sigma_total))
     end
     create_aquifer_plot(zeniths, scenarios_vert;
         output_path=joinpath(output_dir, "part2_2a_vertical_movement.html"),
@@ -823,8 +983,9 @@ function run_part2_2(physics, rock_idx, air_idx, water_idx, porous_idx, porous_d
 
     println("\nPart 2.2b: Moving 90% water aquifer along y at 100m depth")
     println("-" ^ 50)
-    scenarios_horiz = Tuple{String, Vector{Float64}, Vector{Float64}}[]
-    push!(scenarios_horiz, ("Baseline", flux_baseline, sigma_baseline))
+    scenarios_horiz = FluxScenario[]
+    push!(scenarios_horiz, FluxScenario("Baseline", flux_baseline, sigma_baseline_mc,
+                                        sigma_baseline_syst, sigma_baseline_total))
     aquifer_z_center = 100.0
 
     for y_center in 0.0:50.0:200.0
@@ -833,11 +994,17 @@ function run_part2_2(physics, rock_idx, air_idx, water_idx, porous_idx, porous_d
         densities, cell_mats = create_cell_config(cube, rock_idx, water_idx,
             porous_idx, porous_density, center, aquifer_hs, 0.9)
         @info "Computing y_center=$(Int(y_center))m (θ≈$(@sprintf("%.0f",theta_expected))°) ..."
-        flux, sigma = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
+        flux, sigma_mc, sigma_syst, sigma_total = compute_cube_flux_vs_angle(physics, cube, densities, zeniths;
             n_samples=n_samples, straggling=straggling, scattering=scattering,
             energy_threshold_low=energy_threshold_low, energy_min=energy_min,
-            energy_max=energy_max, cell_materials=cell_mats)
-        push!(scenarios_horiz, ("y=$(Int(y_center))m (θ≈$(@sprintf("%.0f",theta_expected))°)", flux, sigma))
+            energy_max=energy_max, threshold_factors=threshold_factors, cell_materials=cell_mats)
+        push!(scenarios_horiz, FluxScenario(
+            "y=$(Int(y_center))m (θ≈$(@sprintf("%.0f",theta_expected))°)",
+            flux,
+            sigma_mc,
+            sigma_syst,
+            sigma_total,
+        ))
     end
     create_aquifer_plot(zeniths, scenarios_horiz;
         output_path=joinpath(output_dir, "part2_2b_horizontal_movement.html"),
@@ -855,6 +1022,8 @@ function parse_commandline()
     dump_path = DEFAULT_DUMP
     n_samples = 1000
     energy_threshold_low = 100.0
+    threshold_scan_low = 0.5
+    threshold_scan_high = 2.0
     energy_min = 1e-3
     energy_max = 1e9
     straggling = true
@@ -871,6 +1040,10 @@ function parse_commandline()
             n_samples = parse(Int, ARGS[i + 1]); i += 2
         elseif arg == "--threshold"
             energy_threshold_low = parse(Float64, ARGS[i + 1]); i += 2
+        elseif arg == "--threshold-scan-low"
+            threshold_scan_low = parse(Float64, ARGS[i + 1]); i += 2
+        elseif arg == "--threshold-scan-high"
+            threshold_scan_high = parse(Float64, ARGS[i + 1]); i += 2
         elseif arg == "--energy-min"
             energy_min = parse(Float64, ARGS[i + 1]); i += 2
         elseif arg == "--energy-max"
@@ -895,6 +1068,7 @@ function parse_commandline()
 
     return (dump_path=dump_path, n_samples=n_samples,
             energy_threshold_low=energy_threshold_low,
+            threshold_factors=(threshold_scan_low, threshold_scan_high),
             energy_min=energy_min, energy_max=energy_max,
             straggling=straggling, scattering=scattering,
             output_dir=output_dir, part=part)
@@ -911,6 +1085,7 @@ function main()
     println("  Dump file:       $(args.dump_path)")
     println("  MC samples:      $(args.n_samples)")
     println("  Threshold:       $(args.energy_threshold_low) GeV")
+    println("  Threshold scan:  ×$(args.threshold_factors[1]) / ×$(args.threshold_factors[2])")
     println("  Energy range:    $(args.energy_min) - $(args.energy_max) GeV")
     println("  Straggling:      $(args.straggling ? "enabled" : "disabled")")
     println("  Scattering:      $(args.scattering ? "enabled" : "disabled")")
@@ -965,12 +1140,13 @@ function main()
         println("-" ^ 40)
         println(" Part 1.1: Flux vs Zenith Angle")
         println("-" ^ 40)
-        flux_grid, sigma_grid = compute_flux_vs_angle(physics, rock_idx, depths, zeniths;
+        flux_grid, sigma_mc_grid, sigma_syst_grid, sigma_total_grid = compute_flux_vs_angle(physics, rock_idx, depths, zeniths;
             n_samples=args.n_samples, straggling=args.straggling, scattering=args.scattering,
             energy_threshold_low=args.energy_threshold_low, energy_min=args.energy_min,
+            threshold_factors=args.threshold_factors,
             energy_max=args.energy_max, porous_material=porous_idx,
             porous_density=p_density, porous_thickness=shallow_depth)
-        create_flux_vs_angle_plot(depths, zeniths, flux_grid, sigma_grid;
+        create_flux_vs_angle_plot(depths, zeniths, flux_grid, sigma_mc_grid, sigma_syst_grid, sigma_total_grid;
             output_path=joinpath(args.output_dir, "part1_1_flux_vs_angle.html"),
             title="Part 1.1: Muon Flux vs Zenith Angle by Rock Depth")
         println()
@@ -991,14 +1167,15 @@ function main()
         println(" Part 1.3: Flux vs Zenith (fixed energies, 1000m depth)")
         println("-" ^ 40)
         depth_1_3 = 1000.0
-        energies_1_3, flux_fe, _ = compute_flux_fixed_energy(
+        energies_1_3, flux_fe, sigma_fe_mc, sigma_fe_syst, sigma_fe_total = compute_flux_fixed_energy(
             physics, rock_idx, air_idx, depth_1_3, zeniths;
             n_samples=args.n_samples, n_energies=100,
             straggling=args.straggling, scattering=args.scattering,
             energy_threshold_low=args.energy_threshold_low, energy_min=args.energy_min,
+            threshold_factors=args.threshold_factors,
             energy_max=args.energy_max, porous_material=porous_idx,
             porous_density=p_density, porous_thickness=shallow_depth)
-        create_flux_fixed_energy_plot(energies_1_3, zeniths, flux_fe;
+        create_flux_fixed_energy_plot(energies_1_3, zeniths, flux_fe, sigma_fe_mc, sigma_fe_syst, sigma_fe_total;
             depth=depth_1_3,
             output_path=joinpath(args.output_dir, "part1_3_flux_vs_zenith_fixed_energy.html"))
         println()
@@ -1010,6 +1187,7 @@ function main()
         kw = (n_samples=args.n_samples, straggling=args.straggling,
               scattering=args.scattering, energy_threshold_low=args.energy_threshold_low,
               energy_min=args.energy_min, energy_max=args.energy_max,
+              threshold_factors=args.threshold_factors,
               output_dir=args.output_dir)
 
         run_part2_1(physics, rock_idx, air_idx, water_idx, porous_idx, p_density; kw...)

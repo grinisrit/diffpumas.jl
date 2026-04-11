@@ -1,13 +1,14 @@
 #!/usr/bin/env julia
 """
-lvd_muography.jl — Gran Sasso LVD directional muon flux & 3D topography
+lvd_muography.jl — Gran Sasso LVD directional muon flux, topography, and paper checks
 
-Part 1 — Directional muon flux on the 48×91 nmap angular grid
+Part 1 — Directional muon flux on the paper-matching nmap angular grid
   Backward-MC flux computed for each non-underground (θ, φ) bin using the
   slant rock distance R(θ,φ) from nm_c.inc, converted to vertical depth
   D = R·cos θ.  Rock density 2.71 g/cm³ (matching rr.for line 13).
   Gaisser primary flux sampled 10 000 m above the detector.
-  Result saved as an interactive 3D surface of log₁₀(flux).
+  Result saved as an interactive 3D surface of log₁₀(flux) for zenith angles
+  up to 60° over the full 0°–360° azimuth range.
 
 Part 2 — 3D topography & trajectory visualisation
   Elevation map derived from nm_c.inc measured rock thicknesses (48×91, 2°×4°),
@@ -15,6 +16,13 @@ Part 2 — 3D topography & trajectory visualisation
   selected from the Part 1 flux grid (one per 60° azimuth sector, picking
   high-flux bins at moderate zenith).  Geometric rays and backward-MC muon
   trajectories are plotted over an interactive 3D terrain surface.
+
+Part 3 — Reproduction checks against arXiv:0810.4635v1
+  Rebuild the Gran Sasso MUSUN observables reported in the paper: the LVD
+  acceptance-weighted azimuthal intensity for θ ≤ 60°, the underground muon
+  energy spectrum and mean energy, and the full angular occupancy map in the
+  LVD reference frame.  The paper curves are loaded from digitized benchmark
+  assets extracted from the original EPS source files.
 
 The dgsm table in nm_c.inc stores slant rock thickness in metres for each
 (zenith, azimuth) direction from the LVD detector.  The `nmap` lookup adds
@@ -34,22 +42,31 @@ Options:
     --output-dir, -o PATH     Output directory for plots (REQUIRED)
     --dump, -d PATH           Path to physics binary dump file
     --samples, -n INT         MC samples per flux bin (default: 1000)
+    --paper-samples INT       MC samples for Part 3 energy spectrum (default: 20000)
     --threshold FLOAT         Energy threshold for mode switching (default: 100.0)
+    --threshold-scan-low FLOAT
+                              Lower multiplicative factor for transport systematic
+                              threshold scan (default: 0.5)
+    --threshold-scan-high FLOAT
+                              Upper multiplicative factor for transport systematic
+                              threshold scan (default: 2.0)
     --energy-min FLOAT        Minimum energy in GeV (default: 1e-3)
     --energy-max FLOAT        Maximum energy in GeV (default: 1e9)
     --no-straggling           Disable straggling
     --no-scattering           Disable scattering
-    --part INT                Run only part 1 or 2 (default: all)
+    --part INT                Run only part 1, 2, or 3 (default: all)
 
 Examples:
     julia --project=. examples/lvd_muography.jl -o out --part 1 --samples 500
     julia --project=. examples/lvd_muography.jl -o out --part 2
+    julia --project=. examples/lvd_muography.jl -o out --part 3 --paper-samples 10000
 """
 
 using DiffPumas
 using DiffPumas.Physics: get_material_index, property_range, ENERGY_LOSS_CSDA
 using DiffPumas.Loader: print_physics_summary
-using DiffPumas.Geometry: PRIMARY_ALTITUDE, compute_flux, locals_air_at_altitude
+using DiffPumas.Geometry: PRIMARY_ALTITUDE, compute_flux, compute_flux_single_with_state,
+                          locals_air_at_altitude
 using DiffPumas.Geometry: transport_backward_step, transport_backward_step_full, transport_backward_step_mixed
 using DiffPumas.Geometry: TwoLayerGeometry
 using DiffPumas.GaisserFlux: flux_gccly
@@ -62,6 +79,7 @@ using PlotlyJS
 using Printf
 using Random
 using LinearAlgebra
+using Statistics
 
 const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
 const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
@@ -77,6 +95,42 @@ const VALLEY_FLOOR       = 600.0
 const ROCK_DENSITY_REF   = 2.71   # g/cm³ used in rr.for (line 13)
 
 const NMC_PATH = joinpath(@__DIR__, "data", "nm_c.inc")
+const PART1_ZENITH_MAX_DEG = 60.0
+const PAPER_FULL_ZENITH_MAX_DEG = 90.0
+const NMAP_ZENITH_STEP_DEG = 2.0
+const NMAP_AZIMUTH_STEP_DEG = 4.0
+
+const PAPER_FIG7_CURVE_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig7_curve.csv")
+const PAPER_FIG7_POINTS_PATH = joinpath(@__DIR__, "data", "lvd_paper_fig7_points.csv")
+const PAPER_FIG8_CURVE_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig8_curve.csv")
+const PAPER_FIG9_PEAKS_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig9_peaks.csv")
+const PAPER_MEAN_ENERGY_GEV  = 273.0
+const PAPER_MEAN_ENERGY_MEAS_GEV = 270.0
+const PAPER_MEAN_ENERGY_MEAS_STAT_GEV = 3.0
+const PAPER_MEAN_ENERGY_MEAS_SYST_GEV = 18.0
+
+const LVD_BOX_LENGTH_M = 22.7
+const LVD_BOX_WIDTH_M  = 13.2
+const LVD_BOX_HEIGHT_M = 10.0
+const LVD_MEAN_ACCEPTANCE_M2 = 298.0
+const LVD_BOX_MEAN_PROJECTION_M2 = (
+    2.0 * (LVD_BOX_LENGTH_M * LVD_BOX_WIDTH_M +
+           LVD_BOX_LENGTH_M * LVD_BOX_HEIGHT_M +
+           LVD_BOX_WIDTH_M  * LVD_BOX_HEIGHT_M)
+) / 4.0
+const LVD_ACCEPTANCE_SCALE = LVD_MEAN_ACCEPTANCE_M2 / LVD_BOX_MEAN_PROJECTION_M2
+
+const PAPER_SPECTRUM_LOG10_EDGES = collect(range(0.0, stop=6.0, length=61))
+
+struct NMapFluxResult
+    zeniths::Vector{Float64}
+    azimuths::Vector{Float64}
+    flux::Matrix{Float64}
+    sigma::Matrix{Float64}
+    sigma_syst::Matrix{Float64}
+    sigma_total::Matrix{Float64}
+    rock::Matrix{Float64}
+end
 
 """
     load_dgsm(filepath) -> Matrix{Float64}
@@ -266,6 +320,124 @@ function build_elevation_map()
     end
 
     return emap
+end
+
+wrap_azimuth_deg(phi_deg::Float64) = mod(phi_deg, 360.0)
+
+function circular_distance_deg(a_deg::Float64, b_deg::Float64)
+    return abs(mod(a_deg - b_deg + 180.0, 360.0) - 180.0)
+end
+
+function nmap_zenith_grid(zenith_max_deg::Float64)
+    max_deg = clamp(zenith_max_deg, 0.0, 94.0)
+    zeniths = collect(0.0:NMAP_ZENITH_STEP_DEG:max_deg)
+    if isempty(zeniths) || !isapprox(zeniths[end], max_deg; atol=1e-9)
+        push!(zeniths, max_deg)
+    end
+    return zeniths
+end
+
+function centered_bin_edges(centers::Vector{Float64};
+                            lower::Float64,
+                            upper::Float64)
+    isempty(centers) && return Float64[lower, upper]
+    edges = zeros(Float64, length(centers) + 1)
+    edges[1] = lower
+    for i in 1:(length(centers) - 1)
+        edges[i + 1] = 0.5 * (centers[i] + centers[i + 1])
+    end
+    edges[end] = upper
+    return edges
+end
+
+function zenith_bin_solid_angles(zeniths::Vector{Float64};
+                                 upper_deg::Float64)
+    edges = centered_bin_edges(zeniths; lower=0.0, upper=upper_deg)
+    dphi = deg2rad(NMAP_AZIMUTH_STEP_DEG)
+    return [dphi * max(cosd(edges[i]) - cosd(edges[i + 1]), 0.0)
+            for i in 1:length(zeniths)]
+end
+
+function drop_duplicate_azimuth_column(azimuths::Vector{Float64},
+                                       grid::Matrix{Float64})
+    if length(azimuths) >= 2 &&
+       isapprox(wrap_azimuth_deg(azimuths[end]), wrap_azimuth_deg(azimuths[1]); atol=1e-9)
+        return azimuths[1:(end - 1)], grid[:, 1:(end - 1)]
+    end
+    return azimuths, grid
+end
+
+function periodic_interp(x::Vector{Float64},
+                         y::Vector{Float64},
+                         xq::Vector{Float64};
+                         period::Float64 = 360.0)
+    length(x) == length(y) || error("periodic_interp: x/y length mismatch")
+    isempty(x) && return Float64[]
+
+    order = sortperm(x)
+    xs = x[order]
+    ys = y[order]
+
+    xs_ext = vcat(xs, xs[1] + period)
+    ys_ext = vcat(ys, ys[1])
+
+    result = similar(xq)
+    for (i, q_raw) in enumerate(xq)
+        q = mod(q_raw - xs[1], period) + xs[1]
+        idx = searchsortedlast(xs_ext, q)
+        idx = clamp(idx, 1, length(xs))
+        x1 = xs_ext[idx]
+        x2 = xs_ext[idx + 1]
+        y1 = ys_ext[idx]
+        y2 = ys_ext[idx + 1]
+        t = x2 == x1 ? 0.0 : (q - x1) / (x2 - x1)
+        result[i] = y1 + t * (y2 - y1)
+    end
+
+    return result
+end
+
+function fit_positive_scale(reference::Vector{Float64},
+                            model::Vector{Float64})
+    denom = dot(model, model)
+    denom <= 0.0 && return 1.0
+    return max(dot(reference, model) / denom, 0.0)
+end
+
+function load_csv_columns(path::String, ncols::Int)
+    cols = [Float64[] for _ in 1:ncols]
+    open(path, "r") do io
+        header_seen = false
+        for line in eachline(io)
+            line = strip(line)
+            isempty(line) && continue
+            startswith(line, "#") && continue
+            if !header_seen
+                header_seen = true
+                continue
+            end
+            parts = split(line, ',')
+            length(parts) == ncols || error("Expected $ncols columns in $path")
+            for i in 1:ncols
+                push!(cols[i], parse(Float64, strip(parts[i])))
+            end
+        end
+    end
+    return cols
+end
+
+function lvd_box_projected_area(zenith_deg::Float64,
+                                azimuth_lvd_deg::Float64)
+    ux = sind(zenith_deg) * cosd(azimuth_lvd_deg)
+    uy = sind(zenith_deg) * sind(azimuth_lvd_deg)
+    uz = cosd(zenith_deg)
+
+    projected =
+        LVD_BOX_WIDTH_M  * LVD_BOX_HEIGHT_M * abs(ux) +
+        LVD_BOX_LENGTH_M * LVD_BOX_HEIGHT_M * abs(uy) +
+        LVD_BOX_LENGTH_M * LVD_BOX_WIDTH_M  * abs(uz)
+
+    return LVD_ACCEPTANCE_SCALE * projected
 end
 
 """
@@ -651,7 +823,7 @@ end
 
 Pick `n` well-spread (azimuth, zenith) directions from the flux grid.
 Divides the azimuth range into `n` equal sectors and, within each sector,
-selects a random valid (non-NaN, θ ∈ 10°–65°) bin.
+selects a random valid (non-NaN, θ ∈ 10°–60°) bin.
 """
 function select_diverse_directions(flux_grid::Matrix{Float64},
                                    zeniths::Vector{Float64},
@@ -669,7 +841,7 @@ function select_diverse_directions(flux_grid::Matrix{Float64},
         for (a_idx, φ) in enumerate(azimuths)
             (φ < az_lo || φ >= az_hi) && continue
             for (z_idx, θ) in enumerate(zeniths)
-                (θ < 10.0 || θ > 65.0) && continue
+                (θ < 10.0 || θ > PART1_ZENITH_MAX_DEG) && continue
                 f = flux_grid[z_idx, a_idx]
                 (!isnan(f) && f > 0.0) && push!(candidates, (φ, θ, f))
             end
@@ -737,36 +909,41 @@ const NMAP_ROCK_DENSITY = 2710.0  # kg/m³ = 2.71 g/cm³ per rr.for line 13
 const GAISSER_HEIGHT    = 10_000.0  # m above detector for primary flux sampling
 
 """
-    compute_nmap_flux_grid(physics; kwargs...) -> (zeniths, azimuths, flux, sigma, rock_m)
+    compute_nmap_flux_grid(physics; kwargs...) -> NMapFluxResult
 
 Compute backward-MC muon flux on the 48×91 angular grid matching the dgsm
 rock-thickness table.  For each non-underground (θ, φ) bin the slant rock
 distance R is converted to a vertical depth `D = R·cos θ` and fed to
 `compute_flux` with ρ = 2710 kg/m³ (rr.for convention).
 
-Returns zenith (48-vector), azimuth (91-vector), flux (48×91), sigma (48×91),
-and the raw slant rock thickness (48×91, NaN for underground).
+`zenith_max_deg` selects how much of the original 2° grid is used.  This lets
+Part 1 stay matched to the paper slice (θ ≤ 60°), while Part 3 can still build
+full-range observables up to 90°.
 """
 function compute_nmap_flux_grid(physics;
                                 n_samples::Int = 1000,
                                 straggling::Bool = true,
                                 scattering::Bool = true,
                                 energy_threshold_low::Float64 = 100.0,
+                                threshold_factors::Tuple{Float64,Float64} = (0.5, 2.0),
                                 energy_min::Float64 = 1e-3,
                                 energy_max::Float64 = 1e9,
+                                zenith_max_deg::Float64 = PART1_ZENITH_MAX_DEG,
                                 porous_material::Int = -1,
                                 porous_density::Float64 = 0.0,
                                 porous_thickness::Float64 = 0.0)
 
     dgsm = load_dgsm(NMC_PATH)
 
-    n_zen = 48
+    zeniths  = nmap_zenith_grid(zenith_max_deg)
     n_azi = 91
-    zeniths  = [2.0 * (i - 1) for i in 1:n_zen]
     azimuths = [4.0 * (j - 1) for j in 1:n_azi]
+    n_zen = length(zeniths)
 
     flux_grid  = fill(NaN, n_zen, n_azi)
     sigma_grid = fill(NaN, n_zen, n_azi)
+    sigma_syst_grid = fill(NaN, n_zen, n_azi)
+    sigma_total_grid = fill(NaN, n_zen, n_azi)
     rock_grid  = fill(NaN, n_zen, n_azi)
 
     n_total   = n_zen * n_azi
@@ -794,24 +971,27 @@ function compute_nmap_flux_grid(physics;
                                n_done, n_total, θ, φ, gsroc, depth)
             end
 
-            flux, sigma = compute_flux(physics,
+            budget = compute_flux_uncertainty(physics,
                 NMAP_ROCK_DENSITY, depth, elevation, energy_min, energy_max;
                 n_samples    = n_samples,
                 straggling   = straggling,
                 scattering   = scattering,
                 energy_threshold_low = energy_threshold_low,
+                threshold_factors = threshold_factors,
                 porous_material  = porous_material,
                 porous_density   = porous_density,
                 porous_thickness = p_thick,
                 primary_altitude = GAISSER_HEIGHT)
 
-            flux_grid[z_idx, a_idx]  = flux
-            sigma_grid[z_idx, a_idx] = sigma
+            flux_grid[z_idx, a_idx] = budget.value
+            sigma_grid[z_idx, a_idx] = budget.sigma_mc
+            sigma_syst_grid[z_idx, a_idx] = budget.sigma_syst
+            sigma_total_grid[z_idx, a_idx] = budget.sigma_total
         end
     end
 
     @info @sprintf("Computed %d bins (%d underground/skipped)", n_done, n_skipped)
-    return zeniths, azimuths, flux_grid, sigma_grid, rock_grid
+    return NMapFluxResult(zeniths, azimuths, flux_grid, sigma_grid, sigma_syst_grid, sigma_total_grid, rock_grid)
 end
 
 """
@@ -823,10 +1003,26 @@ with a companion surface showing the raw slant rock thickness.
 function create_nmap_flux_plot(zeniths::Vector{Float64},
                                azimuths::Vector{Float64},
                                flux_grid::Matrix{Float64},
+                               sigma_grid::Matrix{Float64},
+                               sigma_syst_grid::Matrix{Float64},
+                               sigma_total_grid::Matrix{Float64},
                                rock_grid::Matrix{Float64};
                                output_path::String)
 
     log_flux = map(f -> (isnan(f) || f <= 0.0) ? NaN : log10(f), flux_grid)
+    log_flux_upper = map((f, σ) -> (isnan(f) || f <= 0.0 || !isfinite(σ)) ? NaN : log10(f + σ),
+                         flux_grid, sigma_total_grid)
+    log_flux_lower = map((f, σ) -> (isnan(f) || f <= 0.0 || !isfinite(σ) || f <= σ) ? NaN : log10(f - σ),
+                         flux_grid, sigma_total_grid)
+    hover_text = [@sprintf(
+        "φ=%.0f°<br>θ=%.0f°<br>Flux=%.5e<br>MC=%.2f%%<br>Transport syst=%.2f%%<br>Total=%.2f%%",
+        azimuths[a_idx],
+        zeniths[z_idx],
+        flux_grid[z_idx, a_idx],
+        100 * sigma_grid[z_idx, a_idx] / max(abs(flux_grid[z_idx, a_idx]), 1e-30),
+        100 * sigma_syst_grid[z_idx, a_idx] / max(abs(flux_grid[z_idx, a_idx]), 1e-30),
+        100 * sigma_total_grid[z_idx, a_idx] / max(abs(flux_grid[z_idx, a_idx]), 1e-30),
+    ) for z_idx in 1:length(zeniths), a_idx in 1:length(azimuths)]
 
     valid = filter(!isnan, log_flux)
     zmin = isempty(valid) ? -12.0 : floor(minimum(valid))
@@ -851,8 +1047,23 @@ function create_nmap_flux_plot(zeniths::Vector{Float64},
         colorbar   = attr(title = "log₁₀ Φ<br>(m⁻²s⁻¹sr⁻¹)",
                           x = 1.08, len = 0.6),
         name       = "Muon flux",
-        hovertemplate = "φ=%{x:.0f}°<br>θ=%{y:.0f}°<br>" *
-                        "log₁₀Φ=%{z:.2f}<extra></extra>"
+        text = hover_text,
+        hovertemplate = "%{text}<extra></extra>"
+    ))
+
+    push!(traces, surface(
+        x = azimuths, y = zeniths, z = log_flux_upper,
+        colorscale = "Oranges",
+        opacity = 0.18,
+        showscale = false,
+        name = "Flux total +1σ"
+    ))
+    push!(traces, surface(
+        x = azimuths, y = zeniths, z = log_flux_lower,
+        colorscale = "Oranges",
+        opacity = 0.18,
+        showscale = false,
+        name = "Flux total -1σ"
     ))
 
     rock_log = map(r -> (isnan(r) || r <= 0.0) ? NaN : log10(r), rock_grid)
@@ -869,9 +1080,9 @@ function create_nmap_flux_plot(zeniths::Vector{Float64},
 
     layout = Layout(
         title = attr(
-            text = "Gran Sasso LVD — Muon Flux on 48×91 nmap Grid<br>" *
+            text = "Gran Sasso LVD — Muon Flux on $(length(zeniths))×$(length(azimuths)) nmap Grid<br>" *
                    "<sub>ρ=$(NMAP_ROCK_DENSITY) kg/m³ · Gaisser at $(Int(GAISSER_HEIGHT))m · " *
-                   "measured rock thickness (nm_c.inc)</sub>",
+                   "measured rock thickness (nm_c.inc) · θ ≤ $(round(Int, maximum(zeniths)))°</sub>",
             font = attr(size = 15)
         ),
         scene = attr(
@@ -902,6 +1113,7 @@ function run_part1(physics;
                    straggling::Bool,
                    scattering::Bool,
                    energy_threshold_low::Float64,
+                   threshold_factors::Tuple{Float64,Float64},
                    energy_min::Float64,
                    energy_max::Float64,
                    porous_material::Int,
@@ -910,27 +1122,29 @@ function run_part1(physics;
                    output_dir::String)
 
     println("=" ^ 60)
-    println(" Part 1: Muon Flux on 48×91 nmap Angular Grid")
+    println(" Part 1: Muon Flux on the θ ≤ 60° nmap Slice")
     println("=" ^ 60)
     println()
     println("  Rock density:     $(NMAP_ROCK_DENSITY) kg/m³ (rr.for)")
     println("  Gaisser altitude: $(Int(GAISSER_HEIGHT)) m above detector")
     println("  MC samples/bin:   $n_samples")
+    println("  Zenith coverage:  0 – $(Int(PART1_ZENITH_MAX_DEG))°")
     println("  Energy range:     $energy_min – $energy_max GeV")
     println()
 
-    zeniths, azimuths, flux_grid, sigma_grid, rock_grid =
-        compute_nmap_flux_grid(physics;
+    flux_result = compute_nmap_flux_grid(physics;
             n_samples = n_samples,
             straggling = straggling, scattering = scattering,
             energy_threshold_low = energy_threshold_low,
+            threshold_factors = threshold_factors,
             energy_min = energy_min, energy_max = energy_max,
+            zenith_max_deg = PART1_ZENITH_MAX_DEG,
             porous_material = porous_material,
             porous_density  = porous_density,
             porous_thickness = porous_thickness)
 
-    n_valid = count(!isnan, flux_grid)
-    flux_valid = filter(f -> !isnan(f) && f > 0, flux_grid)
+    n_valid = count(!isnan, flux_result.flux)
+    flux_valid = filter(f -> !isnan(f) && f > 0, flux_result.flux)
     if !isempty(flux_valid)
         println()
         @info @sprintf("Flux range: %.3e – %.3e m⁻²s⁻¹sr⁻¹ (%d valid bins)",
@@ -938,11 +1152,809 @@ function run_part1(physics;
     end
     println()
 
-    create_nmap_flux_plot(zeniths, azimuths, flux_grid, rock_grid;
+    create_nmap_flux_plot(flux_result.zeniths, flux_result.azimuths,
+                          flux_result.flux, flux_result.sigma,
+                          flux_result.sigma_syst, flux_result.sigma_total,
+                          flux_result.rock;
         output_path = joinpath(output_dir, "part1_nmap_flux.html"))
 
     println()
-    return zeniths, azimuths, flux_grid
+    return flux_result
+end
+
+function compute_direction_weight_grid(zeniths::Vector{Float64},
+                                       azimuths::Vector{Float64},
+                                       flux_grid::Matrix{Float64};
+                                       zenith_upper_deg::Float64,
+                                       azimuth_offset_deg::Float64 = 0.0,
+                                       weight_mode::Symbol = :none)
+    azimuths_u, flux_u = drop_duplicate_azimuth_column(azimuths, flux_grid)
+    solid_angles = zenith_bin_solid_angles(zeniths; upper_deg=zenith_upper_deg)
+
+    weights = zeros(Float64, size(flux_u))
+    for (z_idx, θ) in enumerate(zeniths)
+        for (a_idx, φ_geo) in enumerate(azimuths_u)
+            flux = flux_u[z_idx, a_idx]
+            (!isfinite(flux) || flux <= 0.0) && continue
+
+            geom = if weight_mode == :none
+                1.0
+            elseif weight_mode == :lvd_box
+                lvd_box_projected_area(θ, wrap_azimuth_deg(φ_geo + azimuth_offset_deg))
+            else
+                error("Unknown angular weight mode: $weight_mode")
+            end
+
+            weights[z_idx, a_idx] = flux * solid_angles[z_idx] * geom
+        end
+    end
+
+    azimuths_shifted = wrap_azimuth_deg.(azimuths_u .+ azimuth_offset_deg)
+    order = sortperm(azimuths_shifted)
+    return azimuths_shifted[order], weights[:, order]
+end
+
+function compute_direction_uncertainty_terms(zeniths::Vector{Float64},
+                                             azimuths::Vector{Float64},
+                                             sigma_grid::Matrix{Float64};
+                                             zenith_upper_deg::Float64,
+                                             azimuth_offset_deg::Float64 = 0.0,
+                                             weight_mode::Symbol = :none)
+    azimuths_u, sigma_u = drop_duplicate_azimuth_column(azimuths, sigma_grid)
+    solid_angles = zenith_bin_solid_angles(zeniths; upper_deg=zenith_upper_deg)
+
+    weighted_sigma_sq = zeros(Float64, size(sigma_u))
+    for (z_idx, θ) in enumerate(zeniths)
+        for (a_idx, φ_geo) in enumerate(azimuths_u)
+            sigma = sigma_u[z_idx, a_idx]
+            (!isfinite(sigma) || sigma < 0.0) && continue
+
+            geom = if weight_mode == :none
+                1.0
+            elseif weight_mode == :lvd_box
+                lvd_box_projected_area(θ, wrap_azimuth_deg(φ_geo + azimuth_offset_deg))
+            else
+                error("Unknown angular weight mode: $weight_mode")
+            end
+
+            weighted_sigma_sq[z_idx, a_idx] = (sigma * solid_angles[z_idx] * geom)^2
+        end
+    end
+
+    azimuths_shifted = wrap_azimuth_deg.(azimuths_u .+ azimuth_offset_deg)
+    order = sortperm(azimuths_shifted)
+    return azimuths_shifted[order], weighted_sigma_sq[:, order]
+end
+
+function compute_figure7_profile_with_uncertainty(flux_result::NMapFluxResult;
+                                                  azimuth_offset_deg::Float64)
+    z_end = findlast(θ -> θ <= PART1_ZENITH_MAX_DEG + 1e-9, flux_result.zeniths)
+    z_end === nothing && error("No θ ≤ $(PART1_ZENITH_MAX_DEG)° rows available for Figure 7")
+
+    zeniths = flux_result.zeniths[1:z_end]
+    flux = flux_result.flux[1:z_end, :]
+    sigma_mc = flux_result.sigma[1:z_end, :]
+    sigma_syst = flux_result.sigma_syst[1:z_end, :]
+
+    azimuths_lvd, weights = compute_direction_weight_grid(
+        zeniths, flux_result.azimuths, flux;
+        zenith_upper_deg=PART1_ZENITH_MAX_DEG,
+        azimuth_offset_deg=azimuth_offset_deg,
+        weight_mode=:lvd_box)
+    _, mc_terms = compute_direction_uncertainty_terms(
+        zeniths, flux_result.azimuths, sigma_mc;
+        zenith_upper_deg=PART1_ZENITH_MAX_DEG,
+        azimuth_offset_deg=azimuth_offset_deg,
+        weight_mode=:lvd_box)
+    _, syst_terms = compute_direction_uncertainty_terms(
+        zeniths, flux_result.azimuths, sigma_syst;
+        zenith_upper_deg=PART1_ZENITH_MAX_DEG,
+        azimuth_offset_deg=azimuth_offset_deg,
+        weight_mode=:lvd_box)
+
+    profile = vec(sum(weights, dims=1)) / NMAP_AZIMUTH_STEP_DEG
+    profile_sigma_mc = vec(sqrt.(sum(mc_terms, dims=1))) / NMAP_AZIMUTH_STEP_DEG
+    profile_sigma_syst = vec(sqrt.(sum(syst_terms, dims=1))) / NMAP_AZIMUTH_STEP_DEG
+    profile_sigma_total = sqrt.(profile_sigma_mc.^2 .+ profile_sigma_syst.^2)
+
+    return azimuths_lvd, profile, profile_sigma_mc, profile_sigma_syst, profile_sigma_total
+end
+
+function compute_figure7_profile(flux_result::NMapFluxResult;
+                                 azimuth_offset_deg::Float64)
+    azimuths_lvd, profile, _, _, _ = compute_figure7_profile_with_uncertainty(
+        flux_result; azimuth_offset_deg=azimuth_offset_deg)
+    return azimuths_lvd, profile
+end
+
+function compute_figure9_occupancy(flux_result::NMapFluxResult;
+                                   azimuth_offset_deg::Float64)
+    azimuths_lvd, weights = compute_direction_weight_grid(
+        flux_result.zeniths, flux_result.azimuths, flux_result.flux;
+        zenith_upper_deg=maximum(flux_result.zeniths),
+        azimuth_offset_deg=azimuth_offset_deg,
+        weight_mode=:none)
+
+    total = sum(weights)
+    occupancy = total > 0.0 ? weights / total : weights
+    return azimuths_lvd, occupancy
+end
+
+function load_paper_figure7_benchmark()
+    curve_cols = load_csv_columns(PAPER_FIG7_CURVE_PATH, 2)
+    point_cols = load_csv_columns(PAPER_FIG7_POINTS_PATH, 2)
+    return (
+        curve_az = curve_cols[1],
+        curve_intensity = curve_cols[2],
+        point_az = point_cols[1],
+        point_intensity = point_cols[2],
+    )
+end
+
+function load_paper_figure8_benchmark()
+    cols = load_csv_columns(PAPER_FIG8_CURVE_PATH, 2)
+    return (energy = cols[1], relative_count = cols[2])
+end
+
+function load_paper_figure9_peaks()
+    cols = load_csv_columns(PAPER_FIG9_PEAKS_PATH, 3)
+    peaks = NamedTuple{(:cos_zenith, :azimuth_deg, :relative_height),
+                       Tuple{Float64, Float64, Float64}}[]
+    for i in eachindex(cols[1])
+        push!(peaks, (
+            cos_zenith = cols[1][i],
+            azimuth_deg = cols[2][i],
+            relative_height = cols[3][i],
+        ))
+    end
+    return peaks
+end
+
+function infer_lvd_reference_offset(flux_result::NMapFluxResult,
+                                    paper_az::Vector{Float64},
+                                    paper_intensity::Vector{Float64})
+    function score_offset(offset_deg::Float64)
+        model_az, model_profile = compute_figure7_profile(
+            flux_result; azimuth_offset_deg=offset_deg)
+        model_interp = periodic_interp(model_az, model_profile, paper_az)
+        scale = fit_positive_scale(paper_intensity, model_interp)
+        residual = scale .* model_interp .- paper_intensity
+        rmse = sqrt(mean(residual .^ 2)) /
+               max(maximum(paper_intensity), eps(Float64))
+        return rmse, scale
+    end
+
+    best_offset = 0.0
+    best_scale = 1.0
+    best_rmse = Inf
+
+    for offset_deg in 0.0:1.0:359.0
+        rmse, scale = score_offset(offset_deg)
+        if rmse < best_rmse
+            best_offset = offset_deg
+            best_scale = scale
+            best_rmse = rmse
+        end
+    end
+
+    for offset_deg in (best_offset - 2.0):0.25:(best_offset + 2.0)
+        wrapped = wrap_azimuth_deg(offset_deg)
+        rmse, scale = score_offset(wrapped)
+        if rmse < best_rmse
+            best_offset = wrapped
+            best_scale = scale
+            best_rmse = rmse
+        end
+    end
+
+    return (offset_deg=best_offset, scale=best_scale, rmse=best_rmse)
+end
+
+function sample_paper_energy_spectrum(physics,
+                                      flux_result::NMapFluxResult,
+                                      rock_idx::Int,
+                                      air_idx::Int;
+                                      n_samples::Int,
+                                      straggling::Bool,
+                                      scattering::Bool,
+                                      energy_threshold_low::Float64,
+                                      energy_min::Float64,
+                                      energy_max::Float64,
+                                      porous_material::Int,
+                                      porous_density::Float64,
+                                      porous_thickness::Float64,
+                                      seed::Int = 2026,
+                                      verbose::Bool = true)
+    energy_max > energy_min || error("Part 3 spectrum range must have energy_max > energy_min")
+
+    azimuths_u, flux_u = drop_duplicate_azimuth_column(flux_result.azimuths, flux_result.flux)
+    _, rock_u = drop_duplicate_azimuth_column(flux_result.azimuths, flux_result.rock)
+    solid_angles = zenith_bin_solid_angles(
+        flux_result.zeniths; upper_deg=maximum(flux_result.zeniths))
+
+    angle_indices = Tuple{Int, Int}[]
+    angle_weights = Float64[]
+    for (z_idx, θ) in enumerate(flux_result.zeniths)
+        for a_idx in eachindex(azimuths_u)
+            flux = flux_u[z_idx, a_idx]
+            rock = rock_u[z_idx, a_idx]
+            (!isfinite(flux) || flux <= 0.0 || !isfinite(rock) || rock <= 0.0) && continue
+            push!(angle_indices, (z_idx, a_idx))
+            push!(angle_weights, flux * solid_angles[z_idx])
+        end
+    end
+
+    isempty(angle_indices) && error("No valid angular bins available for Part 3 spectrum sampling")
+
+    total_angle_weight = sum(angle_weights)
+    cdf = cumsum(angle_weights) ./ total_angle_weight
+    log_span = log(energy_max / energy_min)
+
+    hist = zeros(Float64, length(PAPER_SPECTRUM_LOG10_EDGES) - 1)
+    hist_w2 = zeros(Float64, length(PAPER_SPECTRUM_LOG10_EDGES) - 1)
+    total_weight = 0.0
+    weighted_energy = 0.0
+
+    rng = MersenneTwister(seed)
+    report_every = max(1, n_samples ÷ 10)
+
+    for sample_idx in 1:n_samples
+        if verbose && (sample_idx == 1 || sample_idx % report_every == 0 || sample_idx == n_samples)
+            @info @sprintf("Part 3 spectrum sample %d / %d", sample_idx, n_samples)
+        end
+
+        draw = rand(rng)
+        draw_idx = searchsortedfirst(cdf, draw)
+        z_idx, a_idx = angle_indices[draw_idx]
+        θ = flux_result.zeniths[z_idx]
+
+        sampled_energy = energy_min * exp(log_span * rand(rng))
+        energy_weight = sampled_energy * log_span
+        charge = rand(rng) > 0.5 ? 1.0 : -1.0
+
+        rock_slant = rock_u[z_idx, a_idx]
+        depth = rock_slant * cosd(θ)
+        p_thick = min(porous_thickness, depth)
+        geometry = TwoLayerGeometry{Float64}(
+            depth, NMAP_ROCK_DENSITY, rock_idx, air_idx,
+            porous_material, porous_density, p_thick, GAISSER_HEIGHT)
+
+        flux_differential, _ = compute_flux_single_with_state(
+            physics, geometry, sampled_energy, 90.0 - θ, charge;
+            rng=rng, straggling=straggling, scattering=scattering,
+            energy_threshold_low=energy_threshold_low)
+
+        flux_differential <= 0.0 && continue
+
+        angle_probability = angle_weights[draw_idx] / total_angle_weight
+        weight = flux_differential * solid_angles[z_idx] *
+                 energy_weight * 2.0 / angle_probability
+
+        loge = log10(sampled_energy)
+        bin_idx = searchsortedlast(PAPER_SPECTRUM_LOG10_EDGES, loge)
+        if bin_idx == length(PAPER_SPECTRUM_LOG10_EDGES)
+            bin_idx -= 1
+        end
+
+        if 1 <= bin_idx <= length(hist)
+            hist[bin_idx] += weight
+            hist_w2[bin_idx] += weight^2
+            total_weight += weight
+            weighted_energy += weight * sampled_energy
+        end
+    end
+
+    centers = [10.0^((PAPER_SPECTRUM_LOG10_EDGES[i] + PAPER_SPECTRUM_LOG10_EDGES[i + 1]) / 2)
+               for i in 1:length(hist)]
+    hist_sum = sum(hist)
+    hist_norm = hist_sum > 0.0 ? hist / hist_sum : hist
+    sigma_relative_count = hist_sum > 0.0 ? sqrt.(hist_w2) / hist_sum : zeros(Float64, length(hist))
+    mean_energy = total_weight > 0.0 ? weighted_energy / total_weight : NaN
+
+    return (
+        energy = centers,
+        relative_count = hist_norm,
+        sigma_relative_count = sigma_relative_count,
+        mean_energy = mean_energy,
+    )
+end
+
+function identify_top_occupancy_peaks(occupancy::Matrix{Float64},
+                                      zeniths::Vector{Float64},
+                                      azimuths::Vector{Float64};
+                                      n::Int = 12)
+    candidates = Tuple{Float64, Float64, Float64}[]
+    for (a_idx, azimuth_deg) in enumerate(azimuths)
+        for (z_idx, θ) in enumerate(zeniths)
+            value = occupancy[z_idx, a_idx]
+            value <= 0.0 && continue
+            push!(candidates, (value, cosd(θ), azimuth_deg))
+        end
+    end
+
+    isempty(candidates) && return NamedTuple[]
+    sort!(candidates; by = c -> -c[1])
+    max_value = candidates[1][1]
+
+    peaks = NamedTuple{(:cos_zenith, :azimuth_deg, :relative_height),
+                       Tuple{Float64, Float64, Float64}}[]
+    for (value, cos_zenith, azimuth_deg) in candidates
+        separated = all(
+            abs(cos_zenith - peak.cos_zenith) > 0.08 ||
+            circular_distance_deg(azimuth_deg, peak.azimuth_deg) > 25.0
+            for peak in peaks)
+        separated || continue
+
+        push!(peaks, (
+            cos_zenith = cos_zenith,
+            azimuth_deg = azimuth_deg,
+            relative_height = value / max_value,
+        ))
+        length(peaks) >= n && break
+    end
+
+    return peaks
+end
+
+function compare_peak_sets(model_peaks, paper_peaks)
+    (isempty(model_peaks) || isempty(paper_peaks)) &&
+        return (matched_fraction=0.0, mean_distance=Inf)
+
+    distances = Float64[]
+    matched = 0
+    for paper_peak in paper_peaks
+        best = Inf
+        for model_peak in model_peaks
+            d_az = circular_distance_deg(model_peak.azimuth_deg, paper_peak.azimuth_deg) / 25.0
+            d_cos = abs(model_peak.cos_zenith - paper_peak.cos_zenith) / 0.08
+            best = min(best, sqrt(d_az^2 + d_cos^2))
+        end
+        push!(distances, best)
+        best <= 1.0 && (matched += 1)
+    end
+
+    return (
+        matched_fraction = matched / length(paper_peaks),
+        mean_distance = mean(distances),
+    )
+end
+
+function add_curve_bands!(traces::Vector{GenericTrace},
+                          x_values,
+                          y_values,
+                          sigma_syst,
+                          sigma_total;
+                          xaxis::String,
+                          yaxis::String,
+                          total_fill::String,
+                          syst_fill::String)
+    total_upper = y_values .+ sigma_total
+    total_lower = max.(y_values .- sigma_total, 1e-30)
+    syst_upper = y_values .+ sigma_syst
+    syst_lower = max.(y_values .- sigma_syst, 1e-30)
+    transparent = "rgba(0,0,0,0)"
+
+    push!(traces, scatter(
+        x = x_values, y = total_upper,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        hoverinfo = "skip",
+        showlegend = false,
+        xaxis = xaxis, yaxis = yaxis
+    ))
+    push!(traces, scatter(
+        x = x_values, y = total_lower,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        fill = "tonexty",
+        fillcolor = total_fill,
+        hoverinfo = "skip",
+        showlegend = false,
+        xaxis = xaxis, yaxis = yaxis
+    ))
+    push!(traces, scatter(
+        x = x_values, y = syst_upper,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        hoverinfo = "skip",
+        showlegend = false,
+        xaxis = xaxis, yaxis = yaxis
+    ))
+    push!(traces, scatter(
+        x = x_values, y = syst_lower,
+        mode = "lines",
+        line = attr(color = transparent, width = 0),
+        fill = "tonexty",
+        fillcolor = syst_fill,
+        hoverinfo = "skip",
+        showlegend = false,
+        xaxis = xaxis, yaxis = yaxis
+    ))
+end
+
+function create_paper_reproduction_plot(fig7, fig8, fig9, metrics;
+                                        output_path::String)
+    fig7_model_scaled = metrics.fig7_scale .* fig7.model_profile
+    fig7_sigma_mc = metrics.fig7_scale .* fig7.sigma_mc
+    fig7_sigma_syst = metrics.fig7_scale .* fig7.sigma_syst
+    fig7_sigma_total = metrics.fig7_scale .* fig7.sigma_total
+
+    fig8_paper = [v > 0.0 ? v : NaN for v in fig8.paper_relative_count]
+    fig8_model = [v > 0.0 ? v : NaN for v in fig8.model_relative_count]
+
+    cos_zeniths = reverse(cosd.(fig9.zeniths))
+    occupancy_heatmap = permutedims(reverse(fig9.occupancy, dims=1), (2, 1))
+
+    traces = GenericTrace[]
+
+    add_curve_bands!(traces, fig7.model_azimuths, fig7_model_scaled .* 1e9,
+                     fig7_sigma_syst .* 1e9, fig7_sigma_total .* 1e9;
+                     xaxis="x", yaxis="y",
+                     total_fill="rgba(40,110,220,0.10)",
+                     syst_fill="rgba(40,110,220,0.18)")
+    add_curve_bands!(traces, fig8.model_energy, fig8.model_relative_count,
+                     fig8.sigma_syst, fig8.sigma_total;
+                     xaxis="x2", yaxis="y2",
+                     total_fill="rgba(40,110,220,0.10)",
+                     syst_fill="rgba(40,110,220,0.18)")
+
+    push!(traces, scatter(
+        x = fig7.paper_curve_azimuths,
+        y = fig7.paper_curve_intensity .* 1e9,
+        mode = "lines",
+        line = attr(color = "rgb(190,40,40)", dash = "dash", width = 2),
+        name = "Figure 7 paper curve",
+        xaxis = "x",
+        yaxis = "y"
+    ))
+    push!(traces, scatter(
+        x = fig7.paper_point_azimuths,
+        y = fig7.paper_point_intensity .* 1e9,
+        mode = "markers",
+        marker = attr(color = "black", size = 5),
+        name = "Figure 7 LVD points",
+        xaxis = "x",
+        yaxis = "y"
+    ))
+    push!(traces, scatter(
+        x = fig7.model_azimuths,
+        y = fig7_model_scaled .* 1e9,
+        mode = "lines",
+        line = attr(color = "rgb(40,110,220)", width = 3),
+        name = "DiffPumas model",
+        text = [@sprintf("φ=%.1f°<br>Intensity=%.4e<br>MC=%.2f%%<br>Transport syst=%.2f%%<br>Total=%.2f%%",
+                         x, y,
+                         100 * mc / max(abs(y), 1e-30),
+                         100 * syst / max(abs(y), 1e-30),
+                         100 * total / max(abs(y), 1e-30))
+                for (x, y, mc, syst, total) in zip(fig7.model_azimuths, fig7_model_scaled,
+                                                   fig7_sigma_mc, fig7_sigma_syst, fig7_sigma_total)],
+        hovertemplate = "%{text}<extra></extra>",
+        xaxis = "x",
+        yaxis = "y"
+    ))
+
+    push!(traces, scatter(
+        x = fig8.paper_energy,
+        y = fig8_paper,
+        mode = "lines",
+        line = attr(color = "rgb(190,40,40)", dash = "dash", width = 2),
+        name = "Figure 8 paper curve",
+        xaxis = "x2",
+        yaxis = "y2",
+        showlegend = false
+    ))
+    push!(traces, scatter(
+        x = fig8.model_energy,
+        y = fig8_model,
+        mode = "lines",
+        line = attr(color = "rgb(40,110,220)", width = 3),
+        name = "DiffPumas spectrum",
+        text = [@sprintf("E=%.3e GeV<br>Relative count=%.4e<br>MC=%.2f%%<br>Transport syst=%.2f%%<br>Total=%.2f%%",
+                         x, y,
+                         100 * mc / max(abs(y), 1e-30),
+                         100 * syst / max(abs(y), 1e-30),
+                         100 * total / max(abs(y), 1e-30))
+                for (x, y, mc, syst, total) in zip(fig8.model_energy, fig8.model_relative_count,
+                                                   fig8.sigma_mc, fig8.sigma_syst, fig8.sigma_total)],
+        hovertemplate = "%{text}<extra></extra>",
+        xaxis = "x2",
+        yaxis = "y2",
+        showlegend = false
+    ))
+
+    push!(traces, heatmap(
+        x = cos_zeniths,
+        y = fig9.azimuths,
+        z = occupancy_heatmap,
+        colorscale = "Viridis",
+        colorbar = attr(title = "Relative occupancy", x = 1.01, len = 0.58),
+        xaxis = "x3",
+        yaxis = "y3",
+        name = "Figure 9 occupancy",
+        showscale = true
+    ))
+    push!(traces, scatter(
+        x = [peak.cos_zenith for peak in fig9.paper_peaks],
+        y = [peak.azimuth_deg for peak in fig9.paper_peaks],
+        mode = "markers",
+        marker = attr(symbol = "x", size = 10, color = "rgb(210,50,50)",
+                      line = attr(width = 2, color = "rgb(210,50,50)")),
+        name = "Figure 9 paper peaks",
+        xaxis = "x3",
+        yaxis = "y3"
+    ))
+    push!(traces, scatter(
+        x = [peak.cos_zenith for peak in fig9.model_peaks],
+        y = [peak.azimuth_deg for peak in fig9.model_peaks],
+        mode = "markers",
+        marker = attr(symbol = "circle-open", size = 10,
+                      color = "rgba(255,255,255,0.2)",
+                      line = attr(width = 2, color = "black")),
+        name = "DiffPumas peaks",
+        xaxis = "x3",
+        yaxis = "y3"
+    ))
+
+    annotations = [
+        attr(x = 0.22, y = 1.03, xref = "paper", yref = "paper",
+             text = "Figure 7: Azimuthal intensity", showarrow = false,
+             font = attr(size = 15)),
+        attr(x = 0.22, y = 0.45, xref = "paper", yref = "paper",
+             text = "Figure 8: Underground energy spectrum", showarrow = false,
+             font = attr(size = 15)),
+        attr(x = 0.79, y = 1.03, xref = "paper", yref = "paper",
+             text = "Figure 9: Angular occupancy", showarrow = false,
+             font = attr(size = 15)),
+        attr(x = 0.22, y = 0.50, xref = "paper", yref = "paper",
+             text = @sprintf("Offset %.2f° · Fig. 7 NRMSE %.3f", metrics.azimuth_offset_deg, metrics.fig7_nrmse),
+             showarrow = false, font = attr(size = 12)),
+        attr(x = 0.22, y = -0.04, xref = "paper", yref = "paper",
+             text = @sprintf("Mean E = %.1f GeV (paper %.0f GeV) · Fig. 8 corr %.3f",
+                             metrics.mean_energy_gev, PAPER_MEAN_ENERGY_GEV, metrics.fig8_corr),
+             showarrow = false, font = attr(size = 12)),
+        attr(x = 0.79, y = -0.04, xref = "paper", yref = "paper",
+             text = @sprintf("Peak match %.0f%% · mean scaled distance %.2f",
+                             100 * metrics.fig9_match_fraction, metrics.fig9_mean_distance),
+             showarrow = false, font = attr(size = 12)),
+    ]
+
+    layout = Layout(
+        title = attr(
+            text = "Gran Sasso LVD — Paper Reproduction Check<br>" *
+                   "<sub>Figure 7 uses an inferred LVD-frame offset and a simple box acceptance model; " *
+                   "Figures 8–9 use the raw underground angular flux</sub>",
+            font = attr(size = 16)
+        ),
+        xaxis = attr(domain = [0.00, 0.46], anchor = "y",
+                     title = "Azimuth φ_LVD (°)", range = [0, 360], dtick = 60),
+        yaxis = attr(domain = [0.58, 1.00], anchor = "x",
+                     title = "Intensity (10⁻⁹ cm⁻² s⁻¹ deg⁻¹)"),
+        xaxis2 = attr(domain = [0.00, 0.46], anchor = "y2",
+                      title = "Muon energy (GeV)", type = "log"),
+        yaxis2 = attr(domain = [0.00, 0.42], anchor = "x2",
+                      title = "Normalized counts", type = "log"),
+        xaxis3 = attr(domain = [0.58, 1.00], anchor = "y3",
+                      title = "cos(θ)", range = [0, 1]),
+        yaxis3 = attr(domain = [0.00, 1.00], anchor = "x3",
+                      title = "Azimuth φ_LVD (°)", range = [0, 360], dtick = 60),
+        annotations = annotations,
+        width = 1450,
+        height = 920,
+        legend = attr(x = 0.60, y = 0.98,
+                      bgcolor = "rgba(255,255,255,0.85)",
+                      font = attr(size = 11))
+    )
+
+    fig = Plot(traces, layout)
+    mkpath(dirname(output_path))
+    savefig(fig, output_path)
+    println("Saved plot: $output_path")
+    return fig
+end
+
+function write_paper_metrics(metrics; output_path::String)
+    lines = [
+        "Gran Sasso LVD paper reproduction summary",
+        "",
+        @sprintf("Inferred LVD azimuth offset: %.2f deg", metrics.azimuth_offset_deg),
+        @sprintf("Figure 7 normalized RMSE: %.4f", metrics.fig7_nrmse),
+        @sprintf("Figure 8 mean energy: %.2f GeV", metrics.mean_energy_gev),
+        @sprintf("Figure 8 delta vs paper mean (%.0f GeV): %.2f GeV",
+                 PAPER_MEAN_ENERGY_GEV, metrics.mean_energy_gev - PAPER_MEAN_ENERGY_GEV),
+        @sprintf("Figure 8 delta vs measurement (%.0f ± %.0f stat ± %.0f syst GeV): %.2f GeV",
+                 PAPER_MEAN_ENERGY_MEAS_GEV,
+                 PAPER_MEAN_ENERGY_MEAS_STAT_GEV,
+                 PAPER_MEAN_ENERGY_MEAS_SYST_GEV,
+                 metrics.mean_energy_gev - PAPER_MEAN_ENERGY_MEAS_GEV),
+        @sprintf("Figure 8 shape correlation: %.4f", metrics.fig8_corr),
+        @sprintf("Figure 9 matched paper peaks: %.1f%%",
+                 100 * metrics.fig9_match_fraction),
+        @sprintf("Figure 9 mean scaled peak distance: %.4f",
+                 metrics.fig9_mean_distance),
+        "",
+        "Assumptions:",
+        "- Figure 7 uses a simple box projected-area model for the LVD acceptance.",
+        "- Figures 8 and 9 use the raw underground angular flux without detector acceptance weighting.",
+        "- The LVD reference-system offset is inferred by matching the paper's Figure 7 azimuthal curve.",
+    ]
+
+    open(output_path, "w") do io
+        println(io, join(lines, '\n'))
+    end
+    println("Saved summary: $output_path")
+end
+
+function run_part3(physics, rock_idx::Int, air_idx::Int;
+                   flux_result::Union{Nothing, NMapFluxResult},
+                   n_samples::Int,
+                   paper_samples::Int,
+                   straggling::Bool,
+                   scattering::Bool,
+                   energy_threshold_low::Float64,
+                   threshold_factors::Tuple{Float64,Float64},
+                   energy_min::Float64,
+                   energy_max::Float64,
+                   porous_material::Int,
+                   porous_density::Float64,
+                   porous_thickness::Float64,
+                   output_dir::String)
+    println("=" ^ 60)
+    println(" Part 3: Reproduce the LVD Paper Observables")
+    println("=" ^ 60)
+    println()
+    println("  Paper MC samples: $paper_samples")
+    println("  Full zenith range: 0 – $(Int(PAPER_FULL_ZENITH_MAX_DEG))°")
+    println()
+
+    full_flux_result = if flux_result === nothing ||
+                          maximum(flux_result.zeniths) < PAPER_FULL_ZENITH_MAX_DEG - 1e-9
+        println("  Building full 0°–$(Int(PAPER_FULL_ZENITH_MAX_DEG))° angular grid for paper checks...")
+        compute_nmap_flux_grid(physics;
+            n_samples = n_samples,
+            straggling = straggling,
+            scattering = scattering,
+            energy_threshold_low = energy_threshold_low,
+            threshold_factors = threshold_factors,
+            energy_min = energy_min,
+            energy_max = energy_max,
+            zenith_max_deg = PAPER_FULL_ZENITH_MAX_DEG,
+            porous_material = porous_material,
+            porous_density = porous_density,
+            porous_thickness = porous_thickness)
+    else
+        println("  Reusing an existing flux grid for paper checks.")
+        flux_result
+    end
+
+    fig7_benchmark = load_paper_figure7_benchmark()
+    fig8_benchmark = load_paper_figure8_benchmark()
+    fig9_paper_peaks = load_paper_figure9_peaks()
+
+    offset_fit = infer_lvd_reference_offset(
+        full_flux_result,
+        fig7_benchmark.curve_az,
+        fig7_benchmark.curve_intensity)
+
+    println(@sprintf("  Inferred LVD azimuth offset: %.2f°", offset_fit.offset_deg))
+
+    fig7_model_azimuths, fig7_model_profile, fig7_sigma_mc, fig7_sigma_syst, fig7_sigma_total =
+        compute_figure7_profile_with_uncertainty(
+            full_flux_result; azimuth_offset_deg=offset_fit.offset_deg)
+    fig7_interp = periodic_interp(
+        fig7_model_azimuths, fig7_model_profile, fig7_benchmark.curve_az)
+    fig7_scale = fit_positive_scale(fig7_benchmark.curve_intensity, fig7_interp)
+    fig7_nrmse = sqrt(mean((fig7_scale .* fig7_interp .-
+                            fig7_benchmark.curve_intensity) .^ 2)) /
+                 max(maximum(fig7_benchmark.curve_intensity), eps(Float64))
+
+    spectrum_energy_min = max(energy_min, 10.0^first(PAPER_SPECTRUM_LOG10_EDGES))
+    spectrum_energy_max = min(energy_max, 10.0^last(PAPER_SPECTRUM_LOG10_EDGES))
+    spectrum_nominal = sample_paper_energy_spectrum(
+        physics, full_flux_result, rock_idx, air_idx;
+        n_samples = paper_samples,
+        straggling = straggling,
+        scattering = scattering,
+        energy_threshold_low = energy_threshold_low,
+        energy_min = spectrum_energy_min,
+        energy_max = spectrum_energy_max,
+        porous_material = porous_material,
+        porous_density = porous_density,
+        porous_thickness = porous_thickness,
+        seed = 2026,
+        verbose = true)
+
+    function spectrum_evaluate(variation)
+        result = if variation.straggling == straggling &&
+                    variation.scattering == scattering &&
+                    isapprox(variation.energy_threshold_low, energy_threshold_low; atol=1e-12, rtol=1e-12) &&
+                    variation.seed == 2026
+            spectrum_nominal
+        else
+            sample_paper_energy_spectrum(
+                physics, full_flux_result, rock_idx, air_idx;
+                n_samples = paper_samples,
+                straggling = variation.straggling,
+                scattering = variation.scattering,
+                energy_threshold_low = variation.energy_threshold_low,
+                energy_min = spectrum_energy_min,
+                energy_max = spectrum_energy_max,
+                porous_material = porous_material,
+                porous_density = porous_density,
+                porous_thickness = porous_thickness,
+                seed = variation.seed,
+                verbose = false,
+            )
+        end
+        return result.relative_count, result.sigma_relative_count
+    end
+
+    spectrum_budget = estimate_transport_uncertainty(
+        spectrum_evaluate;
+        straggling = straggling,
+        scattering = scattering,
+        energy_threshold_low = energy_threshold_low,
+        seed = 2026,
+        threshold_factors = threshold_factors,
+    )
+
+    fig8_mask = (fig8_benchmark.relative_count .> 0.0) .& (spectrum_budget.value .> 0.0)
+    fig8_corr = count(fig8_mask) >= 2 ?
+        cor(log10.(fig8_benchmark.relative_count[fig8_mask]),
+            log10.(spectrum_budget.value[fig8_mask])) : NaN
+
+    fig9_azimuths, fig9_occupancy = compute_figure9_occupancy(
+        full_flux_result; azimuth_offset_deg=offset_fit.offset_deg)
+    fig9_model_peaks = identify_top_occupancy_peaks(
+        fig9_occupancy, full_flux_result.zeniths, fig9_azimuths;
+        n = length(fig9_paper_peaks))
+    fig9_metrics = compare_peak_sets(fig9_model_peaks, fig9_paper_peaks)
+
+    metrics = (
+        azimuth_offset_deg = offset_fit.offset_deg,
+        fig7_scale = fig7_scale,
+        fig7_nrmse = fig7_nrmse,
+        mean_energy_gev = spectrum_nominal.mean_energy,
+        fig8_corr = fig8_corr,
+        fig9_match_fraction = fig9_metrics.matched_fraction,
+        fig9_mean_distance = fig9_metrics.mean_distance,
+    )
+
+    create_paper_reproduction_plot(
+        (
+            paper_curve_azimuths = fig7_benchmark.curve_az,
+            paper_curve_intensity = fig7_benchmark.curve_intensity,
+            paper_point_azimuths = fig7_benchmark.point_az,
+            paper_point_intensity = fig7_benchmark.point_intensity,
+            model_azimuths = fig7_model_azimuths,
+            model_profile = fig7_model_profile,
+            sigma_mc = fig7_sigma_mc,
+            sigma_syst = fig7_sigma_syst,
+            sigma_total = fig7_sigma_total,
+        ),
+        (
+            paper_energy = fig8_benchmark.energy,
+            paper_relative_count = fig8_benchmark.relative_count,
+            model_energy = spectrum_nominal.energy,
+            model_relative_count = spectrum_budget.value,
+            sigma_mc = spectrum_budget.sigma_mc,
+            sigma_syst = spectrum_budget.sigma_syst,
+            sigma_total = spectrum_budget.sigma_total,
+        ),
+        (
+            zeniths = full_flux_result.zeniths,
+            azimuths = fig9_azimuths,
+            occupancy = fig9_occupancy,
+            paper_peaks = fig9_paper_peaks,
+            model_peaks = fig9_model_peaks,
+        ),
+        metrics;
+        output_path = joinpath(output_dir, "part3_paper_reproduction.html"))
+
+    write_paper_metrics(metrics;
+        output_path = joinpath(output_dir, "part3_paper_metrics.txt"))
+    println()
+    return full_flux_result
 end
 
 # =============================================================================
@@ -952,7 +1964,10 @@ end
 function parse_commandline()
     dump_path = DEFAULT_DUMP
     n_samples = 1000
+    paper_samples = 20_000
     energy_threshold_low = 100.0
+    threshold_scan_low = 0.5
+    threshold_scan_high = 2.0
     energy_min = 1e-3
     energy_max = 1e9
     straggling = true
@@ -967,8 +1982,14 @@ function parse_commandline()
             dump_path = ARGS[i + 1]; i += 2
         elseif arg in ("--samples", "-n")
             n_samples = parse(Int, ARGS[i + 1]); i += 2
+        elseif arg == "--paper-samples"
+            paper_samples = parse(Int, ARGS[i + 1]); i += 2
         elseif arg == "--threshold"
             energy_threshold_low = parse(Float64, ARGS[i + 1]); i += 2
+        elseif arg == "--threshold-scan-low"
+            threshold_scan_low = parse(Float64, ARGS[i + 1]); i += 2
+        elseif arg == "--threshold-scan-high"
+            threshold_scan_high = parse(Float64, ARGS[i + 1]); i += 2
         elseif arg == "--energy-min"
             energy_min = parse(Float64, ARGS[i + 1]); i += 2
         elseif arg == "--energy-max"
@@ -991,8 +2012,9 @@ function parse_commandline()
 
     output_dir === nothing && error("--output-dir is required.")
 
-    return (dump_path=dump_path, n_samples=n_samples,
+    return (dump_path=dump_path, n_samples=n_samples, paper_samples=paper_samples,
             energy_threshold_low=energy_threshold_low,
+            threshold_factors=(threshold_scan_low, threshold_scan_high),
             energy_min=energy_min, energy_max=energy_max,
             straggling=straggling, scattering=scattering,
             output_dir=output_dir, part=part)
@@ -1008,7 +2030,9 @@ function main()
     println("Configuration:")
     println("  Dump file:       $(args.dump_path)")
     println("  MC samples:      $(args.n_samples)")
+    println("  Paper samples:   $(args.paper_samples)")
     println("  Threshold:       $(args.energy_threshold_low) GeV")
+    println("  Threshold scan:  ×$(args.threshold_factors[1]) / ×$(args.threshold_factors[2])")
     println("  Energy range:    $(args.energy_min) – $(args.energy_max) GeV")
     println("  Straggling:      $(args.straggling ? "enabled" : "disabled")")
     println("  Scattering:      $(args.scattering ? "enabled" : "disabled")")
@@ -1045,16 +2069,15 @@ function main()
     shallow_depth = 100.0
 
     # ── Part 1: Muon flux on nmap angular grid (runs first) ──────────────
-    zeniths_grid  = Float64[]
-    azimuths_grid = Float64[]
-    flux_grid     = Matrix{Float64}(undef, 0, 0)
+    part1_flux_result = nothing
 
     if args.part < 0 || args.part == 1
-        zeniths_grid, azimuths_grid, flux_grid = run_part1(physics;
+        part1_flux_result = run_part1(physics;
             n_samples = args.n_samples,
             straggling = args.straggling,
             scattering = args.scattering,
             energy_threshold_low = args.energy_threshold_low,
+            threshold_factors = args.threshold_factors,
             energy_min = args.energy_min, energy_max = args.energy_max,
             porous_material = porous_idx, porous_density = p_density,
             porous_thickness = shallow_depth,
@@ -1063,19 +2086,21 @@ function main()
 
     # ── Part 2: 3D topography & trajectories (uses Part 1 directions) ───
     if args.part < 0 || args.part == 2
-        if isempty(flux_grid)
+        if part1_flux_result === nothing
             println("Computing flux grid for trajectory direction selection...")
-            zeniths_grid, azimuths_grid, flux_grid, _, _ =
-                compute_nmap_flux_grid(physics;
+            part1_flux_result = compute_nmap_flux_grid(physics;
                     n_samples = args.n_samples,
                     straggling = args.straggling, scattering = args.scattering,
                     energy_threshold_low = args.energy_threshold_low,
+                    threshold_factors = args.threshold_factors,
                     energy_min = args.energy_min, energy_max = args.energy_max,
+                    zenith_max_deg = PART1_ZENITH_MAX_DEG,
                     porous_material = porous_idx, porous_density = p_density,
                     porous_thickness = shallow_depth)
         end
 
-        directions = select_diverse_directions(flux_grid, zeniths_grid, azimuths_grid)
+        directions = select_diverse_directions(
+            part1_flux_result.flux, part1_flux_result.zeniths, part1_flux_result.azimuths)
         if isempty(directions)
             println("WARNING: no valid directions found, skipping Part 2"); return 1
         end
@@ -1094,6 +2119,24 @@ function main()
             energy_threshold_low=args.energy_threshold_low,
             porous_material=porous_idx, porous_density=p_density,
             porous_thickness=shallow_depth, output_dir=args.output_dir)
+    end
+
+    # ── Part 3: LVD paper reproduction checks ────────────────────────────
+    if args.part < 0 || args.part == 3
+        run_part3(physics, rock_idx, air_idx;
+            flux_result=part1_flux_result,
+            n_samples=args.n_samples,
+            paper_samples=args.paper_samples,
+            straggling=args.straggling,
+            scattering=args.scattering,
+            energy_threshold_low=args.energy_threshold_low,
+            threshold_factors=args.threshold_factors,
+            energy_min=args.energy_min,
+            energy_max=args.energy_max,
+            porous_material=porous_idx,
+            porous_density=p_density,
+            porous_thickness=shallow_depth,
+            output_dir=args.output_dir)
     end
 
     println()

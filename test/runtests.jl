@@ -2,6 +2,7 @@ using Test
 using DiffPumas
 using Zygote
 using LinearAlgebra
+using Random
 
 @testset "DiffPumas.jl" begin
     
@@ -150,6 +151,101 @@ using LinearAlgebra
         
         @test isfinite(flux_val)
         # Note: gradient might be zero or very small for this simple test
+    end
+
+    @testset "Transport Uncertainty" begin
+        @testset "Budget combination math" begin
+            function vector_budget_evaluator(variation)
+                base = (variation.straggling ? 2.0 : 0.0) +
+                       (variation.scattering ? 3.0 : 0.0) +
+                       variation.energy_threshold_low / 10.0
+                value = [100.0 + base, 200.0 + 2.0 * base]
+                sigma_mc = [0.25, 0.50]
+                return value, sigma_mc
+            end
+
+            budget = estimate_transport_uncertainty(
+                vector_budget_evaluator;
+                straggling = true,
+                scattering = true,
+                energy_threshold_low = 10.0,
+                seed = 7,
+                threshold_factors = (0.5, 2.0),
+            )
+
+            @test budget.value ≈ [106.0, 212.0]
+            @test budget.sigma_mc ≈ [0.25, 0.50]
+            @test budget.sources[:straggling].sigma ≈ [2.0, 4.0]
+            @test budget.sources[:scattering].sigma ≈ [3.0, 6.0]
+            @test budget.sources[:energy_threshold_low].sigma ≈ [1.0, 2.0]
+            @test budget.sigma_syst ≈ sqrt.([14.0, 56.0])
+            @test budget.sigma_total ≈ sqrt.([14.0 + 0.25^2, 56.0 + 0.50^2])
+        end
+
+        @testset "Same-seed evaluation is deterministic" begin
+            function seeded_evaluator(variation)
+                rng = MersenneTwister(variation.seed)
+                value = 1.0 +
+                        (variation.straggling ? 0.3 : -0.2) +
+                        (variation.scattering ? 0.5 : -0.4) +
+                        variation.energy_threshold_low / 100.0 +
+                        rand(rng)
+                sigma_mc = rand(rng) / 10.0
+                return value, sigma_mc
+            end
+
+            budget_a = estimate_transport_uncertainty(
+                seeded_evaluator;
+                straggling = true,
+                scattering = true,
+                energy_threshold_low = 20.0,
+                seed = 17,
+                threshold_factors = (0.5, 2.0),
+            )
+            budget_b = estimate_transport_uncertainty(
+                seeded_evaluator;
+                straggling = true,
+                scattering = true,
+                energy_threshold_low = 20.0,
+                seed = 17,
+                threshold_factors = (0.5, 2.0),
+            )
+
+            @test budget_a.value == budget_b.value
+            @test budget_a.sigma_mc == budget_b.sigma_mc
+            @test budget_a.sigma_syst == budget_b.sigma_syst
+            @test budget_a.sigma_total == budget_b.sigma_total
+            @test budget_a.sources[:straggling].variant_values == budget_b.sources[:straggling].variant_values
+            @test budget_a.sources[:energy_threshold_low].variant_values == budget_b.sources[:energy_threshold_low].variant_values
+        end
+
+        @testset "Flux uncertainty smoke test" begin
+            physics = create_physics(MUON; n_energies=30, K_min=0.05, K_max=1e4)
+            budget = compute_flux_uncertainty(
+                physics,
+                2650.0,
+                25.0,
+                55.0,
+                1.0,
+                50.0;
+                n_samples = 8,
+                seed = 11,
+                straggling = true,
+                scattering = true,
+                energy_threshold_low = 50.0,
+                threshold_factors = (0.5, 2.0),
+            )
+
+            @test isfinite(budget.value)
+            @test isfinite(budget.sigma_mc)
+            @test isfinite(budget.sigma_syst)
+            @test isfinite(budget.sigma_total)
+            @test budget.sigma_mc >= 0.0
+            @test budget.sigma_syst >= 0.0
+            @test budget.sigma_total >= budget.sigma_mc
+            @test budget.sigma_total >= budget.sigma_syst
+            @test length(budget.sources[:energy_threshold_low].variant_values) == 2
+        end
     end
     
     @testset "Turtle ECEF" begin

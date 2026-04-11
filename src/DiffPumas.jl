@@ -84,6 +84,7 @@ include("GaisserFlux.jl")
 include("Straggling.jl")
 include("Loader.jl")
 include("Geometry.jl")
+include("Uncertainty.jl")
 include("Turtle.jl")
 include("Plotting.jl")
 include("Pumas.jl")
@@ -101,6 +102,7 @@ using .GaisserFlux
 using .Straggling
 using .Loader
 using .Geometry
+using .Uncertainty
 using .Turtle
 using .Plotting
 using .Pumas
@@ -177,6 +179,11 @@ export compute_flux_csda_direct, compute_flux_differentiable_csda, compute_flux_
 export run_backward_mc, locals_rock, locals_air
 export PRIMARY_ALTITUDE, compute_air_grammage, compute_rock_grammage
 export compute_decay_weight_from_path
+
+# Export Uncertainty
+export TransportVariation, SystematicSourceResult, TransportUncertaintyResult
+export estimate_transport_uncertainty, compute_flux_uncertainty
+export relative_uncertainty_percent
 
 # Export Turtle
 export ecef_from_geodetic, ecef_to_geodetic
