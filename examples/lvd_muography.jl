@@ -20,17 +20,18 @@ Part 2 — 3D topography & trajectory visualisation
 Part 3 — Reproduction checks against arXiv:0810.4635v1
   Rebuild the Gran Sasso MUSUN observables reported in the paper: the LVD
   acceptance-weighted azimuthal intensity for θ ≤ 60°, the underground muon
-  energy spectrum and mean energy, and the full angular occupancy map in the
-  LVD reference frame.  The paper curves are loaded from digitized benchmark
-  assets extracted from the original EPS source files.
+  energy spectrum and mean energy, and the angular occupancy map over the same
+  θ ≤ 60° range in the LVD reference frame.  The paper curves are loaded from
+  digitized benchmark assets extracted from the original EPS source files.
 
 The dgsm table in nm_c.inc stores slant rock thickness in metres for each
 (zenith, azimuth) direction from the LVD detector.  The `nmap` lookup adds
 180° to the physical azimuth before indexing (rr.for line 19).  Values above
 100 000 flag underground directions.
 
-Materials: Standard Rock (2710 kg/m³ for flux, 2650 for transport tables),
-           PorousWetRock (composite, top 100 m).
+Materials: Standard Rock only for all three parts.
+           Slant-depth conversion uses 2710 kg/m³ (matching rr.for line 13);
+           transport uses the StandardRock tables.
 
 For flat-geometry baseline flux studies and aquifer-detection scenarios, see
 flat_muography.jl.
@@ -81,7 +82,7 @@ using Random
 using LinearAlgebra
 using Statistics
 
-const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
+const DEFAULT_DUMP = joinpath(@__DIR__, "data", "lvd_standardrock.pumas")
 const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -96,7 +97,7 @@ const ROCK_DENSITY_REF   = 2.71   # g/cm³ used in rr.for (line 13)
 
 const NMC_PATH = joinpath(@__DIR__, "data", "nm_c.inc")
 const PART1_ZENITH_MAX_DEG = 60.0
-const PAPER_FULL_ZENITH_MAX_DEG = 90.0
+const PAPER_FULL_ZENITH_MAX_DEG = PART1_ZENITH_MAX_DEG
 const NMAP_ZENITH_STEP_DEG = 2.0
 const NMAP_AZIMUTH_STEP_DEG = 4.0
 
@@ -328,14 +329,20 @@ function circular_distance_deg(a_deg::Float64, b_deg::Float64)
     return abs(mod(a_deg - b_deg + 180.0, 360.0) - 180.0)
 end
 
-function nmap_zenith_grid(zenith_max_deg::Float64)
-    max_deg = clamp(zenith_max_deg, 0.0, 94.0)
-    zeniths = collect(0.0:NMAP_ZENITH_STEP_DEG:max_deg)
+function nmap_zenith_grid(zenith_min_deg::Float64, zenith_max_deg::Float64)
+    min_deg = clamp(zenith_min_deg, 0.0, 94.0)
+    max_deg = clamp(zenith_max_deg, min_deg, 94.0)
+    start_deg = NMAP_ZENITH_STEP_DEG *
+                ceil(Int, min_deg / NMAP_ZENITH_STEP_DEG - 1e-9)
+    zeniths = start_deg > max_deg + 1e-9 ?
+        Float64[] : collect(start_deg:NMAP_ZENITH_STEP_DEG:max_deg)
     if isempty(zeniths) || !isapprox(zeniths[end], max_deg; atol=1e-9)
         push!(zeniths, max_deg)
     end
     return zeniths
 end
+
+nmap_zenith_grid(zenith_max_deg::Float64) = nmap_zenith_grid(0.0, zenith_max_deg)
 
 function centered_bin_edges(centers::Vector{Float64};
                             lower::Float64,
@@ -916,9 +923,8 @@ rock-thickness table.  For each non-underground (θ, φ) bin the slant rock
 distance R is converted to a vertical depth `D = R·cos θ` and fed to
 `compute_flux` with ρ = 2710 kg/m³ (rr.for convention).
 
-`zenith_max_deg` selects how much of the original 2° grid is used.  This lets
-Part 1 stay matched to the paper slice (θ ≤ 60°), while Part 3 can still build
-full-range observables up to 90°.
+`zenith_max_deg` selects how much of the original 2° grid is used.  In this
+example all three parts intentionally share the same θ ≤ 60° angular range.
 """
 function compute_nmap_flux_grid(physics;
                                 n_samples::Int = 1000,
@@ -928,17 +934,20 @@ function compute_nmap_flux_grid(physics;
                                 threshold_factors::Tuple{Float64,Float64} = (0.5, 2.0),
                                 energy_min::Float64 = 1e-3,
                                 energy_max::Float64 = 1e9,
+                                zenith_min_deg::Float64 = 0.0,
                                 zenith_max_deg::Float64 = PART1_ZENITH_MAX_DEG,
                                 porous_material::Int = -1,
                                 porous_density::Float64 = 0.0,
-                                porous_thickness::Float64 = 0.0)
+                                porous_thickness::Float64 = 0.0,
+                                progress_note::String = "")
 
     dgsm = load_dgsm(NMC_PATH)
 
-    zeniths  = nmap_zenith_grid(zenith_max_deg)
+    zeniths  = nmap_zenith_grid(zenith_min_deg, zenith_max_deg)
     n_azi = 91
     azimuths = [4.0 * (j - 1) for j in 1:n_azi]
     n_zen = length(zeniths)
+    progress_prefix = isempty(progress_note) ? "" : "$(progress_note) "
 
     flux_grid  = fill(NaN, n_zen, n_azi)
     sigma_grid = fill(NaN, n_zen, n_azi)
@@ -951,6 +960,10 @@ function compute_nmap_flux_grid(physics;
     n_skipped = 0
 
     for (z_idx, θ) in enumerate(zeniths)
+        if z_idx == 1 || z_idx == n_zen || θ >= 86.0
+            @info @sprintf("%sStarting zenith row %d/%d (θ=%.0f°)",
+                           progress_prefix, z_idx, n_zen, θ)
+        end
         elevation = 90.0 - θ
         cos_θ = cosd(θ)
         for (a_idx, φ) in enumerate(azimuths)
@@ -966,9 +979,9 @@ function compute_nmap_flux_grid(physics;
             depth = gsroc * cos_θ
             p_thick = min(porous_thickness, depth)
 
-            if n_done % 200 == 0 || n_done == 1
-                @info @sprintf("[%d/%d] θ=%.0f° φ=%.0f° R=%.0fm D=%.0fm",
-                               n_done, n_total, θ, φ, gsroc, depth)
+            if n_done % 200 == 0 || n_done == 1 || n_done == n_total
+                @info @sprintf("%s[%d/%d] θ=%.0f° φ=%.0f° R=%.0fm D=%.0fm",
+                               progress_prefix, n_done, n_total, θ, φ, gsroc, depth)
             end
 
             budget = compute_flux_uncertainty(physics,
@@ -990,8 +1003,30 @@ function compute_nmap_flux_grid(physics;
         end
     end
 
-    @info @sprintf("Computed %d bins (%d underground/skipped)", n_done, n_skipped)
+    @info @sprintf("%sComputed %d bins (%d underground/skipped)",
+                   progress_prefix, n_done, n_skipped)
     return NMapFluxResult(zeniths, azimuths, flux_grid, sigma_grid, sigma_syst_grid, sigma_total_grid, rock_grid)
+end
+
+function merge_nmap_flux_results(base::NMapFluxResult,
+                                 extension::NMapFluxResult)
+    isempty(extension.zeniths) && return base
+    size(base.flux, 2) == size(extension.flux, 2) ||
+        error("Cannot merge nmap flux grids with different azimuth dimensions")
+    all(isapprox.(base.azimuths, extension.azimuths; atol=1e-9)) ||
+        error("Cannot merge nmap flux grids with different azimuth axes")
+    maximum(base.zeniths) < minimum(extension.zeniths) - 1e-9 ||
+        error("Cannot merge overlapping zenith ranges")
+
+    return NMapFluxResult(
+        vcat(base.zeniths, extension.zeniths),
+        copy(base.azimuths),
+        vcat(base.flux, extension.flux),
+        vcat(base.sigma, extension.sigma),
+        vcat(base.sigma_syst, extension.sigma_syst),
+        vcat(base.sigma_total, extension.sigma_total),
+        vcat(base.rock, extension.rock),
+    )
 end
 
 """
@@ -1774,6 +1809,8 @@ function write_paper_metrics(metrics; output_path::String)
                  metrics.fig9_mean_distance),
         "",
         "Assumptions:",
+        "- All three parts use StandardRock only; no shallow wet-rock or porous composite layer is applied.",
+        "- Part 3 uses the same θ ≤ 60° zenith range as Parts 1 and 2.",
         "- Figure 7 uses a simple box projected-area model for the LVD acceptance.",
         "- Figures 8 and 9 use the raw underground angular flux without detector acceptance weighting.",
         "- The LVD reference-system offset is inferred by matching the paper's Figure 7 azimuthal curve.",
@@ -1783,6 +1820,21 @@ function write_paper_metrics(metrics; output_path::String)
         println(io, join(lines, '\n'))
     end
     println("Saved summary: $output_path")
+end
+
+function write_part3_status(output_dir::String, stage::String;
+                            details::Vector{String} = String[])
+    mkpath(output_dir)
+    status_path = joinpath(output_dir, "part3_status.txt")
+    open(status_path, "w") do io
+        println(io, "Gran Sasso LVD Part 3 status")
+        println(io)
+        println(io, "Stage: $stage")
+        for line in details
+            println(io, line)
+        end
+    end
+    println("Saved status: $status_path")
 end
 
 function run_part3(physics, rock_idx::Int, air_idx::Int;
@@ -1807,9 +1859,23 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
     println("  Full zenith range: 0 – $(Int(PAPER_FULL_ZENITH_MAX_DEG))°")
     println()
 
-    full_flux_result = if flux_result === nothing ||
-                          maximum(flux_result.zeniths) < PAPER_FULL_ZENITH_MAX_DEG - 1e-9
-        println("  Building full 0°–$(Int(PAPER_FULL_ZENITH_MAX_DEG))° angular grid for paper checks...")
+    target_zenith_max_deg = PAPER_FULL_ZENITH_MAX_DEG
+    write_part3_status(output_dir, "starting";
+        details = [
+            "paper_samples = $paper_samples",
+            @sprintf("full_zenith_range = 0 – %d deg", Int(PAPER_FULL_ZENITH_MAX_DEG)),
+            flux_result === nothing ?
+                "input_flux_grid = none" :
+                @sprintf("input_flux_grid_max_zenith = %.0f deg", maximum(flux_result.zeniths)),
+        ])
+
+    full_flux_result = if flux_result === nothing
+        println("  Building full 0°–$(Int(target_zenith_max_deg))° transport grid for paper checks...")
+        write_part3_status(output_dir, "building full flux grid";
+            details = [
+                "mode = fresh build",
+                @sprintf("computing rows from 0 to %.0f deg", target_zenith_max_deg),
+            ])
         compute_nmap_flux_grid(physics;
             n_samples = n_samples,
             straggling = straggling,
@@ -1818,14 +1884,50 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
             threshold_factors = threshold_factors,
             energy_min = energy_min,
             energy_max = energy_max,
-            zenith_max_deg = PAPER_FULL_ZENITH_MAX_DEG,
+            zenith_max_deg = target_zenith_max_deg,
             porous_material = porous_material,
             porous_density = porous_density,
-            porous_thickness = porous_thickness)
+            porous_thickness = porous_thickness,
+            progress_note = "Part 3")
+    elseif maximum(flux_result.zeniths) < target_zenith_max_deg - 1e-9
+        zenith_resume = maximum(flux_result.zeniths) + NMAP_ZENITH_STEP_DEG
+        println(@sprintf("  Extending existing flux grid from %.0f° to %.0f° for paper checks...",
+                         zenith_resume, target_zenith_max_deg))
+        write_part3_status(output_dir, "extending flux grid";
+            details = [
+                @sprintf("reusing rows through %.0f deg", maximum(flux_result.zeniths)),
+                @sprintf("computing rows from %.0f to %.0f deg", zenith_resume, target_zenith_max_deg),
+            ])
+        extension = compute_nmap_flux_grid(physics;
+            n_samples = n_samples,
+            straggling = straggling,
+            scattering = scattering,
+            energy_threshold_low = energy_threshold_low,
+            threshold_factors = threshold_factors,
+            energy_min = energy_min,
+            energy_max = energy_max,
+            zenith_min_deg = zenith_resume,
+            zenith_max_deg = target_zenith_max_deg,
+            porous_material = porous_material,
+            porous_density = porous_density,
+            porous_thickness = porous_thickness,
+            progress_note = "Part 3 extension")
+        merge_nmap_flux_results(flux_result, extension)
     else
         println("  Reusing an existing flux grid for paper checks.")
+        write_part3_status(output_dir, "reusing full flux grid";
+            details = [
+                @sprintf("rows already cover %.0f deg", maximum(flux_result.zeniths)),
+            ])
         flux_result
     end
+
+    write_part3_status(output_dir, "flux grid ready";
+        details = [
+            @sprintf("zenith_rows = %d", length(full_flux_result.zeniths)),
+            @sprintf("valid_flux_bins = %d",
+                     count(x -> !isnan(x) && x > 0.0, full_flux_result.flux)),
+        ])
 
     fig7_benchmark = load_paper_figure7_benchmark()
     fig8_benchmark = load_paper_figure8_benchmark()
@@ -1848,8 +1950,19 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
                             fig7_benchmark.curve_intensity) .^ 2)) /
                  max(maximum(fig7_benchmark.curve_intensity), eps(Float64))
 
+    write_part3_status(output_dir, "figure 7 fit ready";
+        details = [
+            @sprintf("azimuth_offset_deg = %.2f", offset_fit.offset_deg),
+            @sprintf("fig7_nrmse = %.4f", fig7_nrmse),
+        ])
+
     spectrum_energy_min = max(energy_min, 10.0^first(PAPER_SPECTRUM_LOG10_EDGES))
     spectrum_energy_max = min(energy_max, 10.0^last(PAPER_SPECTRUM_LOG10_EDGES))
+    write_part3_status(output_dir, "sampling energy spectrum";
+        details = [
+            @sprintf("paper_samples = %d", paper_samples),
+            @sprintf("energy_range = %.3e – %.3e GeV", spectrum_energy_min, spectrum_energy_max),
+        ])
     spectrum_nominal = sample_paper_energy_spectrum(
         physics, full_flux_result, rock_idx, air_idx;
         n_samples = paper_samples,
@@ -1903,6 +2016,12 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
         cor(log10.(fig8_benchmark.relative_count[fig8_mask]),
             log10.(spectrum_budget.value[fig8_mask])) : NaN
 
+    write_part3_status(output_dir, "spectrum ready";
+        details = [
+            @sprintf("mean_energy_gev = %.2f", spectrum_nominal.mean_energy),
+            @sprintf("fig8_corr = %.4f", fig8_corr),
+        ])
+
     fig9_azimuths, fig9_occupancy = compute_figure9_occupancy(
         full_flux_result; azimuth_offset_deg=offset_fit.offset_deg)
     fig9_model_peaks = identify_top_occupancy_peaks(
@@ -1919,6 +2038,15 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
         fig9_match_fraction = fig9_metrics.matched_fraction,
         fig9_mean_distance = fig9_metrics.mean_distance,
     )
+
+    write_part3_status(output_dir, "finalizing outputs";
+        details = [
+            @sprintf("fig7_nrmse = %.4f", metrics.fig7_nrmse),
+            @sprintf("mean_energy_gev = %.2f", metrics.mean_energy_gev),
+            @sprintf("fig8_corr = %.4f", metrics.fig8_corr),
+            @sprintf("fig9_match_fraction = %.4f", metrics.fig9_match_fraction),
+            @sprintf("fig9_mean_distance = %.4f", metrics.fig9_mean_distance),
+        ])
 
     create_paper_reproduction_plot(
         (
@@ -1953,6 +2081,14 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
 
     write_paper_metrics(metrics;
         output_path = joinpath(output_dir, "part3_paper_metrics.txt"))
+    write_part3_status(output_dir, "complete";
+        details = [
+            @sprintf("fig7_nrmse = %.4f", metrics.fig7_nrmse),
+            @sprintf("mean_energy_gev = %.2f", metrics.mean_energy_gev),
+            @sprintf("fig8_corr = %.4f", metrics.fig8_corr),
+            @sprintf("fig9_match_fraction = %.4f", metrics.fig9_match_fraction),
+            @sprintf("fig9_mean_distance = %.4f", metrics.fig9_mean_distance),
+        ])
     println()
     return full_flux_result
 end
@@ -2043,7 +2179,7 @@ function main()
 
     mkpath(args.output_dir)
 
-    physics = load_or_create_physics(args.dump_path; mdf_path=DEFAULT_MDF)
+    physics = load_or_create_physics(args.dump_path)
     if physics === nothing
         println("ERROR: Failed to load physics"); return 1
     end
@@ -2052,21 +2188,18 @@ function main()
 
     rock_idx   = get_material_index(physics, "StandardRock")
     air_idx    = get_material_index(physics, "Air")
-    porous_idx = get_material_index(physics, "PorousWetRock")
 
     if rock_idx == -1 || air_idx == -1
         println("ERROR: Required materials (StandardRock, Air) not found"); return 1
     end
 
     println("Material indices: rock=$rock_idx, air=$air_idx")
-    if porous_idx != -1
-        println("  PorousWetRock (composite): $porous_idx " *
-                "(density=$(round(physics.tables[porous_idx].density; digits=1)) kg/m³)")
-    end
+    println("  Material model: StandardRock only (no porous/wet-rock layer)")
     println()
 
-    p_density = porous_idx != -1 ? Float64(physics.tables[porous_idx].density) : 0.0
-    shallow_depth = 100.0
+    porous_material = -1
+    porous_density = 0.0
+    porous_thickness = 0.0
 
     # ── Part 1: Muon flux on nmap angular grid (runs first) ──────────────
     part1_flux_result = nothing
@@ -2079,8 +2212,8 @@ function main()
             energy_threshold_low = args.energy_threshold_low,
             threshold_factors = args.threshold_factors,
             energy_min = args.energy_min, energy_max = args.energy_max,
-            porous_material = porous_idx, porous_density = p_density,
-            porous_thickness = shallow_depth,
+            porous_material = porous_material, porous_density = porous_density,
+            porous_thickness = porous_thickness,
             output_dir = args.output_dir)
     end
 
@@ -2095,8 +2228,8 @@ function main()
                     threshold_factors = args.threshold_factors,
                     energy_min = args.energy_min, energy_max = args.energy_max,
                     zenith_max_deg = PART1_ZENITH_MAX_DEG,
-                    porous_material = porous_idx, porous_density = p_density,
-                    porous_thickness = shallow_depth)
+                    porous_material = porous_material, porous_density = porous_density,
+                    porous_thickness = porous_thickness)
         end
 
         directions = select_diverse_directions(
@@ -2117,8 +2250,8 @@ function main()
         run_part2(physics, rock_idx, air_idx, emap, directions;
             straggling=args.straggling, scattering=args.scattering,
             energy_threshold_low=args.energy_threshold_low,
-            porous_material=porous_idx, porous_density=p_density,
-            porous_thickness=shallow_depth, output_dir=args.output_dir)
+            porous_material=porous_material, porous_density=porous_density,
+            porous_thickness=porous_thickness, output_dir=args.output_dir)
     end
 
     # ── Part 3: LVD paper reproduction checks ────────────────────────────
@@ -2133,9 +2266,9 @@ function main()
             threshold_factors=args.threshold_factors,
             energy_min=args.energy_min,
             energy_max=args.energy_max,
-            porous_material=porous_idx,
-            porous_density=p_density,
-            porous_thickness=shallow_depth,
+            porous_material=porous_material,
+            porous_density=porous_density,
+            porous_thickness=porous_thickness,
             output_dir=args.output_dir)
     end
 
