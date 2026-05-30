@@ -16,6 +16,14 @@ Manifest.toml
 .vs/
 venv
 .venv/
+# Cursor — commit .cursor/skills|rules|agents and AGENTS.md; ignore IDE-local .cursor/*
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/agents/
+!.cursor/agents/**
 .cursorrules
 *.code-workspace
 .julia*
@@ -23,3 +31,9 @@ venv
 # pumas
 examples/data/*.pumas
 examples/data/*.html
+
+# Claude Code — commit .claude/skills and CLAUDE.md; ignore IDE-local .claude/*
+.claude/*
+!.claude/skills/
+!.claude/skills/**
+

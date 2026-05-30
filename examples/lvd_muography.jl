@@ -12,22 +12,25 @@ Part 1 — Directional muon flux on the paper-matching nmap angular grid
 
 Part 2 — 3D topography & trajectory visualisation
   Elevation map derived from nm_c.inc measured rock thicknesses (48×91, 2°×4°),
-  inverted via ray–surface bisection.  Six diverse trajectory directions are
-  selected from the Part 1 flux grid (one per 60° azimuth sector, picking
-  high-flux bins at moderate zenith).  Geometric rays and backward-MC muon
-  trajectories are plotted over an interactive 3D terrain surface.
+  then augmented with the hand-extracted cross-section geometry in
+  gran-sasso-lvd-raytracing-geometry.yaml where the radial inversion is too
+  incomplete.  Six diverse trajectory directions are selected from the Part 1
+  flux grid (one per 60° azimuth sector, picking high-flux bins at moderate
+  zenith).  Geometric rays and backward-MC muon trajectories are plotted over
+  an interactive 3D terrain surface.
 
 Part 3 — Reproduction checks against arXiv:0810.4635v1
   Rebuild the Gran Sasso MUSUN observables reported in the paper: the LVD
-  acceptance-weighted azimuthal intensity for θ ≤ 60°, the underground muon
-  energy spectrum and mean energy, and the angular occupancy map over the same
-  θ ≤ 60° range in the LVD reference frame.  The paper curves are loaded from
-  digitized benchmark assets extracted from the original EPS source files.
+  acceptance-weighted azimuthal intensity for θ ≤ 60°, plus the underground
+  muon energy spectrum and mean energy over the same θ ≤ 60° range in the LVD
+  reference frame.  The paper curves are loaded from digitized benchmark assets
+  extracted from the original EPS source files.
 
 The dgsm table in nm_c.inc stores slant rock thickness in metres for each
-(zenith, azimuth) direction from the LVD detector.  The `nmap` lookup adds
-180° to the physical azimuth before indexing (rr.for line 19).  Values above
-100 000 flag underground directions.
+(zenith, azimuth) direction from the LVD detector.  The `nmap` lookup uses the
+same 180° shift as `rr.for` but with the azimuth handedness flipped relative to
+the geographic convention used elsewhere in this script.  Values above 100 000
+flag underground directions.
 
 Materials: Standard Rock only for all three parts.
            Slant-depth conversion uses 2710 kg/m³ (matching rr.for line 13);
@@ -96,6 +99,8 @@ const VALLEY_FLOOR       = 600.0
 const ROCK_DENSITY_REF   = 2.71   # g/cm³ used in rr.for (line 13)
 
 const NMC_PATH = joinpath(@__DIR__, "data", "nm_c.inc")
+const TOPOGRAPHY_GEOMETRY_PATH = joinpath(@__DIR__, "data",
+                                          "gran-sasso-lvd-raytracing-geometry.yaml")
 const PART1_ZENITH_MAX_DEG = 60.0
 const PAPER_FULL_ZENITH_MAX_DEG = PART1_ZENITH_MAX_DEG
 const NMAP_ZENITH_STEP_DEG = 2.0
@@ -104,7 +109,6 @@ const NMAP_AZIMUTH_STEP_DEG = 4.0
 const PAPER_FIG7_CURVE_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig7_curve.csv")
 const PAPER_FIG7_POINTS_PATH = joinpath(@__DIR__, "data", "lvd_paper_fig7_points.csv")
 const PAPER_FIG8_CURVE_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig8_curve.csv")
-const PAPER_FIG9_PEAKS_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig9_peaks.csv")
 const PAPER_MEAN_ENERGY_GEV  = 273.0
 const PAPER_MEAN_ENERGY_MEAS_GEV = 270.0
 const PAPER_MEAN_ENERGY_MEAS_STAT_GEV = 3.0
@@ -113,6 +117,12 @@ const PAPER_MEAN_ENERGY_MEAS_SYST_GEV = 18.0
 const LVD_BOX_LENGTH_M = 22.7
 const LVD_BOX_WIDTH_M  = 13.2
 const LVD_BOX_HEIGHT_M = 10.0
+# Orientation of the LVD long tower axis inside the fitted LVD reference frame.
+# 0° would put the length along the LVD-frame y-axis (local "north"); 90° places
+# it along the x-axis (local "east").  The Gran Sasso hall-A towers run almost
+# perpendicular to the massif's NW–SE axis, and a joint (offset, rotation) fit
+# against the paper Figure 7 curve lands cleanly on 90°.
+const LVD_BOX_ROTATION_DEG = 90.0
 const LVD_MEAN_ACCEPTANCE_M2 = 298.0
 const LVD_BOX_MEAN_PROJECTION_M2 = (
     2.0 * (LVD_BOX_LENGTH_M * LVD_BOX_WIDTH_M +
@@ -133,6 +143,27 @@ struct NMapFluxResult
     rock::Matrix{Float64}
 end
 
+struct TopographyAnchor
+    description::String
+    elevation_m::Union{Nothing,Float64}
+    distance_km::Union{Nothing,Float64}
+end
+
+struct TopographySectionSide
+    name::Symbol
+    label::String
+    max_distance_km::Float64
+    anchors::Vector{TopographyAnchor}
+end
+
+struct TopographySection
+    id::Int
+    name::String
+    phi_deg::Union{Nothing,Float64}
+    left::Union{Nothing,TopographySectionSide}
+    right::Union{Nothing,TopographySectionSide}
+end
+
 """
     load_dgsm(filepath) -> Matrix{Float64}
 
@@ -142,7 +173,7 @@ slant rock-thickness table (metres).
 Grid layout (matching rr.for / nmap conventions):
   - Rows  1–48: zenith  θ = 0°, 2°, 4°, …, 94°
   - Cols  1–91: lookup azimuth φ′ = 0°, 4°, 8°, …, 360°
-                (physical azimuth = φ′ − 180°)
+                (physical azimuth = 180° − φ′ in this script's geographic frame)
   - Values > 100 000 flag underground lines of sight.
 """
 function load_dgsm(filepath::String)
@@ -179,18 +210,179 @@ function load_dgsm(filepath::String)
     return dgsm
 end
 
+function parse_yaml_scalar(raw::AbstractString)
+    text = strip(raw)
+    text == "null" && return nothing
+    text == "true" && return true
+    text == "false" && return false
+
+    if startswith(text, "\"") && endswith(text, "\"") && ncodeunits(text) >= 2
+        return replace(text[2:(end - 1)], "\\\"" => "\"")
+    end
+
+    if startswith(text, "[") && endswith(text, "]")
+        inner = strip(text[2:(end - 1)])
+        isempty(inner) && return Any[]
+        return [parse_yaml_scalar(part) for part in split(inner, ',')]
+    end
+
+    occursin(r"^-?\d+(?:\.\d+)?$", text) && return parse(Float64, text)
+    return text
+end
+
+function load_topography_sections(filepath::String)
+    lines = readlines(filepath)
+    sections = TopographySection[]
+
+    section_id = 0
+    section_name = ""
+    section_phi = nothing
+    left_side = nothing
+    right_side = nothing
+
+    side_name = nothing
+    side_label = ""
+    side_max_distance = 0.0
+    side_anchors = TopographyAnchor[]
+
+    anchor_description = ""
+    anchor_elevation = nothing
+    anchor_distance = nothing
+    in_topographic_anchors = false
+
+    function flush_anchor!()
+        isempty(anchor_description) && anchor_elevation === nothing &&
+            anchor_distance === nothing && return
+        push!(side_anchors, TopographyAnchor(
+            anchor_description,
+            anchor_elevation isa Number ? Float64(anchor_elevation) : nothing,
+            anchor_distance isa Number ? Float64(anchor_distance) : nothing,
+        ))
+        anchor_description = ""
+        anchor_elevation = nothing
+        anchor_distance = nothing
+    end
+
+    function flush_side!()
+        flush_anchor!()
+        side_name === nothing && return
+        side = TopographySectionSide(
+            side_name,
+            side_label,
+            side_max_distance,
+            copy(side_anchors),
+        )
+        if side_name == :left
+            left_side = side
+        else
+            right_side = side
+        end
+        side_name = nothing
+        side_label = ""
+        side_max_distance = 0.0
+        empty!(side_anchors)
+        in_topographic_anchors = false
+    end
+
+    function flush_section!()
+        flush_side!()
+        section_id == 0 && return
+        push!(sections, TopographySection(section_id, section_name, section_phi,
+                                         left_side, right_side))
+        section_id = 0
+        section_name = ""
+        section_phi = nothing
+        left_side = nothing
+        right_side = nothing
+    end
+
+    for raw_line in lines
+        line = rstrip(raw_line)
+
+        if startswith(line, "  - id:")
+            flush_section!()
+            section_id = parse(Int, strip(split(line, ":", limit=2)[2]))
+            continue
+        end
+
+        if occursin(r"^\s{4}name:", line)
+            section_name = String(parse_yaml_scalar(split(line, ":", limit=2)[2]))
+            continue
+        end
+
+        if occursin(r"^\s{4}phi_deg:", line)
+            value = parse_yaml_scalar(split(line, ":", limit=2)[2])
+            section_phi = value isa Number ? Float64(value) : nothing
+            continue
+        end
+
+        if occursin(r"^\s{6}(left|right):\s*$", line)
+            flush_side!()
+            side_name = Symbol(strip(replace(line, ":" => "")))
+            continue
+        end
+
+        if occursin(r"^\s{8}label:", line)
+            side_label = String(parse_yaml_scalar(split(line, ":", limit=2)[2]))
+            continue
+        end
+
+        if occursin(r"^\s{8}max_distance_km:", line)
+            value = parse_yaml_scalar(split(line, ":", limit=2)[2])
+            side_max_distance = value isa Number ? Float64(value) : 0.0
+            continue
+        end
+
+        if occursin(r"^\s{8}topographic_anchors:", line)
+            flush_anchor!()
+            in_topographic_anchors = true
+            continue
+        end
+
+        if in_topographic_anchors && occursin(r"^\s{10}-\s+description:", line)
+            flush_anchor!()
+            anchor_description = String(parse_yaml_scalar(split(line, ":", limit=2)[2]))
+            continue
+        end
+
+        if in_topographic_anchors && occursin(r"^\s{12}[A-Za-z0-9_]+:", line)
+            key, value_raw = split(strip(line), ":", limit=2)
+            value = parse_yaml_scalar(value_raw)
+            if key == "elevation_m"
+                anchor_elevation = value
+            elseif key == "distance_km_from_detector"
+                anchor_distance = value
+            end
+            continue
+        end
+
+        if in_topographic_anchors && occursin(r"^\s{8}(intervals|topographic_anchors):", line)
+            flush_anchor!()
+            in_topographic_anchors = false
+        elseif in_topographic_anchors && !isempty(strip(line)) && !occursin(r"^\s{10}|\s{12}", line)
+            flush_anchor!()
+            in_topographic_anchors = false
+        end
+    end
+
+    flush_section!()
+    return sections
+end
+
 """
     nmap_lookup(dgsm, theta_deg, phi_deg) -> (rock_m, is_underground)
 
 Bilinear interpolation on the `dgsm` rock-thickness table, faithfully
 replicating the Fortran `nmap` subroutine in `rr.for`.
 
-Inputs use geographic azimuth (0° = North, 90° = East).  The +180° internal
-shift and wrap match the Fortran storage layout.
+Inputs use geographic azimuth (0° = North, 90° = East).  The `nm_c.inc` azimuth
+axis is mirrored relative to that convention, so we apply the reflected
+180° shift before indexing.
 """
 function nmap_lookup(dgsm::Matrix{Float64}, theta_deg::Float64, phi_deg::Float64)
-    fi = phi_deg + 180.0
-    fi >= 360.0 && (fi -= 360.0)
+    # The dgsm table is stored with the opposite azimuth handedness from the
+    # geographic convention used elsewhere in this example.
+    fi = mod(180.0 - phi_deg, 360.0)
     tet = theta_deg
 
     jt = floor(Int, tet / 2.0) + 1
@@ -293,9 +485,13 @@ end
 function build_elevation_map()
     dgsm = load_dgsm(NMC_PATH)
     println("  Loaded nm_c.inc rock-thickness map ($(size(dgsm,1))×$(size(dgsm,2)))")
-
-    h  = GRID_HALF_KM
-    s  = GRID_STEP_KM
+    sections = load_topography_sections(TOPOGRAPHY_GEOMETRY_PATH)
+    anchor_samples = build_topography_anchor_samples(dgsm, sections)
+    h = terrain_grid_half_km(sections)
+    s = terrain_grid_step_km(h)
+    println("  Loaded $(length(sections)) cross-sections from geometry YAML")
+    println("  Using $(length(anchor_samples)) explicit elevation anchors for terrain lift")
+    println(@sprintf("  Terrain grid extent: ±%.1f km, step %.2f km", h, s))
     nx = round(Int, 2h / s) + 1
     ny = nx
 
@@ -308,6 +504,9 @@ function build_elevation_map()
             z_peak = max(z_peak, DETECTOR_ELEVATION + v * cosd(θ))
         end
     end
+    for anchor in anchor_samples
+        z_peak = max(z_peak, anchor.target_elevation_m + 150.0)
+    end
     z_max = z_peak + 200.0
     info  = MapInfo(nx, ny, (-h, h), (-h, h), (VALLEY_FLOOR, z_max))
     emap  = map_create(info)
@@ -316,7 +515,8 @@ function build_elevation_map()
         y_km = -h + iy * s
         for ix in 0:(nx - 1)
             x_km = -h + ix * s
-            map_fill(emap, ix, iy, terrain_elevation(x_km, y_km, dgsm))
+            map_fill(emap, ix, iy,
+                     terrain_elevation_augmented(x_km, y_km, dgsm, anchor_samples))
         end
     end
 
@@ -327,6 +527,94 @@ wrap_azimuth_deg(phi_deg::Float64) = mod(phi_deg, 360.0)
 
 function circular_distance_deg(a_deg::Float64, b_deg::Float64)
     return abs(mod(a_deg - b_deg + 180.0, 360.0) - 180.0)
+end
+
+function topography_side_azimuth_deg(section::TopographySection, side::TopographySectionSide)
+    section.phi_deg === nothing && return nothing
+    if side.name == :right
+        return wrap_azimuth_deg(section.phi_deg)
+    else
+        return wrap_azimuth_deg(section.phi_deg + 180.0)
+    end
+end
+
+function terrain_grid_half_km(sections::Vector{TopographySection})
+    extent = GRID_HALF_KM
+    for section in sections
+        for side in (section.left, section.right)
+            side === nothing && continue
+            azimuth_deg = topography_side_azimuth_deg(section, side)
+            azimuth_deg === nothing && continue
+            x = side.max_distance_km * sind(azimuth_deg)
+            y = side.max_distance_km * cosd(azimuth_deg)
+            extent = maximum((extent, abs(x), abs(y)))
+        end
+    end
+    return ceil(extent + 1.0)
+end
+
+function terrain_grid_step_km(half_km::Float64)
+    target = max(GRID_STEP_KM, 2.0 * half_km / 260.0)
+    return 0.05 * ceil(target / 0.05 - 1e-9)
+end
+
+function build_topography_anchor_samples(dgsm::Matrix{Float64},
+                                         sections::Vector{TopographySection})
+    samples = NamedTuple{(:azimuth_deg, :distance_km, :target_elevation_m,
+                          :base_elevation_m, :delta_m, :description),
+                         Tuple{Float64, Float64, Float64, Float64, Float64, String}}[]
+
+    for section in sections
+        for side in (section.left, section.right)
+            side === nothing && continue
+            azimuth_deg = topography_side_azimuth_deg(section, side)
+            azimuth_deg === nothing && continue
+            for anchor in side.anchors
+                anchor.elevation_m === nothing && continue
+                anchor.distance_km === nothing && continue
+                x_km = anchor.distance_km * sind(azimuth_deg)
+                y_km = anchor.distance_km * cosd(azimuth_deg)
+                base_elevation_m = terrain_elevation(x_km, y_km, dgsm)
+                delta_m = max(anchor.elevation_m - base_elevation_m, 0.0)
+                delta_m <= 1.0 && continue
+                push!(samples, (
+                    azimuth_deg = azimuth_deg,
+                    distance_km = anchor.distance_km,
+                    target_elevation_m = anchor.elevation_m,
+                    base_elevation_m = base_elevation_m,
+                    delta_m = delta_m,
+                    description = anchor.description,
+                ))
+            end
+        end
+    end
+
+    return samples
+end
+
+function topography_anchor_correction(x_km::Float64, y_km::Float64, anchor_samples)
+    isempty(anchor_samples) && return 0.0
+    distance_km = hypot(x_km, y_km)
+    azimuth_deg = wrap_azimuth_deg(atand(x_km, y_km))
+
+    correction_m = 0.0
+    for anchor in anchor_samples
+        radial_sigma_km = clamp(0.40 * anchor.distance_km, 0.8, 2.5)
+        azimuth_sigma_deg = anchor.distance_km <= 4.0 ? 12.0 : 8.0
+        radial_term = (distance_km - anchor.distance_km) / radial_sigma_km
+        azimuth_term = circular_distance_deg(azimuth_deg, anchor.azimuth_deg) / azimuth_sigma_deg
+        weight = exp(-0.5 * (radial_term^2 + azimuth_term^2))
+        correction_m = max(correction_m, anchor.delta_m * weight)
+    end
+
+    return correction_m
+end
+
+function terrain_elevation_augmented(x_km::Float64, y_km::Float64,
+                                     dgsm::Matrix{Float64}, anchor_samples)
+    base_elevation_m = terrain_elevation(x_km, y_km, dgsm)
+    correction_m = topography_anchor_correction(x_km, y_km, anchor_samples)
+    return max(base_elevation_m + correction_m, VALLEY_FLOOR)
 end
 
 function nmap_zenith_grid(zenith_min_deg::Float64, zenith_max_deg::Float64)
@@ -411,6 +699,12 @@ function fit_positive_scale(reference::Vector{Float64},
     return max(dot(reference, model) / denom, 0.0)
 end
 
+function normalized_rmse(reference::Vector{Float64}, model::Vector{Float64})
+    isempty(reference) && return Inf
+    residual = model .- reference
+    return sqrt(mean(residual .^ 2)) / max(maximum(reference), eps(Float64))
+end
+
 function load_csv_columns(path::String, ncols::Int)
     cols = [Float64[] for _ in 1:ncols]
     open(path, "r") do io
@@ -435,8 +729,13 @@ end
 
 function lvd_box_projected_area(zenith_deg::Float64,
                                 azimuth_lvd_deg::Float64)
-    ux = sind(zenith_deg) * cosd(azimuth_lvd_deg)
-    uy = sind(zenith_deg) * sind(azimuth_lvd_deg)
+    # Keep the same azimuth convention as the terrain and dgsm helpers:
+    # 0° = North (+y), 90° = East (+x).  The box is additionally rotated by
+    # LVD_BOX_ROTATION_DEG around the vertical so that the long tower axis
+    # points along the physical detector hall direction.
+    az_rel = azimuth_lvd_deg - LVD_BOX_ROTATION_DEG
+    ux = sind(zenith_deg) * sind(az_rel)
+    uy = sind(zenith_deg) * cosd(az_rel)
     uz = cosd(zenith_deg)
 
     projected =
@@ -618,7 +917,7 @@ function create_topo_plot(emap::ElevationMap,
     layout = Layout(
         title = attr(
             text = "Gran Sasso LNGS — LVD Detector & Mountain Topography<br>" *
-                   "<sub>Measured rock thickness (nm_c.inc / nmap) · $title_sub</sub>",
+                   "<sub>Measured rock thickness (nm_c.inc / nmap) + YAML cross-section anchor lift · $title_sub</sub>",
             font = attr(size = 16)
         ),
         scene = attr(
@@ -1331,58 +1630,64 @@ function load_paper_figure8_benchmark()
     return (energy = cols[1], relative_count = cols[2])
 end
 
-function load_paper_figure9_peaks()
-    cols = load_csv_columns(PAPER_FIG9_PEAKS_PATH, 3)
-    peaks = NamedTuple{(:cos_zenith, :azimuth_deg, :relative_height),
-                       Tuple{Float64, Float64, Float64}}[]
-    for i in eachindex(cols[1])
-        push!(peaks, (
-            cos_zenith = cols[1][i],
-            azimuth_deg = cols[2][i],
-            relative_height = cols[3][i],
-        ))
-    end
-    return peaks
+function figure8_reliable_mask(paper_relative_count::Vector{Float64})
+    positives = filter(>(0.0), paper_relative_count)
+    isempty(positives) && return trues(length(paper_relative_count))
+    floor_level = minimum(positives)
+    return paper_relative_count .> (1.25 * floor_level)
 end
 
-function infer_lvd_reference_offset(flux_result::NMapFluxResult,
-                                    paper_az::Vector{Float64},
-                                    paper_intensity::Vector{Float64})
+function infer_lvd_reference_offset(flux_result::NMapFluxResult, benchmark)
     function score_offset(offset_deg::Float64)
         model_az, model_profile = compute_figure7_profile(
             flux_result; azimuth_offset_deg=offset_deg)
-        model_interp = periodic_interp(model_az, model_profile, paper_az)
-        scale = fit_positive_scale(paper_intensity, model_interp)
-        residual = scale .* model_interp .- paper_intensity
-        rmse = sqrt(mean(residual .^ 2)) /
-               max(maximum(paper_intensity), eps(Float64))
-        return rmse, scale
+        curve_interp = periodic_interp(model_az, model_profile, benchmark.curve_az)
+        point_interp = periodic_interp(model_az, model_profile, benchmark.point_az)
+        scale = fit_positive_scale(
+            vcat(benchmark.curve_intensity, benchmark.point_intensity),
+            vcat(curve_interp, point_interp))
+        curve_nrmse = normalized_rmse(benchmark.curve_intensity, scale .* curve_interp)
+        point_nrmse = normalized_rmse(benchmark.point_intensity, scale .* point_interp)
+        combined = 0.75 * curve_nrmse + 0.25 * point_nrmse
+        return combined, scale, curve_nrmse, point_nrmse
     end
 
     best_offset = 0.0
     best_scale = 1.0
-    best_rmse = Inf
+    best_score = Inf
+    best_curve_nrmse = Inf
+    best_point_nrmse = Inf
 
     for offset_deg in 0.0:1.0:359.0
-        rmse, scale = score_offset(offset_deg)
-        if rmse < best_rmse
+        score, scale, curve_nrmse, point_nrmse = score_offset(offset_deg)
+        if score < best_score
             best_offset = offset_deg
             best_scale = scale
-            best_rmse = rmse
+            best_score = score
+            best_curve_nrmse = curve_nrmse
+            best_point_nrmse = point_nrmse
         end
     end
 
-    for offset_deg in (best_offset - 2.0):0.25:(best_offset + 2.0)
+    for offset_deg in (best_offset - 2.0):0.05:(best_offset + 2.0)
         wrapped = wrap_azimuth_deg(offset_deg)
-        rmse, scale = score_offset(wrapped)
-        if rmse < best_rmse
+        score, scale, curve_nrmse, point_nrmse = score_offset(wrapped)
+        if score < best_score
             best_offset = wrapped
             best_scale = scale
-            best_rmse = rmse
+            best_score = score
+            best_curve_nrmse = curve_nrmse
+            best_point_nrmse = point_nrmse
         end
     end
 
-    return (offset_deg=best_offset, scale=best_scale, rmse=best_rmse)
+    return (
+        offset_deg = best_offset,
+        scale = best_scale,
+        score = best_score,
+        curve_nrmse = best_curve_nrmse,
+        point_nrmse = best_point_nrmse,
+    )
 end
 
 function sample_paper_energy_spectrum(physics,
@@ -1607,18 +1912,19 @@ function add_curve_bands!(traces::Vector{GenericTrace},
     ))
 end
 
-function create_paper_reproduction_plot(fig7, fig8, fig9, metrics;
+function create_paper_reproduction_plot(fig7, fig8, metrics;
                                         output_path::String)
     fig7_model_scaled = metrics.fig7_scale .* fig7.model_profile
     fig7_sigma_mc = metrics.fig7_scale .* fig7.sigma_mc
     fig7_sigma_syst = metrics.fig7_scale .* fig7.sigma_syst
     fig7_sigma_total = metrics.fig7_scale .* fig7.sigma_total
 
-    fig8_paper = [v > 0.0 ? v : NaN for v in fig8.paper_relative_count]
-    fig8_model = [v > 0.0 ? v : NaN for v in fig8.model_relative_count]
-
-    cos_zeniths = reverse(cosd.(fig9.zeniths))
-    occupancy_heatmap = permutedims(reverse(fig9.occupancy, dims=1), (2, 1))
+    fig8_paper = [m && v > 0.0 ? v : NaN
+                  for (m, v) in zip(fig8.plot_mask, fig8.paper_relative_count)]
+    fig8_model = [m && v > 0.0 ? v : NaN
+                  for (m, v) in zip(fig8.plot_mask, fig8.model_relative_count)]
+    fig8_sigma_syst = [m ? v : NaN for (m, v) in zip(fig8.plot_mask, fig8.sigma_syst)]
+    fig8_sigma_total = [m ? v : NaN for (m, v) in zip(fig8.plot_mask, fig8.sigma_total)]
 
     traces = GenericTrace[]
 
@@ -1627,8 +1933,8 @@ function create_paper_reproduction_plot(fig7, fig8, fig9, metrics;
                      xaxis="x", yaxis="y",
                      total_fill="rgba(40,110,220,0.10)",
                      syst_fill="rgba(40,110,220,0.18)")
-    add_curve_bands!(traces, fig8.model_energy, fig8.model_relative_count,
-                     fig8.sigma_syst, fig8.sigma_total;
+    add_curve_bands!(traces, fig8.model_energy, fig8_model,
+                     fig8_sigma_syst, fig8_sigma_total;
                      xaxis="x2", yaxis="y2",
                      total_fill="rgba(40,110,220,0.10)",
                      syst_fill="rgba(40,110,220,0.18)")
@@ -1690,67 +1996,33 @@ function create_paper_reproduction_plot(fig7, fig8, fig9, metrics;
                          100 * mc / max(abs(y), 1e-30),
                          100 * syst / max(abs(y), 1e-30),
                          100 * total / max(abs(y), 1e-30))
-                for (x, y, mc, syst, total) in zip(fig8.model_energy, fig8.model_relative_count,
-                                                   fig8.sigma_mc, fig8.sigma_syst, fig8.sigma_total)],
+                for (x, y, mc, syst, total) in zip(fig8.model_energy, fig8_model,
+                                                   fig8.sigma_mc, fig8_sigma_syst, fig8_sigma_total)],
         hovertemplate = "%{text}<extra></extra>",
         xaxis = "x2",
         yaxis = "y2",
         showlegend = false
     ))
 
-    push!(traces, heatmap(
-        x = cos_zeniths,
-        y = fig9.azimuths,
-        z = occupancy_heatmap,
-        colorscale = "Viridis",
-        colorbar = attr(title = "Relative occupancy", x = 1.01, len = 0.58),
-        xaxis = "x3",
-        yaxis = "y3",
-        name = "Figure 9 occupancy",
-        showscale = true
-    ))
-    push!(traces, scatter(
-        x = [peak.cos_zenith for peak in fig9.paper_peaks],
-        y = [peak.azimuth_deg for peak in fig9.paper_peaks],
-        mode = "markers",
-        marker = attr(symbol = "x", size = 10, color = "rgb(210,50,50)",
-                      line = attr(width = 2, color = "rgb(210,50,50)")),
-        name = "Figure 9 paper peaks",
-        xaxis = "x3",
-        yaxis = "y3"
-    ))
-    push!(traces, scatter(
-        x = [peak.cos_zenith for peak in fig9.model_peaks],
-        y = [peak.azimuth_deg for peak in fig9.model_peaks],
-        mode = "markers",
-        marker = attr(symbol = "circle-open", size = 10,
-                      color = "rgba(255,255,255,0.2)",
-                      line = attr(width = 2, color = "black")),
-        name = "DiffPumas peaks",
-        xaxis = "x3",
-        yaxis = "y3"
-    ))
-
     annotations = [
-        attr(x = 0.22, y = 1.03, xref = "paper", yref = "paper",
+        attr(x = 0.50, y = 1.03, xref = "paper", yref = "paper",
              text = "Figure 7: Azimuthal intensity", showarrow = false,
              font = attr(size = 15)),
-        attr(x = 0.22, y = 0.45, xref = "paper", yref = "paper",
+        attr(x = 0.50, y = 0.45, xref = "paper", yref = "paper",
              text = "Figure 8: Underground energy spectrum", showarrow = false,
              font = attr(size = 15)),
-        attr(x = 0.79, y = 1.03, xref = "paper", yref = "paper",
-             text = "Figure 9: Angular occupancy", showarrow = false,
-             font = attr(size = 15)),
-        attr(x = 0.22, y = 0.50, xref = "paper", yref = "paper",
-             text = @sprintf("Offset %.2f° · Fig. 7 NRMSE %.3f", metrics.azimuth_offset_deg, metrics.fig7_nrmse),
+        attr(x = 0.50, y = 0.50, xref = "paper", yref = "paper",
+             text = @sprintf("Offset %.2f° · curve NRMSE %.3f · point NRMSE %.3f",
+                             metrics.azimuth_offset_deg,
+                             metrics.fig7_curve_nrmse,
+                             metrics.fig7_point_nrmse),
              showarrow = false, font = attr(size = 12)),
-        attr(x = 0.22, y = -0.04, xref = "paper", yref = "paper",
-             text = @sprintf("Mean E = %.1f GeV (paper %.0f GeV) · Fig. 8 corr %.3f",
-                             metrics.mean_energy_gev, PAPER_MEAN_ENERGY_GEV, metrics.fig8_corr),
-             showarrow = false, font = attr(size = 12)),
-        attr(x = 0.79, y = -0.04, xref = "paper", yref = "paper",
-             text = @sprintf("Peak match %.0f%% · mean scaled distance %.2f",
-                             100 * metrics.fig9_match_fraction, metrics.fig9_mean_distance),
+        attr(x = 0.50, y = -0.04, xref = "paper", yref = "paper",
+             text = @sprintf("Mean E = %.1f GeV (paper %.0f GeV) · Fig. 8 corr %.3f · tail shown through %.0f GeV",
+                             metrics.mean_energy_gev,
+                             PAPER_MEAN_ENERGY_GEV,
+                             metrics.fig8_corr,
+                             metrics.fig8_max_reliable_energy_gev),
              showarrow = false, font = attr(size = 12)),
     ]
 
@@ -1758,25 +2030,21 @@ function create_paper_reproduction_plot(fig7, fig8, fig9, metrics;
         title = attr(
             text = "Gran Sasso LVD — Paper Reproduction Check<br>" *
                    "<sub>Figure 7 uses an inferred LVD-frame offset and a simple box acceptance model; " *
-                   "Figures 8–9 use the raw underground angular flux</sub>",
+                   "Figure 8 hides the digitized floor tail where the paper benchmark is no longer reliable</sub>",
             font = attr(size = 16)
         ),
-        xaxis = attr(domain = [0.00, 0.46], anchor = "y",
+        xaxis = attr(domain = [0.00, 1.00], anchor = "y",
                      title = "Azimuth φ_LVD (°)", range = [0, 360], dtick = 60),
         yaxis = attr(domain = [0.58, 1.00], anchor = "x",
                      title = "Intensity (10⁻⁹ cm⁻² s⁻¹ deg⁻¹)"),
-        xaxis2 = attr(domain = [0.00, 0.46], anchor = "y2",
+        xaxis2 = attr(domain = [0.00, 1.00], anchor = "y2",
                       title = "Muon energy (GeV)", type = "log"),
         yaxis2 = attr(domain = [0.00, 0.42], anchor = "x2",
                       title = "Normalized counts", type = "log"),
-        xaxis3 = attr(domain = [0.58, 1.00], anchor = "y3",
-                      title = "cos(θ)", range = [0, 1]),
-        yaxis3 = attr(domain = [0.00, 1.00], anchor = "x3",
-                      title = "Azimuth φ_LVD (°)", range = [0, 360], dtick = 60),
         annotations = annotations,
-        width = 1450,
+        width = 1120,
         height = 920,
-        legend = attr(x = 0.60, y = 0.98,
+        legend = attr(x = 0.73, y = 0.98,
                       bgcolor = "rgba(255,255,255,0.85)",
                       font = attr(size = 11))
     )
@@ -1793,7 +2061,8 @@ function write_paper_metrics(metrics; output_path::String)
         "Gran Sasso LVD paper reproduction summary",
         "",
         @sprintf("Inferred LVD azimuth offset: %.2f deg", metrics.azimuth_offset_deg),
-        @sprintf("Figure 7 normalized RMSE: %.4f", metrics.fig7_nrmse),
+        @sprintf("Figure 7 curve normalized RMSE: %.4f", metrics.fig7_curve_nrmse),
+        @sprintf("Figure 7 point normalized RMSE: %.4f", metrics.fig7_point_nrmse),
         @sprintf("Figure 8 mean energy: %.2f GeV", metrics.mean_energy_gev),
         @sprintf("Figure 8 delta vs paper mean (%.0f GeV): %.2f GeV",
                  PAPER_MEAN_ENERGY_GEV, metrics.mean_energy_gev - PAPER_MEAN_ENERGY_GEV),
@@ -1803,17 +2072,16 @@ function write_paper_metrics(metrics; output_path::String)
                  PAPER_MEAN_ENERGY_MEAS_SYST_GEV,
                  metrics.mean_energy_gev - PAPER_MEAN_ENERGY_MEAS_GEV),
         @sprintf("Figure 8 shape correlation: %.4f", metrics.fig8_corr),
-        @sprintf("Figure 9 matched paper peaks: %.1f%%",
-                 100 * metrics.fig9_match_fraction),
-        @sprintf("Figure 9 mean scaled peak distance: %.4f",
-                 metrics.fig9_mean_distance),
+        @sprintf("Figure 8 maximum reliable paper energy shown: %.0f GeV",
+                 metrics.fig8_max_reliable_energy_gev),
         "",
         "Assumptions:",
         "- All three parts use StandardRock only; no shallow wet-rock or porous composite layer is applied.",
         "- Part 3 uses the same θ ≤ 60° zenith range as Parts 1 and 2.",
         "- Figure 7 uses a simple box projected-area model for the LVD acceptance.",
-        "- Figures 8 and 9 use the raw underground angular flux without detector acceptance weighting.",
-        "- The LVD reference-system offset is inferred by matching the paper's Figure 7 azimuthal curve.",
+        "- Figure 8 uses the raw underground angular flux without detector acceptance weighting.",
+        "- The LVD reference-system offset is inferred by jointly matching the Figure 7 curve and digitized points.",
+        "- The high-energy Figure 8 tail is hidden once the digitized paper curve reaches its repeated floor value.",
     ]
 
     open(output_path, "w") do io
@@ -1931,12 +2199,15 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
 
     fig7_benchmark = load_paper_figure7_benchmark()
     fig8_benchmark = load_paper_figure8_benchmark()
-    fig9_paper_peaks = load_paper_figure9_peaks()
+    fig8_plot_mask = figure8_reliable_mask(fig8_benchmark.relative_count)
+    fig8_max_reliable_energy = begin
+        idx = findlast(fig8_plot_mask)
+        idx === nothing ? maximum(fig8_benchmark.energy) : fig8_benchmark.energy[idx]
+    end
 
     offset_fit = infer_lvd_reference_offset(
         full_flux_result,
-        fig7_benchmark.curve_az,
-        fig7_benchmark.curve_intensity)
+        fig7_benchmark)
 
     println(@sprintf("  Inferred LVD azimuth offset: %.2f°", offset_fit.offset_deg))
 
@@ -1945,15 +2216,21 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
             full_flux_result; azimuth_offset_deg=offset_fit.offset_deg)
     fig7_interp = periodic_interp(
         fig7_model_azimuths, fig7_model_profile, fig7_benchmark.curve_az)
-    fig7_scale = fit_positive_scale(fig7_benchmark.curve_intensity, fig7_interp)
-    fig7_nrmse = sqrt(mean((fig7_scale .* fig7_interp .-
-                            fig7_benchmark.curve_intensity) .^ 2)) /
-                 max(maximum(fig7_benchmark.curve_intensity), eps(Float64))
+    fig7_points_interp = periodic_interp(
+        fig7_model_azimuths, fig7_model_profile, fig7_benchmark.point_az)
+    fig7_scale = fit_positive_scale(
+        vcat(fig7_benchmark.curve_intensity, fig7_benchmark.point_intensity),
+        vcat(fig7_interp, fig7_points_interp))
+    fig7_curve_nrmse = normalized_rmse(
+        fig7_benchmark.curve_intensity, fig7_scale .* fig7_interp)
+    fig7_point_nrmse = normalized_rmse(
+        fig7_benchmark.point_intensity, fig7_scale .* fig7_points_interp)
 
     write_part3_status(output_dir, "figure 7 fit ready";
         details = [
             @sprintf("azimuth_offset_deg = %.2f", offset_fit.offset_deg),
-            @sprintf("fig7_nrmse = %.4f", fig7_nrmse),
+            @sprintf("fig7_curve_nrmse = %.4f", fig7_curve_nrmse),
+            @sprintf("fig7_point_nrmse = %.4f", fig7_point_nrmse),
         ])
 
     spectrum_energy_min = max(energy_min, 10.0^first(PAPER_SPECTRUM_LOG10_EDGES))
@@ -2011,7 +2288,9 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
         threshold_factors = threshold_factors,
     )
 
-    fig8_mask = (fig8_benchmark.relative_count .> 0.0) .& (spectrum_budget.value .> 0.0)
+    fig8_mask = fig8_plot_mask .&
+                (fig8_benchmark.relative_count .> 0.0) .&
+                (spectrum_budget.value .> 0.0)
     fig8_corr = count(fig8_mask) >= 2 ?
         cor(log10.(fig8_benchmark.relative_count[fig8_mask]),
             log10.(spectrum_budget.value[fig8_mask])) : NaN
@@ -2020,32 +2299,26 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
         details = [
             @sprintf("mean_energy_gev = %.2f", spectrum_nominal.mean_energy),
             @sprintf("fig8_corr = %.4f", fig8_corr),
+            @sprintf("fig8_max_reliable_energy_gev = %.0f", fig8_max_reliable_energy),
         ])
-
-    fig9_azimuths, fig9_occupancy = compute_figure9_occupancy(
-        full_flux_result; azimuth_offset_deg=offset_fit.offset_deg)
-    fig9_model_peaks = identify_top_occupancy_peaks(
-        fig9_occupancy, full_flux_result.zeniths, fig9_azimuths;
-        n = length(fig9_paper_peaks))
-    fig9_metrics = compare_peak_sets(fig9_model_peaks, fig9_paper_peaks)
 
     metrics = (
         azimuth_offset_deg = offset_fit.offset_deg,
         fig7_scale = fig7_scale,
-        fig7_nrmse = fig7_nrmse,
+        fig7_curve_nrmse = fig7_curve_nrmse,
+        fig7_point_nrmse = fig7_point_nrmse,
         mean_energy_gev = spectrum_nominal.mean_energy,
         fig8_corr = fig8_corr,
-        fig9_match_fraction = fig9_metrics.matched_fraction,
-        fig9_mean_distance = fig9_metrics.mean_distance,
+        fig8_max_reliable_energy_gev = fig8_max_reliable_energy,
     )
 
     write_part3_status(output_dir, "finalizing outputs";
         details = [
-            @sprintf("fig7_nrmse = %.4f", metrics.fig7_nrmse),
+            @sprintf("fig7_curve_nrmse = %.4f", metrics.fig7_curve_nrmse),
+            @sprintf("fig7_point_nrmse = %.4f", metrics.fig7_point_nrmse),
             @sprintf("mean_energy_gev = %.2f", metrics.mean_energy_gev),
             @sprintf("fig8_corr = %.4f", metrics.fig8_corr),
-            @sprintf("fig9_match_fraction = %.4f", metrics.fig9_match_fraction),
-            @sprintf("fig9_mean_distance = %.4f", metrics.fig9_mean_distance),
+            @sprintf("fig8_max_reliable_energy_gev = %.0f", metrics.fig8_max_reliable_energy_gev),
         ])
 
     create_paper_reproduction_plot(
@@ -2068,13 +2341,7 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
             sigma_mc = spectrum_budget.sigma_mc,
             sigma_syst = spectrum_budget.sigma_syst,
             sigma_total = spectrum_budget.sigma_total,
-        ),
-        (
-            zeniths = full_flux_result.zeniths,
-            azimuths = fig9_azimuths,
-            occupancy = fig9_occupancy,
-            paper_peaks = fig9_paper_peaks,
-            model_peaks = fig9_model_peaks,
+            plot_mask = fig8_plot_mask,
         ),
         metrics;
         output_path = joinpath(output_dir, "part3_paper_reproduction.html"))
@@ -2083,11 +2350,11 @@ function run_part3(physics, rock_idx::Int, air_idx::Int;
         output_path = joinpath(output_dir, "part3_paper_metrics.txt"))
     write_part3_status(output_dir, "complete";
         details = [
-            @sprintf("fig7_nrmse = %.4f", metrics.fig7_nrmse),
+            @sprintf("fig7_curve_nrmse = %.4f", metrics.fig7_curve_nrmse),
+            @sprintf("fig7_point_nrmse = %.4f", metrics.fig7_point_nrmse),
             @sprintf("mean_energy_gev = %.2f", metrics.mean_energy_gev),
             @sprintf("fig8_corr = %.4f", metrics.fig8_corr),
-            @sprintf("fig9_match_fraction = %.4f", metrics.fig9_match_fraction),
-            @sprintf("fig9_mean_distance = %.4f", metrics.fig9_mean_distance),
+            @sprintf("fig8_max_reliable_energy_gev = %.0f", metrics.fig8_max_reliable_energy_gev),
         ])
     println()
     return full_flux_result
@@ -2238,7 +2505,7 @@ function main()
             println("WARNING: no valid directions found, skipping Part 2"); return 1
         end
 
-        println("Building elevation map from measured rock thickness (nm_c.inc)...")
+        println("Building elevation map from measured rock thickness and YAML cross-sections...")
         emap = build_elevation_map()
         info, _ = map_meta(emap)
         println("  Grid: $(info.nx) × $(info.ny)")
