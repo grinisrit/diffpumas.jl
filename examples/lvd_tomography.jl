@@ -64,24 +64,20 @@ Options:
 const lvd_tomography = nothing
 
 using DiffPumas
-using DiffPumas.Physics: get_material_index, property_range, property_stopping_power
-using DiffPumas.Physics: ENERGY_LOSS_CSDA
+using DiffPumas.Tomography          # forward model, sparse AD Jacobian, solvers, metrics
+using DiffPumas.Physics: get_material_index
 using DiffPumas.Loader: print_physics_summary
-using DiffPumas.Geometry: compute_decay_weight_from_path
-using DiffPumas.Geometry: locals_air_at_altitude
-using DiffPumas.Geometry: transport_backward_step, transport_backward_step_full, transport_backward_step_mixed
-using DiffPumas.GaisserFlux: flux_gccly
 using DiffPumas.Pumas: load_or_create_physics
 using DiffPumas.TriangleIntersect: intersect
 using DiffPumas.Turtle: ElevationMap, map_elevation
-using DiffPumas.Types: MaterialMixture, State, Vec3
+using DiffPumas.Types: MaterialMixture
 using PlotlyJS
 using Printf
 using Random
 using Statistics
 using LinearAlgebra
+using SparseArrays
 using Logging
-using Zygote
 
 module LVDTopo
 include(joinpath(@__DIR__, "lvd_muography.jl"))
@@ -97,39 +93,6 @@ const CSDA_MAX_RELATIVE_GAIN = 0.02
 const CSDA_MAX_STEP_M = 60.0
 const MC_STEP_MIN_M = 1e-6
 const MC_STEP_EPSILON_M = 1e-7
-
-struct MaterialConfig
-    rock_material::Int
-    water_material::Int
-    air_material::Int
-    porous_material::Int
-    rock_density::Float64
-    water_density::Float64
-    porous_density::Float64
-    porous_top_thickness::Float64
-end
-
-struct EnergySample
-    energy::Float64
-    charge::Float64
-    weight::Float64
-end
-
-struct CellSegment
-    cell_idx::Int
-    distance::Float64
-end
-
-struct DirectionalPath
-    zenith::Float64
-    azimuth::Float64
-    segments::Vector{CellSegment}
-    distance_in_volume::Float64
-    surface_distance::Float64
-    remaining_rock_distance::Float64
-    surface_exit_z::Float64
-    valid::Bool
-end
 
 struct ValidationCase
     label::String
@@ -182,13 +145,6 @@ end
     return volume isa TetraVolume ? "tetra" : "grid"
 end
 
-@inline function direction_vector(zenith_deg::Float64, azimuth_deg::Float64)
-    theta_rad = deg2rad(zenith_deg)
-    phi_rad = deg2rad(azimuth_deg)
-    dh = sin(theta_rad)
-    return (dh * sin(phi_rad), dh * cos(phi_rad), cos(theta_rad))
-end
-
 @inline point_at_distance(dir::NTuple{3,Float64}, s::Float64) =
     Point(dir[1] * s, dir[2] * s, dir[3] * s)
 
@@ -230,20 +186,6 @@ function ray_surface_exit_distance(emap::ElevationMap,
     end
 
     return (NaN, false, NaN)
-end
-
-function sample_energy_set(n_samples::Int,
-                           energy_min::Float64,
-                           energy_max::Float64,
-                           seed::Int)
-    rng = MersenneTwister(seed)
-    samples = Vector{EnergySample}(undef, n_samples)
-    for i in 1:n_samples
-        kf, w = sample_energy_loguniform(energy_min, energy_max, rng)
-        charge = rand(rng) > 0.5 ? 1.0 : -1.0
-        samples[i] = EnergySample(Float64(kf), charge, Float64(w))
-    end
-    return samples
 end
 
 function exclusive_degree_grid(max_deg::Float64, step_deg::Float64)
@@ -734,471 +676,6 @@ function trace_path(volume::VoxelVolume,
                            remaining_rock, surface_exit_z, true)
 end
 
-function continuous_cell_mixture_and_density(w::Float64,
-                                             shallow::Bool,
-                                             matcfg::MaterialConfig)
-    if shallow && matcfg.porous_material > 0 && matcfg.porous_top_thickness > 0.0
-        if abs(w) <= 1e-15
-            return MaterialMixture(matcfg.porous_material), matcfg.porous_density
-        end
-        porous_frac = 0.5 * (1.0 - w)
-        rock_frac = 0.5 * (1.0 - w)
-        mix = MaterialMixture(
-            [matcfg.porous_material, matcfg.rock_material, matcfg.water_material],
-            [porous_frac, rock_frac, w],
-        )
-        density = porous_frac * matcfg.porous_density +
-                  rock_frac * matcfg.rock_density +
-                  w * matcfg.water_density
-        return mix, density
-    end
-
-    mix = MaterialMixture(
-        [matcfg.rock_material, matcfg.water_material],
-        [1.0 - w, w],
-    )
-    density = (1.0 - w) * matcfg.rock_density + w * matcfg.water_density
-    return mix, density
-end
-
-function mc_cell_mixture_and_density(w::Float64,
-                                     shallow::Bool,
-                                     matcfg::MaterialConfig)
-    if shallow && matcfg.porous_material > 0 && matcfg.porous_top_thickness > 0.0
-        if w <= 1e-12
-            return MaterialMixture(matcfg.porous_material), matcfg.porous_density
-        end
-        porous_frac = 0.5 * (1.0 - w)
-        rock_frac = 0.5 * (1.0 - w)
-        mix = MaterialMixture(
-            [matcfg.porous_material, matcfg.rock_material, matcfg.water_material],
-            [porous_frac, rock_frac, w],
-        )
-        density = porous_frac * matcfg.porous_density +
-                  rock_frac * matcfg.rock_density +
-                  w * matcfg.water_density
-        return mix, density
-    end
-
-    if w <= 1e-12
-        return MaterialMixture(matcfg.rock_material), matcfg.rock_density
-    end
-
-    mix = MaterialMixture(
-        [matcfg.rock_material, matcfg.water_material],
-        [1.0 - w, w],
-    )
-    density = (1.0 - w) * matcfg.rock_density + w * matcfg.water_density
-    return mix, density
-end
-
-function build_cell_properties_for_mc(volume::AbstractSensitivityVolume,
-                                      water_fractions::Vector{Float64},
-                                      matcfg::MaterialConfig)
-    materials = Vector{MaterialMixture}(undef, length(water_fractions))
-    densities = Vector{Float64}(undef, length(water_fractions))
-    cache = Dict{Tuple{Bool,Float64}, Tuple{MaterialMixture,Float64}}()
-
-    for idx in eachindex(water_fractions)
-        key = (is_shallow_cell(volume, idx), water_fractions[idx])
-        if !haskey(cache, key)
-            cache[key] = mc_cell_mixture_and_density(water_fractions[idx], key[1], matcfg)
-        end
-        materials[idx], densities[idx] = cache[key]
-    end
-
-    return materials, densities
-end
-
-function propagate_csda_uniform_segment(physics,
-                                        material,
-                                        density::Float64,
-                                        distance::Float64,
-                                        energy::Float64,
-                                        weight::Float64)
-    remaining = distance
-    while remaining > 1e-8
-        dedx0 = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, energy)
-        (!isfinite(dedx0) || dedx0 <= 0.0) && return (energy, 0.0, false)
-
-        grammage_rel = CSDA_MAX_RELATIVE_GAIN * max(energy, 1e-6) / dedx0
-        grammage_step = min(remaining * density, max(grammage_rel, 1e-6), CSDA_MAX_STEP_M * density)
-        ds = min(remaining, grammage_step / max(density, 1e-12))
-        ds <= 0.0 && return (energy, 0.0, false)
-
-        grammage = ds * density
-        energy_predict = energy + dedx0 * grammage
-        dedx1 = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, energy_predict)
-        dE = 0.5 * (dedx0 + dedx1) * grammage
-        energy_next = energy + dE
-
-        (!isfinite(energy_next) || energy_next >= 1e12) && return (energy_next, 0.0, false)
-
-        dedx_next = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, energy_next)
-        weight *= dedx_next / max(dedx0, 1e-30)
-        weight *= compute_decay_weight_from_path(physics, ds, 0.5 * (energy + energy_next))
-
-        energy = energy_next
-        remaining -= ds
-    end
-
-    return energy, weight, true
-end
-
-function propagate_csda_air_segment(physics,
-                                    air_material::Int,
-                                    start_z::Float64,
-                                    cos_theta::Float64,
-                                    distance::Float64,
-                                    energy::Float64,
-                                    weight::Float64)
-    remaining = distance
-    traversed = 0.0
-    while remaining > 1e-8
-        altitude_mid = LVDTopo.DETECTOR_ELEVATION + start_z + cos_theta * (traversed + 0.5 * min(remaining, CSDA_MAX_STEP_M))
-        density = locals_air_at_altitude(altitude_mid).density
-        dedx0 = property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy)
-        (!isfinite(dedx0) || dedx0 <= 0.0) && return (energy, 0.0, false)
-
-        grammage_rel = CSDA_MAX_RELATIVE_GAIN * max(energy, 1e-6) / dedx0
-        ds = min(remaining, CSDA_MAX_STEP_M, grammage_rel / max(density, 1e-12))
-        ds = max(ds, 1e-3)
-
-        altitude_mid = LVDTopo.DETECTOR_ELEVATION + start_z + cos_theta * (traversed + 0.5 * ds)
-        density = locals_air_at_altitude(altitude_mid).density
-        grammage = ds * density
-        energy_predict = energy + dedx0 * grammage
-        dedx1 = property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy_predict)
-        dE = 0.5 * (dedx0 + dedx1) * grammage
-        energy_next = energy + dE
-
-        (!isfinite(energy_next) || energy_next >= 1e12) && return (energy_next, 0.0, false)
-
-        dedx_next = property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy_next)
-        weight *= dedx_next / max(dedx0, 1e-30)
-        weight *= compute_decay_weight_from_path(physics, ds, 0.5 * (energy + energy_next))
-
-        energy = energy_next
-        traversed += ds
-        remaining -= ds
-    end
-
-    return energy, weight, true
-end
-
-function compute_directional_flux_csda(physics,
-                                       volume::AbstractSensitivityVolume,
-                                       matcfg::MaterialConfig,
-                                       path::DirectionalPath,
-                                       water_fractions::Vector{Float64},
-                                       energy_samples::Vector{EnergySample})
-    path.valid || return NaN
-    cos_theta = cosd(path.zenith)
-    cos_theta <= 0.0 && return NaN
-
-    flux_sum = 0.0
-    for sample in energy_samples
-        energy = sample.energy
-        weight = 1.0
-        ok = true
-
-        for seg in path.segments
-            mix, density = continuous_cell_mixture_and_density(
-                water_fractions[seg.cell_idx],
-                is_shallow_cell(volume, seg.cell_idx),
-                matcfg,
-            )
-            energy, weight, ok = propagate_csda_uniform_segment(
-                physics, mix, density, seg.distance, energy, weight,
-            )
-            ok || break
-        end
-
-        if ok && path.remaining_rock_distance > 1e-8
-            energy, weight, ok = propagate_csda_uniform_segment(
-                physics,
-                matcfg.rock_material,
-                matcfg.rock_density,
-                path.remaining_rock_distance,
-                energy,
-                weight,
-            )
-        end
-
-        if ok
-            air_distance = max(0.0, primary_altitude_local() - path.surface_exit_z) / max(cos_theta, 1e-3)
-            energy, weight, ok = propagate_csda_air_segment(
-                physics,
-                matcfg.air_material,
-                path.surface_exit_z,
-                cos_theta,
-                air_distance,
-                energy,
-                weight,
-            )
-        end
-
-        flux_single = ok ? weight * flux_gccly(cos_theta, energy, sample.charge) : 0.0
-        flux_sum += 2.0 * sample.weight * flux_single
-    end
-
-    return flux_sum / length(energy_samples)
-end
-
-function initial_state(energy_final::Float64,
-                       charge::Float64,
-                       zenith::Float64,
-                       azimuth::Float64)
-    dir = direction_vector(zenith, azimuth)
-    return State{Float64}(
-        charge = charge,
-        energy = energy_final,
-        distance = 0.0,
-        grammage = 0.0,
-        time = 0.0,
-        weight = 1.0,
-        position = Vec3{Float64}(0.0, 0.0, 0.0),
-        direction = Vec3{Float64}(-dir[1], -dir[2], -dir[3]),
-        decayed = false,
-    )
-end
-
-function propagate_mc_uniform_segment(physics,
-                                      state::State{Float64},
-                                      material,
-                                      density::Float64,
-                                      distance::Float64,
-                                      rng::AbstractRNG;
-                                      straggling::Bool,
-                                      energy_threshold_low::Float64)
-    remaining = distance
-    energy_limit = 1e12
-
-    while remaining > 1e-8 && state.energy < energy_limit - eps(Float64)
-        if state.weight <= 0.0 || !isfinite(state.weight)
-            break
-        end
-
-        current_limit = state.energy < energy_threshold_low - eps(Float64) ? energy_threshold_low : energy_limit
-
-        Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
-        max_step = 0.01 * Xi / max(density, 1e-6)
-        step_size = clamp(min(remaining + MC_STEP_EPSILON_M, max_step), MC_STEP_MIN_M, remaining)
-
-        if state.energy < energy_threshold_low - eps(Float64)
-            if straggling
-                state, _ = transport_backward_step_full(
-                    physics,
-                    state,
-                    material,
-                    density,
-                    step_size,
-                    rng;
-                    mode = :straggled,
-                    scattering = false,
-                    energy_limit = current_limit,
-                )
-            else
-                state = transport_backward_step(
-                    physics,
-                    state,
-                    material,
-                    density,
-                    step_size;
-                    rng = nothing,
-                    straggling = false,
-                )
-            end
-        else
-            if straggling
-                state = transport_backward_step_mixed(
-                    physics,
-                    state,
-                    material,
-                    density,
-                    step_size,
-                    rng;
-                    energy_limit = current_limit,
-                )
-            else
-                state = transport_backward_step(
-                    physics,
-                    state,
-                    material,
-                    density,
-                    step_size;
-                    rng = nothing,
-                    straggling = false,
-                )
-            end
-        end
-
-        remaining -= step_size
-    end
-
-    return state
-end
-
-function propagate_mc_air_segment(physics,
-                                  state::State{Float64},
-                                  air_material::Int,
-                                  distance::Float64,
-                                  cos_theta::Float64,
-                                  rng::AbstractRNG;
-                                  straggling::Bool,
-                                  energy_threshold_low::Float64)
-    remaining = distance
-    energy_limit = 1e12
-    while remaining > 1e-8 && state.energy < energy_limit - eps(Float64)
-        if state.weight <= 0.0 || !isfinite(state.weight)
-            break
-        end
-
-        current_limit = state.energy < energy_threshold_low - eps(Float64) ? energy_threshold_low : energy_limit
-        altitude = LVDTopo.DETECTOR_ELEVATION + state.position[3]
-        density = locals_air_at_altitude(altitude).density
-
-        Xi = property_range(physics, ENERGY_LOSS_CSDA, air_material, state.energy)
-        max_step = 0.01 * Xi / max(density, 1e-8)
-        max_step = min(max_step, 0.05 * 12e3 / max(cos_theta, 0.05))
-        step_size = clamp(min(remaining + MC_STEP_EPSILON_M, max_step), MC_STEP_MIN_M, remaining)
-
-        if state.energy < energy_threshold_low - eps(Float64)
-            if straggling
-                state, _ = transport_backward_step_full(
-                    physics,
-                    state,
-                    air_material,
-                    density,
-                    step_size,
-                    rng;
-                    mode = :straggled,
-                    scattering = false,
-                    energy_limit = current_limit,
-                )
-            else
-                state = transport_backward_step(
-                    physics,
-                    state,
-                    air_material,
-                    density,
-                    step_size;
-                    rng = nothing,
-                    straggling = false,
-                )
-            end
-        else
-            if straggling
-                state = transport_backward_step_mixed(
-                    physics,
-                    state,
-                    air_material,
-                    density,
-                    step_size,
-                    rng;
-                    energy_limit = current_limit,
-                )
-            else
-                state = transport_backward_step(
-                    physics,
-                    state,
-                    air_material,
-                    density,
-                    step_size;
-                    rng = nothing,
-                    straggling = false,
-                )
-            end
-        end
-
-        remaining -= step_size
-    end
-
-    return state
-end
-
-function compute_directional_flux_mc(physics,
-                                     volume::AbstractSensitivityVolume,
-                                     matcfg::MaterialConfig,
-                                     path::DirectionalPath,
-                                     cell_materials::Vector{MaterialMixture},
-                                     cell_densities::Vector{Float64},
-                                     energy_samples::Vector{EnergySample},
-                                     seed::Int;
-                                     straggling::Bool,
-                                     energy_threshold_low::Float64)
-    path.valid || return (NaN, NaN)
-    cos_theta = cosd(path.zenith)
-    cos_theta <= 0.0 && return (NaN, NaN)
-
-    rng = MersenneTwister(seed)
-    w_sum = 0.0
-    w2_sum = 0.0
-
-    for sample in energy_samples
-        state = initial_state(sample.energy, sample.charge, path.zenith, path.azimuth)
-
-        for seg in path.segments
-            state = propagate_mc_uniform_segment(
-                physics,
-                state,
-                cell_materials[seg.cell_idx],
-                cell_densities[seg.cell_idx],
-                seg.distance,
-                rng;
-                straggling = straggling,
-                energy_threshold_low = energy_threshold_low,
-            )
-            if state.weight <= 0.0 || !isfinite(state.weight)
-                break
-            end
-        end
-
-        if state.weight > 0.0 && isfinite(state.weight) && path.remaining_rock_distance > 1e-8
-            state = propagate_mc_uniform_segment(
-                physics,
-                state,
-                matcfg.rock_material,
-                matcfg.rock_density,
-                path.remaining_rock_distance,
-                rng;
-                straggling = straggling,
-                energy_threshold_low = energy_threshold_low,
-            )
-        end
-
-        if state.weight > 0.0 && isfinite(state.weight)
-            air_distance = max(0.0, primary_altitude_local() - path.surface_exit_z) / max(cos_theta, 1e-3)
-            state = propagate_mc_air_segment(
-                physics,
-                state,
-                matcfg.air_material,
-                air_distance,
-                cos_theta,
-                rng;
-                straggling = straggling,
-                energy_threshold_low = energy_threshold_low,
-            )
-        end
-
-        flux_single = 0.0
-        if state.weight > 0.0 && isfinite(state.weight) &&
-           state.position[3] >= primary_altitude_local() - 1.0
-            flux_single = state.weight * flux_gccly(cos_theta, state.energy, sample.charge)
-        end
-
-        wi = 2.0 * sample.weight * flux_single
-        w_sum += wi
-        w2_sum += wi * wi
-    end
-
-    n = length(energy_samples)
-    flux = w_sum / max(n, 1)
-    variance = (w2_sum / max(n, 1) - flux^2) / max(1, n - 1)
-    sigma = sqrt(max(0.0, variance))
-    return flux, sigma
-end
-
 function create_initial_water_field(volume::AbstractSensitivityVolume, args)
     fractions = zeros(Float64, num_cells(volume))
     args.aquifer_water_fraction <= 0.0 && return fractions
@@ -1240,36 +717,29 @@ function precompute_paths(volume::AbstractSensitivityVolume,
     return paths
 end
 
+# Thin wrapper over the module's threaded sparse-Jacobian assembler. The whole
+# 21,600-bin Jacobian is computed with one reverse pass per bin restricted to the
+# cells the ray actually crosses (see Tomography.directional_flux_and_grad_csda),
+# then stored as a SparseMatrixCSC — orders of magnitude faster and lighter than
+# the old per-bin full-vector Zygote loop into a dense Float32 matrix.
 function compute_flux_and_jacobian(physics,
-                                   volume::AbstractSensitivityVolume,
+                                   shallow_flags::AbstractVector{Bool},
                                    matcfg::MaterialConfig,
+                                   site::SiteConfig,
                                    paths::Vector{DirectionalPath},
                                    water_fractions::Vector{Float64},
-                                   energy_samples::Vector{EnergySample})
-    n_bins = length(paths)
-    n_cells = length(water_fractions)
-    flux_values = fill(NaN, n_bins)
-    jacobian = fill(Float32(NaN), n_bins, n_cells)
-
-    println("Computing direct CSDA flux and Zygote sensitivities...")
-    for bin_idx in 1:n_bins
-        path = paths[bin_idx]
-        path.valid || continue
-
-        flux_fn = w -> compute_directional_flux_csda(
-            physics, volume, matcfg, path, w, energy_samples,
-        )
-
-        flux_values[bin_idx] = flux_fn(water_fractions)
-        grad = Zygote.gradient(flux_fn, water_fractions)[1]
-        jacobian[bin_idx, :] .= Float32.(grad)
-
-        if bin_idx == 1 || bin_idx % 200 == 0 || bin_idx == n_bins
-            println(@sprintf("  [%d/%d] theta=%.1f deg phi=%.1f deg flux=%.5e",
-                             bin_idx, n_bins, path.zenith, path.azimuth, flux_values[bin_idx]))
-        end
-    end
-
+                                   energy_samples::Vector{EnergySample};
+                                   n_cells::Int,
+                                   threaded::Bool = true)
+    println("Computing direct CSDA flux and sparse Zygote sensitivities " *
+            "(threaded=$(threaded), nthreads=$(Threads.nthreads()))...")
+    flux_values, jacobian = assemble_forward_and_jacobian(
+        physics, shallow_flags, matcfg, site, paths, water_fractions, energy_samples;
+        n_cells = n_cells, threaded = threaded)
+    nvalid = count(isfinite, flux_values)
+    println(@sprintf("  %d/%d bins valid, Jacobian nnz=%d (density=%.2e)",
+                     nvalid, length(paths), nnz(jacobian),
+                     nnz(jacobian) / max(1, length(paths) * n_cells)))
     return flux_values, jacobian
 end
 
@@ -1285,19 +755,17 @@ function vector_to_grid(values::AbstractVector{<:Real},
     return grid
 end
 
-function aggregate_cell_sensitivity(jacobian::AbstractMatrix{<:Real})
-    agg = zeros(Float64, size(jacobian, 2))
-    for cell_idx in 1:size(jacobian, 2)
+function aggregate_cell_sensitivity(jacobian::SparseMatrixCSC, n_valid_bins::Int)
+    n_cells = size(jacobian, 2)
+    agg = zeros(Float64, n_cells)
+    vals = nonzeros(jacobian)
+    for cell_idx in 1:n_cells
         s = 0.0
-        n = 0
-        for bin_idx in 1:size(jacobian, 1)
-            g = Float64(jacobian[bin_idx, cell_idx])
-            if isfinite(g)
-                s += g^2
-                n += 1
-            end
+        for k in nzrange(jacobian, cell_idx)
+            g = vals[k]
+            isfinite(g) && (s += g^2)
         end
-        agg[cell_idx] = n > 0 ? sqrt(s / n) : 0.0
+        agg[cell_idx] = n_valid_bins > 0 ? sqrt(s / n_valid_bins) : 0.0
     end
     return agg
 end
@@ -1306,32 +774,29 @@ function best_case_for_mask(label::String,
                             mask::Vector{Bool},
                             paths::Vector{DirectionalPath},
                             flux_values::Vector{Float64},
-                            jacobian::AbstractMatrix{<:Real},
+                            jacobian::SparseMatrixCSC,
                             used_cells::Set{Int};
                             allow_reuse::Bool = false)
     best_case = nothing
     best_score = -Inf
+    rows = rowvals(jacobian)
+    vals = nonzeros(jacobian)
 
-    for bin_idx in eachindex(paths)
-        mask[bin_idx] || continue
-        !isfinite(flux_values[bin_idx]) && continue
-        for cell_idx in 1:size(jacobian, 2)
-            (!allow_reuse && cell_idx in used_cells) && continue
-            g = Float64(jacobian[bin_idx, cell_idx])
-            !isfinite(g) && continue
+    for cell_idx in 1:size(jacobian, 2)
+        (!allow_reuse && cell_idx in used_cells) && continue
+        for k in nzrange(jacobian, cell_idx)
+            bin_idx = rows[k]
+            mask[bin_idx] || continue
+            isfinite(flux_values[bin_idx]) || continue
+            g = vals[k]
+            isfinite(g) || continue
             score = abs(g)
             if score > best_score
                 best_score = score
                 path = paths[bin_idx]
                 best_case = ValidationCase(
-                    label,
-                    bin_idx,
-                    cell_idx,
-                    path.zenith,
-                    path.azimuth,
-                    flux_values[bin_idx],
-                    g,
-                )
+                    label, bin_idx, cell_idx, path.zenith, path.azimuth,
+                    flux_values[bin_idx], g)
             end
         end
     end
@@ -1341,7 +806,7 @@ end
 
 function select_validation_cases(paths::Vector{DirectionalPath},
                                  flux_values::Vector{Float64},
-                                 jacobian::AbstractMatrix{<:Real};
+                                 jacobian::SparseMatrixCSC;
                                  n_cases::Int = 5)
     valid_bins = [i for i in eachindex(paths) if isfinite(flux_values[i])]
     isempty(valid_bins) && return ValidationCase[]
@@ -1410,8 +875,9 @@ function finite_difference_bounds(w0::Float64, delta::Float64)
 end
 
 function run_validation_cases(physics,
-                              volume::AbstractSensitivityVolume,
+                              shallow_flags::AbstractVector{Bool},
                               matcfg::MaterialConfig,
+                              site::SiteConfig,
                               paths::Vector{DirectionalPath},
                               base_water_fractions::Vector{Float64},
                               cases::Vector{ValidationCase},
@@ -1419,7 +885,7 @@ function run_validation_cases(physics,
     results = NamedTuple[]
     mc_samples = sample_energy_set(args.mc_samples, args.energy_min, args.energy_max, args.seed + 10_000)
 
-    println("Running MC finite-difference validation cases...")
+    println("Running MC finite-difference validation cases (CSDA+AD vs MC+FD)...")
     for (case_idx, case) in enumerate(cases)
         lo, hi = finite_difference_bounds(base_water_fractions[case.cell_idx], args.fd_delta)
         low_w = copy(base_water_fractions)
@@ -1427,25 +893,25 @@ function run_validation_cases(physics,
         low_w[case.cell_idx] = lo
         high_w[case.cell_idx] = hi
 
-        base_materials, base_densities = build_cell_properties_for_mc(volume, base_water_fractions, matcfg)
-        low_materials, low_densities = build_cell_properties_for_mc(volume, low_w, matcfg)
-        high_materials, high_densities = build_cell_properties_for_mc(volume, high_w, matcfg)
+        base_materials, base_densities = build_cell_properties_for_mc(shallow_flags, base_water_fractions, matcfg)
+        low_materials, low_densities = build_cell_properties_for_mc(shallow_flags, low_w, matcfg)
+        high_materials, high_densities = build_cell_properties_for_mc(shallow_flags, high_w, matcfg)
 
         path = paths[case.bin_idx]
         flux_mc, sigma_mc = compute_directional_flux_mc(
-            physics, volume, matcfg, path, base_materials, base_densities, mc_samples,
+            physics, matcfg, site, path, base_materials, base_densities, mc_samples,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
         )
         flux_lo, sigma_lo = compute_directional_flux_mc(
-            physics, volume, matcfg, path, low_materials, low_densities, mc_samples,
+            physics, matcfg, site, path, low_materials, low_densities, mc_samples,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
         )
         flux_hi, sigma_hi = compute_directional_flux_mc(
-            physics, volume, matcfg, path, high_materials, high_densities, mc_samples,
+            physics, matcfg, site, path, high_materials, high_densities, mc_samples,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
@@ -1509,14 +975,14 @@ end
 
 function create_cell_sensitivity_plots(zeniths::Vector{Float64},
                                        azimuths::Vector{Float64},
-                                       jacobian::Matrix{Float32},
+                                       jacobian::SparseMatrixCSC,
                                        cases::Vector{ValidationCase};
                                        output_dir::String)
     seen = Set{Int}()
     for case in cases
         case.cell_idx in seen && continue
         push!(seen, case.cell_idx)
-        grid = vector_to_grid(Float64.(jacobian[:, case.cell_idx]), length(zeniths), length(azimuths))
+        grid = vector_to_grid(Vector{Float64}(jacobian[:, case.cell_idx]), length(zeniths), length(azimuths))
         finite_vals = [abs(v) for v in vec(grid) if isfinite(v)]
         max_abs = isempty(finite_vals) ? 1e-12 : max(maximum(finite_vals), 1e-12)
         traces = GenericTrace[
@@ -1714,6 +1180,11 @@ function parse_commandline()
         aquifer_half_z = 150.0,
         max_plot_cells = 150,
         straggling = true,
+        solver = "all",
+        reg_weight = 0.0,
+        contrast = 0.5,
+        reco_iters = 200,
+        threaded = true,
     )
 
     i = 1
@@ -1775,6 +1246,16 @@ function parse_commandline()
             args = merge(args, (max_plot_cells = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-straggling"
             args = merge(args, (straggling = false,)); i += 1
+        elseif arg == "--solver"
+            args = merge(args, (solver = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--reg-weight"
+            args = merge(args, (reg_weight = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--contrast"
+            args = merge(args, (contrast = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--reco-iters"
+            args = merge(args, (reco_iters = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--no-threads"
+            args = merge(args, (threaded = false,)); i += 1
         elseif arg in ("--help", "-h")
             println(@doc lvd_tomography)
             exit(0)
@@ -1784,7 +1265,154 @@ function parse_commandline()
     end
 
     args.geometry in ("auto", "tetra", "grid") || error("--geometry must be auto, tetra, or grid")
+    args.solver in ("all", "sart", "mlem", "gd") || error("--solver must be all, sart, mlem, or gd")
     return args
+end
+
+# --- cell adjacency for the Laplacian smoothness prior -------------------
+
+function cell_neighbors(volume::TetraVolume)
+    n = num_cells(volume)
+    nbr = [Int[] for _ in 1:n]
+    for c in 1:n, f in 1:4
+        j = volume.neighbors[c, f]
+        j > 0 && push!(nbr[c], j)
+    end
+    return nbr
+end
+
+function cell_neighbors(volume::VoxelVolume)
+    nx = voxel_nx(volume); ny = voxel_ny(volume); nz = voxel_nz(volume)
+    n = num_cells(volume)
+    nbr = [Int[] for _ in 1:n]
+    for idx in 1:n
+        i, j, k = voxel_ijk(volume, idx)
+        for (di, dj, dk) in ((1,0,0), (-1,0,0), (0,1,0), (0,-1,0), (0,0,1), (0,0,-1))
+            ii, jj, kk = i + di, j + dj, k + dk
+            (1 <= ii <= nx && 1 <= jj <= ny && 1 <= kk <= nz) || continue
+            push!(nbr[idx], voxel_linear_index(volume, ii, jj, kk))
+        end
+    end
+    return nbr
+end
+
+# Rough characteristic cell size (m) for the resolution geometric floor.
+estimate_cell_size(volume::VoxelVolume) =
+    Float64(minimum(diff(volume.z_edges)))
+function estimate_cell_size(volume::TetraVolume)
+    # cube-root of the mean tetra "cell volume" proxy = surface_step^2 * mean depth span
+    return volume.surface_step_m
+end
+
+build_site() = SiteConfig(Float64(LVDTopo.DETECTOR_ELEVATION), Float64(primary_altitude_local()))
+
+# --- inverse reconstruction: SART / MLEM / gradient-descent + metrics ----
+
+function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                          volume::AbstractSensitivityVolume, paths::Vector{DirectionalPath},
+                          energy_samples::Vector{EnergySample},
+                          flux_values::Vector{Float64}, jacobian::SparseMatrixCSC,
+                          aggregate::Vector{Float64}, args; output_path::String)
+    n_cells = num_cells(volume)
+    valid_bins = findall(isfinite, flux_values)
+    isempty(valid_bins) && (println("No valid bins; skipping inversion."); return nothing)
+
+    # Ground-truth field: the baseline aquifer if present, otherwise inject a
+    # single-cell anomaly at the most informative cell so the demo is non-trivial.
+    w_true = create_initial_water_field(volume, args)
+    base_flux = flux_values
+    base_J = jacobian
+    if all(iszero, w_true)
+        c = argmax(aggregate)
+        w_true[c] = clamp(args.contrast, 0.0, MAX_WATER_FRACTION)
+        println(@sprintf("  Injected synthetic anomaly w=%.2f at cell %d (highest sensitivity)",
+                         w_true[c], c))
+        base_flux, base_J = assemble_forward_and_jacobian(
+            physics, shallow_flags, matcfg, site, paths, w_true, energy_samples;
+            n_cells = n_cells, threaded = args.threaded)
+        valid_bins = findall(isfinite, base_flux)
+    end
+
+    Jv = base_J[valid_bins, :]
+    obs = base_flux[valid_bins]
+    b_lin = Jv * w_true                      # linearised RHS consistent with the truth (J w_true)
+
+    neighbors = cell_neighbors(volume)
+    prior = args.reg_weight > 0 ? SmoothnessPrior(neighbors, args.reg_weight) : nothing
+
+    results = Dict{String,Any}()
+    runset = args.solver == "all" ? ("sart", "mlem", "gd") : (args.solver,)
+
+    for s in runset
+        t0 = time()
+        if s == "sart"
+            w_rec, hist = sart_reconstruct(Jv, b_lin; n_iter = args.reco_iters,
+                relaxation = 0.2, prior = prior)
+        elseif s == "mlem"
+            w_rec, hist = mlem_reconstruct(Jv, b_lin; n_iter = args.reco_iters, prior = prior)
+        elseif s == "gd"
+            # Our differentiable method: projected gradient descent (Adam) driven
+            # by the reverse-mode AD Jacobian. Linearised here for tractability on
+            # the full 21,600-bin geometry; the fully nonlinear solve is available
+            # via `make_csda_operator(...)` + `relinearize=true`.
+            model = w -> (Jv * w, Jv)
+            w_rec, hist = gradient_descent_reconstruct(model, b_lin;
+                w0 = zeros(n_cells), n_iter = args.reco_iters,
+                lr = 0.05, optimizer = :adam, prior = prior, relinearize = true)
+        else
+            error("Unknown solver '$s' (use sart, mlem, gd, or all)")
+        end
+        dt = time() - t0
+        rep = reconstruction_report(w_rec, w_true)
+        results[s] = (w = w_rec, hist = hist, report = rep, seconds = dt)
+        println(@sprintf("  [%-4s] mse=%.3e rmse=%.3e psnr=%.1f dB ssim=%.3f  (%.1fs, %d iters)",
+                         uppercase(s), rep.mse, rep.rmse, rep.psnr, rep.ssim, dt, length(hist)))
+    end
+
+    # --- resolution estimate (point-spread / FWHM vs depth) --------------
+    # Linearised PSF using the baseline Jacobian: probe a few cells across depth.
+    centroids = volume.centroids
+    order = sortperm(aggregate, rev = true)
+    probe = order[1:min(8, length(order))]
+    recon_lin = wt -> first(sart_reconstruct(Jv, Jv * wt; n_iter = 120, relaxation = 0.2))
+    zmin, zmax = extrema(centroids[3, :])
+    depth_edges = collect(range(max(0.0, zmin), zmax; length = 5))
+    rvd = resolution_vs_depth(recon_lin, centroids, zeros(n_cells), probe;
+        depth_edges = depth_edges, contrast = args.contrast,
+        zenith_step_deg = args.zenith_step_deg, cell_size_m = estimate_cell_size(volume))
+
+    open(output_path, "w") do io
+        println(io, "LVD tomography inverse reconstruction summary")
+        println(io, "geometry = $(geometry_name(volume)), n_cells = $n_cells, valid_bins = $(length(valid_bins))")
+        println(io, "ground-truth nonzero cells = $(count(>(0.0), w_true)), contrast = $(args.contrast)")
+        println(io, "regularisation weight = $(args.reg_weight)")
+        println(io)
+        for s in runset
+            haskey(results, s) || continue
+            r = results[s]
+            println(io, "[$(uppercase(s))]  ($(round(r.seconds; digits=2)) s, $(length(r.hist)) iters)")
+            println(io, @sprintf("  MSE=%.4e RMSE=%.4e PSNR=%.2f dB SSIM=%.4f SNR=%.2f dB",
+                                 r.report.mse, r.report.rmse, r.report.psnr, r.report.ssim, r.report.snr))
+            println(io, @sprintf("  final data misfit ||Jw-b|| = %.4e", r.hist[end]))
+            println(io)
+        end
+        println(io, "Resolution (linearised point-spread FWHM vs depth):")
+        println(io, @sprintf("  %-12s %-12s %-12s %-8s", "depth[m]", "FWHM[m]", "floor[m]", "n_cells"))
+        for e in rvd
+            println(io, @sprintf("  %-12.1f %-12.1f %-12.1f %-8d", e.depth_m, e.fwhm_m, e.floor_m, e.n_cells))
+        end
+        if isempty(rvd)
+            println(io, "  (no depth bins populated)")
+        end
+    end
+
+    println("Resolution vs depth (linearised PSF FWHM):")
+    for e in rvd
+        println(@sprintf("  depth=%.0f m -> FWHM=%.0f m (geometric floor %.0f m, %d cells)",
+                         e.depth_m, e.fwhm_m, e.floor_m, e.n_cells))
+    end
+
+    return (results = results, w_true = w_true, resolution = rvd)
 end
 
 function main()
@@ -1849,6 +1477,9 @@ function main()
     println("Constructed $(geometry_name(volume)) sensitivity volume with $(num_cells(volume)) cells")
     println()
 
+    site = build_site()
+    shallow_flags = Bool[is_shallow_cell(volume, i) for i in 1:num_cells(volume)]
+
     water_fractions = create_initial_water_field(volume, args)
     n_aquifer = count(>(0.0), water_fractions)
     println("Baseline water-fraction field:")
@@ -1865,17 +1496,29 @@ function main()
     println()
 
     energy_samples = sample_energy_set(args.n_samples, args.energy_min, args.energy_max, args.seed)
+    t_jac = time()
     flux_values, jacobian = compute_flux_and_jacobian(
-        physics, volume, matcfg, paths, water_fractions, energy_samples,
+        physics, shallow_flags, matcfg, site, paths, water_fractions, energy_samples;
+        n_cells = num_cells(volume), threaded = args.threaded,
+    )
+    println(@sprintf("  Jacobian assembled in %.2f s", time() - t_jac))
+    println()
+
+    n_valid = count(isfinite, flux_values)
+    flux_grid = vector_to_grid(flux_values, length(zeniths), length(azimuths))
+    aggregate = aggregate_cell_sensitivity(jacobian, n_valid)
+    cases = select_validation_cases(paths, flux_values, jacobian; n_cases = args.validation_cases)
+    validation_results = run_validation_cases(
+        physics, shallow_flags, matcfg, site, paths, water_fractions, cases, args,
     )
     println()
 
-    flux_grid = vector_to_grid(flux_values, length(zeniths), length(azimuths))
-    aggregate = aggregate_cell_sensitivity(jacobian)
-    cases = select_validation_cases(paths, flux_values, jacobian; n_cases = args.validation_cases)
-    validation_results = run_validation_cases(
-        physics, volume, matcfg, paths, water_fractions, cases, args,
-    )
+    # Inverse problem: recover the per-cell rock/water field with SART, MLEM and
+    # our differentiable gradient-descent solver, then estimate spatial resolution.
+    inverse_txt = joinpath(args.output_dir, "lvd_tomography_inverse.txt")
+    println("Solving the inverse problem (solver=$(args.solver))...")
+    run_inverse_demo(physics, shallow_flags, matcfg, site, volume, paths, energy_samples,
+        flux_values, jacobian, aggregate, args; output_path = inverse_txt)
     println()
 
     flux_plot = joinpath(args.output_dir, "lvd_tomography_flux.html")
@@ -1893,6 +1536,7 @@ function main()
     println("  $flux_plot")
     println("  $mesh_plot")
     println("  $summary_txt")
+    println("  $inverse_txt")
     println()
     return 0
 end

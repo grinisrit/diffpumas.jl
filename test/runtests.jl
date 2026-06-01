@@ -360,19 +360,21 @@ using Random
 
     @testset "Loader" begin
         physics = create_physics(MUON; n_energies=20, K_min=0.1, K_max=1e3)
-        
+
         # Test save/load (using temp file)
         tmp_path = tempname() * ".pumas"
         @test save_physics(physics, tmp_path)
-        
+
         loaded = load_physics(tmp_path)
         @test loaded !== nothing
         @test loaded.particle == physics.particle
         @test length(loaded.tables) == length(physics.tables)
-        
+
         # Clean up
         rm(tmp_path, force=true)
     end
+
+    include("test_tomography.jl")
 end
 
 println("\nAll tests passed! ✓")

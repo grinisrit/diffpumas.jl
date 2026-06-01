@@ -6,6 +6,7 @@
 *.orig
 Manifest.toml
 *.html
+*.log
 
 # IDE & notebooks files
 .vscode
@@ -16,14 +17,11 @@ Manifest.toml
 .vs/
 venv
 .venv/
-# Cursor — commit .cursor/skills|rules|agents and AGENTS.md; ignore IDE-local .cursor/*
+# Cursor — commit domain skills; ignore personal overlay
 .cursor/*
 !.cursor/skills/
 !.cursor/skills/**
-!.cursor/rules/
-!.cursor/rules/**
-!.cursor/agents/
-!.cursor/agents/**
+.cursor/skills/activate-repo/
 .cursorrules
 *.code-workspace
 .julia*
@@ -31,9 +29,11 @@ venv
 # pumas
 examples/data/*.pumas
 examples/data/*.html
+examples/data/*.csv
 
-# Claude Code — commit .claude/skills and CLAUDE.md; ignore IDE-local .claude/*
+# Claude Code — commit domain skills; ignore personal overlay
 .claude/*
 !.claude/skills/
 !.claude/skills/**
+.claude/skills/activate-repo/
 

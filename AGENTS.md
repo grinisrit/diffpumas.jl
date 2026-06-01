@@ -2,10 +2,6 @@
 
 Julia port of [PUMAS](https://github.com/niess/pumas) with **Zygote** gradients for flux w.r.t. material density (muography, inversion).
 
-## Model pipeline
-
-**Composer** default. GPT subagents only when you explicitly ask.
-
 ## Layout
 
 | Path | Role |
@@ -51,7 +47,3 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 ## Unrelated stacks
 
 No dependency on `atra` / `pyatra` — keep changes self-contained.
-
-## Python
-
-`/home/roland/.venv/bin/python` only if adding external tooling scripts.

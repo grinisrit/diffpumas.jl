@@ -88,6 +88,7 @@ include("Uncertainty.jl")
 include("Turtle.jl")
 include("Plotting.jl")
 include("Pumas.jl")
+include("Tomography.jl")
 
 # Import and re-export from submodules
 using .Constants
@@ -106,6 +107,7 @@ using .Uncertainty
 using .Turtle
 using .Plotting
 using .Pumas
+using .Tomography
 
 # Export Constants
 export ALPHA_EM, HBAR_C, BOHR_RADIUS, MUON_C_TAU, TAU_C_TAU
@@ -209,6 +211,18 @@ export plot_trajectories, plot_transport_path
 # Export Pumas
 export zenith_to_elevation, compute_gaisser_flux_grid, compute_gaisser_flux_integrated
 export sample_energy_loguniform
+
+# Export Tomography (absorption muography forward model + inverse solvers)
+export MaterialConfig, SiteConfig, EnergySample, CellSegment, DirectionalPath
+export sample_energy_set, direction_vector
+export cell_density, cell_stopping_power
+export compute_directional_flux_csda, directional_flux_and_grad_csda
+export assemble_forward_and_jacobian
+export build_cell_properties_for_mc, compute_directional_flux_mc
+export SmoothnessPrior, laplacian_gradient, apply_laplacian_smoothing
+export sart_reconstruct, mlem_reconstruct, gradient_descent_reconstruct, make_csda_operator
+export mse, rmse, snr_metric, cnr, psnr, ssim_metric, reconstruction_report
+export point_spread_recovery, resolution_vs_depth, radial_fwhm
 
 # Version information
 const VERSION = v"0.2.0"

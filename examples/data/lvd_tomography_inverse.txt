@@ -1,0 +1,22 @@
+LVD tomography inverse reconstruction summary
+geometry = grid, n_cells = 600, valid_bins = 21600
+ground-truth nonzero cells = 4, contrast = 0.5
+regularisation weight = 0.0
+
+[SART]  (0.6 s, 200 iters)
+  MSE=9.2705e-04 RMSE=3.0447e-02 PSNR=29.41 dB SSIM=0.6806 SNR=-15.47 dB
+  final data misfit ||Jw-b|| = 1.4414e-03
+
+[MLEM]  (0.23 s, 200 iters)
+  MSE=3.5194e-04 RMSE=1.8760e-02 PSNR=33.62 dB SSIM=0.8938 SNR=-18.54 dB
+  final data misfit ||Jw-b|| = 3.6902e-04
+
+[GD]  (0.14 s, 200 iters)
+  MSE=5.6276e-04 RMSE=2.3723e-02 PSNR=31.58 dB SSIM=0.8305 SNR=-18.90 dB
+  final data misfit ||Jw-b|| = 3.9192e-04
+
+Resolution (linearised point-spread FWHM vs depth):
+  depth[m]     FWHM[m]      floor[m]     n_cells 
+  319.6        2236.7       319.6        4       
+  799.0        1278.4       319.6        2       
+  1118.6       639.2        319.6        2       

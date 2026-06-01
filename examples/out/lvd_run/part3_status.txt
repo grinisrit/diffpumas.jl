@@ -1,8 +1,0 @@
-Gran Sasso LVD Part 3 status
-
-Stage: complete
-fig7_curve_nrmse = 0.0822
-fig7_point_nrmse = 0.0721
-mean_energy_gev = 257.85
-fig8_corr = 0.9984
-fig8_max_reliable_energy_gev = 44668
