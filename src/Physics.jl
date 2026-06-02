@@ -678,6 +678,37 @@ PERFORMANCE: ~5x faster than interpolate_table for hot paths.
     end
 end
 
+# Make interpolate_table_fast differentiable (hot path: avoids tracing the
+# binary search, collapsing the per-call tape to a single analytic node). The
+# forward result depends on `log_x` only (the linear interpolant in log-energy);
+# `x` enters solely through the piecewise-constant bound clamping, so ∂y/∂x = 0
+# in the interior and the whole derivative is carried on `log_x`. Callers compute
+# `log_x = log(x)`, so under AD `x` still receives `Δy·dy_dlogx/x` via that link.
+function ChainRulesCore.rrule(::typeof(interpolate_table_fast), x::T, log_x::T,
+                              xs::Vector{T}, log_xs::Vector{T}, ys::Vector{T}) where T<:Real
+    y = interpolate_table_fast(x, log_x, xs, log_xs, ys)
+    function interpolate_table_fast_pullback(Δy)
+        n = length(xs)
+        @inbounds if x <= xs[1] || x >= xs[n]
+            return (NoTangent(), ZeroTangent(), zero(T), NoTangent(), NoTangent(), NoTangent())
+        end
+        # Same binary search as the forward pass (log values precomputed, no log()).
+        lo, hi = 1, n
+        @inbounds while lo < hi - 1
+            mid = (lo + hi) >> 1
+            if log_x < log_xs[mid]
+                hi = mid
+            else
+                lo = mid
+            end
+        end
+        i = lo
+        @inbounds dy_dlogx = (ys[i+1] - ys[i]) / (log_xs[i+1] - log_xs[i])
+        return (NoTangent(), ZeroTangent(), Δy * dy_dlogx, NoTangent(), NoTangent(), NoTangent())
+    end
+    return y, interpolate_table_fast_pullback
+end
+
 # Make interpolate_table differentiable
 function ChainRulesCore.rrule(::typeof(interpolate_table), x::T, xs::Vector{T}, ys::Vector{T}) where T
     y = interpolate_table(x, xs, ys)

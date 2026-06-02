@@ -3,62 +3,38 @@ geometry = grid
 n_cells = 600
 
 Case 1: lowZenith_highFlux
-  direction: theta=29.0 deg phi=23.0 deg
+  direction: theta=27.0 deg phi=24.0 deg
   cell: 256 at (500.0, 500.0, 799.0) m
   baseline water fraction: 0.500
   FD interval: [0.450, 0.550]
-  flux_csda: 6.012185e-04
-  flux_mc:   3.620663e-04 +/- 8.88e-05
-  flux mismatch: 39.78 %
-  grad_csda: 5.761401e-04
-  grad_fd:   3.563002e-04
-  grad mismatch: 38.16 %
+  flux_csda: 3.845114e-04
+  flux_mc:   1.021258e-03 +/- 3.26e-04
+  flux mismatch: 165.60 %
+  grad_csda: 4.313780e-04
+  grad_fd:   1.023572e-03
+  grad mismatch: 137.28 %
 
 Case 2: lowZenith_lowFlux
-  direction: theta=26.0 deg phi=86.0 deg
-  cell: 356 at (500.0, 500.0, 1118.6) m
-  baseline water fraction: 0.000
-  FD interval: [0.000, 0.050]
-  flux_csda: 2.350702e-04
-  flux_mc:   1.355590e-04 +/- 3.43e-05
-  flux mismatch: 42.33 %
-  grad_csda: 2.366124e-04
-  grad_fd:   1.317703e-04
-  grad mismatch: 44.31 %
-
-Case 3: highZenith_highFlux
-  direction: theta=43.0 deg phi=161.0 deg
-  cell: 146 at (500.0, -500.0, 479.4) m
-  baseline water fraction: 0.000
-  FD interval: [0.000, 0.050]
-  flux_csda: 5.726997e-04
-  flux_mc:   3.769376e-04 +/- 8.89e-05
-  flux mismatch: 34.18 %
-  grad_csda: 6.555668e-04
-  grad_fd:   4.341418e-04
-  grad mismatch: 33.78 %
-
-Case 4: highZenith_lowFlux
-  direction: theta=57.0 deg phi=51.0 deg
-  cell: 156 at (500.0, 500.0, 479.4) m
-  baseline water fraction: 0.000
-  FD interval: [0.000, 0.050]
-  flux_csda: 2.336591e-04
-  flux_mc:   1.593313e-04 +/- 3.59e-05
-  flux mismatch: 31.81 %
-  grad_csda: 3.548735e-04
-  grad_fd:   2.377744e-04
-  grad mismatch: 33.00 %
-
-Case 5: midZenith_peak
-  direction: theta=39.0 deg phi=165.0 deg
-  cell: 246 at (500.0, -500.0, 799.0) m
+  direction: theta=24.0 deg phi=210.0 deg
+  cell: 345 at (-500.0, -500.0, 1118.6) m
   baseline water fraction: 0.500
   FD interval: [0.450, 0.550]
-  flux_csda: 5.860014e-04
-  flux_mc:   3.771559e-04 +/- 9.05e-05
-  flux mismatch: 35.64 %
-  grad_csda: 6.294820e-04
-  grad_fd:   4.077268e-04
-  grad mismatch: 35.23 %
+  flux_csda: 1.669593e-04
+  flux_mc:   4.408219e-04 +/- 1.52e-04
+  flux mismatch: 164.03 %
+  grad_csda: 1.675192e-04
+  grad_fd:   4.108375e-04
+  grad mismatch: 145.25 %
+
+Case 3: highZenith_highFlux
+  direction: theta=33.0 deg phi=24.0 deg
+  cell: 156 at (500.0, 500.0, 479.4) m
+  baseline water fraction: 0.500
+  FD interval: [0.450, 0.550]
+  flux_csda: 3.805062e-04
+  flux_mc:   9.197506e-04 +/- 3.18e-04
+  flux mismatch: 141.72 %
+  grad_csda: 4.332219e-04
+  grad_fd:   9.193832e-04
+  grad mismatch: 112.22 %
 

@@ -78,6 +78,7 @@ using Statistics
 using LinearAlgebra
 using SparseArrays
 using Logging
+using Serialization
 
 module LVDTopo
 include(joinpath(@__DIR__, "lvd_muography.jl"))
@@ -1185,6 +1186,12 @@ function parse_commandline()
         contrast = 0.5,
         reco_iters = 200,
         threaded = true,
+        correction = true,         # MC-calibrated CSDA fluctuation/hard-loss correction
+        calibration_bins = 24,     # bins used to fit the correction to MC
+        inverse_data = "mc",       # observation source: "mc" (full MC) or "csda"
+        inverse_mc_samples = 256,  # MC samples per bin for the (low-noise) observations
+        exposure = 1.0e8,          # detector exposure (sets Poisson noise level)
+        edge_delta = 0.03,         # Huber transition for the edge-preserving GN prior
     )
 
     i = 1
@@ -1256,6 +1263,18 @@ function parse_commandline()
             args = merge(args, (reco_iters = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-threads"
             args = merge(args, (threaded = false,)); i += 1
+        elseif arg == "--no-correction"
+            args = merge(args, (correction = false,)); i += 1
+        elseif arg == "--calibration-bins"
+            args = merge(args, (calibration_bins = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--inverse-data"
+            args = merge(args, (inverse_data = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--exposure"
+            args = merge(args, (exposure = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--edge-delta"
+            args = merge(args, (edge_delta = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--inverse-mc-samples"
+            args = merge(args, (inverse_mc_samples = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg in ("--help", "-h")
             println(@doc lvd_tomography)
             exit(0)
@@ -1265,7 +1284,8 @@ function parse_commandline()
     end
 
     args.geometry in ("auto", "tetra", "grid") || error("--geometry must be auto, tetra, or grid")
-    args.solver in ("all", "sart", "mlem", "gd") || error("--solver must be all, sart, mlem, or gd")
+    args.solver in ("all", "sart", "mlem", "gd", "gn") || error("--solver must be all, sart, mlem, gd, or gn")
+    args.inverse_data in ("mc", "csda") || error("--inverse-data must be mc or csda")
     return args
 end
 
@@ -1306,7 +1326,85 @@ end
 
 build_site() = SiteConfig(Float64(LVDTopo.DETECTOR_ELEVATION), Float64(primary_altitude_local()))
 
-# --- inverse reconstruction: SART / MLEM / gradient-descent + metrics ----
+# --- MC-calibrated CSDA fluctuation/hard-loss correction (Part A) ---------
+
+# Fit the differentiable CSDA correction to full MC on a stratified set of bins,
+# then install it so the Jacobian and the inverse forward use the corrected
+# operator. Returns (kappa_strag, kappa_hard, stats) or nothing when disabled.
+function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConfig,
+                                    site::SiteConfig, paths::Vector{DirectionalPath},
+                                    water_fractions::Vector{Float64},
+                                    energy_samples::Vector{EnergySample}, args)
+    if !args.correction
+        set_csda_correction!(enabled = false)
+        println("CSDA fluctuation correction: DISABLED (pure CSDA).")
+        return nothing
+    end
+    valid = [b for b in eachindex(paths) if paths[b].valid]
+    isempty(valid) && return nothing
+    # stratify by zenith so the calibration spans the overburden range
+    order = sort(valid; by = b -> paths[b].zenith)
+    nb = min(args.calibration_bins, length(order))
+    pick = unique(round.(Int, range(1, length(order); length = nb)))
+    cbins = order[pick]
+
+    mc_samples = sample_energy_set(args.mc_samples, args.energy_min, args.energy_max, args.seed + 20_000)
+    mats, dens = build_cell_properties_for_mc(shallow_flags, water_fractions, matcfg)
+    println("Calibrating CSDA correction to full MC on $(length(cbins)) bins (scattering+straggling)...")
+    mcflux = Vector{Float64}(undef, length(cbins))
+    Threads.@threads for k in eachindex(cbins)
+        f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[cbins[k]], mats, dens,
+            mc_samples, args.seed + 30_000 + k;
+            straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
+            scattering = true)
+        mcflux[k] = f
+    end
+    ks, kh, stats = calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
+        water_fractions, energy_samples, mcflux, cbins)
+    println(@sprintf("  fitted kappa_strag=%.3f kappa_hard=%.3f | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
+                     ks, kh, 100 * stats.rel_before, 100 * stats.rel_after))
+    return (ks, kh, stats)
+end
+
+# --- full-MC observations for the inverse problem (cached) ----------------
+
+function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfig,
+                                   site::SiteConfig, paths::Vector{DirectionalPath},
+                                   w_true::Vector{Float64}, valid::Vector{Int}, args;
+                                   cache_path::String)
+    sig = (length(paths), length(valid), args.inverse_mc_samples, args.seed, args.zenith_step_deg,
+           args.azimuth_step_deg, args.geometry, hash(w_true), args.straggling,
+           args.energy_min, args.energy_max, args.energy_threshold_low)
+    if isfile(cache_path)
+        try
+            cached = Serialization.deserialize(cache_path)
+            if cached.sig == sig
+                println("  loaded cached MC observations ($(length(valid)) bins) from $(basename(cache_path))")
+                return cached.obs
+            end
+        catch
+        end
+    end
+    mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, args.seed + 40_000)
+    mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
+    println("  generating full-MC observations for $(length(valid)) bins (scattering+straggling, $(args.inverse_mc_samples) samples)...")
+    obs = Vector{Float64}(undef, length(valid))
+    Threads.@threads for k in eachindex(valid)
+        f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
+            mc_samples, args.seed + 50_000 + k;
+            straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
+            scattering = true)
+        obs[k] = f
+    end
+    try
+        Serialization.serialize(cache_path, (sig = sig, obs = obs))
+    catch e
+        @warn "could not cache MC observations" exception=e
+    end
+    return obs
+end
+
+# --- inverse reconstruction: SART / MLEM / GN + metrics -------------------
 
 function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
                           volume::AbstractSensitivityVolume, paths::Vector{DirectionalPath},
@@ -1314,53 +1412,89 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
                           flux_values::Vector{Float64}, jacobian::SparseMatrixCSC,
                           aggregate::Vector{Float64}, args; output_path::String)
     n_cells = num_cells(volume)
-    valid_bins = findall(isfinite, flux_values)
-    isempty(valid_bins) && (println("No valid bins; skipping inversion."); return nothing)
 
     # Ground-truth field: the baseline aquifer if present, otherwise inject a
     # single-cell anomaly at the most informative cell so the demo is non-trivial.
     w_true = create_initial_water_field(volume, args)
-    base_flux = flux_values
-    base_J = jacobian
     if all(iszero, w_true)
         c = argmax(aggregate)
         w_true[c] = clamp(args.contrast, 0.0, MAX_WATER_FRACTION)
         println(@sprintf("  Injected synthetic anomaly w=%.2f at cell %d (highest sensitivity)",
                          w_true[c], c))
-        base_flux, base_J = assemble_forward_and_jacobian(
-            physics, shallow_flags, matcfg, site, paths, w_true, energy_samples;
-            n_cells = n_cells, threaded = args.threaded)
-        valid_bins = findall(isfinite, base_flux)
     end
 
+    # Linear operator = corrected-CSDA Jacobian at the no-water baseline (w=0).
+    # Water (ρ≈1000) is lighter than rock (ρ≈2650), so adding water RAISES the
+    # transmitted flux: ∂flux/∂w > 0 and the anomaly is a flux EXCESS.
+    base_flux, base_J = assemble_forward_and_jacobian(
+        physics, shallow_flags, matcfg, site, paths, zeros(n_cells), energy_samples;
+        n_cells = n_cells, threaded = args.threaded)
+    valid_bins = findall(isfinite, base_flux)
+    isempty(valid_bins) && (println("No valid bins; skipping inversion."); return nothing)
     Jv = base_J[valid_bins, :]
-    obs = base_flux[valid_bins]
-    b_lin = Jv * w_true                      # linearised RHS consistent with the truth (J w_true)
+    f0 = base_flux[valid_bins]
+
+    # Observations: NO inverse crime — generated by the full MC (scattering +
+    # straggling) through the true field, then Poisson counting noise. The
+    # linear solvers invert `Jv`; only our Gauss-Newton fits the true nonlinear
+    # corrected-CSDA operator, which is its edge over MLEM.
+    if args.inverse_data == "mc"
+        cache_path = joinpath(args.output_dir, "lvd_mc_observations.bin")
+        obs_clean = mc_observations_for_field(physics, shallow_flags, matcfg, site, paths,
+            w_true, valid_bins, args; cache_path = cache_path)
+    else
+        ff, _ = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site, paths,
+            w_true, energy_samples; n_cells = n_cells, threaded = args.threaded)
+        obs_clean = ff[valid_bins]
+    end
+    rng = MersenneTwister(args.seed + 777)
+    σ = sqrt.(max.(obs_clean, 0.0) ./ args.exposure)
+    @inbounds for i in eachindex(σ); σ[i] = max(σ[i], 1e-12 * maximum(obs_clean)); end
+    obs = [max(obs_clean[i], 0.0) + σ[i] * randn(rng) for i in eachindex(obs_clean)]
+    excess = obs .- f0                      # flux excess from the lighter water
+
+    # Regularisation weights auto-scaled to the operator curvature so they are
+    # neither negligible nor overwhelming (or use --reg-weight to set explicitly).
+    Wvec = 1.0 ./ σ .^ 2
+    diagJtWJ = vec(sum(Wvec .* (Matrix(Jv) .^ 2); dims = 1))   # curvature per cell
+    gn_scale = (m = filter(>(0), diagJtWJ); isempty(m) ? 1.0 : median(m))
+    sens = vec(sum(max.(Jv, 0.0); dims = 1))
+    sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
+    edge_w = args.reg_weight > 0 ? args.reg_weight : 1.0 * gn_scale
+    sm_w   = args.reg_weight > 0 ? args.reg_weight : 0.25 * sm_scale
 
     neighbors = cell_neighbors(volume)
-    prior = args.reg_weight > 0 ? SmoothnessPrior(neighbors, args.reg_weight) : nothing
+    sm_prior   = SmoothnessPrior(neighbors, sm_w)
+    edge_prior = EdgePrior(neighbors, edge_w, args.edge_delta)
 
     results = Dict{String,Any}()
-    runset = args.solver == "all" ? ("sart", "mlem", "gd") : (args.solver,)
+    runset = args.solver == "all" ? ("sart", "mlem", "gd", "gn") : (args.solver,)
 
     for s in runset
         t0 = time()
         if s == "sart"
-            w_rec, hist = sart_reconstruct(Jv, b_lin; n_iter = args.reco_iters,
-                relaxation = 0.2, prior = prior)
+            w_rec, hist = sart_reconstruct(Jv, excess; n_iter = args.reco_iters,
+                relaxation = 0.2, prior = sm_prior)
         elseif s == "mlem"
-            w_rec, hist = mlem_reconstruct(Jv, b_lin; n_iter = args.reco_iters, prior = prior)
+            w_rec, hist = mlem_reconstruct(max.(Jv, 0.0), max.(excess, 0.0);
+                n_iter = args.reco_iters, prior = sm_prior)
         elseif s == "gd"
-            # Our differentiable method: projected gradient descent (Adam) driven
-            # by the reverse-mode AD Jacobian. Linearised here for tractability on
-            # the full 21,600-bin geometry; the fully nonlinear solve is available
-            # via `make_csda_operator(...)` + `relinearize=true`.
             model = w -> (Jv * w, Jv)
-            w_rec, hist = gradient_descent_reconstruct(model, b_lin;
+            w_rec, hist = gradient_descent_reconstruct(model, excess;
                 w0 = zeros(n_cells), n_iter = args.reco_iters,
-                lr = 0.05, optimizer = :adam, prior = prior, relinearize = true)
+                lr = 0.05, optimizer = :adam, prior = sm_prior, relinearize = false)
+        elseif s == "gn"
+            # Our DiffPumas-native solver: box-constrained Gauss-Newton on the
+            # true nonlinear corrected-CSDA operator (relinearised via the fast
+            # AD Jacobian), inverse-variance weighted, with an edge-preserving prior.
+            model = make_csda_operator(physics, shallow_flags, matcfg, site, paths,
+                energy_samples; n_cells = n_cells, valid_bins = valid_bins,
+                threaded = args.threaded)
+            w_rec, hist = gauss_newton_reconstruct(model, obs;
+                w0 = zeros(n_cells), n_iter = max(8, args.reco_iters ÷ 16),
+                prior = edge_prior, weights = 1.0 ./ σ .^ 2, relinearize = true)
         else
-            error("Unknown solver '$s' (use sart, mlem, gd, or all)")
+            error("Unknown solver '$s' (use sart, mlem, gd, gn, or all)")
         end
         dt = time() - t0
         rep = reconstruction_report(w_rec, w_true)
@@ -1496,6 +1630,14 @@ function main()
     println()
 
     energy_samples = sample_energy_set(args.n_samples, args.energy_min, args.energy_max, args.seed)
+
+    # Calibrate the differentiable CSDA fluctuation/hard-loss correction to full
+    # MC (Part A) BEFORE assembling the Jacobian, so the forward operator and its
+    # sensitivities use the corrected (MC-matched) physics.
+    calibrate_correction_to_mc(physics, shallow_flags, matcfg, site, paths,
+        water_fractions, energy_samples, args)
+    println()
+
     t_jac = time()
     flux_values, jacobian = compute_flux_and_jacobian(
         physics, shallow_flags, matcfg, site, paths, water_fractions, energy_samples;

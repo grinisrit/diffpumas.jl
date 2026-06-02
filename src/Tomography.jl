@@ -35,7 +35,8 @@ Zygote), so the AD hot path allocates no `MaterialMixture` and stays type-stable
 module Tomography
 
 using ..Types: MaterialMixture, State, Vec3
-using ..Physics: property_stopping_power, property_range, ENERGY_LOSS_CSDA
+using ..Physics: property_stopping_power, property_range, property_straggling,
+                 ENERGY_LOSS_CSDA, ENERGY_LOSS_MIXED
 using ..Geometry: compute_decay_weight_from_path, locals_air_at_altitude,
                   transport_backward_step, transport_backward_step_full,
                   transport_backward_step_mixed
@@ -54,8 +55,10 @@ export cell_density, cell_stopping_power
 export compute_directional_flux_csda, directional_flux_and_grad_csda
 export assemble_forward_and_jacobian
 export build_cell_properties_for_mc, compute_directional_flux_mc
+export CsdaCorrection, set_csda_correction!, get_csda_correction, calibrate_csda_correction
 export SmoothnessPrior, laplacian_gradient, apply_laplacian_smoothing
-export sart_reconstruct, mlem_reconstruct, gradient_descent_reconstruct
+export EdgePrior, edge_gradient, edge_hessian
+export sart_reconstruct, mlem_reconstruct, gradient_descent_reconstruct, gauss_newton_reconstruct
 export make_csda_operator
 export mse, rmse, snr_metric, cnr, psnr, ssim_metric, reconstruction_report
 export point_spread_recovery, resolution_vs_depth, radial_fwhm
@@ -66,6 +69,46 @@ const CSDA_MAX_RELATIVE_GAIN = 0.02
 const CSDA_MAX_STEP_M = 60.0
 const MC_STEP_MIN_M = 1e-6
 const MC_STEP_EPSILON_M = 1e-7
+
+# ===========================================================================
+# Differentiable CSDA fluctuation/hard-loss correction (matches full MC)
+#
+# Pure CSDA overpredicts the deep-detector flux by ~40% because it propagates a
+# deterministic energy with the *mean* dE/dx and ignores the stochastic physics
+# the MC keeps: (i) energy-loss straggling (variance Ω, GeV²/(kg/m²)) and
+# (ii) catastrophic hard radiative events (brem/pair/photonuclear) whose mean
+# loss is `dedx_CSDA − dedx_MIXED`. Both push the required surface energy up the
+# steeply-falling spectrum, suppressing the transmitted flux. We fold them into
+# the per-step weight as a differentiable, MC-calibrated factor
+#   exp(−κ_s · Ω · dX / E²  −  κ_h · (dedx_CSDA − dedx_MIXED) · dX / E),
+# with `dX` the step grammage and `E` the step's mean energy. The coefficients
+# (κ_s, κ_h) are fit to converged MC by `calibrate_csda_correction`. Because the
+# factor lives inside the propagators, the segment `rrule`s differentiate it
+# automatically (it depends on `w` through density, Ω and the stopping powers).
+# ===========================================================================
+
+mutable struct CsdaCorrection
+    enabled::Bool
+    kappa_strag::Float64   # weight on Ω·dX/E²  (straggling variance)
+    kappa_hard::Float64    # weight on (dedx_csda−dedx_mixed)·dX/E (hard-loss mean)
+end
+
+const CSDA_CORRECTION = Ref(CsdaCorrection(false, 0.0, 0.0))
+
+"""
+    set_csda_correction!(; enabled=true, kappa_strag=0.0, kappa_hard=0.0)
+
+Install the differentiable CSDA fluctuation/hard-loss correction used by every
+`propagate_csda_*_segment`. Disabled by default (pure CSDA). See
+[`calibrate_csda_correction`](@ref).
+"""
+function set_csda_correction!(; enabled::Bool = true, kappa_strag::Float64 = 0.0,
+                              kappa_hard::Float64 = 0.0)
+    CSDA_CORRECTION[] = CsdaCorrection(enabled, kappa_strag, kappa_hard)
+    return CSDA_CORRECTION[]
+end
+
+get_csda_correction() = CSDA_CORRECTION[]
 
 # ===========================================================================
 # Shared types
@@ -174,6 +217,27 @@ end
     sp_r = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy)
     sp_w = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.water_material, energy)
     return (1.0 - w) * sp_r + w * sp_w
+end
+
+# Rock hard-loss stopping power (dedx_CSDA − dedx_MIXED ≥ 0) — the mean energy
+# carried by catastrophic radiative events that MIXED mode resolves stochastically.
+@inline function rock_hardloss(physics, matcfg::MaterialConfig, energy)
+    return property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy) -
+           property_stopping_power(physics, ENERGY_LOSS_MIXED, matcfg.rock_material, energy)
+end
+
+# Flux suppression from the *accumulated* surface-energy spread. The steeply
+# falling surface spectrum, folded against the energy straggling, is suppressed
+# by ≈ exp(−κ_s · V/E_s² − κ_h · H/E_s), where V = ∫Ω(E(X))dX is the variance of
+# the surface energy built up along the column (GeV²), H = ∫(dedx_csda−dedx_mixed)dX
+# the integrated hard-loss (GeV), and E_s the surface energy. V and H are
+# accumulated with the *real* energy profile (not a single-point proxy), which
+# is what makes the deficit nearly column-independent the way the MC is.
+@inline function csda_var_correction(energy_surface, V, H)
+    c = CSDA_CORRECTION[]
+    c.enabled || return one(typeof(energy_surface))
+    e = max(energy_surface, 1.0)
+    return exp(-c.kappa_strag * V / (e * e) - c.kappa_hard * max(H, 0.0) / e)
 end
 
 # ===========================================================================
@@ -313,16 +377,30 @@ function _directional_flux_core(physics, matcfg::MaterialConfig, site::SiteConfi
     @inbounds for sample in energy_samples
         energy = sample.energy
         weight = one(eltype(wsel)) * 1.0
+        Vacc = zero(eltype(wsel)) + 0.0   # ∫Ω(E)dX  (surface-energy variance)
+        Hacc = zero(eltype(wsel)) + 0.0   # ∫(dedx_csda−dedx_mixed)dX (hard-loss)
         ok = true
         for k in 1:nseg
+            e_in = energy
             energy, weight, ok = propagate_csda_cell_segment(
                 physics, wsel[seg_pos[k]], seg_shallow[k], matcfg, seg_dist[k], energy, weight)
             ok || break
+            e_rep = 0.5 * (e_in + energy)
+            gx = seg_dist[k] * cell_density(wsel[seg_pos[k]], seg_shallow[k], matcfg)
+            Vacc += property_straggling(physics, matcfg.rock_material, e_rep) * gx
+            Hacc += rock_hardloss(physics, matcfg, e_rep) * gx
         end
         if ok && path.remaining_rock_distance > 1e-8
+            e_in = energy
             energy, weight, ok = propagate_csda_uniform_segment(
                 physics, matcfg.rock_material, matcfg.rock_density,
                 path.remaining_rock_distance, energy, weight)
+            if ok
+                e_rep = 0.5 * (e_in + energy)
+                gx = path.remaining_rock_distance * matcfg.rock_density
+                Vacc += property_straggling(physics, matcfg.rock_material, e_rep) * gx
+                Hacc += rock_hardloss(physics, matcfg, e_rep) * gx
+            end
         end
         if ok
             air_distance = max(0.0, site.primary_altitude - path.surface_exit_z) / max(cos_theta, 1e-3)
@@ -330,7 +408,12 @@ function _directional_flux_core(physics, matcfg::MaterialConfig, site::SiteConfi
                 physics, matcfg.air_material, site, path.surface_exit_z, cos_theta,
                 air_distance, energy, weight)
         end
-        flux_single = ok ? weight * flux_gccly(cos_theta, energy, sample.charge) : zero(eltype(wsel))
+        if ok
+            corr = csda_var_correction(energy, Vacc, Hacc)
+            flux_single = weight * corr * flux_gccly(cos_theta, energy, sample.charge)
+        else
+            flux_single = zero(eltype(wsel))
+        end
         flux_sum += 2.0 * sample.weight * flux_single
     end
     return flux_sum / length(energy_samples)
@@ -375,21 +458,36 @@ function compute_directional_flux_csda(physics, shallow_flags::AbstractVector{Bo
     # Direct scalar indexing of the full field (no array mutation), so this is
     # itself Zygote-differentiable over the full vector; used as the forward
     # value and as an independent full-vector AD reference in tests.
-    flux_sum = 0.0
+    flux_sum = zero(eltype(water_fractions)) + 0.0
     @inbounds for sample in energy_samples
         energy = sample.energy
         weight = 1.0
+        Vacc = zero(eltype(water_fractions)) + 0.0
+        Hacc = zero(eltype(water_fractions)) + 0.0
         ok = true
         for seg in path.segments
+            e_in = energy
             energy, weight, ok = propagate_csda_cell_segment(
                 physics, water_fractions[seg.cell_idx], shallow_flags[seg.cell_idx],
                 matcfg, seg.distance, energy, weight)
             ok || break
+            e_rep = 0.5 * (e_in + energy)
+            gx = seg.distance * cell_density(water_fractions[seg.cell_idx],
+                                             shallow_flags[seg.cell_idx], matcfg)
+            Vacc += property_straggling(physics, matcfg.rock_material, e_rep) * gx
+            Hacc += rock_hardloss(physics, matcfg, e_rep) * gx
         end
         if ok && path.remaining_rock_distance > 1e-8
+            e_in = energy
             energy, weight, ok = propagate_csda_uniform_segment(
                 physics, matcfg.rock_material, matcfg.rock_density,
                 path.remaining_rock_distance, energy, weight)
+            if ok
+                e_rep = 0.5 * (e_in + energy)
+                gx = path.remaining_rock_distance * matcfg.rock_density
+                Vacc += property_straggling(physics, matcfg.rock_material, e_rep) * gx
+                Hacc += rock_hardloss(physics, matcfg, e_rep) * gx
+            end
         end
         if ok
             air_distance = max(0.0, site.primary_altitude - path.surface_exit_z) / max(cos_theta, 1e-3)
@@ -397,7 +495,12 @@ function compute_directional_flux_csda(physics, shallow_flags::AbstractVector{Bo
                 physics, matcfg.air_material, site, path.surface_exit_z, cos_theta,
                 air_distance, energy, weight)
         end
-        flux_single = ok ? weight * flux_gccly(cos_theta, energy, sample.charge) : 0.0
+        if ok
+            corr = csda_var_correction(energy, Vacc, Hacc)
+            flux_single = weight * corr * flux_gccly(cos_theta, energy, sample.charge)
+        else
+            flux_single = zero(eltype(water_fractions))
+        end
         flux_sum += 2.0 * sample.weight * flux_single
     end
     return flux_sum / length(energy_samples)
@@ -549,7 +652,8 @@ end
 
 function propagate_mc_uniform_segment(physics, state::State{Float64}, material, density::Float64,
                                       distance::Float64, rng::AbstractRNG;
-                                      straggling::Bool, energy_threshold_low::Float64)
+                                      straggling::Bool, energy_threshold_low::Float64,
+                                      scattering::Bool = false)
     remaining = distance
     energy_limit = 1e12
     while remaining > 1e-8 && state.energy < energy_limit - eps(Float64)
@@ -561,7 +665,7 @@ function propagate_mc_uniform_segment(physics, state::State{Float64}, material, 
         if state.energy < energy_threshold_low - eps(Float64)
             if straggling
                 state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
-                    mode = :straggled, scattering = false, energy_limit = current_limit)
+                    mode = :straggled, scattering = scattering, energy_limit = current_limit)
             else
                 state = transport_backward_step(physics, state, material, density, step_size;
                     rng = nothing, straggling = false)
@@ -582,7 +686,8 @@ end
 
 function propagate_mc_air_segment(physics, state::State{Float64}, air_material::Int, site::SiteConfig,
                                   distance::Float64, cos_theta::Float64, rng::AbstractRNG;
-                                  straggling::Bool, energy_threshold_low::Float64)
+                                  straggling::Bool, energy_threshold_low::Float64,
+                                  scattering::Bool = false)
     remaining = distance
     energy_limit = 1e12
     while remaining > 1e-8 && state.energy < energy_limit - eps(Float64)
@@ -597,7 +702,7 @@ function propagate_mc_air_segment(physics, state::State{Float64}, air_material::
         if state.energy < energy_threshold_low - eps(Float64)
             if straggling
                 state, _ = transport_backward_step_full(physics, state, air_material, density, step_size, rng;
-                    mode = :straggled, scattering = false, energy_limit = current_limit)
+                    mode = :straggled, scattering = scattering, energy_limit = current_limit)
             else
                 state = transport_backward_step(physics, state, air_material, density, step_size;
                     rng = nothing, straggling = false)
@@ -629,7 +734,8 @@ function compute_directional_flux_mc(physics, matcfg::MaterialConfig, site::Site
                                      cell_materials::Vector{MaterialMixture},
                                      cell_densities::Vector{Float64},
                                      energy_samples::Vector{EnergySample}, seed::Int;
-                                     straggling::Bool, energy_threshold_low::Float64)
+                                     straggling::Bool, energy_threshold_low::Float64,
+                                     scattering::Bool = false)
     path.valid || return (NaN, NaN)
     cos_theta = cosd(path.zenith)
     cos_theta <= 0.0 && return (NaN, NaN)
@@ -641,19 +747,22 @@ function compute_directional_flux_mc(physics, matcfg::MaterialConfig, site::Site
         for seg in path.segments
             state = propagate_mc_uniform_segment(physics, state, cell_materials[seg.cell_idx],
                 cell_densities[seg.cell_idx], seg.distance, rng;
-                straggling = straggling, energy_threshold_low = energy_threshold_low)
+                straggling = straggling, energy_threshold_low = energy_threshold_low,
+                scattering = scattering)
             (state.weight <= 0.0 || !isfinite(state.weight)) && break
         end
         if state.weight > 0.0 && isfinite(state.weight) && path.remaining_rock_distance > 1e-8
             state = propagate_mc_uniform_segment(physics, state, MaterialMixture(matcfg.rock_material),
                 matcfg.rock_density, path.remaining_rock_distance, rng;
-                straggling = straggling, energy_threshold_low = energy_threshold_low)
+                straggling = straggling, energy_threshold_low = energy_threshold_low,
+                scattering = scattering)
         end
         if state.weight > 0.0 && isfinite(state.weight)
             air_distance = max(0.0, site.primary_altitude - path.surface_exit_z) / max(cos_theta, 1e-3)
             state = propagate_mc_air_segment(physics, state, matcfg.air_material, site,
                 air_distance, cos_theta, rng;
-                straggling = straggling, energy_threshold_low = energy_threshold_low)
+                straggling = straggling, energy_threshold_low = energy_threshold_low,
+                scattering = scattering)
         end
         flux_single = 0.0
         if state.weight > 0.0 && isfinite(state.weight) &&
@@ -671,6 +780,83 @@ function compute_directional_flux_mc(physics, matcfg::MaterialConfig, site::Site
     return flux, sigma
 end
 
+"""
+    calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
+                              water_fractions, energy_samples, mc_fluxes, bin_indices;
+                              ks_grid, kh_grid, refine=2) -> (kappa_strag, kappa_hard, stats)
+
+Fit the CSDA fluctuation/hard-loss coefficients (κ_s, κ_h) so the corrected CSDA
+flux matches the full-MC reference `mc_fluxes` on the calibration bins
+`bin_indices`. Minimises the mean squared log-residual `mean(log(flux_csda/flux_mc)^2)`
+by a coarse-to-fine grid search (the forward is cheap, the objective is smooth and
+2-D). Installs the best coefficients via [`set_csda_correction!`] and returns them
+plus residual statistics (`stats.rel_before`, `stats.rel_after` = mean |1 − csda/mc|).
+"""
+function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
+                                   matcfg::MaterialConfig, site::SiteConfig,
+                                   paths::Vector{DirectionalPath},
+                                   water_fractions::AbstractVector{<:Real},
+                                   energy_samples::Vector{EnergySample},
+                                   mc_fluxes::AbstractVector{<:Real},
+                                   bin_indices::AbstractVector{Int};
+                                   ks_grid = range(0.0, 80.0; length = 33),
+                                   kh_grid = range(0.0, 40.0; length = 33),
+                                   refine::Int = 3)
+    @assert length(mc_fluxes) == length(bin_indices)
+    valid = [i for i in eachindex(bin_indices) if isfinite(mc_fluxes[i]) && mc_fluxes[i] > 0]
+    isempty(valid) && error("calibrate_csda_correction: no positive MC reference fluxes")
+    logmc = [log(mc_fluxes[i]) for i in valid]
+    bins = [bin_indices[i] for i in valid]
+
+    function objective(ks, kh)
+        set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh)
+        s = 0.0; n = 0
+        for (j, b) in enumerate(bins)
+            f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
+                                              paths[b], water_fractions, energy_samples)
+            (isfinite(f) && f > 0) || continue
+            d = log(f) - logmc[j]; s += d * d; n += 1
+        end
+        return n == 0 ? Inf : s / n
+    end
+
+    rel(ks, kh) = begin
+        set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh)
+        acc = 0.0; n = 0
+        for (j, b) in enumerate(bins)
+            f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
+                                              paths[b], water_fractions, energy_samples)
+            (isfinite(f) && f > 0) || continue
+            acc += abs(1.0 - f / exp(logmc[j])); n += 1
+        end
+        return n == 0 ? NaN : acc / n
+    end
+
+    rel_before = rel(0.0, 0.0)
+    best_ks, best_kh, best_obj = 0.0, 0.0, Inf
+    ksg, khg = collect(Float64, ks_grid), collect(Float64, kh_grid)
+    for _ in 0:refine
+        for ks in ksg, kh in khg
+            o = objective(ks, kh)
+            if o < best_obj
+                best_obj = o; best_ks = ks; best_kh = kh
+            end
+        end
+        # refine the grid around the current best
+        dks = (length(ksg) > 1 ? (ksg[2] - ksg[1]) : 1.0)
+        dkh = (length(khg) > 1 ? (khg[2] - khg[1]) : 1.0)
+        ksg = collect(range(max(0.0, best_ks - dks), best_ks + dks; length = 9))
+        khg = collect(range(max(0.0, best_kh - dkh), best_kh + dkh; length = 9))
+    end
+
+    set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh)
+    rel_after = rel(best_ks, best_kh)
+    stats = (rel_before = rel_before, rel_after = rel_after, mse_log = best_obj,
+             n_bins = length(bins))
+    return best_ks, best_kh, stats
+end
+
+include("Tomography_rules.jl")
 include("Tomography_inverse.jl")
 
 end # module Tomography

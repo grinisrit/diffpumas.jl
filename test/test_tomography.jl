@@ -202,4 +202,66 @@ using Random
         @test rvd isa Vector
     end
 
+    @testset "8. edge prior + Gauss-Newton beats MLEM (noisy, blocky)" begin
+        n = 20
+        neighbors = [filter(j -> 1 <= j <= n && j != i, [i - 1, i + 1]) for i in 1:n]
+
+        # EdgePrior gradient matches a finite-difference of R(w)
+        prior = EdgePrior(neighbors, 1.0, 0.05)
+        Rfun(w) = begin
+            s = 0.0
+            for i in 1:n, j in neighbors[i]
+                i < j || continue
+                t = w[i] - w[j]
+                s += abs(t) <= prior.delta ? 0.5 * t^2 : prior.delta * (abs(t) - 0.5 * prior.delta)
+            end
+            prior.weight * s
+        end
+        wprobe = collect(range(0.0, 0.6; length = n)); wprobe[10:14] .= 0.7
+        g = edge_gradient(prior, wprobe)
+        for k in (3, 10, 17)
+            h = 1e-6
+            wp = copy(wprobe); wp[k] += h; wm = copy(wprobe); wm[k] -= h
+            @test isapprox(g[k], (Rfun(wp) - Rfun(wm)) / (2h); rtol = 1e-4, atol = 1e-8)
+        end
+        H = edge_hessian(prior, wprobe)
+        @test size(H) == (n, n)
+        @test isapprox(H, transpose(H); atol = 1e-12)          # symmetric
+        @test minimum(eigvals(Matrix(H) + 1e-9I)) > 0           # SPD
+
+        # Blocky truth; data from a NONLINEAR forward (no inverse crime).
+        # MLEM/SART invert the linearised operator A (mismatched); Gauss-Newton
+        # relinearises the true nonlinear model — the physics setup in miniature,
+        # where our method's edge is fitting the real operator under noise.
+        rng = MersenneTwister(2024)
+        w_true = zeros(n); w_true[9:13] .= 0.5
+        rows = Vector{Vector{Float64}}()
+        for _ in 1:60
+            a = zeros(n); st = rand(rng, 1:(n - 4)); L = rand(rng, 3:5)
+            a[st:st+L-1] .= 0.5 .+ rand(rng, L)
+            push!(rows, a)
+        end
+        A = permutedims(hcat(rows...))
+        m0 = maximum(A * w_true)
+        c = 0.6 / m0                          # quadratic gain ~20–30% at the block
+        forward(w) = (u = A * w; u .+ c .* u .^ 2)
+        nl_jac(w)  = (u = A * w; (Diagonal(1 .+ 2 .* c .* u) * A, u .+ c .* u .^ 2))
+        b = forward(w_true) .+ 0.02 .* m0 .* randn(rng, size(A, 1))
+
+        sm = SmoothnessPrior(neighbors, 1e-3)
+        ep = EdgePrior(neighbors, 1e-3, 0.03)
+        # Baselines see only the linearised operator A and the (nonlinear) data b.
+        w_mlem, _ = mlem_reconstruct(max.(A, 0.0), max.(b, 0.0); n_iter = 1500, prior = sm)
+        model = w -> (p = nl_jac(w); (p[2], p[1]))
+        w_gn, hist = gauss_newton_reconstruct(model, b; w0 = fill(0.1, n), n_iter = 40,
+            prior = ep, relinearize = true)
+
+        @test all(0.0 .<= w_gn .<= 0.9)
+        @test hist[end] <= hist[1]
+        rmse_gn = sqrt(mse(w_gn, w_true)); rmse_mlem = sqrt(mse(w_mlem, w_true))
+        @test rmse_gn < rmse_mlem            # our method beats MLEM under model mismatch
+        @test rmse_gn < 0.7 * rmse_mlem      # …by a clear margin
+        @test ssim_metric(w_gn, w_true) > ssim_metric(w_mlem, w_true)
+    end
+
 end

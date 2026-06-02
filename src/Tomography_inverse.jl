@@ -207,6 +207,158 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
     return w, history
 end
 
+# --------------------------------------------------------------------------
+# Edge-preserving (Huber / TV) prior on the cell adjacency graph
+# --------------------------------------------------------------------------
+
+"""
+    EdgePrior(neighbors, weight, delta)
+
+Edge-preserving prior `R(w) = weight · Σ_{i<j∈N} ρ_δ(w_i − w_j)` with the Huber
+loss `ρ_δ` (quadratic for `|t|≤δ`, linear beyond). Unlike the quadratic
+[`SmoothnessPrior`], it penalises a sharp boundary only linearly, so it
+preserves blocky anomalies (e.g. an aquifer box) instead of blurring them.
+`delta → 0` approaches total variation. Provides the gradient `∂R/∂w` and an
+SPD lagged-diffusivity (IRLS) Hessian `weight·Lᵂ` for Gauss-Newton.
+"""
+struct EdgePrior
+    neighbors::Vector{Vector{Int}}
+    weight::Float64
+    delta::Float64
+end
+
+@inline _huber_grad(t, δ) = abs(t) <= δ ? t : δ * sign(t)
+@inline _huber_irls(t, δ) = abs(t) <= δ ? 1.0 : δ / abs(t)   # ψ(t) = ρ'(t)/t
+
+"""
+    edge_gradient(prior, w) -> Vector
+"""
+function edge_gradient(prior::EdgePrior, w::AbstractVector{<:Real})
+    g = zeros(Float64, length(w))
+    λ = prior.weight; δ = prior.delta
+    @inbounds for k in eachindex(w)
+        acc = 0.0
+        for j in prior.neighbors[k]
+            acc += _huber_grad(w[k] - w[j], δ)
+        end
+        g[k] = λ * acc
+    end
+    return g
+end
+
+"""
+    edge_hessian(prior, w) -> SparseMatrixCSC
+
+Lagged-diffusivity (IRLS) Gauss-Newton Hessian `weight · Lᵂ`, a weighted graph
+Laplacian with edge weights `ψ(w_i−w_j) = ρ'_δ/(w_i−w_j)`. SPD, so the
+normal-equation matrix stays positive definite.
+"""
+function edge_hessian(prior::EdgePrior, w::AbstractVector{<:Real})
+    n = length(w); λ = prior.weight; δ = prior.delta
+    I = Int[]; J = Int[]; V = Float64[]
+    @inbounds for k in 1:n
+        diag = 0.0
+        for j in prior.neighbors[k]
+            ψ = _huber_irls(w[k] - w[j], δ)
+            diag += ψ
+            push!(I, k); push!(J, j); push!(V, -λ * ψ)
+        end
+        push!(I, k); push!(J, k); push!(V, λ * diag)
+    end
+    return sparse(I, J, V, n, n)
+end
+
+# --------------------------------------------------------------------------
+# Gauss-Newton / Levenberg-Marquardt on the AD Jacobian (our method)
+# --------------------------------------------------------------------------
+
+"""
+    gauss_newton_reconstruct(model, obs; w0, n_iter=12, box=(0,0.9),
+                             prior=nothing, lm_damping=1e-3, lm_factor=3.0,
+                             relinearize=true, weights=nothing) -> (w, history)
+
+Box-constrained Gauss-Newton (Levenberg-Marquardt) for the nonlinear data misfit
+`½‖pred(w) − obs‖²_W + R(w)`. `model(w) → (pred, J)` supplies the forward flux and
+its sparse AD Jacobian; each step solves the regularised normal equations
+`(JᵀWJ + H_R + μ·diag(JᵀWJ)) δ = −(JᵀW r + ∇R)` and projects `w+δ` onto `box`,
+adapting the LM damping `μ` on accept/reject. With `relinearize=true` the Jacobian
+is recomputed each iteration (cheap with the fast assembly), so this fits the true
+nonlinear corrected-CSDA operator — the DiffPumas-native solver, and the one meant
+to beat MLEM on full-MC data. `weights` is an optional per-bin `1/σ²`.
+"""
+function gauss_newton_reconstruct(model, obs::AbstractVector;
+                                  w0::AbstractVector,
+                                  n_iter::Int = 12,
+                                  box::Tuple{Float64,Float64} = (0.0, MAX_WATER_FRACTION),
+                                  prior::Union{Nothing,SmoothnessPrior,EdgePrior} = nothing,
+                                  lm_damping::Float64 = 1e-3,
+                                  lm_factor::Float64 = 3.0,
+                                  relinearize::Bool = true,
+                                  weights::Union{Nothing,AbstractVector} = nothing)
+    w = clamp.(collect(Float64, w0), box[1], box[2])
+    history = Float64[]
+    W = weights === nothing ? nothing : collect(Float64, weights)
+
+    prior_grad(wv) = prior === nothing ? nothing :
+        (prior isa EdgePrior ? edge_gradient(prior, wv) : laplacian_gradient(prior, wv))
+    prior_hess(wv) = prior === nothing ? nothing :
+        (prior isa EdgePrior ? edge_hessian(prior, wv) :
+         # quadratic prior: constant weighted Laplacian (weights = 1)
+         edge_hessian(EdgePrior(prior.neighbors, prior.weight, Inf), wv))
+
+    cost(r) = W === nothing ? 0.5 * dot(r, r) : 0.5 * sum(W .* r .^ 2)
+
+    pred, J = model(w)
+    r = pred .- obs
+    f_cur = cost(r)
+    μ = lm_damping
+    push!(history, norm(r))
+
+    for _ in 1:n_iter
+        Jt = transpose(J)
+        # Normal-equation matrix and RHS (optionally weighted)
+        if W === nothing
+            JtJ = Matrix(Jt * J)
+            grad = Jt * r
+        else
+            WJ = (W .* J)
+            JtJ = Matrix(Jt * WJ)
+            grad = Jt * (W .* r)
+        end
+        if prior !== nothing
+            grad = grad .+ prior_grad(w)
+            JtJ = JtJ .+ Matrix(prior_hess(w))
+        end
+        d = [JtJ[i, i] for i in axes(JtJ, 1)]
+        dmax = maximum(d); dmax = dmax > 0 ? dmax : 1.0
+
+        accepted = false
+        for _try in 1:8
+            A = JtJ + Diagonal(μ .* max.(d, 1e-12 * dmax))
+            δ = try
+                -(A \ grad)
+            catch
+                fill(0.0, length(w))
+            end
+            w_new = clamp.(w .+ δ, box[1], box[2])
+            pred_new, J_new = relinearize ? model(w_new) : (J * w_new, J)
+            r_new = pred_new .- obs
+            f_new = cost(r_new)
+            if isfinite(f_new) && f_new < f_cur
+                w = w_new; r = r_new; J = J_new; f_cur = f_new
+                μ = max(μ / lm_factor, 1e-12)
+                accepted = true
+                break
+            else
+                μ = min(μ * lm_factor, 1e12)
+            end
+        end
+        push!(history, norm(r))
+        accepted || break
+    end
+    return w, history
+end
+
 """
     make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
                        n_cells, valid_bins, threaded=true) -> model

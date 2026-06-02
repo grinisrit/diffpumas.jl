@@ -1,19 +1,23 @@
 LVD tomography inverse reconstruction summary
-geometry = grid, n_cells = 600, valid_bins = 21600
-ground-truth nonzero cells = 4, contrast = 0.5
+geometry = grid, n_cells = 600, valid_bins = 1200
+ground-truth nonzero cells = 12, contrast = 0.5
 regularisation weight = 0.0
 
-[SART]  (0.6 s, 200 iters)
-  MSE=9.2705e-04 RMSE=3.0447e-02 PSNR=29.41 dB SSIM=0.6806 SNR=-15.47 dB
-  final data misfit ||Jw-b|| = 1.4414e-03
+[SART]  (0.38 s, 200 iters)
+  MSE=3.0467e-02 RMSE=1.7455e-01 PSNR=14.25 dB SSIM=0.0664 SNR=-1.30 dB
+  final data misfit ||Jw-b|| = 6.9725e-04
 
-[MLEM]  (0.23 s, 200 iters)
-  MSE=3.5194e-04 RMSE=1.8760e-02 PSNR=33.62 dB SSIM=0.8938 SNR=-18.54 dB
-  final data misfit ||Jw-b|| = 3.6902e-04
+[MLEM]  (0.24 s, 200 iters)
+  MSE=5.6465e-03 RMSE=7.5143e-02 PSNR=21.57 dB SSIM=0.5278 SNR=-13.79 dB
+  final data misfit ||Jw-b|| = 5.6196e-04
 
 [GD]  (0.14 s, 200 iters)
-  MSE=5.6276e-04 RMSE=2.3723e-02 PSNR=31.58 dB SSIM=0.8305 SNR=-18.90 dB
-  final data misfit ||Jw-b|| = 3.9192e-04
+  MSE=2.3534e-01 RMSE=4.8511e-01 PSNR=5.37 dB SSIM=0.0072 SNR=42.79 dB
+  final data misfit ||Jw-b|| = 1.4361e-03
+
+[GN]  (11.95 s, 13 iters)
+  MSE=5.7298e-03 RMSE=7.5696e-02 PSNR=21.50 dB SSIM=0.2292 SNR=1.97 dB
+  final data misfit ||Jw-b|| = 4.8487e-04
 
 Resolution (linearised point-spread FWHM vs depth):
   depth[m]     FWHM[m]      floor[m]     n_cells 
