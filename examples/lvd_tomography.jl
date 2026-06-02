@@ -1460,8 +1460,11 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     gn_scale = (m = filter(>(0), diagJtWJ); isempty(m) ? 1.0 : median(m))
     sens = vec(sum(max.(Jv, 0.0); dims = 1))
     sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
-    edge_w = args.reg_weight > 0 ? args.reg_weight : 1.0 * gn_scale
-    sm_w   = args.reg_weight > 0 ? args.reg_weight : 0.25 * sm_scale
+    # The edge Hessian λ·L has O(#neighbors) on its diagonal, so λ must be a small
+    # FRACTION of the data curvature median(diag(JᵀWJ)) for mild edge-preserving
+    # regularisation (too large collapses GN to a flat field).
+    edge_w = args.reg_weight > 0 ? args.reg_weight : 0.01 * gn_scale
+    sm_w   = args.reg_weight > 0 ? args.reg_weight : 0.05 * sm_scale
 
     neighbors = cell_neighbors(volume)
     sm_prior   = SmoothnessPrior(neighbors, sm_w)
@@ -1482,7 +1485,7 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             model = w -> (Jv * w, Jv)
             w_rec, hist = gradient_descent_reconstruct(model, excess;
                 w0 = zeros(n_cells), n_iter = args.reco_iters,
-                lr = 0.05, optimizer = :adam, prior = sm_prior, relinearize = false)
+                lr = 0.01, optimizer = :adam, prior = sm_prior, relinearize = false)
         elseif s == "gn"
             # Our DiffPumas-native solver: box-constrained Gauss-Newton on the
             # true nonlinear corrected-CSDA operator (relinearised via the fast

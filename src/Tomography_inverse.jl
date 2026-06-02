@@ -332,22 +332,35 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
         d = [JtJ[i, i] for i in axes(JtJ, 1)]
         dmax = maximum(d); dmax = dmax > 0 ? dmax : 1.0
 
+        # For a strongly nonlinear operator the full Gauss-Newton step overshoots,
+        # so we damp (LM) AND backtrack along the step direction: try the LM step,
+        # then halve it until the true (nonlinear) cost actually decreases. A few
+        # LM levels guard against a poorly-scaled direction.
         accepted = false
-        for _try in 1:8
+        for _try in 1:6
             A = JtJ + Diagonal(μ .* max.(d, 1e-12 * dmax))
             δ = try
                 -(A \ grad)
             catch
                 fill(0.0, length(w))
             end
-            w_new = clamp.(w .+ δ, box[1], box[2])
-            pred_new, J_new = relinearize ? model(w_new) : (J * w_new, J)
-            r_new = pred_new .- obs
-            f_new = cost(r_new)
-            if isfinite(f_new) && f_new < f_cur
-                w = w_new; r = r_new; J = J_new; f_cur = f_new
+            if !all(isfinite, δ)
+                μ = min(μ * lm_factor, 1e12); continue
+            end
+            α = 1.0
+            for _ls in 1:14
+                w_new = clamp.(w .+ α .* δ, box[1], box[2])
+                pred_new, J_new = relinearize ? model(w_new) : (J * w_new, J)
+                f_new = cost(pred_new .- obs)
+                if isfinite(f_new) && f_new < f_cur - 1e-10 * abs(f_cur)
+                    w = w_new; r = pred_new .- obs; J = J_new; f_cur = f_new
+                    accepted = true
+                    break
+                end
+                α *= 0.5
+            end
+            if accepted
                 μ = max(μ / lm_factor, 1e-12)
-                accepted = true
                 break
             else
                 μ = min(μ * lm_factor, 1e12)

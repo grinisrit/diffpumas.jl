@@ -3,21 +3,21 @@ geometry = grid, n_cells = 600, valid_bins = 1200
 ground-truth nonzero cells = 12, contrast = 0.5
 regularisation weight = 0.0
 
-[SART]  (0.38 s, 200 iters)
-  MSE=3.0467e-02 RMSE=1.7455e-01 PSNR=14.25 dB SSIM=0.0664 SNR=-1.30 dB
-  final data misfit ||Jw-b|| = 6.9725e-04
+[SART]  (0.35 s, 200 iters)
+  MSE=1.5906e-02 RMSE=1.2612e-01 PSNR=17.07 dB SSIM=0.1509 SNR=-5.59 dB
+  final data misfit ||Jw-b|| = 8.6552e-04
 
 [MLEM]  (0.24 s, 200 iters)
-  MSE=5.6465e-03 RMSE=7.5143e-02 PSNR=21.57 dB SSIM=0.5278 SNR=-13.79 dB
-  final data misfit ||Jw-b|| = 5.6196e-04
+  MSE=8.9074e-03 RMSE=9.4379e-02 PSNR=19.59 dB SSIM=0.4836 SNR=-15.20 dB
+  final data misfit ||Jw-b|| = 5.9515e-04
 
-[GD]  (0.14 s, 200 iters)
-  MSE=2.3534e-01 RMSE=4.8511e-01 PSNR=5.37 dB SSIM=0.0072 SNR=42.79 dB
-  final data misfit ||Jw-b|| = 1.4361e-03
+[GD]  (0.12 s, 200 iters)
+  MSE=7.6476e-01 RMSE=8.7451e-01 PSNR=0.25 dB SSIM=0.0033 SNR=58.19 dB
+  final data misfit ||Jw-b|| = 6.7677e-04
 
-[GN]  (11.95 s, 13 iters)
-  MSE=5.7298e-03 RMSE=7.5696e-02 PSNR=21.50 dB SSIM=0.2292 SNR=1.97 dB
-  final data misfit ||Jw-b|| = 4.8487e-04
+[GN]  (117.21 s, 13 iters)
+  MSE=2.6941e-03 RMSE=5.1904e-02 PSNR=24.78 dB SSIM=0.7296 SNR=-14.56 dB
+  final data misfit ||Jw-b|| = 4.5771e-04
 
 Resolution (linearised point-spread FWHM vs depth):
   depth[m]     FWHM[m]      floor[m]     n_cells 

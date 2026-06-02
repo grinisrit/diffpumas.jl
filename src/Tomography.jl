@@ -91,20 +91,28 @@ mutable struct CsdaCorrection
     enabled::Bool
     kappa_strag::Float64   # weight on Ω·dX/E²  (straggling variance)
     kappa_hard::Float64    # weight on (dedx_csda−dedx_mixed)·dX/E (hard-loss mean)
+    # Smooth geometric residual `exp(resid_a + resid_b·log L)` (L = rock path
+    # length, m), fit to the κ-corrected MC residual to absorb the monotonic
+    # column-density trend the 2-parameter physics model leaves behind. It is
+    # w-independent, so it rescales flux and its gradient by the same factor.
+    resid_a::Float64
+    resid_b::Float64
 end
 
-const CSDA_CORRECTION = Ref(CsdaCorrection(false, 0.0, 0.0))
+const CSDA_CORRECTION = Ref(CsdaCorrection(false, 0.0, 0.0, 0.0, 0.0))
 
 """
-    set_csda_correction!(; enabled=true, kappa_strag=0.0, kappa_hard=0.0)
+    set_csda_correction!(; enabled=true, kappa_strag=0.0, kappa_hard=0.0,
+                         resid_a=0.0, resid_b=0.0)
 
 Install the differentiable CSDA fluctuation/hard-loss correction used by every
-`propagate_csda_*_segment`. Disabled by default (pure CSDA). See
-[`calibrate_csda_correction`](@ref).
+`propagate_csda_*_segment`, plus the geometric residual factor. Disabled by
+default (pure CSDA). See [`calibrate_csda_correction`](@ref).
 """
 function set_csda_correction!(; enabled::Bool = true, kappa_strag::Float64 = 0.0,
-                              kappa_hard::Float64 = 0.0)
-    CSDA_CORRECTION[] = CsdaCorrection(enabled, kappa_strag, kappa_hard)
+                              kappa_hard::Float64 = 0.0,
+                              resid_a::Float64 = 0.0, resid_b::Float64 = 0.0)
+    CSDA_CORRECTION[] = CsdaCorrection(enabled, kappa_strag, kappa_hard, resid_a, resid_b)
     return CSDA_CORRECTION[]
 end
 
@@ -238,6 +246,23 @@ end
     c.enabled || return one(typeof(energy_surface))
     e = max(energy_surface, 1.0)
     return exp(-c.kappa_strag * V / (e * e) - c.kappa_hard * max(H, 0.0) / e)
+end
+
+# Geometric rock path length (m), w-independent: cells + rock remainder.
+@inline function path_rock_length(path::DirectionalPath)
+    L = path.remaining_rock_distance
+    @inbounds for s in path.segments
+        L += s.distance
+    end
+    return L
+end
+
+# Smooth geometric residual multiplier `exp(a + b·log L)`; 1.0 when disabled.
+@inline function csda_geom_multiplier(path::DirectionalPath)
+    c = CSDA_CORRECTION[]
+    (c.enabled && c.resid_b != 0.0) || return 1.0
+    L = max(path_rock_length(path), 1.0)
+    return exp(c.resid_a + c.resid_b * log(L))
 end
 
 # ===========================================================================
@@ -416,7 +441,7 @@ function _directional_flux_core(physics, matcfg::MaterialConfig, site::SiteConfi
         end
         flux_sum += 2.0 * sample.weight * flux_single
     end
-    return flux_sum / length(energy_samples)
+    return csda_geom_multiplier(path) * flux_sum / length(energy_samples)
 end
 
 # Precompute the on-path cell list and per-segment index/shallow/distance arrays.
@@ -503,7 +528,7 @@ function compute_directional_flux_csda(physics, shallow_flags::AbstractVector{Bo
         end
         flux_sum += 2.0 * sample.weight * flux_single
     end
-    return flux_sum / length(energy_samples)
+    return csda_geom_multiplier(path) * flux_sum / length(energy_samples)
 end
 
 """
@@ -849,10 +874,40 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
         khg = collect(range(max(0.0, best_kh - dkh), best_kh + dkh; length = 9))
     end
 
+    # --- geometric residual: fit exp(a + b·log L) to the κ-corrected residual ---
     set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh)
-    rel_after = rel(best_ks, best_kh)
+    xs = Float64[]; ys = Float64[]
+    for (j, b) in enumerate(bins)
+        f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
+                                          paths[b], water_fractions, energy_samples)
+        (isfinite(f) && f > 0) || continue
+        push!(xs, log(max(path_rock_length(paths[b]), 1.0)))
+        push!(ys, logmc[j] - log(f))          # log(mc / csda_κ): what the multiplier must supply
+    end
+    nfit = length(xs)
+    resid_a, resid_b = 0.0, 0.0
+    if nfit >= 3
+        mx = sum(xs) / nfit; my = sum(ys) / nfit
+        sxx = sum((xs .- mx) .^ 2); sxy = sum((xs .- mx) .* (ys .- my))
+        resid_b = sxx > 0 ? sxy / sxx : 0.0
+        resid_a = my - resid_b * mx
+    elseif nfit > 0
+        resid_a = sum(ys) / nfit            # constant offset only
+    end
+
+    set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh,
+                         resid_a = resid_a, resid_b = resid_b)
+    acc = 0.0; n = 0
+    for (j, b) in enumerate(bins)
+        f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
+                                          paths[b], water_fractions, energy_samples)
+        (isfinite(f) && f > 0) || continue
+        acc += abs(1.0 - f / exp(logmc[j])); n += 1
+    end
+    rel_after = n == 0 ? NaN : acc / n
     stats = (rel_before = rel_before, rel_after = rel_after, mse_log = best_obj,
-             n_bins = length(bins))
+             n_bins = length(bins), kappa_strag = best_ks, kappa_hard = best_kh,
+             resid_a = resid_a, resid_b = resid_b)
     return best_ks, best_kh, stats
 end
 
