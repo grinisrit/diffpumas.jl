@@ -60,8 +60,8 @@ export SmoothnessPrior, laplacian_gradient, apply_laplacian_smoothing
 export EdgePrior, edge_gradient, edge_hessian
 export sart_reconstruct, mlem_reconstruct, gradient_descent_reconstruct, gauss_newton_reconstruct
 export make_csda_operator
-export mse, rmse, snr_metric, cnr, psnr, ssim_metric, reconstruction_report
-export point_spread_recovery, resolution_vs_depth, radial_fwhm
+export mse, rmse, snr_metric, recon_snr, cnr, psnr, ssim_metric, reconstruction_report
+export point_spread_recovery, resolution_vs_depth, resolution_map, radial_fwhm
 
 # --- CSDA stepping constants (kept identical to examples/lvd_tomography.jl) ---
 const MAX_WATER_FRACTION = 0.9
@@ -89,30 +89,41 @@ const MC_STEP_EPSILON_M = 1e-7
 
 mutable struct CsdaCorrection
     enabled::Bool
-    kappa_strag::Float64   # weight on Ω·dX/E²  (straggling variance)
-    kappa_hard::Float64    # weight on (dedx_csda−dedx_mixed)·dX/E (hard-loss mean)
-    # Smooth geometric residual `exp(resid_a + resid_b·log L)` (L = rock path
-    # length, m), fit to the κ-corrected MC residual to absorb the monotonic
-    # column-density trend the 2-parameter physics model leaves behind. It is
-    # w-independent, so it rescales flux and its gradient by the same factor.
+    # MC-calibrated multiplicative flux correction exp(−κ_strag·V/E² − κ_hard·H/E)
+    # applied per energy sample. The CSDA↔MC deficit is catastrophic-hard-loss
+    # dominated; V/E² serves as an additional flexible depth-dependent suppression
+    # basis (phenomenological — κ_strag is not the physical straggling coefficient).
+    kappa_strag::Float64       # weight on V/E²  (depth-dependent suppression basis)
+    kappa_hard::Float64        # weight on H/E   (catastrophic hard-loss deficit)
+    # Smooth geometric residual `exp(a + b·logL + c·logL² + d·cosθ)` (L = rock path
+    # length, m; θ = zenith), fit to the convolution-corrected MC residual to absorb
+    # any leftover depth/angle structure. w-independent, so it rescales flux and its
+    # gradient by the same factor.
     resid_a::Float64
     resid_b::Float64
+    resid_c::Float64       # weight on (logL)²
+    resid_d::Float64       # weight on cosθ
 end
+
+# Backward-compatible constructor (resid_c = resid_d = 0).
+CsdaCorrection(en, ks, kh, a, b) = CsdaCorrection(en, ks, kh, a, b, 0.0, 0.0)
 
 const CSDA_CORRECTION = Ref(CsdaCorrection(false, 0.0, 0.0, 0.0, 0.0))
 
 """
     set_csda_correction!(; enabled=true, kappa_strag=0.0, kappa_hard=0.0,
-                         resid_a=0.0, resid_b=0.0)
+                         resid_a=0.0, resid_b=0.0, resid_c=0.0, resid_d=0.0)
 
-Install the differentiable CSDA fluctuation/hard-loss correction used by every
-`propagate_csda_*_segment`, plus the geometric residual factor. Disabled by
-default (pure CSDA). See [`calibrate_csda_correction`](@ref).
+Install the differentiable CSDA spectral-convolution correction used by the surface
+flux, plus the geometric residual factor. Disabled by default (pure CSDA).
+See [`calibrate_csda_correction`](@ref).
 """
 function set_csda_correction!(; enabled::Bool = true, kappa_strag::Float64 = 0.0,
                               kappa_hard::Float64 = 0.0,
-                              resid_a::Float64 = 0.0, resid_b::Float64 = 0.0)
-    CSDA_CORRECTION[] = CsdaCorrection(enabled, kappa_strag, kappa_hard, resid_a, resid_b)
+                              resid_a::Float64 = 0.0, resid_b::Float64 = 0.0,
+                              resid_c::Float64 = 0.0, resid_d::Float64 = 0.0)
+    CSDA_CORRECTION[] = CsdaCorrection(enabled, kappa_strag, kappa_hard,
+                                       resid_a, resid_b, resid_c, resid_d)
     return CSDA_CORRECTION[]
 end
 
@@ -131,7 +142,14 @@ struct MaterialConfig
     water_density::Float64
     porous_density::Float64
     porous_top_thickness::Float64
+    # Denser-rock endpoint (same composition as standard rock, higher density) for
+    # the signed mixture parameter m<0. Defaults to rock_density (no-op) so the
+    # negative branch is inert unless a denser value is supplied.
+    dense_density::Float64
 end
+
+MaterialConfig(rm, wm, am, pm, rd, wd, pd, pt) =
+    MaterialConfig(rm, wm, am, pm, rd, wd, pd, pt, rd)
 
 """
     SiteConfig(detector_elevation, primary_altitude)
@@ -206,7 +224,16 @@ end
     return shallow && matcfg.porous_material > 0 && matcfg.porous_top_thickness > 0.0
 end
 
+# Signed mixture parameter `w`:
+#   w ≥ 0 : water fraction — (1-w)·rock + w·water  (lighter; original behaviour)
+#   w < 0 : dense fraction d=-w — (1-d)·rock + d·dense_rock  (heavier than standard rock)
+# Continuous at w=0 (both give pure standard rock). The dense endpoint shares the
+# standard-rock composition, so only the density changes there.
 @inline function cell_density(w, shallow::Bool, matcfg::MaterialConfig)
+    if w < zero(w)
+        d = -w
+        return (1.0 - d) * matcfg.rock_density + d * matcfg.dense_density
+    end
     if is_shallow_porous(shallow, matcfg)
         return 0.5 * (1.0 - w) * matcfg.porous_density +
                0.5 * (1.0 - w) * matcfg.rock_density +
@@ -216,6 +243,11 @@ end
 end
 
 @inline function cell_stopping_power(physics, w, shallow::Bool, matcfg::MaterialConfig, energy)
+    if w < zero(w)
+        # dense rock: standard-rock composition (stopping power per grammage is the
+        # same as rock; the extra mass enters through cell_density's grammage).
+        return property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy)
+    end
     if is_shallow_porous(shallow, matcfg)
         sp_p = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.porous_material, energy)
         sp_r = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy)
@@ -241,6 +273,11 @@ end
 # the integrated hard-loss (GeV), and E_s the surface energy. V and H are
 # accumulated with the *real* energy profile (not a single-point proxy), which
 # is what makes the deficit nearly column-independent the way the MC is.
+# MC-calibrated flux suppression from the accumulated surface-energy spread and the
+# catastrophic hard-loss deficit: ≈ exp(−κ_s·V/E_s² − κ_h·H/E_s). The deficit
+# (MC < CSDA) is hard-loss dominated; the V/E² term provides an additional flexible
+# depth-dependent suppression basis. Phenomenological (κ_s is not the physical
+# straggling coefficient) but the best deterministic fit (~10% vs full MC).
 @inline function csda_var_correction(energy_surface, V, H)
     c = CSDA_CORRECTION[]
     c.enabled || return one(typeof(energy_surface))
@@ -257,12 +294,16 @@ end
     return L
 end
 
-# Smooth geometric residual multiplier `exp(a + b·log L)`; 1.0 when disabled.
+# Smooth geometric residual multiplier `exp(a + b·logL + c·logL² + d·cosθ)`;
+# 1.0 when no residual coefficients are set. w-independent (rescales flux and its
+# gradient equally), so it is safe for the AD Jacobian.
 @inline function csda_geom_multiplier(path::DirectionalPath)
     c = CSDA_CORRECTION[]
-    (c.enabled && c.resid_b != 0.0) || return 1.0
-    L = max(path_rock_length(path), 1.0)
-    return exp(c.resid_a + c.resid_b * log(L))
+    (c.enabled && (c.resid_a != 0.0 || c.resid_b != 0.0 ||
+                   c.resid_c != 0.0 || c.resid_d != 0.0)) || return 1.0
+    logL = log(max(path_rock_length(path), 1.0))
+    cosθ = cosd(path.zenith)
+    return exp(c.resid_a + c.resid_b * logL + c.resid_c * logL * logL + c.resid_d * cosθ)
 end
 
 # ===========================================================================
@@ -630,6 +671,12 @@ end
 # ===========================================================================
 
 function mc_cell_mixture_and_density(w::Float64, shallow::Bool, matcfg::MaterialConfig)
+    if w < 0.0
+        # dense rock: standard-rock composition, density interpolated to dense_density.
+        d = -w
+        density = (1.0 - d) * matcfg.rock_density + d * matcfg.dense_density
+        return MaterialMixture(matcfg.rock_material), density
+    end
     if is_shallow_porous(shallow, matcfg)
         if w <= 1e-12
             return MaterialMixture(matcfg.porous_material), matcfg.porous_density
@@ -824,17 +871,18 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
                                    energy_samples::Vector{EnergySample},
                                    mc_fluxes::AbstractVector{<:Real},
                                    bin_indices::AbstractVector{Int};
-                                   ks_grid = range(0.0, 80.0; length = 33),
-                                   kh_grid = range(0.0, 40.0; length = 33),
-                                   refine::Int = 3)
+                                   ks_grid = range(0.0, 300.0; length = 31),
+                                   kh_grid = range(0.0, 80.0; length = 33),
+                                   refine::Int = 4)
     @assert length(mc_fluxes) == length(bin_indices)
     valid = [i for i in eachindex(bin_indices) if isfinite(mc_fluxes[i]) && mc_fluxes[i] > 0]
     isempty(valid) && error("calibrate_csda_correction: no positive MC reference fluxes")
     logmc = [log(mc_fluxes[i]) for i in valid]
     bins = [bin_indices[i] for i in valid]
 
+    set_corr(ks, kh) = set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh)
     function objective(ks, kh)
-        set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh)
+        set_corr(ks, kh)
         s = 0.0; n = 0
         for (j, b) in enumerate(bins)
             f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
@@ -844,9 +892,8 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
         end
         return n == 0 ? Inf : s / n
     end
-
-    rel(ks, kh) = begin
-        set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh)
+    function rel(ks, kh)
+        set_corr(ks, kh)
         acc = 0.0; n = 0
         for (j, b) in enumerate(bins)
             f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
@@ -857,46 +904,47 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
         return n == 0 ? NaN : acc / n
     end
 
+    # Coarse-to-fine 2-D grid over (κ_strag, κ_hard) — both ≈ O(1) for the convolution.
     rel_before = rel(0.0, 0.0)
     best_ks, best_kh, best_obj = 0.0, 0.0, Inf
     ksg, khg = collect(Float64, ks_grid), collect(Float64, kh_grid)
     for _ in 0:refine
         for ks in ksg, kh in khg
             o = objective(ks, kh)
-            if o < best_obj
-                best_obj = o; best_ks = ks; best_kh = kh
-            end
+            (o < best_obj) && (best_obj = o; best_ks = ks; best_kh = kh)
         end
-        # refine the grid around the current best
-        dks = (length(ksg) > 1 ? (ksg[2] - ksg[1]) : 1.0)
-        dkh = (length(khg) > 1 ? (khg[2] - khg[1]) : 1.0)
+        dks = length(ksg) > 1 ? (ksg[2] - ksg[1]) : 0.5
+        dkh = length(khg) > 1 ? (khg[2] - khg[1]) : 0.5
         ksg = collect(range(max(0.0, best_ks - dks), best_ks + dks; length = 9))
         khg = collect(range(max(0.0, best_kh - dkh), best_kh + dkh; length = 9))
     end
 
-    # --- geometric residual: fit exp(a + b·log L) to the κ-corrected residual ---
+    # --- geometric residual: fit exp(a + b·logL + c·logL² + d·cosθ) to the
+    # convolution-corrected residual by linear least-squares (absorbs any leftover
+    # smooth depth/angle structure). w-independent, so it is AD-safe. ---
     set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh)
-    xs = Float64[]; ys = Float64[]
+    feats = Vector{Float64}[]; ys = Float64[]
     for (j, b) in enumerate(bins)
         f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
                                           paths[b], water_fractions, energy_samples)
         (isfinite(f) && f > 0) || continue
-        push!(xs, log(max(path_rock_length(paths[b]), 1.0)))
+        logL = log(max(path_rock_length(paths[b]), 1.0))
+        push!(feats, [1.0, logL, logL * logL, cosd(paths[b].zenith)])
         push!(ys, logmc[j] - log(f))          # log(mc / csda_κ): what the multiplier must supply
     end
-    nfit = length(xs)
-    resid_a, resid_b = 0.0, 0.0
-    if nfit >= 3
-        mx = sum(xs) / nfit; my = sum(ys) / nfit
-        sxx = sum((xs .- mx) .^ 2); sxy = sum((xs .- mx) .* (ys .- my))
-        resid_b = sxx > 0 ? sxy / sxx : 0.0
-        resid_a = my - resid_b * mx
+    nfit = length(ys)
+    resid_a = resid_b = resid_c = resid_d = 0.0
+    if nfit >= 4
+        A = reduce(vcat, transpose.(feats))   # nfit × 4
+        coef = A \ ys                          # least-squares (a, b, c, d)
+        resid_a, resid_b, resid_c, resid_d = coef[1], coef[2], coef[3], coef[4]
     elseif nfit > 0
-        resid_a = sum(ys) / nfit            # constant offset only
+        resid_a = sum(ys) / nfit               # constant offset only
     end
 
     set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh,
-                         resid_a = resid_a, resid_b = resid_b)
+                         resid_a = resid_a, resid_b = resid_b,
+                         resid_c = resid_c, resid_d = resid_d)
     acc = 0.0; n = 0
     for (j, b) in enumerate(bins)
         f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
@@ -907,7 +955,7 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
     rel_after = n == 0 ? NaN : acc / n
     stats = (rel_before = rel_before, rel_after = rel_after, mse_log = best_obj,
              n_bins = length(bins), kappa_strag = best_ks, kappa_hard = best_kh,
-             resid_a = resid_a, resid_b = resid_b)
+             resid_a = resid_a, resid_b = resid_b, resid_c = resid_c, resid_d = resid_d)
     return best_ks, best_kh, stats
 end
 

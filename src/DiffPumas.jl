@@ -222,7 +222,7 @@ export build_cell_properties_for_mc, compute_directional_flux_mc
 export SmoothnessPrior, laplacian_gradient, apply_laplacian_smoothing
 export sart_reconstruct, mlem_reconstruct, gradient_descent_reconstruct, make_csda_operator
 export mse, rmse, snr_metric, cnr, psnr, ssim_metric, reconstruction_report
-export point_spread_recovery, resolution_vs_depth, radial_fwhm
+export point_spread_recovery, resolution_vs_depth, resolution_map, radial_fwhm
 
 # Version information
 const VERSION = v"0.2.0"

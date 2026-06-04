@@ -57,6 +57,26 @@ Options:
     --aquifer-half-x FLOAT        Aquifer box half-size in east direction in m (default: 300.0)
     --aquifer-half-y FLOAT        Aquifer box half-size in north direction in m (default: 300.0)
     --aquifer-half-z FLOAT        Aquifer box half-size in vertical direction in m (default: 150.0)
+    --simple-field                Use the single aquifer box instead of the multi-anomaly truth
+    --slab-w FLOAT                Shallow slab water fraction in the multi-anomaly truth (default: 0.3)
+    --lens-w FLOAT                Deep high-contrast lens water fraction (default: 0.9)
+    --dip-w FLOAT                 Dipping-interface water fraction (default: 0.5)
+    --reco-iters INT              Iterations for SART/MLEM (default: 200)
+    --gd-iters INT                AAD preconditioned-GD iterations, relinearised (default: 40)
+    --gd-lr FLOAT                 AAD GD step-length cap, 1.0 = full quadratic step (default: 1.0)
+    --min-eval-depth FLOAT        Exclude cells shallower than this (m above detector) from
+                                  reconstruction metrics and resolution (default: 350)
+    --primary-altitude-km FLOAT   Gaisser/primary flux sampling altitude above detector (default: 30)
+    --dense-rock-density FLOAT    Denser-rock endpoint kg/m^3 for the signed mixture w<0 (default: 3000)
+    --dense-w FLOAT               Dense anomaly value (w<0) in the rich ground truth (default: -0.5)
+    --m-min FLOAT                 Most-dense reconstruction bound / box lower limit (default: -1.0)
+    --papermatch                  Run the final section: GN material-mixture match to the measured
+                                  LVD flux + Fig.7 angular-distribution reproduction, with MC+syst error
+    --papermatch-only             Run ONLY geometry+calibration+paper-match (skip the inverse demo) —
+                                  fast iteration on the reconstruction figures
+    --match-data PATH             Measured intensity map (default: data/rock_int.txt)
+    --papermatch-mc-samples INT   MC samples/bin for the paper-match uncertainty grid (default: 64)
+    --papermatch-paper-samples INT  MC samples for the Fig.8 energy spectrum (default: 2000)
     --max-plot-cells INT          Maximum cells rendered in the 3D sensitivity plot (default: 150)
     --no-straggling               Disable stochastic energy-loss fluctuations for MC validation
 """
@@ -86,7 +106,7 @@ end
 
 const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
 const DEFAULT_MDF = joinpath(@__DIR__, "data", "materials.xml")
-const DEFAULT_OUTPUT_DIR = joinpath(@__DIR__, "data")
+const DEFAULT_OUTPUT_DIR = joinpath(@__DIR__, "data", "lvd_results")
 const MAX_WATER_FRACTION = 0.9
 const POINT_EPS = 1e-4
 const SURFACE_SEARCH_STEP_M = 40.0
@@ -679,17 +699,53 @@ end
 
 function create_initial_water_field(volume::AbstractSensitivityVolume, args)
     fractions = zeros(Float64, num_cells(volume))
-    args.aquifer_water_fraction <= 0.0 && return fractions
 
-    water_fraction = min(args.aquifer_water_fraction, MAX_WATER_FRACTION)
+    if !args.rich_field
+        # Legacy single aquifer box (off unless --aquifer-water-fraction > 0).
+        args.aquifer_water_fraction <= 0.0 && return fractions
+        wf = min(args.aquifer_water_fraction, MAX_WATER_FRACTION)
+        for idx in eachindex(fractions)
+            x, y, z = cell_centroid(volume, idx)
+            if abs(x - args.aquifer_center_x) <= args.aquifer_half_x &&
+               abs(y - args.aquifer_center_y) <= args.aquifer_half_y &&
+               abs(z - args.aquifer_center_z) <= args.aquifer_half_z
+                fractions[idx] = wf
+            end
+        end
+        return fractions
+    end
 
+    # Richer multi-anomaly truth chosen to exercise the operator's nonlinearity at
+    # different angles/depths (grid z-layer midpoints ≈ 160/479/799/1119/1438/1758 m).
+    # Includes a DENSE block (w<0) that positivity-only MLEM/SART cannot represent — so
+    # the signed AAD solvers (GN/GD) win on this problem:
+    #   1. shallow LOW-contrast slab  (z≈479 m, broad)         — near-vertical rays
+    #   2. deep HIGH-contrast lens     (z≈1119 m, compact, w≈0.9) — long-path nonlinearity (AAD edge)
+    #   3. dipping interface           (tilted sheet z = z0 + slope·x) — oblique high-zenith rays
+    # Overlaps resolve to the strongest feature via max().
+    slab_w = clamp(args.slab_w, 0.0, MAX_WATER_FRACTION)
+    lens_w = clamp(args.lens_w, 0.0, MAX_WATER_FRACTION)
+    dip_w  = clamp(args.dip_w,  0.0, MAX_WATER_FRACTION)
     for idx in eachindex(fractions)
         x, y, z = cell_centroid(volume, idx)
-        if abs(x - args.aquifer_center_x) <= args.aquifer_half_x &&
-           abs(y - args.aquifer_center_y) <= args.aquifer_half_y &&
-           abs(z - args.aquifer_center_z) <= args.aquifer_half_z
-            fractions[idx] = water_fraction
+        w = 0.0
+        # 1. shallow slab
+        if abs(z - 479.4) <= 160.0 && abs(x) <= 1600.0 && abs(y) <= 1600.0
+            w = max(w, slab_w)
         end
+        # 2. deep compact lens
+        if abs(z - 1118.6) <= 160.0 && abs(x) <= 600.0 && abs(y) <= 600.0
+            w = max(w, lens_w)
+        end
+        # 3. dipping interface: anomaly where |(z - z0) - slope·x| ≤ band, |y| ≤ extent
+        if abs((z - 799.0) - 0.4 * x) <= 220.0 && abs(y) <= 1600.0
+            w = max(w, dip_w)
+        end
+        # 4. DENSE rock block (w < 0): a compact body heavier than standard rock, set
+        #    apart from the water anomalies. Positivity-constrained MLEM/SART cannot
+        #    represent w < 0, so only the signed AAD solvers (GN/GD) recover it.
+        dense_here = abs(z - 959.0) <= 160.0 && abs(x + 800.0) <= 600.0 && abs(y + 800.0) <= 600.0
+        fractions[idx] = dense_here ? clamp(args.dense_w, args.m_min, 0.0) : w
     end
 
     return fractions
@@ -866,7 +922,7 @@ end
 
 function finite_difference_bounds(w0::Float64, delta::Float64)
     hi = min(MAX_WATER_FRACTION, w0 + delta)
-    lo = max(0.0, w0 - delta)
+    lo = max(-1.0, w0 - delta)   # signed mixture: allow dense (w<0) range
     if hi > lo + 1e-12
         return lo, hi
     end
@@ -904,18 +960,21 @@ function run_validation_cases(physics,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
+            scattering = true,
         )
         flux_lo, sigma_lo = compute_directional_flux_mc(
             physics, matcfg, site, path, low_materials, low_densities, mc_samples,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
+            scattering = true,
         )
         flux_hi, sigma_hi = compute_directional_flux_mc(
             physics, matcfg, site, path, high_materials, high_densities, mc_samples,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
+            scattering = true,
         )
 
         fd_grad = (flux_hi - flux_lo) / (hi - lo)
@@ -1125,16 +1184,30 @@ end
 function write_validation_summary(results,
                                   volume::AbstractSensitivityVolume;
                                   output_path::String)
+    # Diff-CSDA (forward flux + Zygote gradient) vs full MC (straggling + scattering
+    # on; gradient by central finite difference on the cell mixture). The MC flux and
+    # MC-FD gradient are noisy, so the headline test is the z-score (how many MC sigmas
+    # separate CSDA from MC), not the raw percentage mismatch — at these sample counts
+    # a large % can still be <1 sigma. sigma_grad propagates the two endpoint MC errors.
+    flux_z = Float64[]
+    grad_z = Float64[]
     open(output_path, "w") do io
         println(io, "LVD tomography validation summary")
         println(io, "geometry = $(geometry_name(volume))")
         println(io, "n_cells = $(num_cells(volume))")
+        println(io, "comparison: diff-CSDA + Zygote   vs   full MC (straggling+scattering) + finite difference")
         println(io)
 
         for (idx, result) in enumerate(results)
             cx, cy, cz = cell_centroid(volume, result.cell_idx)
+            dw = max(result.w_hi - result.w_lo, 1e-30)
+            sigma_grad = hypot(result.sigma_lo, result.sigma_hi) / dw   # MC error on the FD slope
             flux_rel = 100 * abs(result.flux_mc - result.flux_csda) / max(abs(result.flux_csda), 1e-30)
             grad_rel = 100 * abs(result.grad_fd - result.grad_csda) / max(abs(result.grad_csda), 1e-30)
+            fz = (result.flux_mc - result.flux_csda) / max(result.sigma_mc, 1e-30)
+            gz = (result.grad_fd - result.grad_csda) / max(sigma_grad, 1e-30)
+            push!(flux_z, fz); push!(grad_z, gz)
+            agree(z) = abs(z) <= 2 ? "AGREE (<2 sigma)" : "TENSION (>2 sigma)"
             println(io, "Case $idx: $(result.label)")
             println(io, @sprintf("  direction: theta=%.1f deg phi=%.1f deg", result.zenith, result.azimuth))
             println(io, @sprintf("  cell: %d at (%.1f, %.1f, %.1f) m", result.cell_idx, cx, cy, cz))
@@ -1142,11 +1215,22 @@ function write_validation_summary(results,
             println(io, @sprintf("  FD interval: [%.3f, %.3f]", result.w_lo, result.w_hi))
             println(io, @sprintf("  flux_csda: %.6e", result.flux_csda))
             println(io, @sprintf("  flux_mc:   %.6e +/- %.2e", result.flux_mc, result.sigma_mc))
-            println(io, @sprintf("  flux mismatch: %.2f %%", flux_rel))
+            println(io, @sprintf("  flux:  %.2f %% mismatch | %+.2f sigma | %s", flux_rel, fz, agree(fz)))
             println(io, @sprintf("  grad_csda: %.6e", result.grad_csda))
-            println(io, @sprintf("  grad_fd:   %.6e", result.grad_fd))
-            println(io, @sprintf("  grad mismatch: %.2f %%", grad_rel))
+            println(io, @sprintf("  grad_fd:   %.6e +/- %.2e", result.grad_fd, sigma_grad))
+            println(io, @sprintf("  grad:  %.2f %% mismatch | %+.2f sigma | %s", grad_rel, gz, agree(gz)))
             println(io)
+        end
+
+        # --- aggregate: with noisy FD, "agreement" = fraction within the MC error bar ---
+        n = length(results)
+        if n > 0
+            flux_ok = count(z -> abs(z) <= 2, flux_z)
+            grad_ok = count(z -> abs(z) <= 2, grad_z)
+            println(io, "Aggregate over $n cases (full MC: straggling+scattering on):")
+            println(io, @sprintf("  flux within 2 sigma: %d/%d   | median |z| = %.2f", flux_ok, n, median(abs.(flux_z))))
+            println(io, @sprintf("  grad within 2 sigma: %d/%d   | median |z| = %.2f", grad_ok, n, median(abs.(grad_z))))
+            println(io, "  note: raise --mc-samples / --validation-cases to tighten the MC error bars.")
         end
     end
 end
@@ -1179,19 +1263,47 @@ function parse_commandline()
         aquifer_half_x = 300.0,
         aquifer_half_y = 300.0,
         aquifer_half_z = 150.0,
+        rich_field = true,         # multi-anomaly ground truth (slab + lens + dip)
+        slab_w = 0.3,              # shallow low-contrast slab water fraction
+        lens_w = 0.9,              # deep high-contrast lens water fraction
+        dip_w = 0.5,               # dipping-interface water fraction
         max_plot_cells = 150,
         straggling = true,
         solver = "all",
         reg_weight = 0.0,
         contrast = 0.5,
         reco_iters = 200,
+        gd_iters = 40,             # AAD preconditioned-GD iterations (relinearised)
+        gd_lr = 1.0,               # AAD GD step-length cap (1.0 = full quadratic step)
+        min_eval_depth = 350.0,    # exclude shallower-than-this cells from metrics/resolution
+                                   # (near-surface cells are geometrically unresolvable)
         threaded = true,
         correction = true,         # MC-calibrated CSDA fluctuation/hard-loss correction
-        calibration_bins = 24,     # bins used to fit the correction to MC
+        calibration_bins = 48,     # bins used to fit the CSDA correction to full MC (more = tighter)
+        calibration_mc_samples = 512,  # MC samples/bin for the calibration reference (high = low MC noise)
         inverse_data = "mc",       # observation source: "mc" (full MC) or "csda"
         inverse_mc_samples = 256,  # MC samples per bin for the (low-noise) observations
         exposure = 1.0e8,          # detector exposure (sets Poisson noise level)
         edge_delta = 0.03,         # Huber transition for the edge-preserving GN prior
+        primary_altitude_km = 30.0,    # Gaisser/primary flux sampling altitude above detector
+        dense_rock_density = 3000.0,   # denser-rock endpoint (kg/m^3) for the signed mixture w<0
+        dense_w = 0.0,                 # dense anomaly (w<0) in the synthetic truth; 0 = water-only
+                                       # demo (GN/GD beat classics in the positivity-regularized regime)
+        m_min = -1.0,                  # most-dense reconstruction bound (box lower limit)
+        papermatch = false,            # run the final paper-matching section
+        papermatch_only = false,       # run ONLY geometry+calibration+paper-match (skip inverse demo)
+        match_data = joinpath(@__DIR__, "data", "rock_int.txt"),  # measured intensity map
+        papermatch_zenith_step = 2.0,  # coarse grid for the NMapFluxResult (nmap resolution)
+        papermatch_azimuth_step = 4.0,
+        papermatch_mc_samples = 64,    # MC samples/bin for the paper-match uncertainty grid
+        papermatch_paper_samples = 2000,  # MC samples for the Fig.8 energy spectrum
+        papermatch_reg = 1.0,          # smoothness-prior weight (× data curvature) for the
+                                       # signed match — replaces positivity regularization
+        detectability = false,         # run the exposure-sweep detectability study (then exit)
+        sweep_exp_min = 1.0e5,         # exposure sweep range (detector exposure units)
+        sweep_exp_max = 1.0e9,
+        sweep_n = 13,                  # number of exposure points (log-spaced)
+        sweep_realizations = 80,       # noise realizations per exposure per solver
     )
 
     i = 1
@@ -1249,6 +1361,14 @@ function parse_commandline()
             args = merge(args, (aquifer_half_y = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--aquifer-half-z"
             args = merge(args, (aquifer_half_z = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--simple-field"
+            args = merge(args, (rich_field = false,)); i += 1
+        elseif arg == "--slab-w"
+            args = merge(args, (slab_w = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--lens-w"
+            args = merge(args, (lens_w = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--dip-w"
+            args = merge(args, (dip_w = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--max-plot-cells"
             args = merge(args, (max_plot_cells = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-straggling"
@@ -1261,12 +1381,50 @@ function parse_commandline()
             args = merge(args, (contrast = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--reco-iters"
             args = merge(args, (reco_iters = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--gd-iters"
+            args = merge(args, (gd_iters = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--gd-lr"
+            args = merge(args, (gd_lr = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--min-eval-depth"
+            args = merge(args, (min_eval_depth = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--primary-altitude-km"
+            args = merge(args, (primary_altitude_km = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--dense-rock-density"
+            args = merge(args, (dense_rock_density = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--dense-w"
+            args = merge(args, (dense_w = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--m-min"
+            args = merge(args, (m_min = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch"
+            args = merge(args, (papermatch = true,)); i += 1
+        elseif arg == "--papermatch-only"
+            args = merge(args, (papermatch = true, papermatch_only = true,)); i += 1
+        elseif arg == "--match-data"
+            args = merge(args, (match_data = ARGS[i + 1],)); i += 2
+        elseif arg == "--papermatch-zenith-step"
+            args = merge(args, (papermatch_zenith_step = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-azimuth-step"
+            args = merge(args, (papermatch_azimuth_step = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-mc-samples"
+            args = merge(args, (papermatch_mc_samples = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-paper-samples"
+            args = merge(args, (papermatch_paper_samples = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-reg"
+            args = merge(args, (papermatch_reg = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--detectability"
+            args = merge(args, (detectability = true,)); i += 1
+        elseif arg == "--sweep-realizations"
+            args = merge(args, (sweep_realizations = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--sweep-n"
+            args = merge(args, (sweep_n = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-threads"
             args = merge(args, (threaded = false,)); i += 1
         elseif arg == "--no-correction"
             args = merge(args, (correction = false,)); i += 1
         elseif arg == "--calibration-bins"
             args = merge(args, (calibration_bins = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--calibration-mc-samples"
+            args = merge(args, (calibration_mc_samples = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--inverse-data"
             args = merge(args, (inverse_data = lowercase(ARGS[i + 1]),)); i += 2
         elseif arg == "--exposure"
@@ -1324,7 +1482,8 @@ function estimate_cell_size(volume::TetraVolume)
     return volume.surface_step_m
 end
 
-build_site() = SiteConfig(Float64(LVDTopo.DETECTOR_ELEVATION), Float64(primary_altitude_local()))
+build_site(primary_alt_m::Real = primary_altitude_local()) =
+    SiteConfig(Float64(LVDTopo.DETECTOR_ELEVATION), Float64(primary_alt_m))
 
 # --- MC-calibrated CSDA fluctuation/hard-loss correction (Part A) ---------
 
@@ -1348,9 +1507,13 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
     pick = unique(round.(Int, range(1, length(order); length = nb)))
     cbins = order[pick]
 
-    mc_samples = sample_energy_set(args.mc_samples, args.energy_min, args.energy_max, args.seed + 20_000)
+    # High-statistics MC reference: the CSDA↔MC residual is MC-noise-limited at low
+    # sample counts (≈16% at 24 samples, ≈6% at 256), so calibrate against a clean
+    # reference (dedicated --calibration-mc-samples) to approach the ~4% model floor.
+    mc_samples = sample_energy_set(args.calibration_mc_samples, args.energy_min, args.energy_max, args.seed + 20_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, water_fractions, matcfg)
-    println("Calibrating CSDA correction to full MC on $(length(cbins)) bins (scattering+straggling)...")
+    println("Calibrating CSDA correction to full MC on $(length(cbins)) bins " *
+            "($(args.calibration_mc_samples) MC samples/bin, scattering+straggling)...")
     mcflux = Vector{Float64}(undef, length(cbins))
     Threads.@threads for k in eachindex(cbins)
         f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[cbins[k]], mats, dens,
@@ -1361,7 +1524,7 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
     end
     ks, kh, stats = calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
         water_fractions, energy_samples, mcflux, cbins)
-    println(@sprintf("  fitted kappa_strag=%.3f kappa_hard=%.3f | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
+    println(@sprintf("  fitted kappa_strag=%.3f kappa_hard=%.3f (+ geometric residual) | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
                      ks, kh, 100 * stats.rel_before, 100 * stats.rel_after))
     return (ks, kh, stats)
 end
@@ -1470,6 +1633,21 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     sm_prior   = SmoothnessPrior(neighbors, sm_w)
     edge_prior = EdgePrior(neighbors, edge_w, args.edge_delta)
 
+    # The true nonlinear corrected-CSDA operator, relinearised via the fast AD
+    # Jacobian — shared by BOTH our AAD solvers (GN and GD). SART/MLEM are the
+    # frozen-operator baselines (single Jacobian Jv at w=0).
+    csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths,
+        energy_samples; n_cells = n_cells, valid_bins = valid_bins,
+        threaded = args.threaded)
+    Wobs = 1.0 ./ σ .^ 2
+    # Near-surface cells are crossed only by near-vertical rays and are essentially
+    # unrecoverable, so we evaluate quality below a minimum depth (configurable). All
+    # reported metrics and the resolution map use this evaluation mask.
+    zc_all = volume.centroids[3, :]
+    eval_mask = zc_all .>= args.min_eval_depth
+    roi_mask = (abs.(w_true) .> 1e-9) .& eval_mask   # signal = any anomaly (water w>0 OR dense w<0)
+    bg_mask  = (abs.(w_true) .<= 1e-9) .& eval_mask
+
     results = Dict{String,Any}()
     runset = args.solver == "all" ? ("sart", "mlem", "gd", "gn") : (args.solver,)
 
@@ -1482,41 +1660,98 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             w_rec, hist = mlem_reconstruct(max.(Jv, 0.0), max.(excess, 0.0);
                 n_iter = args.reco_iters, prior = sm_prior)
         elseif s == "gd"
-            model = w -> (Jv * w, Jv)
-            w_rec, hist = gradient_descent_reconstruct(model, excess;
-                w0 = zeros(n_cells), n_iter = args.reco_iters,
-                lr = 0.01, optimizer = :adam, prior = sm_prior, relinearize = false)
+            # Our AAD first-order solver: preconditioned projected gradient on the
+            # true nonlinear corrected-CSDA operator (relinearised each step via the
+            # AD Jacobian), inverse-variance weighted, with the same edge-preserving
+            # prior as GN. The Jacobi preconditioner keeps the background sparse
+            # (Adam marched every cell to the box and collapsed the reconstruction).
+            # Positive box: positivity regularizes this ill-posed inverse (opening the
+            # box to dense w<0 lets GD fill the background with spurious dense rock and
+            # collapses the reconstruction — see the box-isolation study). The dense
+            # endpoint is exercised in the paper-match section, which adds a strong prior.
+            w_rec, hist = gradient_descent_reconstruct(csda_model, obs;
+                w0 = zeros(n_cells), n_iter = args.gd_iters,
+                lr = args.gd_lr, optimizer = :pgd, prior = edge_prior,
+                weights = Wobs, relinearize = true,
+                box = (0.0, MAX_WATER_FRACTION))
         elseif s == "gn"
-            # Our DiffPumas-native solver: box-constrained Gauss-Newton on the
-            # true nonlinear corrected-CSDA operator (relinearised via the fast
-            # AD Jacobian), inverse-variance weighted, with an edge-preserving prior.
-            model = make_csda_operator(physics, shallow_flags, matcfg, site, paths,
-                energy_samples; n_cells = n_cells, valid_bins = valid_bins,
-                threaded = args.threaded)
-            w_rec, hist = gauss_newton_reconstruct(model, obs;
+            # Our AAD second-order solver: box-constrained Gauss-Newton on the same
+            # nonlinear operator, inverse-variance weighted, edge-preserving prior.
+            w_rec, hist = gauss_newton_reconstruct(csda_model, obs;
                 w0 = zeros(n_cells), n_iter = max(8, args.reco_iters ÷ 16),
-                prior = edge_prior, weights = 1.0 ./ σ .^ 2, relinearize = true)
+                prior = edge_prior, weights = Wobs, relinearize = true,
+                box = (0.0, MAX_WATER_FRACTION))
         else
             error("Unknown solver '$s' (use sart, mlem, gd, gn, or all)")
         end
         dt = time() - t0
-        rep = reconstruction_report(w_rec, w_true)
+        rep = reconstruction_report(w_rec, w_true; mask = eval_mask,
+                                    roi_mask = roi_mask, bg_mask = bg_mask)
         results[s] = (w = w_rec, hist = hist, report = rep, seconds = dt)
-        println(@sprintf("  [%-4s] mse=%.3e rmse=%.3e psnr=%.1f dB ssim=%.3f  (%.1fs, %d iters)",
-                         uppercase(s), rep.mse, rep.rmse, rep.psnr, rep.ssim, dt, length(hist)))
+        println(@sprintf("  [%-4s] mse=%.3e rmse=%.3e psnr=%.1f dB ssim=%.3f snr=%.1f dB  (%.1fs, %d iters)",
+                         uppercase(s), rep.mse, rep.rmse, rep.psnr, rep.ssim, rep.snr, dt, length(hist)))
     end
 
-    # --- resolution estimate (point-spread / FWHM vs depth) --------------
-    # Linearised PSF using the baseline Jacobian: probe a few cells across depth.
+    # --- resolution: full depth × direction map over ALL cells below min depth ---
+    # Probe every cell (above the minimum evaluation depth), recover its linearised
+    # point-spread, and bin the FWHM by depth layer and azimuthal direction so the
+    # map covers all directions and all (resolvable) depths.
     centroids = volume.centroids
-    order = sortperm(aggregate, rev = true)
-    probe = order[1:min(8, length(order))]
     recon_lin = wt -> first(sart_reconstruct(Jv, Jv * wt; n_iter = 120, relaxation = 0.2))
     zmin, zmax = extrema(centroids[3, :])
-    depth_edges = collect(range(max(0.0, zmin), zmax; length = 5))
-    rvd = resolution_vs_depth(recon_lin, centroids, zeros(n_cells), probe;
-        depth_edges = depth_edges, contrast = args.contrast,
+    # one depth bin per grid z-layer at/above the minimum evaluation depth
+    zlayers = filter(z -> z >= args.min_eval_depth - 1e-6,
+                     sort(unique(round.(centroids[3, :]; digits = 1))))
+    layer_edges = length(zlayers) >= 2 ?
+        vcat(zlayers[1] - 1.0,
+             [0.5 * (zlayers[k] + zlayers[k + 1]) for k in 1:length(zlayers) - 1],
+             zlayers[end] + 1.0) :
+        Float64[args.min_eval_depth - 1.0, zmax + 1.0]
+    azimuth_edges = collect(range(0.0, 360.0; length = 9))   # 8 directional sectors
+    res_cells = findall(z -> z >= args.min_eval_depth - 1e-6, vec(centroids[3, :]))
+    resmap = resolution_map(recon_lin, centroids, zeros(n_cells), res_cells;
+        depth_edges = layer_edges, azimuth_edges = azimuth_edges, contrast = args.contrast,
         zenith_step_deg = args.zenith_step_deg, cell_size_m = estimate_cell_size(volume))
+    # depth-only summary (median over directions) for the console + return value
+    rvd = NamedTuple[]
+    for k in eachindex(resmap.depths)
+        finite = filter(isfinite, resmap.fwhm[k, :])
+        isempty(finite) && continue
+        push!(rvd, (depth_m = resmap.depths[k], fwhm_m = median(finite),
+                    floor_m = resmap.floor[k], n_cells = sum(resmap.counts[k, :])))
+    end
+
+    # by-depth reconstruction bands also start at the minimum evaluation depth
+    depth_edges = collect(range(max(args.min_eval_depth, zmin), zmax; length = 5))
+
+    # --- by-depth reconstruction quality: AAD (GN/GD) should pull ahead in the
+    # deeper bands where the corrected-CSDA operator is most nonlinear -----------
+    zc = centroids[3, :]
+    nbands = length(depth_edges) - 1
+    depth_masks = [(depth_edges[k] .<= zc) .& (k == nbands ? (zc .<= depth_edges[k + 1]) :
+                                                              (zc .< depth_edges[k + 1])) for k in 1:nbands]
+    band_reports = Dict{String,Vector{Any}}()
+    for s in runset
+        haskey(results, s) || continue
+        wrec = results[s].w
+        band_reports[s] = Any[count(depth_masks[k]) == 0 ? nothing :
+            reconstruction_report(wrec, w_true; mask = depth_masks[k]) for k in 1:nbands]
+    end
+
+    # --- by-zenith DATA residual: evaluate every reconstruction through the TRUE
+    # nonlinear forward and bin the misfit by ray zenith (apples-to-apples) ------
+    zb = Float64[paths[b].zenith for b in valid_bins]
+    zedges = collect(range(minimum(zb), maximum(zb); length = 4))   # 3 zenith bands
+    zmasks = [(zedges[k] .<= zb) .& (k == 3 ? (zb .<= zedges[k + 1]) :
+                                              (zb .< zedges[k + 1])) for k in 1:3]
+    relresid(p, idx) = any(idx) ?
+        sqrt(sum((p[idx] .- obs[idx]) .^ 2)) / max(sqrt(sum(obs[idx] .^ 2)), 1e-30) : NaN
+    zenith_reports = Dict{String,Vector{Float64}}()
+    for s in runset
+        haskey(results, s) || continue
+        pred_true = csda_model(results[s].w)[1]
+        zenith_reports[s] = Float64[relresid(pred_true, zmasks[k]) for k in 1:3]
+    end
 
     open(output_path, "w") do io
         println(io, "LVD tomography inverse reconstruction summary")
@@ -1533,6 +1768,50 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             println(io, @sprintf("  final data misfit ||Jw-b|| = %.4e", r.hist[end]))
             println(io)
         end
+
+        # By-depth reconstruction error (RMSE / SSIM) per solver.
+        println(io, "Reconstruction RMSE by depth band (lower = better):")
+        hdr = "  " * rpad("depth band [m]", 22) * join([rpad(uppercase(s), 11) for s in runset])
+        println(io, hdr)
+        for k in 1:nbands
+            label = @sprintf("%.0f-%.0f", depth_edges[k], depth_edges[k + 1])
+            row = "  " * rpad(label, 22)
+            for s in runset
+                br = get(band_reports, s, nothing)
+                rep = br === nothing ? nothing : br[k]
+                row *= rpad(rep === nothing ? "-" : @sprintf("%.4f", rep.rmse), 11)
+            end
+            println(io, row)
+        end
+        println(io)
+        println(io, "Reconstruction SSIM by depth band (higher = better):")
+        println(io, hdr)
+        for k in 1:nbands
+            label = @sprintf("%.0f-%.0f", depth_edges[k], depth_edges[k + 1])
+            row = "  " * rpad(label, 22)
+            for s in runset
+                br = get(band_reports, s, nothing)
+                rep = br === nothing ? nothing : br[k]
+                row *= rpad(rep === nothing ? "-" : @sprintf("%.4f", rep.ssim), 11)
+            end
+            println(io, row)
+        end
+        println(io)
+
+        # By-zenith data residual through the TRUE nonlinear forward.
+        println(io, "Relative data residual ||pred_true - obs||/||obs|| by zenith band:")
+        println(io, "  " * rpad("zenith band [deg]", 22) * join([rpad(uppercase(s), 11) for s in runset]))
+        for k in 1:3
+            label = @sprintf("%.0f-%.0f", zedges[k], zedges[k + 1])
+            row = "  " * rpad(label, 22)
+            for s in runset
+                zr = get(zenith_reports, s, nothing)
+                row *= rpad(zr === nothing ? "-" : @sprintf("%.4f", zr[k]), 11)
+            end
+            println(io, row)
+        end
+        println(io)
+
         println(io, "Resolution (linearised point-spread FWHM vs depth):")
         println(io, @sprintf("  %-12s %-12s %-12s %-8s", "depth[m]", "FWHM[m]", "floor[m]", "n_cells"))
         for e in rvd
@@ -1541,15 +1820,513 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
         if isempty(rvd)
             println(io, "  (no depth bins populated)")
         end
+        println(io)
+
+        # Full resolution map: recovered FWHM[m] for all depths × all directions.
+        println(io, "Resolution FWHM[m] map — all depths (rows) × azimuth directions (cols, deg):")
+        azhdr = "  " * rpad("depth[m]", 9) *
+                join([rpad(@sprintf("%.0f", a), 7) for a in resmap.azimuths]) * rpad("floor", 7)
+        println(io, azhdr)
+        for k in eachindex(resmap.depths)
+            row = "  " * rpad(@sprintf("%.0f", resmap.depths[k]), 9)
+            for a in eachindex(resmap.azimuths)
+                v = resmap.fwhm[k, a]
+                row *= rpad(isfinite(v) ? @sprintf("%.0f", v) : "-", 7)
+            end
+            row *= rpad(@sprintf("%.0f", resmap.floor[k]), 7)
+            println(io, row)
+        end
+        println(io, @sprintf("  (azimuth sectors of %.0f deg; cells evaluated below %.0f m)",
+                             360.0 / length(resmap.azimuths), args.min_eval_depth))
     end
 
+    println("Reconstruction RMSE by depth band (lower = better):")
+    println("  " * rpad("depth[m]", 16) * join([rpad(uppercase(s), 10) for s in runset]))
+    for k in 1:nbands
+        row = "  " * rpad(@sprintf("%.0f-%.0f", depth_edges[k], depth_edges[k + 1]), 16)
+        for s in runset
+            br = get(band_reports, s, nothing)
+            rep = br === nothing ? nothing : br[k]
+            row *= rpad(rep === nothing ? "-" : @sprintf("%.4f", rep.rmse), 10)
+        end
+        println(row)
+    end
     println("Resolution vs depth (linearised PSF FWHM):")
     for e in rvd
         println(@sprintf("  depth=%.0f m -> FWHM=%.0f m (geometric floor %.0f m, %d cells)",
                          e.depth_m, e.fwhm_m, e.floor_m, e.n_cells))
     end
 
-    return (results = results, w_true = w_true, resolution = rvd)
+    return (results = results, w_true = w_true, resolution = rvd, resolution_map = resmap)
+end
+
+# ===========================================================================
+# Final section: explain the MEASURED Gran Sasso LVD flux with a per-cell
+# material-mixture field (Gauss-Newton) under STANDARD rock density, instead of
+# the paper's ad-hoc uniform non-standard density (2710 kg/m³). Reuses the
+# muography Part-3 machinery (LVDTopo.run_part3) by building an NMapFluxResult
+# from the tomography mixture forward. Every table/plot carries the MC +
+# systematic error (sigma_mc / sigma_syst / sigma_total).
+# ===========================================================================
+
+# One measured bin from rock_int.txt: az/zenith interval, slant rock (m), intensity.
+struct MeasuredBin
+    az_lo::Float64; az_hi::Float64; zen_lo::Float64; zen_hi::Float64
+    rock_m::Float64; intensity::Float64
+end
+
+function load_measured_intensity(path::String)
+    bins = MeasuredBin[]
+    for line in eachline(path)
+        s = strip(line)
+        (isempty(s) || startswith(s, "#")) && continue
+        p = split(s)
+        length(p) >= 7 || continue
+        push!(bins, MeasuredBin(parse(Float64, p[2]), parse(Float64, p[3]),
+                                parse(Float64, p[4]), parse(Float64, p[5]),
+                                parse(Float64, p[6]), parse(Float64, p[7])))
+    end
+    return bins
+end
+
+# Measured intensity for each path's (θ,φ); NaN where uncovered or non-positive.
+function measured_intensity_for_paths(paths::Vector{DirectionalPath}, bins::Vector{MeasuredBin})
+    out = fill(NaN, length(paths))
+    for (i, path) in enumerate(paths)
+        path.valid || continue
+        θ = path.zenith; φ = mod(path.azimuth, 360.0)
+        for b in bins
+            inzen = b.zen_lo <= θ < b.zen_hi
+            inaz = if b.az_hi - b.az_lo >= 359.999
+                true
+            else
+                lo = mod(b.az_lo, 360.0); hi = mod(b.az_hi, 360.0)
+                lo <= hi ? (lo <= φ < hi) : (φ >= lo || φ < hi)
+            end
+            if inzen && inaz
+                out[i] = b.intensity > 0 ? b.intensity : NaN
+                break
+            end
+        end
+    end
+    return out
+end
+
+# Build an LVDTopo.NMapFluxResult from the tomography mixture forward on the
+# coarse (nmap-resolution) grid: per-bin MC flux + MC/systematic uncertainty via
+# the generic estimate_transport_uncertainty wrapper, plus the slant-rock grid.
+function nmap_result_for(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                         cpaths::Vector{DirectionalPath}, czen::Vector{Float64},
+                         caz::Vector{Float64}, w_field::Vector{Float64},
+                         psamples, args; base_seed::Int = 2026)
+    nz = length(czen); na = length(caz)
+    flux = fill(NaN, nz, na); smc = zeros(nz, na); ssy = zeros(nz, na)
+    sto = zeros(nz, na); rock = zeros(nz, na)
+    materials, densities = build_cell_properties_for_mc(shallow_flags, w_field, matcfg)
+    Threads.@threads for idx in eachindex(cpaths)
+        path = cpaths[idx]
+        z = div(idx - 1, na) + 1; a = mod(idx - 1, na) + 1   # paths order: θ outer, φ inner
+        rock[z, a] = path.remaining_rock_distance + sum(s.distance for s in path.segments; init = 0.0)
+        path.valid || continue
+        evaluate = variation -> compute_directional_flux_mc(
+            physics, matcfg, site, path, materials, densities, psamples, variation.seed;
+            straggling = variation.straggling,
+            energy_threshold_low = variation.energy_threshold_low,
+            scattering = variation.scattering)
+        budget = estimate_transport_uncertainty(evaluate;
+            straggling = args.straggling, scattering = true,
+            energy_threshold_low = Float64(args.energy_threshold_low),
+            seed = base_seed + idx, threshold_factors = (0.5, 2.0))
+        flux[z, a] = budget.value; smc[z, a] = budget.sigma_mc
+        ssy[z, a] = budget.sigma_syst; sto[z, a] = budget.sigma_total
+    end
+    return LVDTopo.NMapFluxResult(copy(czen), copy(caz), flux, smc, ssy, sto, rock)
+end
+
+# Diverging 3D scatter of a SIGNED mixture field (dense w<0 blue ↔ water w>0 red),
+# ranked by |w| so both anomaly signs are shown (unlike the sensitivity plot which
+# ranks by value and would drop the negative/dense cells).
+function plot_signed_field(volume, w::Vector{Float64}; output_path::String, max_cells::Int = 200)
+    order = sortperm(abs.(w), rev = true)
+    sel = order[1:min(max_cells, length(order))]
+    sel = [i for i in sel if abs(w[i]) > 1e-6]
+    isempty(sel) && (sel = order[1:min(max_cells, length(order))])
+    cmax = maximum(abs.(w[sel]); init = 1e-6)
+    traces = GenericTrace[
+        scatter3d(x = [volume.centroids[1, i] for i in sel],
+                  y = [volume.centroids[2, i] for i in sel],
+                  z = [volume.centroids[3, i] for i in sel],
+                  mode = "markers",
+                  marker = attr(size = 5, color = [w[i] for i in sel],
+                                colorscale = "RdBu", reversescale = true,
+                                cmin = -cmax, cmax = cmax,
+                                colorbar = attr(title = "w  (>0 water, <0 dense)")),
+                  name = "mixture"),
+        scatter3d(x = [0.0], y = [0.0], z = [0.0], mode = "markers+text",
+                  marker = attr(size = 7, color = "black"), text = ["LVD"],
+                  textposition = "top center", name = "Detector"),
+    ]
+    layout = Layout(title = "Reconstructed material-mixture field (single muon angular distribution)",
+        scene = attr(xaxis = attr(title = "East (m)"), yaxis = attr(title = "North (m)"),
+                     zaxis = attr(title = "Height above detector (m)"), aspectmode = "data"),
+        width = 1000, height = 800)
+    savefig(Plot(traces, layout), output_path)
+end
+
+# 3D map of WHERE the water proportion increased vs pure standard rock: cells with
+# w>0, coloured by water fraction (and the implied effective-density drop). Answers
+# "where did the reconstruction add water relative to rock".
+function plot_water_increase(volume, w::Vector{Float64}, matcfg::MaterialConfig;
+                             output_path::String, w_floor::Float64 = 0.02)
+    sel = [i for i in eachindex(w) if w[i] > w_floor]
+    if isempty(sel)
+        @warn "plot_water_increase: no cells with w>$(w_floor); skipping $output_path"; return
+    end
+    # effective density drop fraction vs pure rock, for the hover text
+    ddrop = [100.0 * (1.0 - cell_density(w[i], false, matcfg) / matcfg.rock_density) for i in sel]
+    traces = GenericTrace[
+        scatter3d(x = [volume.centroids[1, i] for i in sel],
+                  y = [volume.centroids[2, i] for i in sel],
+                  z = [volume.centroids[3, i] for i in sel],
+                  mode = "markers",
+                  marker = attr(size = 5, color = [w[i] for i in sel],
+                                colorscale = "Blues", cmin = 0.0, cmax = MAX_WATER_FRACTION,
+                                colorbar = attr(title = "water fraction w")),
+                  text = [@sprintf("w=%.2f<br>ρ_eff %.1f%% below rock", w[i], dd)
+                          for (i, dd) in zip(sel, ddrop)],
+                  hovertemplate = "%{text}<extra></extra>", name = "water increase"),
+        scatter3d(x = [0.0], y = [0.0], z = [0.0], mode = "markers+text",
+                  marker = attr(size = 7, color = "red"), text = ["LVD"],
+                  textposition = "top center", name = "Detector"),
+    ]
+    layout = Layout(title = "Where the water proportion increased vs pure rock (reconstructed)",
+        scene = attr(xaxis = attr(title = "East (m)"), yaxis = attr(title = "North (m)"),
+                     zaxis = attr(title = "Height above detector (m)"), aspectmode = "data"),
+        width = 1000, height = 800)
+    savefig(Plot(traces, layout), output_path)
+end
+
+# Figure 7 only (the reconstructed single-muon azimuthal angular distribution) vs the
+# paper, with MC + systematic bands. Figure 8 (energy spectrum) is intentionally
+# omitted — it is model-generated, not reconstructed from the detector.
+function create_figure7_plot(fig7, model_az, model_prof, smc, ssy, sto, fit; output_path::String)
+    scale = fit.scale
+    prof = scale .* model_prof .* 1e9            # to 1e-9 cm^-2 s^-1 deg^-1
+    syst = scale .* ssy .* 1e9
+    tot  = scale .* sto .* 1e9
+    mc   = scale .* smc .* 1e9
+    band(lo, hi, fill) = scatter(x = vcat(model_az, reverse(model_az)),
+        y = vcat(hi, reverse(lo)), fill = "toself", fillcolor = fill,
+        line = attr(width = 0), hoverinfo = "skip", showlegend = false)
+    traces = GenericTrace[
+        band(prof .- tot, prof .+ tot, "rgba(40,110,220,0.10)"),
+        band(prof .- syst, prof .+ syst, "rgba(40,110,220,0.20)"),
+        scatter(x = fig7.curve_az, y = fig7.curve_intensity .* 1e9, mode = "lines",
+                line = attr(color = "rgb(190,40,40)", dash = "dash", width = 2), name = "paper curve"),
+        scatter(x = fig7.point_az, y = fig7.point_intensity .* 1e9, mode = "markers",
+                marker = attr(color = "black", size = 5), name = "paper LVD points"),
+        scatter(x = model_az, y = prof, mode = "lines",
+                line = attr(color = "rgb(40,110,220)", width = 3), name = "reconstructed mixture",
+                text = [@sprintf("φ=%.0f°<br>I=%.3e<br>MC=%.1f%%<br>syst=%.1f%%<br>total=%.1f%%",
+                                 a, y, 100*m/max(abs(y),1e-30), 100*s/max(abs(y),1e-30), 100*t/max(abs(y),1e-30))
+                        for (a,y,m,s,t) in zip(model_az, prof, mc, syst, tot)],
+                hovertemplate = "%{text}<extra></extra>"),
+    ]
+    layout = Layout(
+        title = attr(text = "Single muon angular distribution — Figure 7 (azimuthal intensity, θ≤60°)<br>" *
+            "<sub>reconstructed material mixture (standard rock) vs LVD paper · " *
+            @sprintf("offset %.1f°, curve NRMSE %.3f · ±1σ MC (light) + systematic (dark)</sub>",
+                     fit.offset_deg, fit.curve_nrmse)),
+        xaxis = attr(title = "Azimuth φ_LVD (deg)", range = [0, 360], dtick = 60),
+        yaxis = attr(title = "Intensity (10⁻⁹ cm⁻² s⁻¹ deg⁻¹)"),
+        width = 1050, height = 650)
+    savefig(Plot(traces, layout), output_path)
+end
+
+# Matched-resolution detectability study (the fair comparison for the paper). For each
+# solver we sweep its regularization to trace a RESOLUTION–EFFICIENCY frontier: at each
+# setting we measure (a) the point-spread FWHM (noiseless point-source reconstruction)
+# and (b) τ₉₅, the exposure for 95% detection of the deep lens. Detection significance
+# DP = (⟨w⟩_lens,signal − μ_null)/σ_null; in the linear-Gaussian threshold regime
+# DP ∝ √τ, so τ₉₅ = τ₀·(z/DP(τ₀))² with z = 3 + Φ⁻¹(0.95) = 4.645. Comparing solvers AT
+# MATCHED FWHM isolates statistical efficiency (variance) from resolution (bias) — the
+# only fair basis for an efficiency-gain claim.
+function run_detectability_matched(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                                   volume, paths::Vector{DirectionalPath}, energy_samples, args;
+                                   output_path::String, plot_path::String)
+    n_cells = num_cells(volume)
+    w_true = zeros(n_cells)
+    for i in 1:n_cells
+        x, y, z = cell_centroid(volume, i)
+        (abs(z - 1118.6) <= 160.0 && abs(x) <= 600.0 && abs(y) <= 600.0) &&
+            (w_true[i] = clamp(args.lens_w, 0.0, MAX_WATER_FRACTION))
+    end
+    lens_cells = findall(>(0.0), w_true)
+    if isempty(lens_cells)
+        println("  no deep-lens cells on this grid; skipping detectability study"); return nothing
+    end
+    lcx = mean(volume.centroids[1, lens_cells]); lcy = mean(volume.centroids[2, lens_cells])
+    lcz = mean(volume.centroids[3, lens_cells])
+    c0 = lens_cells[argmin([(volume.centroids[1, i] - lcx)^2 + (volume.centroids[2, i] - lcy)^2 +
+                            (volume.centroids[3, i] - lcz)^2 for i in lens_cells])]
+    center = (volume.centroids[1, c0], volume.centroids[2, c0], volume.centroids[3, c0])
+
+    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site,
+        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    valid_bins = findall(isfinite, base_flux)
+    Jv = base_J[valid_bins, :]; f0 = base_flux[valid_bins]
+    excess_lens = Jv * w_true; obs_clean = f0 .+ excess_lens
+    excess_pt = Vector(Jv[:, c0])             # point-source response (unit contrast at c0)
+
+    neighbors = cell_neighbors(volume)
+    Lmat = Matrix(edge_hessian(EdgePrior(neighbors, 1.0, Inf), zeros(n_cells)))
+
+    τ0 = sqrt(args.sweep_exp_min * args.sweep_exp_max)   # reference exposure (log-midpoint)
+    σ0 = sqrt.(max.(obs_clean, 0.0) ./ τ0); σ0 .= max.(σ0, 1e-12 * maximum(obs_clean))
+    W0 = 1.0 ./ σ0 .^ 2
+    JtW0J = Matrix(transpose(Jv) * (W0 .* Jv))
+    dmed = median(filter(>(0), [JtW0J[i, i] for i in 1:n_cells]))
+    z95 = 4.645   # 3σ detection threshold with 95% of realizations above it
+
+    # All solvers use positivity (real prior for a positive anomaly): SART/MLEM intrinsically,
+    # GN via clamping its regularised inverse-variance solution to ≥0 — otherwise the unconstrained
+    # GN is unfairly handicapped at detecting a positive lens.
+    recon(solver, knob, ex) =
+        solver === :sart ? max.(first(sart_reconstruct(Jv, ex; n_iter = round(Int, knob), relaxation = 0.2)), 0.0) :
+        solver === :mlem ? first(mlem_reconstruct(max.(Jv, 0.0), max.(ex, 0.0); n_iter = round(Int, knob))) :
+        (Afac = cholesky(Symmetric(JtW0J .+ (knob * dmed) .* Lmat); check = false);
+         issuccess(Afac) ? max.(Afac \ (transpose(Jv) * (W0 .* ex)), 0.0) : zeros(n_cells))
+
+    function fwhm_of(solver, knob)
+        w = recon(solver, knob, excess_pt)
+        pk = w[c0] > 0 ? w[c0] : maximum(w)
+        radial_fwhm(w, volume.centroids, center, pk)
+    end
+    function tau95_of(solver, knob, seed)
+        M = args.sweep_realizations
+        rng = MersenneTwister(seed)
+        As = Vector{Float64}(undef, M); An = Vector{Float64}(undef, M)
+        for m in 1:M
+            As[m] = mean(recon(solver, knob, excess_lens .+ σ0 .* randn(rng, length(σ0)))[lens_cells])
+            An[m] = mean(recon(solver, knob, σ0 .* randn(rng, length(σ0)))[lens_cells])
+        end
+        dp = (mean(As) - mean(An)) / max(std(An), 1e-30)
+        return dp <= 0 ? Inf : τ0 * (z95 / dp)^2
+    end
+
+    knobs = Dict(:sart => [400.0, 200, 100, 50, 25], :mlem => [400.0, 200, 100, 50, 25],
+                 :gn => [0.003, 0.01, 0.03, 0.1, 0.3])
+    labels = Dict(:sart => "SART", :mlem => "MLEM", :gn => "GN")
+    println("Matched-resolution detectability frontier: lens w=$(args.lens_w) " *
+            "($(length(lens_cells)) cells), $(args.sweep_realizations) realizations/point...")
+    res = Dict(s => NamedTuple[] for s in (:sart, :mlem, :gn))
+    sc = 0
+    for s in (:sart, :mlem, :gn), k in knobs[s]
+        sc += 1
+        fw = fwhm_of(s, k); t = tau95_of(s, k, args.seed + 7000 + sc)
+        push!(res[s], (knob = float(k), fwhm = fw, tau95 = t))
+        println(@sprintf("  %-4s knob=%-7.4g  FWHM=%6.0f m  τ95=%.3e", labels[s], k, fw, t))
+    end
+
+    # efficiency at a MATCHED FWHM = midpoint of the FWHM range common to all solvers
+    fwhm_lo = maximum(minimum(r.fwhm for r in res[s]) for s in keys(res))
+    fwhm_hi = minimum(maximum(r.fwhm for r in res[s]) for s in keys(res))
+    fstar = 0.5 * (fwhm_lo + fwhm_hi)
+    matched = fwhm_hi > fwhm_lo
+    function interp_tau(s, F)
+        pts = sort(res[s]; by = r -> r.fwhm)
+        F <= pts[1].fwhm && return pts[1].tau95
+        F >= pts[end].fwhm && return pts[end].tau95
+        for k in 2:length(pts)
+            if F <= pts[k].fwhm
+                t = (F - pts[k-1].fwhm) / (pts[k].fwhm - pts[k-1].fwhm + 1e-30)
+                return 10.0 ^ (log10(pts[k-1].tau95) + t * (log10(pts[k].tau95) - log10(pts[k-1].tau95)))
+            end
+        end
+        return pts[end].tau95
+    end
+    tstar = Dict(s => interp_tau(s, fstar) for s in keys(res))
+
+    open(output_path, "w") do io
+        println(io, "Matched-resolution detectability frontier (deep lens, DP≥3, 95% detection)")
+        println(io, @sprintf("lens w=%.2f, %d lens cells; reference exposure τ₀=%.2e; %d realizations/point",
+                             args.lens_w, length(lens_cells), τ0, args.sweep_realizations))
+        println(io, "GN = regularised inverse-variance least squares; SART/MLEM = algebraic baselines.")
+        println(io, "τ₉₅ = exposure for 95% detection at the given resolution (DP ∝ √τ scaling).")
+        for s in (:sart, :mlem, :gn)
+            println(io); println(io, "$(labels[s]):  " * rpad("knob", 10) * rpad("FWHM[m]", 10) * "tau95")
+            for r in sort(res[s]; by = r -> r.fwhm)
+                println(io, "  " * rpad(@sprintf("%.4g", r.knob), 10) * rpad(@sprintf("%.0f", r.fwhm), 10) *
+                        @sprintf("%.3e", r.tau95))
+            end
+        end
+        println(io)
+        if matched
+            println(io, @sprintf("At matched resolution FWHM ≈ %.0f m (common-overlap midpoint):", fstar))
+            for s in (:sart, :mlem, :gn)
+                println(io, @sprintf("  %-5s τ₉₅ = %.3e", labels[s], tstar[s]))
+            end
+            for s in (:sart, :mlem)
+                println(io, @sprintf("  efficiency gain GN vs %s = %.1f×", labels[s], tstar[s] / tstar[:gn]))
+            end
+        else
+            println(io, "No common FWHM overlap across solvers — widen the knob ranges.")
+        end
+    end
+
+    colors = Dict(:sart => "rgb(200,120,40)", :mlem => "rgb(60,160,90)", :gn => "rgb(40,110,220)")
+    traces = GenericTrace[]
+    for s in (:sart, :mlem, :gn)
+        pts = sort(res[s]; by = r -> r.fwhm)
+        push!(traces, scatter(x = [r.fwhm for r in pts], y = [r.tau95 for r in pts],
+                              mode = "lines+markers", name = labels[s], line = attr(color = colors[s])))
+    end
+    matched && push!(traces, scatter(x = [fstar, fstar],
+        y = [minimum(values(tstar)) * 0.5, maximum(values(tstar)) * 2.0],
+        mode = "lines", line = attr(color = "gray", dash = "dot"), name = "matched FWHM"))
+    savefig(Plot(traces, Layout(title = "Detection efficiency vs resolution (deep lens, 95% @ DP≥3)",
+        xaxis = attr(title = "Point-spread FWHM (m)"),
+        yaxis = attr(title = "τ₉₅ exposure for 95% detection", type = "log"),
+        width = 1000, height = 650)), plot_path)
+    println("  detectability outputs: $output_path , $plot_path")
+    return (res = res, fstar = fstar, tstar = tstar)
+end
+
+function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
+                         emap, paths::Vector{DirectionalPath}, energy_samples,
+                         rock_idx::Int, air_idx::Int, args)
+    println("=" ^ 64)
+    println(" Single muon angular distribution — material-mixture reconstruction (standard rock + water + dense rock)")
+    println("=" ^ 64)
+    n_cells = num_cells(volume)
+    fig7 = LVDTopo.load_paper_figure7_benchmark()
+
+    # Coarse nmap-resolution grid + paths (geometry only — reused across altitudes/fields).
+    czen = collect(0.0:args.papermatch_zenith_step:LVDTopo.PART1_ZENITH_MAX_DEG)
+    caz  = collect(0.0:args.papermatch_azimuth_step:360.0)
+    cpaths = precompute_paths(volume, emap, czen, caz)
+    psamples = sample_energy_set(args.papermatch_mc_samples, args.energy_min, args.energy_max, args.seed + 99)
+
+    # --- Stage A: Gaisser-altitude experiment (test the muon-excess hypothesis) ---
+    println("Gaisser-altitude experiment (Fig.7 fit on uniform standard rock, w=0)...")
+    alt_rows = NamedTuple[]
+    for alt in sort(unique(Float64[10.0, 30.0, args.primary_altitude_km]))
+        site_a = build_site(alt * 1000.0)
+        res0 = nmap_result_for(physics, shallow_flags, matcfg, site_a, cpaths, czen, caz,
+                               zeros(n_cells), psamples, args)
+        fit = LVDTopo.infer_lvd_reference_offset(res0, fig7)
+        push!(alt_rows, (alt_km = alt, scale = fit.scale, offset = fit.offset_deg,
+                         curve_nrmse = fit.curve_nrmse, point_nrmse = fit.point_nrmse))
+        println(@sprintf("  %.0f km: fit scale=%.3e  offset=%.1f deg  curveNRMSE=%.3f  pointNRMSE=%.3f",
+                         alt, fit.scale, fit.offset_deg, fit.curve_nrmse, fit.point_nrmse))
+    end
+
+    # --- Stage B: GN material-mixture match to measured rock_int.txt (standard rock) ---
+    println("GN mixture match to measured intensity (standard rock, altitude=$(args.primary_altitude_km) km)...")
+    match_site = build_site(args.primary_altitude_km * 1000.0)
+    meas = measured_intensity_for_paths(paths, load_measured_intensity(args.match_data))
+    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, match_site,
+        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    covered = findall(i -> isfinite(base_flux[i]) && base_flux[i] > 0 &&
+                           isfinite(meas[i]) && meas[i] > 0, eachindex(base_flux))
+    if isempty(covered)
+        println("  no covered bins (measured ∩ valid); skipping match"); return nothing
+    end
+    # Global forward→measured unit normalization (log least-squares over covered bins).
+    s = exp(mean(log.(meas[covered]) .- log.(base_flux[covered])))
+    valid_bins = covered
+    obs = meas[valid_bins] ./ s                       # measured brought into forward units
+    σ = sqrt.(max.(obs, 0.0) ./ args.exposure)
+    σ .= max.(σ, 1e-12 * maximum(obs)); Wobs = 1.0 ./ σ .^ 2
+    Jv = base_J[valid_bins, :]
+    diagJtWJ = vec(sum(Wobs .* (Matrix(Jv) .^ 2); dims = 1))
+    gn_scale = (m = filter(>(0), diagJtWJ); isempty(m) ? 1.0 : median(m))
+    # Strong QUADRATIC smoothness prior: the signed box removes positivity, so this
+    # supplies the regularization. The over-prediction is ~uniform, so a smoothness
+    # penalty drives a smooth ~uniform dense field + localized anomalies rather than
+    # the spurious speckle an under-regularized signed solve produces.
+    sm_prior = SmoothnessPrior(cell_neighbors(volume), args.papermatch_reg * gn_scale)
+    csda_model = make_csda_operator(physics, shallow_flags, matcfg, match_site, paths,
+        energy_samples; n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
+    w_matched, _ = gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
+        n_iter = max(8, args.reco_iters ÷ 16), prior = sm_prior, weights = Wobs, relinearize = true,
+        box = (args.m_min, MAX_WATER_FRACTION))   # signed: dense rock (w<0) can lower the over-predicted flux
+    pred_m = csda_model(w_matched)[1]
+    res_base = norm(base_flux[valid_bins] .- obs) / max(norm(obs), 1e-30)
+    res_m = norm(pred_m .- obs) / max(norm(obs), 1e-30)
+    pinned = count(x -> x <= args.m_min + 1e-3 || x >= MAX_WATER_FRACTION - 1e-3, w_matched)
+    println(@sprintf("  covered bins=%d  norm=%.3e  rel resid %.3f -> %.3f", length(valid_bins), s, res_base, res_m))
+    println(@sprintf("  matched w: mean=%.3f std=%.3f min=%.3f max=%.3f  box-pinned cells=%d/%d",
+                     mean(w_matched), std(w_matched), minimum(w_matched), maximum(w_matched), pinned, n_cells))
+
+    # --- Stage C: Figure-7 reproduction for the matched field (angular distribution
+    # only; Figure 8 / energy spectrum is omitted — it is model-generated, not
+    # reconstructed from the detector). MC+systematic bands on the reconstructed curve. ---
+    println("Reproducing the single-muon angular distribution (Fig.7) for the matched field...")
+    tomo_matched = nmap_result_for(physics, shallow_flags, matcfg, match_site, cpaths, czen, caz,
+                                   w_matched, psamples, args)
+    fig7_fit = LVDTopo.infer_lvd_reference_offset(tomo_matched, fig7)
+    f7_az, f7_prof, f7_mc, f7_syst, f7_tot =
+        LVDTopo.compute_figure7_profile_with_uncertainty(tomo_matched; azimuth_offset_deg = fig7_fit.offset_deg)
+    fig7_plot = joinpath(args.output_dir, "lvd_single_muon_angular_distribution_fig7.html")
+    create_figure7_plot(fig7, f7_az, f7_prof, f7_mc, f7_syst, f7_tot, fig7_fit; output_path = fig7_plot)
+
+    # --- Stage D: outputs (mixture field, water-increase map, w CSV, summary table) ---
+    field_plot = joinpath(args.output_dir, "lvd_single_muon_angular_distribution_field.html")
+    plot_signed_field(volume, w_matched; output_path = field_plot, max_cells = 300)
+    water_plot = joinpath(args.output_dir, "lvd_water_increase_vs_rock.html")
+    plot_water_increase(volume, w_matched, matcfg; output_path = water_plot)
+    w_csv = joinpath(args.output_dir, "lvd_matched_mixture_field.csv")
+    open(w_csv, "w") do io
+        println(io, "cell_idx,x_m,y_m,z_m,w,rho_eff_kg_m3")
+        for i in 1:n_cells
+            cx, cy, cz = cell_centroid(volume, i)
+            println(io, @sprintf("%d,%.1f,%.1f,%.1f,%.4f,%.1f",
+                                 i, cx, cy, cz, w_matched[i], cell_density(w_matched[i], false, matcfg)))
+        end
+    end
+    pm_txt = joinpath(args.output_dir, "lvd_single_muon_angular_distribution.txt")
+    open(pm_txt, "w") do io
+        println(io, "Single muon angular distribution — material-mixture reconstruction of the measured LVD flux")
+        println(io, "(standard rock + water + dense rock; the paper used a uniform non-standard rock density instead)")
+        println(io, @sprintf("standard rock density = %.0f kg/m^3 (paper used %.0f)",
+                             matcfg.rock_density, LVDTopo.NMAP_ROCK_DENSITY))
+        println(io, @sprintf("match primary/Gaisser altitude = %.0f km", args.primary_altitude_km))
+        println(io)
+        println(io, "Gaisser-altitude experiment (Fig.7 fit on uniform standard rock, w=0):")
+        println(io, @sprintf("  %-9s %-13s %-9s %-12s %-12s",
+                             "alt[km]", "fit_scale", "offset", "curveNRMSE", "pointNRMSE"))
+        for r in alt_rows
+            println(io, @sprintf("  %-9.0f %-13.3e %-9.1f %-12.3f %-12.3f",
+                                 r.alt_km, r.scale, r.offset, r.curve_nrmse, r.point_nrmse))
+        end
+        println(io, "  (a fitted scale farther from 1 means a larger absolute flux excess/deficit;")
+        println(io, "   raising the Gaisser altitude lowers the simulated normalization.)")
+        println(io)
+        println(io, "GN material-mixture match vs measured rock_int.txt (standard rock):")
+        println(io, @sprintf("  covered bins: %d", length(valid_bins)))
+        println(io, @sprintf("  forward->measured normalization: %.4e", s))
+        println(io, @sprintf("  relative data residual: baseline %.4f -> matched %.4f", res_base, res_m))
+        println(io, @sprintf("  matched water fraction: mean=%.3f max=%.3f nonzero(>1e-3)=%d/%d",
+                             mean(w_matched), maximum(w_matched), count(>(1e-3), w_matched), n_cells))
+        println(io, @sprintf("  water increased (w>0.02) in %d / %d cells",
+                             count(>(0.02), w_matched), n_cells))
+        println(io)
+        println(io, @sprintf("Figure 7 (reconstructed angular distribution) vs paper: offset %.1f deg, curve NRMSE %.3f, point NRMSE %.3f",
+                             fig7_fit.offset_deg, fig7_fit.curve_nrmse, fig7_fit.point_nrmse))
+        println(io, "  plot: lvd_single_muon_angular_distribution_fig7.html (MC+systematic bands)")
+        println(io, "  (Figure 8 / energy spectrum omitted — model-generated, not reconstructed from the detector.)")
+        println(io, @sprintf("Signed mixture range: dense rock up to %.0f kg/m^3 (w=-1) ... water (w=+%.1f).",
+                             matcfg.dense_density, MAX_WATER_FRACTION))
+        println(io, "  Dense cells (w<0) lower the over-predicted flux; water cells (w>0) raise it.")
+        println(io, "Caveat: the CSDA correction is calibrated at the run's primary altitude/material setup.")
+    end
+    println("  paper-match outputs: $pm_txt")
+    println("  $fig7_plot")
+    println("  $field_plot")
+    println("  $water_plot")
+    println("  $w_csv")
+    return (w_matched = w_matched, alt_rows = alt_rows, normalization = s, residual = res_m)
 end
 
 function main()
@@ -1574,7 +2351,12 @@ function main()
     println("  Validation cases:  $(args.validation_cases)")
     println("  Seed:              $(args.seed)")
     println("  Porous top:        $(args.porous_top_thickness) m")
-    println("  Baseline aquifer:  w=$(args.aquifer_water_fraction)")
+    if args.rich_field
+        println("  Ground truth:      multi-anomaly (slab w=$(args.slab_w), lens w=$(args.lens_w), dip w=$(args.dip_w))")
+    else
+        println("  Ground truth:      single aquifer box, w=$(args.aquifer_water_fraction)")
+    end
+    println("  AAD GD iters/lr:   $(args.gd_iters) / $(args.gd_lr)")
     println("  Output dir:        $(args.output_dir)")
     println()
 
@@ -1602,19 +2384,20 @@ function main()
         Float64(physics.tables[water_idx].density),
         porous_idx > 0 ? Float64(physics.tables[porous_idx].density) : 0.0,
         args.porous_top_thickness,
+        args.dense_rock_density,
     )
 
     println("Building / loading LVD topography...")
     emap = LVDTopo.build_elevation_map()
     println("  Detector elevation: $(LVDTopo.DETECTOR_ELEVATION) m ASL")
-    println("  Primary altitude:   $(primary_altitude_local()) m above detector")
+    println("  Primary altitude:   $(args.primary_altitude_km * 1000.0) m above detector")
     println()
 
     volume = create_sensitivity_volume(emap, matcfg, args)
     println("Constructed $(geometry_name(volume)) sensitivity volume with $(num_cells(volume)) cells")
     println()
 
-    site = build_site()
+    site = build_site(args.primary_altitude_km * 1000.0)
     shallow_flags = Bool[is_shallow_cell(volume, i) for i in 1:num_cells(volume)]
 
     water_fractions = create_initial_water_field(volume, args)
@@ -1640,6 +2423,24 @@ function main()
     calibrate_correction_to_mc(physics, shallow_flags, matcfg, site, paths,
         water_fractions, energy_samples, args)
     println()
+
+    # Exposure-sweep detectability study (then exit): τ₉₅ per solver + efficiency gains.
+    if args.detectability
+        run_detectability_matched(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
+            output_path = joinpath(args.output_dir, "lvd_detectability_sweep.txt"),
+            plot_path = joinpath(args.output_dir, "lvd_detectability_sweep.html"))
+        println("\nDetectability-sweep outputs written to $(args.output_dir)")
+        return 0
+    end
+
+    # Fast path: regenerate ONLY the paper-match figures (skip the inverse-demo,
+    # validation, resolution and main plots) — for iterating on the reconstruction.
+    if args.papermatch_only
+        run_paper_match(physics, shallow_flags, matcfg, volume, emap, paths, energy_samples,
+                        rock_idx, air_idx, args)
+        println("\nPaper-match-only outputs written to $(args.output_dir)")
+        return 0
+    end
 
     t_jac = time()
     flux_values, jacobian = compute_flux_and_jacobian(
@@ -1676,6 +2477,12 @@ function main()
         output_path = mesh_plot,
         max_cells = args.max_plot_cells)
     write_validation_summary(validation_results, volume; output_path = summary_txt)
+
+    if args.papermatch
+        run_paper_match(physics, shallow_flags, matcfg, volume, emap, paths, energy_samples,
+                        rock_idx, air_idx, args)
+        println()
+    end
 
     println("Outputs written to:")
     println("  $flux_plot")

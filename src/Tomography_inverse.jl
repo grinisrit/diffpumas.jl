@@ -144,70 +144,6 @@ function mlem_reconstruct(A::AbstractMatrix, b::AbstractVector;
 end
 
 # --------------------------------------------------------------------------
-# Gradient descent on the nonlinear misfit using the AD Jacobian (our method)
-# --------------------------------------------------------------------------
-
-"""
-    gradient_descent_reconstruct(model, obs; w0, n_iter=200, lr=1e-2,
-                                 box=(0,0.9), prior=nothing, optimizer=:adam,
-                                 relinearize=true) -> (w, history)
-
-Minimise `½‖pred(w) − obs‖² + R(w)` by projected gradient descent. `model(w)`
-returns `(pred::Vector, J)` with `J = ∂pred/∂w` (the AD sparse Jacobian); the
-gradient is `Jᵀ(pred − obs) + ∂R/∂w`. With `relinearize=false` the Jacobian is
-computed once at `w0` and reused (cheaper, linearised solve). `optimizer` is
-`:adam` or `:gd`. This is the DiffPumas-native solver: the same differentiable
-CSDA forward model used for sensitivities drives the inversion.
-"""
-function gradient_descent_reconstruct(model, obs::AbstractVector;
-                                      w0::AbstractVector,
-                                      n_iter::Int = 200, lr::Float64 = 1e-2,
-                                      box::Tuple{Float64,Float64} = (0.0, MAX_WATER_FRACTION),
-                                      prior::Union{Nothing,SmoothnessPrior} = nothing,
-                                      optimizer::Symbol = :adam,
-                                      relinearize::Bool = true)
-    w = collect(Float64, w0)
-    history = Float64[]
-    # Adam state
-    m = zeros(Float64, length(w))
-    v = zeros(Float64, length(w))
-    β1 = 0.9; β2 = 0.999; ϵ = 1e-8
-    Jfixed = nothing
-    for t in 1:n_iter
-        local pred, J
-        if relinearize
-            pred, J = model(w)
-        elseif Jfixed === nothing
-            pred, Jfixed = model(w)
-            J = Jfixed
-        else
-            pred, _ = model(w)
-            J = Jfixed
-        end
-        r = pred .- obs
-        g = transpose(J) * r
-        if prior !== nothing
-            g = g .+ laplacian_gradient(prior, w)
-        end
-        if optimizer === :adam
-            @inbounds for i in eachindex(w)
-                m[i] = β1 * m[i] + (1 - β1) * g[i]
-                v[i] = β2 * v[i] + (1 - β2) * g[i]^2
-                mhat = m[i] / (1 - β1^t)
-                vhat = v[i] / (1 - β2^t)
-                w[i] = clamp(w[i] - lr * mhat / (sqrt(vhat) + ϵ), box[1], box[2])
-            end
-        else
-            @inbounds for i in eachindex(w)
-                w[i] = clamp(w[i] - lr * g[i], box[1], box[2])
-            end
-        end
-        push!(history, norm(r))
-    end
-    return w, history
-end
-
-# --------------------------------------------------------------------------
 # Edge-preserving (Huber / TV) prior on the cell adjacency graph
 # --------------------------------------------------------------------------
 
@@ -266,6 +202,110 @@ function edge_hessian(prior::EdgePrior, w::AbstractVector{<:Real})
         push!(I, k); push!(J, k); push!(V, λ * diag)
     end
     return sparse(I, J, V, n, n)
+end
+
+# --------------------------------------------------------------------------
+# Gradient descent on the nonlinear misfit using the AD Jacobian (our method)
+# --------------------------------------------------------------------------
+
+"""
+    gradient_descent_reconstruct(model, obs; w0, n_iter=200, lr=1e-2,
+                                 box=(0,0.9), prior=nothing, optimizer=:adam,
+                                 relinearize=true, weights=nothing) -> (w, history)
+
+Minimise `½‖pred(w) − obs‖²_W + R(w)` by projected gradient descent. `model(w)`
+returns `(pred::Vector, J)` with `J = ∂pred/∂w` (the AD sparse Jacobian); the
+gradient is `Jᵀ(W ⊙ (pred − obs)) + ∂R/∂w`. With `relinearize=false` the Jacobian
+is computed once at `w0` and reused (cheaper, linearised solve). `optimizer` is
+`:pgd` (recommended), `:adam`, or `:gd`. `:pgd` is a diagonally-preconditioned
+projected gradient: it scales the gradient by the Gauss-Newton + prior curvature
+diagonal and takes the exact quadratic-model step length, so uninformative cells
+(≈0 gradient AND ≈0 curvature) get ≈0 step and the background stays sparse — where
+`:adam`, being per-coordinate scale-free, marches every cell to the box and
+destroys the reconstruction. For `:pgd`, `lr` is the step-length cap (use `1.0`).
+`prior` may be a quadratic [`SmoothnessPrior`] or an
+edge-preserving [`EdgePrior`] (same regulariser as Gauss-Newton), and `weights`
+is an optional per-bin `1/σ²` for inverse-variance parity with `gauss_newton_reconstruct`.
+This is a DiffPumas-native solver: the same differentiable CSDA forward model used
+for sensitivities drives the inversion (with `relinearize=true`).
+"""
+function gradient_descent_reconstruct(model, obs::AbstractVector;
+                                      w0::AbstractVector,
+                                      n_iter::Int = 200, lr::Float64 = 1e-2,
+                                      box::Tuple{Float64,Float64} = (0.0, MAX_WATER_FRACTION),
+                                      prior::Union{Nothing,SmoothnessPrior,EdgePrior} = nothing,
+                                      optimizer::Symbol = :adam,
+                                      relinearize::Bool = true,
+                                      weights::Union{Nothing,AbstractVector} = nothing)
+    w = collect(Float64, w0)
+    history = Float64[]
+    W = weights === nothing ? nothing : collect(Float64, weights)
+    prior_grad(wv) = prior === nothing ? nothing :
+        (prior isa EdgePrior ? edge_gradient(prior, wv) : laplacian_gradient(prior, wv))
+    # Adam state
+    m = zeros(Float64, length(w))
+    v = zeros(Float64, length(w))
+    β1 = 0.9; β2 = 0.999; ϵ = 1e-8
+    Jfixed = nothing
+    for t in 1:n_iter
+        local pred, J
+        if relinearize
+            pred, J = model(w)
+        elseif Jfixed === nothing
+            pred, Jfixed = model(w)
+            J = Jfixed
+        else
+            pred, _ = model(w)
+            J = Jfixed
+        end
+        r = pred .- obs
+        g = W === nothing ? transpose(J) * r : transpose(J) * (W .* r)
+        if prior !== nothing
+            g = g .+ prior_grad(w)
+        end
+        if optimizer === :pgd
+            # Jacobi (diagonal Gauss-Newton + prior) preconditioner, then the exact
+            # step length that minimises the local quadratic model along p = D⁻¹g.
+            dgJ = W === nothing ? vec(sum(J .^ 2; dims = 1)) : vec(sum(W .* (J .^ 2); dims = 1))
+            Hr = prior === nothing ? nothing :
+                 (prior isa EdgePrior ? edge_hessian(prior, w) :
+                  edge_hessian(EdgePrior(prior.neighbors, prior.weight, Inf), w))
+            dvec = collect(Float64, dgJ)
+            if Hr !== nothing
+                @inbounds for i in eachindex(dvec); dvec[i] += Hr[i, i]; end
+            end
+            dmax = maximum(dvec); dmax = dmax > 0 ? dmax : 1.0
+            p = g ./ max.(dvec, 1e-9 * dmax)                 # preconditioned descent dir
+            Jp = J * p
+            denom = W === nothing ? dot(Jp, Jp) : dot(Jp, W .* Jp)
+            Hr === nothing || (denom += dot(p, Hr * p))      # curvature along p
+            num = dot(g, p)
+            α = (denom > 0 && isfinite(num)) ? clamp(num / denom, 0.0, lr) : 0.0
+            @inbounds for i in eachindex(w)
+                w[i] = clamp(w[i] - α * p[i], box[1], box[2])
+            end
+        elseif optimizer === :adam
+            @inbounds for i in eachindex(w)
+                m[i] = β1 * m[i] + (1 - β1) * g[i]
+                v[i] = β2 * v[i] + (1 - β2) * g[i]^2
+                mhat = m[i] / (1 - β1^t)
+                vhat = v[i] / (1 - β2^t)
+                w[i] = clamp(w[i] - lr * mhat / (sqrt(vhat) + ϵ), box[1], box[2])
+            end
+        else
+            @inbounds for i in eachindex(w)
+                w[i] = clamp(w[i] - lr * g[i], box[1], box[2])
+            end
+        end
+        push!(history, norm(r))
+        # converged (preconditioned mode takes near-optimal steps, so the misfit
+        # plateaus quickly): stop early to avoid wasted relinearisations.
+        if optimizer === :pgd && length(history) > 1 &&
+           abs(history[end - 1] - history[end]) <= 1e-5 * max(history[end - 1], eps())
+            break
+        end
+    end
+    return w, history
 end
 
 # --------------------------------------------------------------------------
@@ -424,6 +464,23 @@ function snr_metric(recon::AbstractVector; mask = nothing)
 end
 
 """
+    recon_snr(recon, truth; mask=nothing) -> Float64
+
+Truth-referenced reconstruction SNR in dB, `10·log10(‖truth‖² / ‖truth − recon‖²)`
+over the (masked) field. Unlike [`snr_metric`] (which only measures a field's own
+mean²/var and rewards flat/diverged solutions), this rises only as the
+reconstruction approaches the ground truth, so it ranks solvers correctly.
+"""
+function recon_snr(recon::AbstractVector, truth::AbstractVector; mask = nothing)
+    a = _select(recon, mask); b = _select(truth, mask)
+    sig = dot(b, b)
+    err = sum((a .- b) .^ 2)
+    err <= 0 && return Inf
+    sig <= 0 && return -Inf
+    return 10.0 * log10(sig / err)
+end
+
+"""
     cnr(field, roi_mask, bg_mask) -> Float64
 
 Contrast-to-noise ratio `|μ_roi − μ_bg| / sqrt(σ_roi² + σ_bg²)`.
@@ -467,19 +524,22 @@ function ssim_metric(recon::AbstractVector, truth::AbstractVector;
 end
 
 """
-    reconstruction_report(recon, truth; roi_mask=nothing, bg_mask=nothing, peak=MAX_WATER_FRACTION)
-        -> NamedTuple
+    reconstruction_report(recon, truth; mask=nothing, roi_mask=nothing, bg_mask=nothing,
+                          peak=MAX_WATER_FRACTION) -> NamedTuple
 
 Bundle of all comparison metrics between a reconstructed and a ground-truth field.
+`mask` restricts mse/rmse/psnr/ssim/snr to a subset of cells (e.g. a depth band);
+the reported `snr` is the truth-referenced [`recon_snr`], not the field-only
+[`snr_metric`].
 """
 function reconstruction_report(recon::AbstractVector, truth::AbstractVector;
-                               roi_mask = nothing, bg_mask = nothing,
+                               mask = nothing, roi_mask = nothing, bg_mask = nothing,
                                peak::Float64 = MAX_WATER_FRACTION)
     c = (roi_mask !== nothing && bg_mask !== nothing) ? cnr(recon, roi_mask, bg_mask) : NaN
-    return (mse = mse(recon, truth), rmse = rmse(recon, truth),
-            psnr = psnr(recon, truth; peak = peak),
-            ssim = ssim_metric(recon, truth; peak = peak),
-            snr = snr_metric(recon), cnr = c)
+    return (mse = mse(recon, truth; mask = mask), rmse = rmse(recon, truth; mask = mask),
+            psnr = psnr(recon, truth; peak = peak, mask = mask),
+            ssim = ssim_metric(recon, truth; peak = peak, mask = mask),
+            snr = recon_snr(recon, truth; mask = mask), cnr = c)
 end
 
 # ===========================================================================
@@ -579,4 +639,53 @@ function resolution_vs_depth(reconstruct, centroids::AbstractMatrix{<:Real},
         push!(out, (depth_m = d, fwhm_m = emp, floor_m = floor_m, n_cells = length(fwhms[bin])))
     end
     return out
+end
+
+"""
+    resolution_map(reconstruct, centroids, baseline, cells;
+                   depth_edges, azimuth_edges, contrast=0.5,
+                   zenith_step_deg=1.0, cell_size_m=0.0)
+        -> (depths, azimuths, fwhm, counts, floor)
+
+Recovered FWHM resolution over a full **depth × direction** grid. For every cell in
+`cells` run [`point_spread_recovery`], then bin its FWHM by depth (`z` centroid,
+via `depth_edges`) and by azimuthal direction about the detector axis
+(`atand(y, x) ∈ [0,360)`, via `azimuth_edges`). Returns the per-bin median FWHM in
+`fwhm[ndepth, nazim]` (NaN where empty), the cell `counts`, the depth-bin midpoints
+`depths`, azimuth-bin midpoints `azimuths`, and the per-depth geometric floor
+`max(cell_size_m, depth · Δθ)`. Pass all cells (above a minimum depth) to cover
+all directions and all depths.
+"""
+function resolution_map(reconstruct, centroids::AbstractMatrix{<:Real},
+                        baseline::AbstractVector{<:Real},
+                        cells::AbstractVector{Int};
+                        depth_edges::AbstractVector{<:Real},
+                        azimuth_edges::AbstractVector{<:Real},
+                        contrast::Float64 = 0.5,
+                        zenith_step_deg::Float64 = 1.0,
+                        cell_size_m::Float64 = 0.0)
+    Δθ = deg2rad(zenith_step_deg)
+    nd = length(depth_edges) - 1
+    na = length(azimuth_edges) - 1
+    acc = [Float64[] for _ in 1:nd, _ in 1:na]
+    for c in cells
+        z = centroids[3, c]
+        db = searchsortedlast(depth_edges, z)
+        (db < 1 || db > nd) && continue
+        az = atand(centroids[2, c], centroids[1, c]); az < 0 && (az += 360.0)
+        ab = searchsortedlast(azimuth_edges, az)
+        (ab < 1 || ab > na) && continue
+        res = point_spread_recovery(reconstruct, centroids, baseline, c; contrast = contrast)
+        isfinite(res.fwhm_m) || continue
+        push!(acc[db, ab], res.fwhm_m)
+    end
+    fwhm = fill(NaN, nd, na); counts = zeros(Int, nd, na)
+    for db in 1:nd, ab in 1:na
+        isempty(acc[db, ab]) && continue
+        fwhm[db, ab] = median(acc[db, ab]); counts[db, ab] = length(acc[db, ab])
+    end
+    depths = [0.5 * (depth_edges[k] + depth_edges[k + 1]) for k in 1:nd]
+    azimuths = [0.5 * (azimuth_edges[k] + azimuth_edges[k + 1]) for k in 1:na]
+    floors = [max(cell_size_m, depths[k] * Δθ) for k in 1:nd]
+    return (depths = depths, azimuths = azimuths, fwhm = fwhm, counts = counts, floor = floors)
 end
