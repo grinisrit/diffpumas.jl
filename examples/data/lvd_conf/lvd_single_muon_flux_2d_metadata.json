@@ -1,0 +1,28 @@
+{
+  "source_pdf_url": "https://www.inr.ru/rus/referat/agafonova/dis.pdf",
+  "reconstruction_spec": "examples/data/lvd_conf/lvd_muon_reconstruction_spec.md",
+  "detector_geometry": "examples/data/lvd_conf/lvd_detector_geometry.json",
+  "counter_layout_csv": "examples/data/lvd_conf/lvd_tower1_counters.csv",
+  "source_legacy_table": "examples/data/lvd_conf/rock_int.txt",
+  "csv": "examples/data/lvd_conf/lvd_single_muon_flux_2d.csv",
+  "meaning": "2D single-muon directional distribution from the LVD reconstruction: azimuth interval, zenith interval, slant rock thickness, raw reconstructed intensity/count-like value.",
+  "columns": {
+    "azimuth_lo_deg, azimuth_hi_deg": "native map azimuth interval used by the LVD/nmap-style input table",
+    "zenith_lo_deg, zenith_hi_deg": "zenith interval in degrees from vertical",
+    "slant_rock_m": "slant rock thickness along the bin direction, m",
+    "intensity_raw": "raw reconstructed single-muon map value from rock_int.txt; lvd_tomography fits a global scale to forward flux units",
+    "solid_angle_sr": "bin solid angle for the listed angular interval",
+    "fig7_lvd_azimuth_center_deg": "empirical Fig.7 frame center: (43 deg - azimuth_center_deg) mod 360"
+  },
+  "fig7_projection": {
+    "projection_csv": "examples/data/lvd_conf/lvd_single_muon_flux_2d_fig7_projection.csv",
+    "theta_selection_deg": "zenith_lo < 60, clipped at 60",
+    "weighting": "solid-angle weighted mean of intensity_raw over theta bins, then fitted with one positive scale to lvd_paper_fig7_curve.csv",
+    "azimuth_transform": "phi_fig7 = 43 deg - phi_native (mod 360)",
+    "fit_scale_to_cm2_s_deg": 1.605955809938678e-13,
+    "nrmse_to_digitized_fig7_curve": 0.0927721661973955,
+    "correlation_to_digitized_fig7_curve": 0.9380500893926942
+  },
+  "row_count": 1359,
+  "theta_lt_60_row_count": 668
+}

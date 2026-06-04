@@ -85,7 +85,9 @@ using Random
 using LinearAlgebra
 using Statistics
 
-const DEFAULT_DUMP = joinpath(@__DIR__, "data", "lvd_standardrock.pumas")
+const LVD_DATA_DIR = joinpath(@__DIR__, "data", "lvd_conf")
+
+const DEFAULT_DUMP = joinpath(LVD_DATA_DIR, "lvd_standardrock.pumas")
 const DEFAULT_MDF  = joinpath(@__DIR__, "data", "materials.xml")
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -98,17 +100,17 @@ const GRID_STEP_KM       = 0.1
 const VALLEY_FLOOR       = 600.0
 const ROCK_DENSITY_REF   = 2.71   # g/cm³ used in rr.for (line 13)
 
-const NMC_PATH = joinpath(@__DIR__, "data", "nm_c.inc")
-const TOPOGRAPHY_GEOMETRY_PATH = joinpath(@__DIR__, "data",
-                                          "gran-sasso-lvd-raytracing-geometry.yaml")
+const NMC_PATH = joinpath(LVD_DATA_DIR, "nm_c.inc")
+const TOPOGRAPHY_GEOMETRY_PATH = joinpath(LVD_DATA_DIR, "gran-sasso-lvd-raytracing-geometry.yaml")
 const PART1_ZENITH_MAX_DEG = 60.0
 const PAPER_FULL_ZENITH_MAX_DEG = PART1_ZENITH_MAX_DEG
 const NMAP_ZENITH_STEP_DEG = 2.0
 const NMAP_AZIMUTH_STEP_DEG = 4.0
 
-const PAPER_FIG7_CURVE_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig7_curve.csv")
-const PAPER_FIG7_POINTS_PATH = joinpath(@__DIR__, "data", "lvd_paper_fig7_points.csv")
-const PAPER_FIG8_CURVE_PATH  = joinpath(@__DIR__, "data", "lvd_paper_fig8_curve.csv")
+const PAPER_FIG7_CURVE_PATH  = joinpath(LVD_DATA_DIR, "lvd_paper_fig7_curve.csv")
+const PAPER_FIG7_POINTS_PATH = joinpath(LVD_DATA_DIR, "lvd_paper_fig7_points.csv")
+const PAPER_FIG8_CURVE_PATH  = joinpath(LVD_DATA_DIR, "lvd_paper_fig8_curve.csv")
+const DEFAULT_MATCH_DATA     = joinpath(LVD_DATA_DIR, "lvd_single_muon_flux_2d.csv")
 const PAPER_MEAN_ENERGY_GEV  = 273.0
 const PAPER_MEAN_ENERGY_MEAS_GEV = 270.0
 const PAPER_MEAN_ENERGY_MEAS_STAT_GEV = 3.0

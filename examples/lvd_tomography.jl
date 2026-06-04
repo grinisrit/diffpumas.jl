@@ -74,7 +74,8 @@ Options:
                                   LVD flux + Fig.7 angular-distribution reproduction, with MC+syst error
     --papermatch-only             Run ONLY geometry+calibration+paper-match (skip the inverse demo) —
                                   fast iteration on the reconstruction figures
-    --match-data PATH             Measured intensity map (default: data/rock_int.txt)
+    --match-data PATH             Measured 2D single-muon intensity map
+                                 (default: data/lvd_conf/lvd_single_muon_flux_2d.csv)
     --papermatch-mc-samples INT   MC samples/bin for the paper-match uncertainty grid (default: 64)
     --papermatch-paper-samples INT  MC samples for the Fig.8 energy spectrum (default: 2000)
     --max-plot-cells INT          Maximum cells rendered in the 3D sensitivity plot (default: 150)
@@ -107,6 +108,7 @@ end
 const DEFAULT_DUMP = joinpath(@__DIR__, "data", "materials.pumas")
 const DEFAULT_MDF = joinpath(@__DIR__, "data", "materials.xml")
 const DEFAULT_OUTPUT_DIR = joinpath(@__DIR__, "data", "lvd_results")
+const DEFAULT_MATCH_DATA = LVDTopo.DEFAULT_MATCH_DATA
 const MAX_WATER_FRACTION = 0.9
 const POINT_EPS = 1e-4
 const SURFACE_SEARCH_STEP_M = 40.0
@@ -1292,14 +1294,17 @@ function parse_commandline()
         m_min = -1.0,                  # most-dense reconstruction bound (box lower limit)
         papermatch = false,            # run the final paper-matching section
         papermatch_only = false,       # run ONLY geometry+calibration+paper-match (skip inverse demo)
-        match_data = joinpath(@__DIR__, "data", "rock_int.txt"),  # measured intensity map
+        match_data = DEFAULT_MATCH_DATA,      # measured 2D single-muon intensity map
         papermatch_zenith_step = 2.0,  # coarse grid for the NMapFluxResult (nmap resolution)
         papermatch_azimuth_step = 4.0,
         papermatch_mc_samples = 64,    # MC samples/bin for the paper-match uncertainty grid
         papermatch_paper_samples = 2000,  # MC samples for the Fig.8 energy spectrum
         papermatch_reg = 1.0,          # smoothness-prior weight (× data curvature) for the
                                        # signed match — replaces positivity regularization
-        detectability = false,         # run the exposure-sweep detectability study (then exit)
+        detectability = false,         # run the matched-resolution detectability study (then exit)
+        detection_benchmark = false,   # run the CSDA gradient matched-filter detection benchmark (then exit)
+        reconstruction_sweep = false,  # (b) reconstruction RMSE/SSIM vs exposure (then exit)
+        detection_contrast_sweep = false,  # (a) Ψ-vs-SART detection gain vs contrast (then exit)
         sweep_exp_min = 1.0e5,         # exposure sweep range (detector exposure units)
         sweep_exp_max = 1.0e9,
         sweep_n = 13,                  # number of exposure points (log-spaced)
@@ -1413,6 +1418,12 @@ function parse_commandline()
             args = merge(args, (papermatch_reg = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--detectability"
             args = merge(args, (detectability = true,)); i += 1
+        elseif arg == "--detection-benchmark"
+            args = merge(args, (detection_benchmark = true,)); i += 1
+        elseif arg == "--reconstruction-sweep"
+            args = merge(args, (reconstruction_sweep = true,)); i += 1
+        elseif arg == "--detection-contrast-sweep"
+            args = merge(args, (detection_contrast_sweep = true,)); i += 1
         elseif arg == "--sweep-realizations"
             args = merge(args, (sweep_realizations = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--sweep-n"
@@ -1880,11 +1891,25 @@ function load_measured_intensity(path::String)
     for line in eachline(path)
         s = strip(line)
         (isempty(s) || startswith(s, "#")) && continue
-        p = split(s)
-        length(p) >= 7 || continue
-        push!(bins, MeasuredBin(parse(Float64, p[2]), parse(Float64, p[3]),
-                                parse(Float64, p[4]), parse(Float64, p[5]),
-                                parse(Float64, p[6]), parse(Float64, p[7])))
+        if occursin(",", s)
+            p = strip.(split(s, ","))
+            (isempty(p) || lowercase(p[1]) == "bin_index") && continue
+            # Headered Agafonova extraction:
+            # bin_index, az_lo, az_hi, az_center, zen_lo, zen_hi, zen_center,
+            # slant_rock_m, intensity_raw, ...
+            length(p) >= 9 || continue
+            push!(bins, MeasuredBin(parse(Float64, p[2]), parse(Float64, p[3]),
+                                    parse(Float64, p[5]), parse(Float64, p[6]),
+                                    parse(Float64, p[8]), parse(Float64, p[9])))
+        else
+            p = split(s)
+            length(p) >= 7 || continue
+            # Legacy rock_int.txt:
+            # bin_index az_lo az_hi zen_lo zen_hi slant_rock_m intensity
+            push!(bins, MeasuredBin(parse(Float64, p[2]), parse(Float64, p[3]),
+                                    parse(Float64, p[4]), parse(Float64, p[5]),
+                                    parse(Float64, p[6]), parse(Float64, p[7])))
+        end
     end
     return bins
 end
@@ -2043,6 +2068,69 @@ function create_figure7_plot(fig7, model_az, model_prof, smc, ssy, sto, fit; out
     savefig(Plot(traces, layout), output_path)
 end
 
+function write_single_muon_2d_comparison(paths::Vector{DirectionalPath},
+                                         valid_bins::Vector{Int},
+                                         obs::Vector{Float64},
+                                         pred::Vector{Float64},
+                                         normalization::Float64;
+                                         output_csv::String,
+                                         output_plot::String)
+    zeniths = sort(unique([paths[b].zenith for b in valid_bins]))
+    azimuths = sort(unique([mod(paths[b].azimuth, 360.0) for b in valid_bins]))
+    zmap = Dict(z => i for (i, z) in enumerate(zeniths))
+    amap = Dict(a => i for (i, a) in enumerate(azimuths))
+    data = fill(NaN, length(zeniths), length(azimuths))
+    model = fill(NaN, length(zeniths), length(azimuths))
+    rel = fill(NaN, length(zeniths), length(azimuths))
+
+    mkpath(dirname(output_csv))
+    relvals = Float64[]
+    open(output_csv, "w") do io
+        println(io, "bin_idx,zenith_deg,azimuth_deg,measured_raw,model_raw,model_over_measured,relative_residual")
+        for (k, b) in enumerate(valid_bins)
+            measured_raw = obs[k] * normalization
+            model_raw = pred[k] * normalization
+            ratio = model_raw / max(measured_raw, 1e-30)
+            residual = ratio - 1.0
+            push!(relvals, residual)
+            zi = zmap[paths[b].zenith]
+            ai = amap[mod(paths[b].azimuth, 360.0)]
+            data[zi, ai] = measured_raw
+            model[zi, ai] = model_raw
+            rel[zi, ai] = 100.0 * residual
+            println(io, @sprintf("%d,%.6f,%.6f,%.8e,%.8e,%.8e,%.8e",
+                                 b, paths[b].zenith, mod(paths[b].azimuth, 360.0),
+                                 measured_raw, model_raw, ratio, residual))
+        end
+    end
+
+    log_data = map(x -> (isfinite(x) && x > 0.0) ? log10(x) : NaN, data)
+    log_model = map(x -> (isfinite(x) && x > 0.0) ? log10(x) : NaN, model)
+    traces = GenericTrace[
+        heatmap(x = azimuths, y = zeniths, z = log_data,
+                colorscale = "Viridis", name = "measured log10(raw)",
+                colorbar = attr(title = "log10 raw"),
+                hovertemplate = "φ=%{x:.0f}°<br>θ=%{y:.0f}°<br>log10(data)=%{z:.3f}<extra></extra>"),
+        heatmap(x = azimuths, y = zeniths, z = log_model,
+                colorscale = "Viridis", name = "model log10(raw)",
+                visible = "legendonly",
+                hovertemplate = "φ=%{x:.0f}°<br>θ=%{y:.0f}°<br>log10(model)=%{z:.3f}<extra></extra>"),
+        heatmap(x = azimuths, y = zeniths, z = rel,
+                colorscale = "RdBu", reversescale = true, zmid = 0.0,
+                name = "model-data residual (%)", visible = "legendonly",
+                hovertemplate = "φ=%{x:.0f}°<br>θ=%{y:.0f}°<br>resid=%{z:.1f}%<extra></extra>"),
+    ]
+    layout = Layout(title = "Agafonova/LVD 2D single-muon map: measured data vs reconstructed mixture",
+        xaxis = attr(title = "Azimuth φ (deg)", dtick = 30),
+        yaxis = attr(title = "Zenith θ (deg)", dtick = 10),
+        width = 1100, height = 700)
+    savefig(Plot(traces, layout), output_plot)
+
+    rms = isempty(relvals) ? NaN : sqrt(mean(relvals .^ 2))
+    bias = isempty(relvals) ? NaN : mean(relvals)
+    return (n_bins = length(relvals), rms_rel = rms, bias_rel = bias)
+end
+
 # Matched-resolution detectability study (the fair comparison for the paper). For each
 # solver we sweep its regularization to trace a RESOLUTION–EFFICIENCY frontier: at each
 # setting we measure (a) the point-spread FWHM (noiseless point-source reconstruction)
@@ -2192,6 +2280,254 @@ function run_detectability_matched(physics, shallow_flags, matcfg::MaterialConfi
     return (res = res, fstar = fstar, tstar = tstar)
 end
 
+# Second benchmark: a DETECTION-specific statistic built from CSDA first-order info
+# (the flux gradient), following Benton et al. (information-theoretic muon radiography,
+# docs/muon_tomography_information_theory.md). The muon counts form a Poisson channel
+# k_m ~ Poisson(τ·μ_m); a perturbation χ gives μ_m → μ_m(1 + ζ_m·χ) with the relative
+# sensitivity ζ_m = (∂μ_m/∂χ)/μ_m = (J·Δw)_m / μ_m (our AD Jacobian over the baseline
+# flux). The Neyman–Pearson-optimal LINEAR statistic is the matched filter
+#   Ψ = Σ_m ζ_m k_m,
+# whose detection significance is DP = χ·√(τ · Σ_m (∂μ_m/∂χ)²/μ_m) = √(τ·F) — the Fisher
+# information bound, ANALYTIC (no reconstruction, no GN/GD). Compared against the
+# unweighted plume-ROI sum Φ = Σ_{m∈ROI} k_m (Benton's baseline) and the SART
+# reconstruction detector. τ₉₅ = z²/F with z = 3 + Φ⁻¹(0.95) = 4.645 (95% above 3σ).
+function run_detection_benchmark(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                                 volume, paths::Vector{DirectionalPath}, energy_samples, args;
+                                 output_path::String, plot_path::String)
+    n_cells = num_cells(volume)
+    w_true = zeros(n_cells)
+    for i in 1:n_cells
+        x, y, z = cell_centroid(volume, i)
+        (abs(z - 1118.6) <= 160.0 && abs(x) <= 600.0 && abs(y) <= 600.0) &&
+            (w_true[i] = clamp(args.lens_w, 0.0, MAX_WATER_FRACTION))
+    end
+    lens_cells = findall(>(0.0), w_true)
+    if isempty(lens_cells)
+        println("  no deep-lens cells on this grid; skipping detection benchmark"); return nothing
+    end
+    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site,
+        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    valid_bins = findall(isfinite, base_flux)
+    Jv = base_J[valid_bins, :]; f0 = base_flux[valid_bins]
+    μ = max.(f0, 1e-30)
+    s = Jv * w_true                       # first-order flux change from the lens (signal template)
+    z95 = 4.645
+
+    # Ψ — optimal matched filter (Fisher information bound), analytic
+    fisher = sum(s .^ 2 ./ μ)
+    τ_psi = fisher > 0 ? z95^2 / fisher : Inf
+
+    # Φ — unweighted plume-ROI count sum (bins carrying ≥10% of peak |signal|)
+    roi = abs.(s) .>= 0.1 * maximum(abs.(s))
+    num = sum(s[roi]); den = sum(μ[roi])
+    τ_phi = (den > 0 && num != 0) ? z95^2 * den / num^2 : Inf
+
+    # SART reconstruction detector with a PROPERLY FPR-CONTROLLED test (no GN/GD):
+    # threshold = empirical 3σ one-sided quantile of SART's OWN null distribution (which
+    # is non-Gaussian under positivity), then τ₉₅ = exposure for 95% detection power. This
+    # matches Ψ's operating point (3σ FPR, 95% power) so the comparison is apples-to-apples.
+    τ0 = sqrt(args.sweep_exp_min * args.sweep_exp_max)
+    σ0 = sqrt.(μ ./ τ0); σ0 .= max.(σ0, 1e-12 * maximum(μ))
+    excess = s
+    amp(w) = mean(w[lens_cells])
+    sart_amp(ex) = amp(max.(first(sart_reconstruct(Jv, ex; n_iter = 200, relaxation = 0.2)), 0.0))
+    function sart_tau95_fpr(seed)
+        rng = MersenneTwister(seed); Mn = 3000; Ms = 600
+        An = [sart_amp(σ0 .* randn(rng, length(σ0))) for _ in 1:Mn]
+        As = [sart_amp(excess .+ σ0 .* randn(rng, length(σ0))) for _ in 1:Ms]
+        μn = mean(An); Δ = mean(As) - μn
+        Δ <= 0 && return Inf
+        qcut = quantile(An, 0.99865) - μn       # 3σ one-sided FPR threshold (null noise quantile)
+        ε = As .- mean(As)                      # signal-noise component at τ0
+        rate(τ) = mean((Δ * sqrt(τ / τ0) .+ ε) .> qcut)
+        lo, hi = τ0 * 1e-5, τ0 * 1e5
+        for _ in 1:64
+            mid = sqrt(lo * hi); rate(mid) >= 0.95 ? (hi = mid) : (lo = mid)
+        end
+        return hi
+    end
+    τ_sart = sart_tau95_fpr(args.seed + 8000)
+
+    println("Detection benchmark (deep lens, DP≥3, 95% detection; no GN/GD):")
+    println(@sprintf("  Ψ matched filter (optimal, Fisher): τ₉₅ = %.3e", τ_psi))
+    println(@sprintf("  Φ ROI count sum (Benton baseline):  τ₉₅ = %.3e  (Ψ gain %.2f×)", τ_phi, τ_phi / τ_psi))
+    println(@sprintf("  SART reconstruction detector:       τ₉₅ = %.3e  (Ψ gain %.2f×)", τ_sart, τ_sart / τ_psi))
+
+    open(output_path, "w") do io
+        println(io, "Detection benchmark — CSDA first-order (flux-gradient) statistics vs SART")
+        println(io, "(deep lens w=$(args.lens_w), $(length(lens_cells)) cells; DP≥3, 95% detection; Poisson channel)")
+        println(io, "Method = optimal info-theory matched filter Ψ=Σ ζ_m k_m, ζ_m=(∂μ_m/∂χ)/μ_m (Benton et al. 2020).")
+        println(io, "NO Gauss-Newton / gradient-descent reconstruction is used.")
+        println(io)
+        println(io, @sprintf("  %-34s τ₉₅ = %.4e", "Ψ matched filter (optimal/Fisher)", τ_psi))
+        println(io, @sprintf("  %-34s τ₉₅ = %.4e   (Ψ %.2f× better)", "Φ unweighted plume-ROI sum", τ_phi, τ_phi / τ_psi))
+        println(io, @sprintf("  %-34s τ₉₅ = %.4e   (Ψ %.2f× better)", "SART reconstruction detector", τ_sart, τ_sart / τ_psi))
+        println(io)
+        println(io, @sprintf("ROI: %d / %d bins carry ≥10%% of peak |∂flux/∂χ|.", count(roi), length(s)))
+        println(io, "Ψ is the Neyman–Pearson optimal linear detector, so τ₉₅(Ψ) ≤ τ₉₅(any linear statistic).")
+    end
+
+    methods = ["Ψ matched filter", "Φ ROI sum", "SART recon"]
+    taus = [τ_psi, τ_phi, τ_sart]
+    savefig(Plot([bar(x = methods, y = taus, marker = attr(color = ["rgb(40,110,220)", "rgb(200,120,40)", "rgb(60,160,90)"]))],
+        Layout(title = "Detection efficiency: exposure for 95% detection of the deep lens (lower = better)",
+            yaxis = attr(title = "τ₉₅ exposure", type = "log"), width = 850, height = 600)), plot_path)
+    println("  detection-benchmark outputs: $output_path , $plot_path")
+    return (psi = τ_psi, phi = τ_phi, sart = τ_sart)
+end
+
+# (b) Benchmark 1 as a sweep: reconstruction accuracy (RMSE, SSIM vs the true field) vs
+# detector exposure, all four solvers with the FULL NONLINEAR operator (GD/GN relinearize
+# each step, as in the headline result). Clean observations are the full MC (computed once,
+# no inverse crime); only the counting noise scales with exposure. Use a reduced-but-
+# overdetermined angular grid so the nonlinear GN sweep is affordable.
+function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                                  volume, paths::Vector{DirectionalPath}, energy_samples, args;
+                                  output_path::String, plot_path::String)
+    n_cells = num_cells(volume)
+    w_true = create_initial_water_field(volume, args)
+    if all(iszero, w_true)
+        for i in 1:n_cells
+            x, y, z = cell_centroid(volume, i)
+            (abs(z - 1118.6) <= 160.0 && abs(x) <= 600.0 && abs(y) <= 600.0) &&
+                (w_true[i] = clamp(args.lens_w, 0.0, MAX_WATER_FRACTION))
+        end
+    end
+    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site,
+        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    valid_bins = findall(isfinite, base_flux)
+    Jv = base_J[valid_bins, :]; f0 = base_flux[valid_bins]
+    clean_obs = mc_observations_for_field(physics, shallow_flags, matcfg, site, paths, w_true, valid_bins, args;
+        cache_path = joinpath(args.output_dir, "lvd_recon_sweep_obs.bin"))
+    csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
+        n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
+    eval_mask = volume.centroids[3, :] .>= args.min_eval_depth
+    neighbors = cell_neighbors(volume)
+    sens = vec(sum(max.(Jv, 0.0); dims = 1)); sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
+    sm_prior = SmoothnessPrior(neighbors, 0.05 * sm_scale)
+
+    exps = 10.0 .^ range(log10(args.sweep_exp_min), log10(args.sweep_exp_max); length = args.sweep_n)
+    solvers = ("sart", "mlem", "gd", "gn")
+    rmse = Dict(s => zeros(length(exps)) for s in solvers)
+    ssimv = Dict(s => zeros(length(exps)) for s in solvers)
+    M = max(3, args.sweep_realizations ÷ 10)
+    println("Reconstruction-accuracy sweep (NONLINEAR operator, full-MC obs): $(length(exps)) exposures × $M realizations...")
+    rng = MersenneTwister(args.seed + 9000)
+    for (ei, τ) in enumerate(exps)
+        σ = sqrt.(max.(clean_obs, 0.0) ./ τ); σ .= max.(σ, 1e-12 * maximum(clean_obs)); W = 1.0 ./ σ .^ 2
+        diagc = vec(sum(W .* (Matrix(Jv) .^ 2); dims = 1)); gn_scale = (m = filter(>(0), diagc); isempty(m) ? 1.0 : median(m))
+        edge_prior = EdgePrior(neighbors, 0.01 * gn_scale, args.edge_delta)
+        acc = Dict(s => (r = Float64[], s = Float64[]) for s in solvers)
+        for _ in 1:M
+            obs = clean_obs .+ σ .* randn(rng, length(σ)); excess = obs .- f0
+            recs = Dict(
+                "sart" => first(sart_reconstruct(Jv, excess; n_iter = args.reco_iters, relaxation = 0.2, prior = sm_prior)),
+                "mlem" => first(mlem_reconstruct(max.(Jv, 0.0), max.(excess, 0.0); n_iter = args.reco_iters, prior = sm_prior)),
+                "gd"   => first(gradient_descent_reconstruct(csda_model, obs; w0 = zeros(n_cells),
+                            n_iter = args.gd_iters, lr = args.gd_lr, optimizer = :pgd, prior = edge_prior,
+                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION))),
+                "gn"   => first(gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
+                            n_iter = max(8, args.reco_iters ÷ 16), prior = edge_prior,
+                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION))))
+            for s in solvers
+                rep = reconstruction_report(recs[s], w_true; mask = eval_mask)
+                push!(acc[s].r, rep.rmse); push!(acc[s].s, rep.ssim)
+            end
+        end
+        for s in solvers; rmse[s][ei] = mean(acc[s].r); ssimv[s][ei] = mean(acc[s].s); end
+        println(@sprintf("  τ=%.2e  RMSE  SART=%.3f MLEM=%.3f GD=%.3f GN=%.3f", τ,
+                         rmse["sart"][ei], rmse["mlem"][ei], rmse["gd"][ei], rmse["gn"][ei]))
+    end
+
+    open(output_path, "w") do io
+        println(io, "Reconstruction accuracy vs exposure (nonlinear operator, full-MC obs; truth = multi-anomaly field)")
+        println(io, @sprintf("%d realizations/point; eval depth ≥ %.0f m", M, args.min_eval_depth))
+        for metric in ("RMSE", "SSIM")
+            d = metric == "RMSE" ? rmse : ssimv
+            println(io); println(io, "$metric:"); println(io, "  " * rpad("exposure", 12) * join([rpad(uppercase(s), 9) for s in solvers]))
+            for ei in eachindex(exps)
+                println(io, "  " * rpad(@sprintf("%.2e", exps[ei]), 12) * join([rpad(@sprintf("%.3f", d[s][ei]), 9) for s in solvers]))
+            end
+        end
+    end
+    colors = Dict("sart" => "rgb(200,120,40)", "mlem" => "rgb(60,160,90)", "gd" => "rgb(150,80,200)", "gn" => "rgb(40,110,220)")
+    traces = GenericTrace[scatter(x = collect(exps), y = rmse[s], mode = "lines+markers",
+                                  name = uppercase(s), line = attr(color = colors[s])) for s in solvers]
+    savefig(Plot(traces, Layout(title = "Reconstruction RMSE vs exposure (lower = better)",
+        xaxis = attr(title = "Detector exposure", type = "log"),
+        yaxis = attr(title = "RMSE (water fraction)"), width = 1000, height = 600)), plot_path)
+    println("  reconstruction-sweep outputs: $output_path , $plot_path")
+    return (exps = exps, rmse = rmse, ssim = ssimv)
+end
+
+# (a) Detection-efficiency gain of the Ψ matched filter vs SART as a function of anomaly
+# contrast. Ψ/Φ τ₉₅ ∝ 1/χ² (ratio contrast-independent); SART is nonlinear, so Ψ's
+# advantage over it is expected to grow toward low contrast (Benton regime).
+function run_detection_contrast_sweep(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                                      volume, paths::Vector{DirectionalPath}, energy_samples, args;
+                                      output_path::String, plot_path::String)
+    n_cells = num_cells(volume)
+    lens_mask = falses(n_cells)
+    for i in 1:n_cells
+        x, y, z = cell_centroid(volume, i)
+        (abs(z - 1118.6) <= 160.0 && abs(x) <= 600.0 && abs(y) <= 600.0) && (lens_mask[i] = true)
+    end
+    lens_cells = findall(lens_mask)
+    isempty(lens_cells) && (println("  no lens cells; skipping"); return nothing)
+    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site,
+        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    valid_bins = findall(isfinite, base_flux); Jv = base_J[valid_bins, :]
+    μ = max.(base_flux[valid_bins], 1e-30)
+    s_unit = Jv * Float64.(lens_mask)        # unit-contrast lens response
+    z95 = 4.645
+    τ0base = sqrt(args.sweep_exp_min * args.sweep_exp_max)
+    amp(w) = mean(w[lens_cells])
+
+    contrasts = [0.05, 0.1, 0.2, 0.4, 0.8]
+    rows = NamedTuple[]
+    println("Detection gain vs contrast (Ψ matched filter vs SART, FPR-controlled)...")
+    for (ci, χ) in enumerate(contrasts)
+        s = χ .* s_unit
+        τ_psi = z95^2 / sum(s .^ 2 ./ μ)
+        # SART τ95 (FPR-controlled) at this contrast; reference exposure scaled so noise ~ signal
+        τ0 = τ0base
+        σ0 = sqrt.(μ ./ τ0); σ0 .= max.(σ0, 1e-12 * maximum(μ))
+        rng = MersenneTwister(args.seed + 9100 + ci); Mn = 2000; Ms = 500
+        sa(ex) = amp(max.(first(sart_reconstruct(Jv, ex; n_iter = 200, relaxation = 0.2)), 0.0))
+        An = [sa(σ0 .* randn(rng, length(σ0))) for _ in 1:Mn]
+        As = [sa(s .+ σ0 .* randn(rng, length(σ0))) for _ in 1:Ms]
+        μn = mean(An); Δ = mean(As) - μn
+        if Δ <= 0
+            τ_sart = Inf
+        else
+            qcut = quantile(An, 0.99865) - μn; ε = As .- mean(As)
+            rate(τ) = mean((Δ * sqrt(τ / τ0) .+ ε) .> qcut)
+            lo, hi = τ0 * 1e-5, τ0 * 1e5
+            for _ in 1:64; mid = sqrt(lo * hi); rate(mid) >= 0.95 ? (hi = mid) : (lo = mid); end
+            τ_sart = hi
+        end
+        push!(rows, (χ = χ, psi = τ_psi, sart = τ_sart, gain = τ_sart / τ_psi))
+        println(@sprintf("  contrast=%.2f  Ψ τ95=%.3e  SART τ95=%.3e  gain=%.2f×", χ, τ_psi, τ_sart, τ_sart / τ_psi))
+    end
+
+    open(output_path, "w") do io
+        println(io, "Detection efficiency gain Ψ (CSDA matched filter) vs SART, vs anomaly contrast")
+        println(io, "(deep lens; 95% detection, 3σ FPR-controlled; no GN/GD)")
+        println(io, "  " * rpad("contrast", 10) * rpad("Ψ τ95", 13) * rpad("SART τ95", 13) * "gain")
+        for r in rows
+            println(io, "  " * rpad(@sprintf("%.2f", r.χ), 10) * rpad(@sprintf("%.3e", r.psi), 13) *
+                    rpad(@sprintf("%.3e", r.sart), 13) * @sprintf("%.2f×", r.gain))
+        end
+    end
+    savefig(Plot([scatter(x = [r.χ for r in rows], y = [r.gain for r in rows], mode = "lines+markers",
+                          name = "Ψ/SART gain")],
+        Layout(title = "Ψ matched-filter detection gain over SART vs contrast",
+            xaxis = attr(title = "Anomaly water-fraction contrast"),
+            yaxis = attr(title = "τ₉₅(SART) / τ₉₅(Ψ)"), width = 950, height = 600)), plot_path)
+    println("  detection-contrast outputs: $output_path , $plot_path")
+    return rows
+end
+
 function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                          emap, paths::Vector{DirectionalPath}, energy_samples,
                          rock_idx::Int, air_idx::Int, args)
@@ -2259,10 +2595,15 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     println(@sprintf("  matched w: mean=%.3f std=%.3f min=%.3f max=%.3f  box-pinned cells=%d/%d",
                      mean(w_matched), std(w_matched), minimum(w_matched), maximum(w_matched), pinned, n_cells))
 
-    # --- Stage C: Figure-7 reproduction for the matched field (angular distribution
-    # only; Figure 8 / energy spectrum is omitted — it is model-generated, not
-    # reconstructed from the detector). MC+systematic bands on the reconstructed curve. ---
-    println("Reproducing the single-muon angular distribution (Fig.7) for the matched field...")
+    # --- Stage C: reproduce the extracted 2D single-muon map, then project to Fig.7.
+    # Figure 8 / energy spectrum is omitted — it is model-generated, not reconstructed
+    # from the detector. MC+systematic bands are carried on the Fig.7 projection.
+    println("Reproducing the extracted 2D single-muon map and its Fig.7 projection...")
+    map_csv = joinpath(args.output_dir, "lvd_single_muon_2d_match.csv")
+    map_plot = joinpath(args.output_dir, "lvd_single_muon_2d_match.html")
+    map_stats = write_single_muon_2d_comparison(paths, valid_bins, obs, pred_m, s;
+        output_csv = map_csv, output_plot = map_plot)
+
     tomo_matched = nmap_result_for(physics, shallow_flags, matcfg, match_site, cpaths, czen, caz,
                                    w_matched, psamples, args)
     fig7_fit = LVDTopo.infer_lvd_reference_offset(tomo_matched, fig7)
@@ -2315,6 +2656,13 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("Figure 7 (reconstructed angular distribution) vs paper: offset %.1f deg, curve NRMSE %.3f, point NRMSE %.3f",
                              fig7_fit.offset_deg, fig7_fit.curve_nrmse, fig7_fit.point_nrmse))
         println(io, "  plot: lvd_single_muon_angular_distribution_fig7.html (MC+systematic bands)")
+        println(io)
+        println(io, "2D single-muon map reproduction:")
+        println(io, @sprintf("  bins used: %d", map_stats.n_bins))
+        println(io, @sprintf("  relative residual RMS: %.4f", map_stats.rms_rel))
+        println(io, @sprintf("  relative residual bias: %.4f", map_stats.bias_rel))
+        println(io, "  csv: lvd_single_muon_2d_match.csv")
+        println(io, "  plot: lvd_single_muon_2d_match.html")
         println(io, "  (Figure 8 / energy spectrum omitted — model-generated, not reconstructed from the detector.)")
         println(io, @sprintf("Signed mixture range: dense rock up to %.0f kg/m^3 (w=-1) ... water (w=+%.1f).",
                              matcfg.dense_density, MAX_WATER_FRACTION))
@@ -2323,10 +2671,13 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     end
     println("  paper-match outputs: $pm_txt")
     println("  $fig7_plot")
+    println("  $map_plot")
+    println("  $map_csv")
     println("  $field_plot")
     println("  $water_plot")
     println("  $w_csv")
-    return (w_matched = w_matched, alt_rows = alt_rows, normalization = s, residual = res_m)
+    return (w_matched = w_matched, alt_rows = alt_rows, normalization = s,
+            residual = res_m, map_stats = map_stats)
 end
 
 function main()
@@ -2424,7 +2775,34 @@ function main()
         water_fractions, energy_samples, args)
     println()
 
-    # Exposure-sweep detectability study (then exit): τ₉₅ per solver + efficiency gains.
+    # (b) Reconstruction accuracy vs exposure (then exit).
+    if args.reconstruction_sweep
+        run_reconstruction_sweep(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
+            output_path = joinpath(args.output_dir, "lvd_reconstruction_sweep.txt"),
+            plot_path = joinpath(args.output_dir, "lvd_reconstruction_sweep.html"))
+        println("\nReconstruction-sweep outputs written to $(args.output_dir)")
+        return 0
+    end
+
+    # (a) Detection gain vs contrast (then exit).
+    if args.detection_contrast_sweep
+        run_detection_contrast_sweep(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
+            output_path = joinpath(args.output_dir, "lvd_detection_contrast_sweep.txt"),
+            plot_path = joinpath(args.output_dir, "lvd_detection_contrast_sweep.html"))
+        println("\nDetection-contrast-sweep outputs written to $(args.output_dir)")
+        return 0
+    end
+
+    # Detection benchmark (then exit): CSDA gradient matched filter Ψ vs ROI-sum vs SART.
+    if args.detection_benchmark
+        run_detection_benchmark(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
+            output_path = joinpath(args.output_dir, "lvd_detection_benchmark.txt"),
+            plot_path = joinpath(args.output_dir, "lvd_detection_benchmark.html"))
+        println("\nDetection-benchmark outputs written to $(args.output_dir)")
+        return 0
+    end
+
+    # Matched-resolution detectability study (then exit): τ₉₅ per solver + efficiency gains.
     if args.detectability
         run_detectability_matched(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
             output_path = joinpath(args.output_dir, "lvd_detectability_sweep.txt"),
