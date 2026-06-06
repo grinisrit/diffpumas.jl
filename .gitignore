@@ -25,6 +25,7 @@ venv
 .cursorrules
 *.code-workspace
 .julia*
+*.zip
 
 # examples/data — generated outputs; see lvd_conf exceptions for committed CSV/JSON
 examples/data/*.html

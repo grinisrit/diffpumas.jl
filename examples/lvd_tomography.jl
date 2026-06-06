@@ -1703,6 +1703,24 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
                          uppercase(s), rep.mse, rep.rmse, rep.psnr, rep.ssim, rep.snr, dt, length(hist)))
     end
 
+    # --- export truth + reconstructed fields as CSV for the paper's 3D inverse figure.
+    # One row per cell: idx, centroid (m), and water fraction. The reconstructions are
+    # the headline GN/GD result and the SART/MLEM baselines on the SAME synthetic truth.
+    let cen = volume.centroids
+        write_field_csv = (path, field) -> open(path, "w") do io
+            println(io, "cell_idx,x_m,y_m,z_m,w")
+            for c in 1:n_cells
+                println(io, @sprintf("%d,%.1f,%.1f,%.1f,%.6f",
+                                     c, cen[1, c], cen[2, c], cen[3, c], field[c]))
+            end
+        end
+        write_field_csv(joinpath(args.output_dir, "lvd_synthetic_truth_field.csv"), w_true)
+        for (s, r) in results
+            write_field_csv(joinpath(args.output_dir, "lvd_synthetic_recon_$(s).csv"), r.w)
+        end
+        println("  Exported synthetic truth + reconstruction fields to lvd_synthetic_*.csv")
+    end
+
     # --- resolution: full depth × direction map over ALL cells below min depth ---
     # Probe every cell (above the minimum evaluation depth), recover its linearised
     # point-spread, and bin the FWHM by depth layer and azimuthal direction so the
@@ -2557,13 +2575,24 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                          alt, fit.scale, fit.offset_deg, fit.curve_nrmse, fit.point_nrmse))
     end
 
-    # --- Stage B: GN material-mixture match to measured rock_int.txt (standard rock) ---
-    println("GN mixture match to measured intensity (standard rock, altitude=$(args.primary_altitude_km) km)...")
+    # --- Stage B: GN material-mixture match to the FULL measured 2D surface (standard rock).
+    # Solve the inverse against the whole observed angular surface — every populated bin of
+    # the measured map, at its native resolution (one line of sight per bin), spanning all
+    # azimuths AND the full zenith range (theta up to ~92 deg, not just the theta<60 deg cap
+    # used for the Fig.7 projection). The near-horizontal rays add long-slant lines of sight
+    # through laterally distinct rock; that independent coverage is what makes the otherwise
+    # single-viewpoint column-density inverse meaningfully better posed.
+    println("GN mixture match to the full measured 2D surface (standard rock, altitude=$(args.primary_altitude_km) km)...")
     match_site = build_site(args.primary_altitude_km * 1000.0)
-    meas = measured_intensity_for_paths(paths, load_measured_intensity(args.match_data))
+    match_bins = load_measured_intensity(args.match_data)
+    match_zen = Float64[0.5 * (b.zen_lo + b.zen_hi) for b in match_bins]
+    match_az  = Float64[(b.az_hi - b.az_lo >= 359.999) ? 0.0 : 0.5 * (b.az_lo + b.az_hi) for b in match_bins]
+    println("Tracing geometry for $(length(match_bins)) measured-surface bins (0 <= theta <= $(round(maximum(match_zen); digits=0)) deg)...")
+    match_paths = [trace_path(volume, match_zen[i], match_az[i], emap) for i in eachindex(match_bins)]
+    meas = Float64[b.intensity for b in match_bins]
     base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, match_site,
-        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
-    covered = findall(i -> isfinite(base_flux[i]) && base_flux[i] > 0 &&
+        match_paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    covered = findall(i -> match_paths[i].valid && isfinite(base_flux[i]) && base_flux[i] > 0 &&
                            isfinite(meas[i]) && meas[i] > 0, eachindex(base_flux))
     if isempty(covered)
         println("  no covered bins (measured ∩ valid); skipping match"); return nothing
@@ -2582,7 +2611,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     # penalty drives a smooth ~uniform dense field + localized anomalies rather than
     # the spurious speckle an under-regularized signed solve produces.
     sm_prior = SmoothnessPrior(cell_neighbors(volume), args.papermatch_reg * gn_scale)
-    csda_model = make_csda_operator(physics, shallow_flags, matcfg, match_site, paths,
+    csda_model = make_csda_operator(physics, shallow_flags, matcfg, match_site, match_paths,
         energy_samples; n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
     w_matched, _ = gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
         n_iter = max(8, args.reco_iters ÷ 16), prior = sm_prior, weights = Wobs, relinearize = true,
@@ -2591,7 +2620,10 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     res_base = norm(base_flux[valid_bins] .- obs) / max(norm(obs), 1e-30)
     res_m = norm(pred_m .- obs) / max(norm(obs), 1e-30)
     pinned = count(x -> x <= args.m_min + 1e-3 || x >= MAX_WATER_FRACTION - 1e-3, w_matched)
-    println(@sprintf("  covered bins=%d  norm=%.3e  rel resid %.3f -> %.3f", length(valid_bins), s, res_base, res_m))
+    n_vert = count(i -> match_zen[i] < 60.0, valid_bins)
+    n_horiz = length(valid_bins) - n_vert
+    println(@sprintf("  covered bins=%d (theta<60: %d, theta>=60: %d, up to %.0f deg)  norm=%.3e  rel resid %.3f -> %.3f",
+                     length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins]), s, res_base, res_m))
     println(@sprintf("  matched w: mean=%.3f std=%.3f min=%.3f max=%.3f  box-pinned cells=%d/%d",
                      mean(w_matched), std(w_matched), minimum(w_matched), maximum(w_matched), pinned, n_cells))
 
@@ -2601,7 +2633,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     println("Reproducing the extracted 2D single-muon map and its Fig.7 projection...")
     map_csv = joinpath(args.output_dir, "lvd_single_muon_2d_match.csv")
     map_plot = joinpath(args.output_dir, "lvd_single_muon_2d_match.html")
-    map_stats = write_single_muon_2d_comparison(paths, valid_bins, obs, pred_m, s;
+    map_stats = write_single_muon_2d_comparison(match_paths, valid_bins, obs, pred_m, s;
         output_csv = map_csv, output_plot = map_plot)
 
     tomo_matched = nmap_result_for(physics, shallow_flags, matcfg, match_site, cpaths, czen, caz,
@@ -2644,8 +2676,10 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, "  (a fitted scale farther from 1 means a larger absolute flux excess/deficit;")
         println(io, "   raising the Gaisser altitude lowers the simulated normalization.)")
         println(io)
-        println(io, "GN material-mixture match vs measured rock_int.txt (standard rock):")
-        println(io, @sprintf("  covered bins: %d", length(valid_bins)))
+        println(io, "GN material-mixture match vs the full measured 2D surface (standard rock):")
+        println(io, @sprintf("  match data: %s", args.match_data))
+        println(io, @sprintf("  covered bins: %d (theta<60: %d, theta>=60: %d, max theta %.0f deg)",
+                             length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins])))
         println(io, @sprintf("  forward->measured normalization: %.4e", s))
         println(io, @sprintf("  relative data residual: baseline %.4f -> matched %.4f", res_base, res_m))
         println(io, @sprintf("  matched water fraction: mean=%.3f max=%.3f nonzero(>1e-3)=%d/%d",
