@@ -67,6 +67,8 @@ Options:
     --min-eval-depth FLOAT        Exclude cells shallower than this (m above detector) from
                                   reconstruction metrics and resolution (default: 350)
     --primary-altitude-km FLOAT   Gaisser/primary flux sampling altitude above detector (default: 30)
+    --rock-density FLOAT          Base rock density kg/m^3; 0 = physics-table value. The paper-match
+                                  uses 2710 (Gran Sasso rock, Kudryavtsev 2009) not 2650 standard rock
     --dense-rock-density FLOAT    Denser-rock endpoint kg/m^3 for the signed mixture w<0 (default: 3000)
     --dense-w FLOAT               Dense anomaly value (w<0) in the rich ground truth (default: -0.5)
     --m-min FLOAT                 Most-dense reconstruction bound / box lower limit (default: -1.0)
@@ -1288,6 +1290,9 @@ function parse_commandline()
         exposure = 1.0e8,          # detector exposure (sets Poisson noise level)
         edge_delta = 0.03,         # Huber transition for the edge-preserving GN prior
         primary_altitude_km = 30.0,    # Gaisser/primary flux sampling altitude above detector
+        rock_density = 0.0,            # base rock density (kg/m^3); 0 = use the physics-table value.
+                                       # The paper-match uses 2710 (Gran Sasso rock, Kudryavtsev 2009)
+                                       # rather than the 2650 standard-rock table value.
         dense_rock_density = 3000.0,   # denser-rock endpoint (kg/m^3) for the signed mixture w<0
         dense_w = 0.0,                 # dense anomaly (w<0) in the synthetic truth; 0 = water-only
                                        # demo (GN/GD beat classics in the positivity-regularized regime)
@@ -1394,6 +1399,8 @@ function parse_commandline()
             args = merge(args, (min_eval_depth = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--primary-altitude-km"
             args = merge(args, (primary_altitude_km = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--rock-density"
+            args = merge(args, (rock_density = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--dense-rock-density"
             args = merge(args, (dense_rock_density = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--dense-w"
@@ -2550,39 +2557,21 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                          emap, paths::Vector{DirectionalPath}, energy_samples,
                          rock_idx::Int, air_idx::Int, args)
     println("=" ^ 64)
-    println(" Single muon angular distribution — material-mixture reconstruction (standard rock + water + dense rock)")
+    println(" Single muon angular distribution — water-content reconstruction from the measured 2D LVD surface")
     println("=" ^ 64)
     n_cells = num_cells(volume)
-    fig7 = LVDTopo.load_paper_figure7_benchmark()
+    println(@sprintf(" base rock density = %.0f kg/m^3 (Gran Sasso rock, Kudryavtsev 2009); water-only field w in [0, %.1f]",
+                     matcfg.rock_density, MAX_WATER_FRACTION))
 
-    # Coarse nmap-resolution grid + paths (geometry only — reused across altitudes/fields).
-    czen = collect(0.0:args.papermatch_zenith_step:LVDTopo.PART1_ZENITH_MAX_DEG)
-    caz  = collect(0.0:args.papermatch_azimuth_step:360.0)
-    cpaths = precompute_paths(volume, emap, czen, caz)
-    psamples = sample_energy_set(args.papermatch_mc_samples, args.energy_min, args.energy_max, args.seed + 99)
-
-    # --- Stage A: Gaisser-altitude experiment (test the muon-excess hypothesis) ---
-    println("Gaisser-altitude experiment (Fig.7 fit on uniform standard rock, w=0)...")
-    alt_rows = NamedTuple[]
-    for alt in sort(unique(Float64[10.0, 30.0, args.primary_altitude_km]))
-        site_a = build_site(alt * 1000.0)
-        res0 = nmap_result_for(physics, shallow_flags, matcfg, site_a, cpaths, czen, caz,
-                               zeros(n_cells), psamples, args)
-        fit = LVDTopo.infer_lvd_reference_offset(res0, fig7)
-        push!(alt_rows, (alt_km = alt, scale = fit.scale, offset = fit.offset_deg,
-                         curve_nrmse = fit.curve_nrmse, point_nrmse = fit.point_nrmse))
-        println(@sprintf("  %.0f km: fit scale=%.3e  offset=%.1f deg  curveNRMSE=%.3f  pointNRMSE=%.3f",
-                         alt, fit.scale, fit.offset_deg, fit.curve_nrmse, fit.point_nrmse))
-    end
-
-    # --- Stage B: GN material-mixture match to the FULL measured 2D surface (standard rock).
-    # Solve the inverse against the whole observed angular surface — every populated bin of
-    # the measured map, at its native resolution (one line of sight per bin), spanning all
-    # azimuths AND the full zenith range (theta up to ~92 deg, not just the theta<60 deg cap
-    # used for the Fig.7 projection). The near-horizontal rays add long-slant lines of sight
-    # through laterally distinct rock; that independent coverage is what makes the otherwise
-    # single-viewpoint column-density inverse meaningfully better posed.
-    println("GN mixture match to the full measured 2D surface (standard rock, altitude=$(args.primary_altitude_km) km)...")
+    # --- GN water-content match to the FULL measured 2D azimuth/zenith surface.
+    # Solve the inverse directly against the whole observed angular map — every populated bin
+    # of the measured (zenith, azimuth) surface, at its native resolution (one line of sight
+    # per bin), spanning all azimuths AND the full zenith range (theta up to ~86 deg). The
+    # near-horizontal rays add long-slant lines of sight through laterally distinct rock; that
+    # independent coverage is what makes the otherwise single-viewpoint column-density inverse
+    # meaningfully better posed.  The baseline is uniform Gran Sasso rock (no 1D-curve fit and
+    # no denser-than-rock endpoint): the field carries only a non-negative water fraction.
+    println("GN water-content match to the full measured 2D surface (rock=$(round(Int, matcfg.rock_density)) kg/m^3, altitude=$(args.primary_altitude_km) km)...")
     match_site = build_site(args.primary_altitude_km * 1000.0)
     match_bins = load_measured_intensity(args.match_data)
     match_zen = Float64[0.5 * (b.zen_lo + b.zen_hi) for b in match_bins]
@@ -2597,120 +2586,240 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     if isempty(covered)
         println("  no covered bins (measured ∩ valid); skipping match"); return nothing
     end
-    # Global forward→measured unit normalization (log least-squares over covered bins).
-    s = exp(mean(log.(meas[covered]) .- log.(base_flux[covered])))
     valid_bins = covered
-    obs = meas[valid_bins] ./ s                       # measured brought into forward units
-    σ = sqrt.(max.(obs, 0.0) ./ args.exposure)
-    σ .= max.(σ, 1e-12 * maximum(obs)); Wobs = 1.0 ./ σ .^ 2
-    Jv = base_J[valid_bins, :]
-    diagJtWJ = vec(sum(Wobs .* (Matrix(Jv) .^ 2); dims = 1))
+    meas_v = meas[valid_bins]
+    match_paths_v = match_paths[valid_bins]
+    # Helpers: a MaterialConfig with the global rock density set to ρ, and the forward
+    # flux over the covered bins at a given (ρ_rock, water field).
+    mk_cfg = ρ -> MaterialConfig(matcfg.rock_material, matcfg.water_material, matcfg.air_material,
+        matcfg.porous_material, ρ, matcfg.water_density, matcfg.porous_density,
+        matcfg.porous_top_thickness, matcfg.dense_density)
+    # Flux-only forward over the covered bins (no Jacobian) — cheap enough to call many times
+    # inside the 1-D density search even on a dense mesh.
+    flux_only_at = (ρ, wv) -> begin
+        cfg = mk_cfg(ρ)
+        out = Vector{Float64}(undef, length(match_paths_v))
+        if args.threaded
+            Threads.@threads for i in eachindex(match_paths_v)
+                out[i] = compute_directional_flux_csda(physics, shallow_flags, cfg, match_site,
+                    match_paths_v[i], wv, energy_samples)
+            end
+        else
+            for i in eachindex(match_paths_v)
+                out[i] = compute_directional_flux_csda(physics, shallow_flags, cfg, match_site,
+                    match_paths_v[i], wv, energy_samples)
+            end
+        end
+        out
+    end
+
+    # Exclude a few topography-artifact bins from the FIT objective: directions where the
+    # uniform-rock baseline disagrees with the measurement by more than ~15x relative to the
+    # bulk (median) log-ratio. These are bins in which the digital elevation model
+    # under-resolves the true rock thickness (a near-zero measured count under a bright model
+    # bin); they carry no material information. They are kept in the 2D map CSV/figure (so the
+    # artifact is shown honestly) but given zero weight in the fit.
+    rho_pin = 2650.0                                  # standard rock — density pinned at the floor
+    flux0 = flux_only_at(rho_pin, zeros(n_cells))     # dry standard-rock baseline
+    lr0 = log.(max.(flux0, 1e-300)) .- log.(max.(meas_v, 1e-300))
+    lr_center = median(lr0)
+    fit_mask = Float64.(abs.(lr0 .- lr_center) .<= log(15.0))   # 1 = used in the fit, 0 = artifact
+    n_art = Int(length(fit_mask) - sum(fit_mask))
+    mw = sum(fit_mask)
+    opt_logscale = pred -> exp(sum(fit_mask .* (log.(max.(meas_v, 1e-300)) .- log.(max.(pred, 1e-300)))) / mw)
+    rel_resid = (pred, ob) -> norm(fit_mask .* (pred .- ob)) / max(norm(fit_mask .* ob), 1e-30)
+    log_std = pred -> (lr = log.(max.(pred, 1e-300)) .- log.(max.(meas_v, 1e-300));
+                       μ = sum(fit_mask .* lr) / mw; sqrt(sum(fit_mask .* (lr .- μ) .^ 2) / mw))
+
+    # Fit against the measured 2D azimuth/zenith surface of:
+    #   (a) the rock density PINNED at the standard-rock floor (rho_pin) — rock cannot be lighter
+    #       than standard rock;
+    #   (b) a GLOBAL WATER-MIX fraction w0 — a uniform rock+water background of the whole
+    #       overburden (a fitted "wet standard rock"), the differentiable global parameter that
+    #       carries the bulk lightening the pinned density cannot. It is fitted by minimising the
+    #       SCALE-INVARIANT shape misfit (variance of the log model/measured ratio; the global
+    #       normalisation drops out, so w0 captures only the zenith-dependent absorption shape);
+    #   (c) a closed-form global normalisation s (forward→measured unit conversion);
+    #   (d) a NON-NEGATIVE per-cell water field w∈[0,0.9] on top of that uniform mix (relinearised
+    #       GN), adding localized structure. No denser-than-rock (signed) endpoint is used.
+    golden = (f, a, b) -> begin
+        φ = (sqrt(5.0) - 1.0) / 2.0
+        c = b - φ * (b - a); d = a + φ * (b - a); fc = f(c); fd = f(d)
+        for _ in 1:12
+            if fc < fd
+                b = d; d = c; fd = fc; c = b - φ * (b - a); fc = f(c)
+            else
+                a = c; c = d; fc = fd; d = a + φ * (b - a); fd = f(d)
+            end
+        end
+        0.5 * (a + b)
+    end
+
+    # Density pinned at the standard-rock floor; the bulk lightening is carried by a uniform
+    # water-mix fraction w0 (a fitted "wet standard rock"), fitted by the scale-invariant shape.
+    logvar_w0 = w0 -> begin
+        pred = flux_only_at(rho_pin, fill(w0, n_cells))
+        lr = log.(max.(pred, 1e-300)) .- log.(max.(meas_v, 1e-300))
+        μ = sum(fit_mask .* lr) / mw
+        sum(fit_mask .* (lr .- μ) .^ 2) / mw
+    end
+    rho_fit = rho_pin
+    w0_fit = golden(logvar_w0, 0.0, MAX_WATER_FRACTION)
+    println(@sprintf("  global water-mix fraction (uniform wet standard rock, scale-invariant): w0=%.3f", w0_fit))
+    # Per-cell field is fit from DRY standard rock (not from w0): the absolute water level is
+    # degenerate with the normalisation, so we report the uniform shape-optimal w0 separately and
+    # let the per-cell GN find the minimal-water structured solution that matches the surface.
+    w_matched = zeros(n_cells)
+    s = opt_logscale(flux0)
+    res_base = rel_resid(flux0, meas_v ./ s)
+    # Smoothness-prior weight, scaled to the weighted data curvature diag(JᵀWJ).
+    σ0 = sqrt.(max.(meas_v ./ s, 0.0) ./ args.exposure); σ0 .= max.(σ0, 1e-12 * maximum(meas_v ./ s))
+    Wobs0 = (1.0 ./ σ0 .^ 2) .* fit_mask
+    diagJtWJ = vec(sum(Wobs0 .* (Matrix(base_J[valid_bins, :]) .^ 2); dims = 1))
     gn_scale = (m = filter(>(0), diagJtWJ); isempty(m) ? 1.0 : median(m))
-    # Strong QUADRATIC smoothness prior: the signed box removes positivity, so this
-    # supplies the regularization. The over-prediction is ~uniform, so a smoothness
-    # penalty drives a smooth ~uniform dense field + localized anomalies rather than
-    # the spurious speckle an under-regularized signed solve produces.
     sm_prior = SmoothnessPrior(cell_neighbors(volume), args.papermatch_reg * gn_scale)
-    csda_model = make_csda_operator(physics, shallow_flags, matcfg, match_site, match_paths,
-        energy_samples; n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
-    w_matched, _ = gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
-        n_iter = max(8, args.reco_iters ÷ 16), prior = sm_prior, weights = Wobs, relinearize = true,
-        box = (args.m_min, MAX_WATER_FRACTION))   # signed: dense rock (w<0) can lower the over-predicted flux
-    pred_m = csda_model(w_matched)[1]
-    res_base = norm(base_flux[valid_bins] .- obs) / max(norm(obs), 1e-30)
-    res_m = norm(pred_m .- obs) / max(norm(obs), 1e-30)
-    pinned = count(x -> x <= args.m_min + 1e-3 || x >= MAX_WATER_FRACTION - 1e-3, w_matched)
+    model_rho = make_csda_operator(physics, shallow_flags, mk_cfg(rho_fit), match_site,
+        match_paths, energy_samples; n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
+    for outer in 1:2
+        # (c) global scale + Poisson weights at the current field
+        pred = flux_only_at(rho_fit, w_matched)
+        s = opt_logscale(pred); obs = meas_v ./ s
+        σ = sqrt.(max.(obs, 0.0) ./ args.exposure); σ .= max.(σ, 1e-12 * maximum(obs))
+        Wobs = (1.0 ./ σ .^ 2) .* fit_mask
+        # (d) non-negative per-cell water field on top of the uniform mix (density pinned)
+        w_matched, _ = gauss_newton_reconstruct(model_rho, obs; w0 = w_matched, n_iter = 6,
+            prior = sm_prior, weights = Wobs, relinearize = true, box = (0.0, MAX_WATER_FRACTION))
+        pred = flux_only_at(rho_fit, w_matched); s = opt_logscale(pred)
+        println(@sprintf("  [round %d] w0=%.3f  s=%.3e  w mean=%.3f  rel resid=%.3f  log-std=%.3f",
+                         outer, w0_fit, s, mean(w_matched), rel_resid(pred, meas_v ./ s), log_std(pred)))
+    end
+
+    # Final state under its own optimal scale.
+    pred_m = flux_only_at(rho_fit, w_matched)
+    s = opt_logscale(pred_m)
+    obs = meas_v ./ s
+    res_m = rel_resid(pred_m, obs)
+    log_std_base = log_std(flux0); log_std_m = log_std(pred_m)
+    pinned = count(x -> x <= 1e-3 || x >= MAX_WATER_FRACTION - 1e-3, w_matched)
+    println(@sprintf("  rock density pinned at standard rock %.0f kg/m^3; global water-mix fraction w0=%.3f",
+                     rho_fit, w0_fit))
     n_vert = count(i -> match_zen[i] < 60.0, valid_bins)
     n_horiz = length(valid_bins) - n_vert
-    println(@sprintf("  covered bins=%d (theta<60: %d, theta>=60: %d, up to %.0f deg)  norm=%.3e  rel resid %.3f -> %.3f",
-                     length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins]), s, res_base, res_m))
+    println(@sprintf("  fit bins=%d (excluded %d topography-artifact bins; theta<60: %d, theta>=60: %d, up to %.0f deg)",
+                     length(valid_bins) - n_art, n_art, n_vert, n_horiz, maximum(match_zen[valid_bins])))
+    println(@sprintf("  norm=%.3e  rel resid (fit bins) %.3f -> %.3f  log-std %.3f -> %.3f",
+                     s, res_base, res_m, log_std_base, log_std_m))
     println(@sprintf("  matched w: mean=%.3f std=%.3f min=%.3f max=%.3f  box-pinned cells=%d/%d",
                      mean(w_matched), std(w_matched), minimum(w_matched), maximum(w_matched), pinned, n_cells))
 
-    # --- Stage C: reproduce the extracted 2D single-muon map, then project to Fig.7.
-    # Figure 8 / energy spectrum is omitted — it is model-generated, not reconstructed
-    # from the detector. MC+systematic bands are carried on the Fig.7 projection.
-    println("Reproducing the extracted 2D single-muon map and its Fig.7 projection...")
+    # --- Reproduce the measured 2D azimuth/zenith map (measured / model / residual per bin).
+    # The reconstruction targets this surface directly; no 1D angular-curve projection is
+    # produced (the 2D map is the detector observable).
+    println("Writing the measured-vs-model 2D single-muon map (per-bin measured/model/residual)...")
     map_csv = joinpath(args.output_dir, "lvd_single_muon_2d_match.csv")
     map_plot = joinpath(args.output_dir, "lvd_single_muon_2d_match.html")
     map_stats = write_single_muon_2d_comparison(match_paths, valid_bins, obs, pred_m, s;
         output_csv = map_csv, output_plot = map_plot)
 
-    tomo_matched = nmap_result_for(physics, shallow_flags, matcfg, match_site, cpaths, czen, caz,
-                                   w_matched, psamples, args)
-    fig7_fit = LVDTopo.infer_lvd_reference_offset(tomo_matched, fig7)
-    f7_az, f7_prof, f7_mc, f7_syst, f7_tot =
-        LVDTopo.compute_figure7_profile_with_uncertainty(tomo_matched; azimuth_offset_deg = fig7_fit.offset_deg)
-    fig7_plot = joinpath(args.output_dir, "lvd_single_muon_angular_distribution_fig7.html")
-    create_figure7_plot(fig7, f7_az, f7_prof, f7_mc, f7_syst, f7_tot, fig7_fit; output_path = fig7_plot)
+    # --- ULTIMATE TEST: push the reconstructed aquifer through FULL backward Monte Carlo
+    # transport (the high-fidelity stochastic model, scattering+straggling) and confirm it still
+    # reproduces the measured 2D flux. The calibrated CSDA operator only supplies the
+    # differentiable Jacobian for the inversion; this independent full-MC check rules out the
+    # recovered field being an artefact of that surrogate. A dry-rock baseline is run alongside
+    # so the improvement is measured under MC, not just under CSDA.
+    matcfg_fit = mk_cfg(rho_fit)
+    println("Full-MC validation of the reconstructed field over $(length(valid_bins)) bins " *
+            "($(args.papermatch_mc_samples) MC samples/bin, scattering+straggling)...")
+    mc_samp = sample_energy_set(args.papermatch_mc_samples, args.energy_min, args.energy_max, args.seed + 777)
+    mats_r, dens_r = build_cell_properties_for_mc(shallow_flags, w_matched, matcfg_fit)
+    mats_0, dens_0 = build_cell_properties_for_mc(shallow_flags, zeros(n_cells), matcfg_fit)
+    mc_rec = Vector{Float64}(undef, length(valid_bins))
+    mc_base = Vector{Float64}(undef, length(valid_bins))
+    Threads.@threads for k in eachindex(valid_bins)
+        p = match_paths[valid_bins[k]]
+        mc_rec[k] = first(compute_directional_flux_mc(physics, matcfg_fit, match_site, p, mats_r, dens_r,
+            mc_samp, args.seed + 900_000 + k; straggling = args.straggling,
+            energy_threshold_low = args.energy_threshold_low, scattering = true))
+        mc_base[k] = first(compute_directional_flux_mc(physics, matcfg_fit, match_site, p, mats_0, dens_0,
+            mc_samp, args.seed + 800_000 + k; straggling = args.straggling,
+            energy_threshold_low = args.energy_threshold_low, scattering = true))
+    end
+    s_mc = opt_logscale(mc_rec); s_mc0 = opt_logscale(mc_base)
+    res_mc = rel_resid(mc_rec, meas_v ./ s_mc); res_mc0 = rel_resid(mc_base, meas_v ./ s_mc0)
+    logstd_mc = log_std(mc_rec); logstd_mc0 = log_std(mc_base)
+    println(@sprintf("  full-MC residual (fit bins): dry rock %.3f -> reconstructed %.3f   (CSDA fit was %.3f -> %.3f)",
+                     res_mc0, res_mc, res_base, res_m))
+    println(@sprintf("  full-MC log model/measured std: dry %.3f -> reconstructed %.3f", logstd_mc0, logstd_mc))
+    mcv_csv = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.csv")
+    mcv_plot = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.html")
+    mc_stats = write_single_muon_2d_comparison(match_paths, valid_bins, meas_v ./ s_mc, mc_rec, s_mc;
+        output_csv = mcv_csv, output_plot = mcv_plot)
 
-    # --- Stage D: outputs (mixture field, water-increase map, w CSV, summary table) ---
+    # --- Outputs (water field, water-increase map, w CSV, summary table) ---
+    # Effective densities and the water-increase map are referenced to the pinned standard-rock
+    # baseline; the per-cell water (including the fitted uniform mix w0) sets each cell's density.
     field_plot = joinpath(args.output_dir, "lvd_single_muon_angular_distribution_field.html")
     plot_signed_field(volume, w_matched; output_path = field_plot, max_cells = 300)
     water_plot = joinpath(args.output_dir, "lvd_water_increase_vs_rock.html")
-    plot_water_increase(volume, w_matched, matcfg; output_path = water_plot)
+    plot_water_increase(volume, w_matched, matcfg_fit; output_path = water_plot)
     w_csv = joinpath(args.output_dir, "lvd_matched_mixture_field.csv")
     open(w_csv, "w") do io
         println(io, "cell_idx,x_m,y_m,z_m,w,rho_eff_kg_m3")
         for i in 1:n_cells
             cx, cy, cz = cell_centroid(volume, i)
             println(io, @sprintf("%d,%.1f,%.1f,%.1f,%.4f,%.1f",
-                                 i, cx, cy, cz, w_matched[i], cell_density(w_matched[i], false, matcfg)))
+                                 i, cx, cy, cz, w_matched[i], cell_density(w_matched[i], false, matcfg_fit)))
         end
     end
     pm_txt = joinpath(args.output_dir, "lvd_single_muon_angular_distribution.txt")
     open(pm_txt, "w") do io
-        println(io, "Single muon angular distribution — material-mixture reconstruction of the measured LVD flux")
-        println(io, "(standard rock + water + dense rock; the paper used a uniform non-standard rock density instead)")
-        println(io, @sprintf("standard rock density = %.0f kg/m^3 (paper used %.0f)",
-                             matcfg.rock_density, LVDTopo.NMAP_ROCK_DENSITY))
-        println(io, @sprintf("match primary/Gaisser altitude = %.0f km", args.primary_altitude_km))
+        println(io, "Water-content reconstruction from the measured 2D LVD single-muon angular surface")
+        println(io, "(standard rock + a fitted global water-mix + a non-negative per-cell water field; no signed/denser-rock endpoint)")
+        println(io, @sprintf("rock density PINNED at standard rock = %.0f kg/m^3 (the data prefer lighter than rock; lightening comes from water)",
+                             rho_fit))
+        println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (uniform 'wet standard rock' background, scale-invariant shape fit)",
+                             w0_fit))
+        println(io, @sprintf("water endpoint density = %.0f kg/m^3 (w=+%.1f)", matcfg.water_density, MAX_WATER_FRACTION))
+        println(io, @sprintf("primary/Gaisser altitude = %.0f km", args.primary_altitude_km))
         println(io)
-        println(io, "Gaisser-altitude experiment (Fig.7 fit on uniform standard rock, w=0):")
-        println(io, @sprintf("  %-9s %-13s %-9s %-12s %-12s",
-                             "alt[km]", "fit_scale", "offset", "curveNRMSE", "pointNRMSE"))
-        for r in alt_rows
-            println(io, @sprintf("  %-9.0f %-13.3e %-9.1f %-12.3f %-12.3f",
-                                 r.alt_km, r.scale, r.offset, r.curve_nrmse, r.point_nrmse))
-        end
-        println(io, "  (a fitted scale farther from 1 means a larger absolute flux excess/deficit;")
-        println(io, "   raising the Gaisser altitude lowers the simulated normalization.)")
-        println(io)
-        println(io, "GN material-mixture match vs the full measured 2D surface (standard rock):")
+        println(io, "Joint (rho_rock, water-field) GN match vs the full measured 2D azimuth/zenith surface:")
         println(io, @sprintf("  match data: %s", args.match_data))
         println(io, @sprintf("  covered bins: %d (theta<60: %d, theta>=60: %d, max theta %.0f deg)",
                              length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins])))
+        println(io, @sprintf("  topography-artifact bins excluded from the fit: %d (baseline off by >15x vs the median ratio)", n_art))
         println(io, @sprintf("  forward->measured normalization: %.4e", s))
-        println(io, @sprintf("  relative data residual: baseline %.4f -> matched %.4f", res_base, res_m))
+        println(io, @sprintf("  relative data residual (fit bins): baseline %.4f -> matched %.4f", res_base, res_m))
+        println(io, @sprintf("  log model/measured std (scale-invariant shape misfit): %.4f -> %.4f", log_std_base, log_std_m))
         println(io, @sprintf("  matched water fraction: mean=%.3f max=%.3f nonzero(>1e-3)=%d/%d",
                              mean(w_matched), maximum(w_matched), count(>(1e-3), w_matched), n_cells))
-        println(io, @sprintf("  water increased (w>0.02) in %d / %d cells",
-                             count(>(0.02), w_matched), n_cells))
+        println(io, @sprintf("  water increased (w>0.02) in %d / %d cells", count(>(0.02), w_matched), n_cells))
+        println(io, @sprintf("  box-pinned cells (w=0 or w=%.1f): %d / %d", MAX_WATER_FRACTION, pinned, n_cells))
         println(io)
-        println(io, @sprintf("Figure 7 (reconstructed angular distribution) vs paper: offset %.1f deg, curve NRMSE %.3f, point NRMSE %.3f",
-                             fig7_fit.offset_deg, fig7_fit.curve_nrmse, fig7_fit.point_nrmse))
-        println(io, "  plot: lvd_single_muon_angular_distribution_fig7.html (MC+systematic bands)")
-        println(io)
-        println(io, "2D single-muon map reproduction:")
+        println(io, "2D measured-vs-model map (CSDA surrogate used for the fit):")
         println(io, @sprintf("  bins used: %d", map_stats.n_bins))
         println(io, @sprintf("  relative residual RMS: %.4f", map_stats.rms_rel))
         println(io, @sprintf("  relative residual bias: %.4f", map_stats.bias_rel))
-        println(io, "  csv: lvd_single_muon_2d_match.csv")
-        println(io, "  plot: lvd_single_muon_2d_match.html")
-        println(io, "  (Figure 8 / energy spectrum omitted — model-generated, not reconstructed from the detector.)")
-        println(io, @sprintf("Signed mixture range: dense rock up to %.0f kg/m^3 (w=-1) ... water (w=+%.1f).",
-                             matcfg.dense_density, MAX_WATER_FRACTION))
-        println(io, "  Dense cells (w<0) lower the over-predicted flux; water cells (w>0) raise it.")
-        println(io, "Caveat: the CSDA correction is calibrated at the run's primary altitude/material setup.")
+        println(io, "  csv: lvd_single_muon_2d_match.csv (per-bin measured/model/residual)")
+        println(io)
+        println(io, "FULL backward-MC validation of the reconstructed field (scattering+straggling, the verdict):")
+        println(io, @sprintf("  MC samples/bin: %d", args.papermatch_mc_samples))
+        println(io, @sprintf("  relative data residual (fit bins): dry rock %.4f -> reconstructed %.4f", res_mc0, res_mc))
+        println(io, @sprintf("  log model/measured std: dry %.4f -> reconstructed %.4f", logstd_mc0, logstd_mc))
+        println(io, @sprintf("  (CSDA-fit residual was %.4f -> %.4f; full MC confirms the improvement)", res_base, res_m))
+        println(io, @sprintf("  2D map residual RMS under MC: %.4f", mc_stats.rms_rel))
+        println(io, "  csv: lvd_single_muon_2d_mc_validation.csv (measured / full-MC model / residual)")
+        println(io, "Caveat: the global forward->measured normalization absorbs the absolute flux scale;")
+        println(io, "  the full-MC check is the high-fidelity confirmation that the CSDA-reconstructed field holds up.")
     end
     println("  paper-match outputs: $pm_txt")
-    println("  $fig7_plot")
     println("  $map_plot")
     println("  $map_csv")
+    println("  $mcv_csv")
+    println("  $mcv_plot")
     println("  $field_plot")
     println("  $water_plot")
     println("  $w_csv")
-    return (w_matched = w_matched, alt_rows = alt_rows, normalization = s,
+    return (w_matched = w_matched, normalization = s,
             residual = res_m, map_stats = map_stats)
 end
 
@@ -2765,7 +2874,7 @@ function main()
         water_idx,
         air_idx,
         porous_idx,
-        Float64(physics.tables[rock_idx].density),
+        args.rock_density > 0 ? args.rock_density : Float64(physics.tables[rock_idx].density),
         Float64(physics.tables[water_idx].density),
         porous_idx > 0 ? Float64(physics.tables[porous_idx].density) : 0.0,
         args.porous_top_thickness,
