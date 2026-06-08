@@ -873,14 +873,23 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
                                    bin_indices::AbstractVector{Int};
                                    ks_grid = range(0.0, 300.0; length = 31),
                                    kh_grid = range(0.0, 80.0; length = 33),
-                                   refine::Int = 4)
+                                   refine::Int = 4,
+                                   fit_geometric::Bool = true)
     @assert length(mc_fluxes) == length(bin_indices)
     valid = [i for i in eachindex(bin_indices) if isfinite(mc_fluxes[i]) && mc_fluxes[i] > 0]
     isempty(valid) && error("calibrate_csda_correction: no positive MC reference fluxes")
     logmc = [log(mc_fluxes[i]) for i in valid]
     bins = [bin_indices[i] for i in valid]
 
-    set_corr(ks, kh) = set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh)
+    # When fit_geometric=false the material-INDEPENDENT geometric residual is held
+    # fixed at its current (pass-1) value and only the material-coupled (κ_strag,
+    # κ_hard) are re-fit. This is used by the self-consistent recursion so the
+    # geometric term cannot drift to absorb the recovered material's mean absorption.
+    cur = get_csda_correction()
+    fa, fb, fc, fd = fit_geometric ? (0.0, 0.0, 0.0, 0.0) :
+                     (cur.resid_a, cur.resid_b, cur.resid_c, cur.resid_d)
+    set_corr(ks, kh) = set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh,
+                                            resid_a = fa, resid_b = fb, resid_c = fc, resid_d = fd)
     function objective(ks, kh)
         set_corr(ks, kh)
         s = 0.0; n = 0
@@ -921,25 +930,29 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
 
     # --- geometric residual: fit exp(a + b·logL + c·logL² + d·cosθ) to the
     # convolution-corrected residual by linear least-squares (absorbs any leftover
-    # smooth depth/angle structure). w-independent, so it is AD-safe. ---
-    set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh)
-    feats = Vector{Float64}[]; ys = Float64[]
-    for (j, b) in enumerate(bins)
-        f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
-                                          paths[b], water_fractions, energy_samples)
-        (isfinite(f) && f > 0) || continue
-        logL = log(max(path_rock_length(paths[b]), 1.0))
-        push!(feats, [1.0, logL, logL * logL, cosd(paths[b].zenith)])
-        push!(ys, logmc[j] - log(f))          # log(mc / csda_κ): what the multiplier must supply
-    end
-    nfit = length(ys)
-    resid_a = resid_b = resid_c = resid_d = 0.0
-    if nfit >= 4
-        A = reduce(vcat, transpose.(feats))   # nfit × 4
-        coef = A \ ys                          # least-squares (a, b, c, d)
-        resid_a, resid_b, resid_c, resid_d = coef[1], coef[2], coef[3], coef[4]
-    elseif nfit > 0
-        resid_a = sum(ys) / nfit               # constant offset only
+    # smooth depth/angle structure). w-independent, so it is AD-safe. Skipped (held
+    # frozen at the pass-1 value) when fit_geometric=false. ---
+    resid_a, resid_b, resid_c, resid_d = fa, fb, fc, fd
+    if fit_geometric
+        set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh)
+        feats = Vector{Float64}[]; ys = Float64[]
+        for (j, b) in enumerate(bins)
+            f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
+                                              paths[b], water_fractions, energy_samples)
+            (isfinite(f) && f > 0) || continue
+            logL = log(max(path_rock_length(paths[b]), 1.0))
+            push!(feats, [1.0, logL, logL * logL, cosd(paths[b].zenith)])
+            push!(ys, logmc[j] - log(f))          # log(mc / csda_κ): what the multiplier must supply
+        end
+        nfit = length(ys)
+        resid_a = resid_b = resid_c = resid_d = 0.0
+        if nfit >= 4
+            A = reduce(vcat, transpose.(feats))   # nfit × 4
+            coef = A \ ys                          # least-squares (a, b, c, d)
+            resid_a, resid_b, resid_c, resid_d = coef[1], coef[2], coef[3], coef[4]
+        elseif nfit > 0
+            resid_a = sum(ys) / nfit               # constant offset only
+        end
     end
 
     set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh,

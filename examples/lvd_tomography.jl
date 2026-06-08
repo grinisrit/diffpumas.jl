@@ -1306,6 +1306,14 @@ function parse_commandline()
         papermatch_paper_samples = 2000,  # MC samples for the Fig.8 energy spectrum
         papermatch_reg = 1.0,          # smoothness-prior weight (× data curvature) for the
                                        # signed match — replaces positivity regularization
+        papermatch_recursions = 1,     # self-consistent recursion: re-calibrate CSDA->MC at the
+                                       # current reconstructed field and re-solve, up to N times (1 = off)
+        papermatch_recur_tol = 0.02,   # stop the recursion once both the field and the correction
+                                       # coefficients change by less than this (relative L2)
+        papermatch_damp = 0.6,         # under-relaxation on the field between recursion passes
+                                       # (1 = take each solve as-is; <1 damps oscillation)
+        papermatch_val_horiz = 80,     # # of stratified theta>=60 (long-slant) bins added to the
+                                       # full-MC validation on top of all theta<60 fit bins
         detectability = false,         # run the matched-resolution detectability study (then exit)
         detection_benchmark = false,   # run the CSDA gradient matched-filter detection benchmark (then exit)
         reconstruction_sweep = false,  # (b) reconstruction RMSE/SSIM vs exposure (then exit)
@@ -1423,6 +1431,14 @@ function parse_commandline()
             args = merge(args, (papermatch_paper_samples = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--papermatch-reg"
             args = merge(args, (papermatch_reg = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-recursions"
+            args = merge(args, (papermatch_recursions = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-recur-tol"
+            args = merge(args, (papermatch_recur_tol = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-damp"
+            args = merge(args, (papermatch_damp = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-val-horiz"
+            args = merge(args, (papermatch_val_horiz = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--detectability"
             args = merge(args, (detectability = true,)); i += 1
         elseif arg == "--detection-benchmark"
@@ -1511,7 +1527,8 @@ build_site(primary_alt_m::Real = primary_altitude_local()) =
 function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConfig,
                                     site::SiteConfig, paths::Vector{DirectionalPath},
                                     water_fractions::Vector{Float64},
-                                    energy_samples::Vector{EnergySample}, args)
+                                    energy_samples::Vector{EnergySample}, args;
+                                    fit_geometric::Bool = true)
     if !args.correction
         set_csda_correction!(enabled = false)
         println("CSDA fluctuation correction: DISABLED (pure CSDA).")
@@ -1541,9 +1558,9 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
         mcflux[k] = f
     end
     ks, kh, stats = calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
-        water_fractions, energy_samples, mcflux, cbins)
-    println(@sprintf("  fitted kappa_strag=%.3f kappa_hard=%.3f (+ geometric residual) | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
-                     ks, kh, 100 * stats.rel_before, 100 * stats.rel_after))
+        water_fractions, energy_samples, mcflux, cbins; fit_geometric = fit_geometric)
+    println(@sprintf("  fitted kappa_strag=%.3f kappa_hard=%.3f (%s geometric residual) | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
+                     ks, kh, fit_geometric ? "+ fitted" : "frozen", 100 * stats.rel_before, 100 * stats.rel_after))
     return (ks, kh, stats)
 end
 
@@ -2655,20 +2672,30 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         0.5 * (a + b)
     end
 
-    # Density pinned at the standard-rock floor; the bulk lightening is carried by a uniform
-    # water-mix fraction w0 (a fitted "wet standard rock"), fitted by the scale-invariant shape.
+    # GEOLOGICAL PRIOR: the known Gran Sasso saturated cave layer / aquifer sits ~550 m above the
+    # detector. We restrict the reconstructed water to cells ABOVE 500 m; everything below stays
+    # dry standard rock. The free (volume-filling) fit is unphysical -- this anchors the water to
+    # the aquifer region that the single-viewpoint data cannot localise on their own.
+    cell_z = Float64[cell_centroid(volume, i)[3] for i in 1:n_cells]
+    # Only ROCK cells crossed by the measured rays count (a cell with no ray sensitivity is air,
+    # above the topographic surface) -- otherwise the smoothness prior bleeds water into air cells
+    # above the mountain. Aquifer = above 500 m AND inside the rock (nonzero column in the forward J).
+    crossed = vec(sum(abs.(base_J[valid_bins, :]); dims = 1)) .> 0.0
+    aquifer_mask = (cell_z .> 500.0) .& crossed
+    n_aq = count(aquifer_mask)
+    maskdiag = Diagonal(Float64.(aquifer_mask))
+    println(@sprintf("  aquifer prior: water restricted to %d / %d rock cells above 500 m (below surface)", n_aq, n_cells))
+
+    # Density pinned at the standard-rock floor; the lightening is carried by a uniform water-mix
+    # fraction w0 over the AQUIFER cells, fitted by the scale-invariant shape misfit.
     logvar_w0 = w0 -> begin
-        pred = flux_only_at(rho_pin, fill(w0, n_cells))
+        wv = zeros(n_cells); wv[aquifer_mask] .= w0
+        pred = flux_only_at(rho_pin, wv)
         lr = log.(max.(pred, 1e-300)) .- log.(max.(meas_v, 1e-300))
         μ = sum(fit_mask .* lr) / mw
         sum(fit_mask .* (lr .- μ) .^ 2) / mw
     end
     rho_fit = rho_pin
-    w0_fit = golden(logvar_w0, 0.0, MAX_WATER_FRACTION)
-    println(@sprintf("  global water-mix fraction (uniform wet standard rock, scale-invariant): w0=%.3f", w0_fit))
-    # Per-cell field is fit from DRY standard rock (not from w0): the absolute water level is
-    # degenerate with the normalisation, so we report the uniform shape-optimal w0 separately and
-    # let the per-cell GN find the minimal-water structured solution that matches the surface.
     w_matched = zeros(n_cells)
     s = opt_logscale(flux0)
     res_base = rel_resid(flux0, meas_v ./ s)
@@ -2680,18 +2707,62 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     sm_prior = SmoothnessPrior(cell_neighbors(volume), args.papermatch_reg * gn_scale)
     model_rho = make_csda_operator(physics, shallow_flags, mk_cfg(rho_fit), match_site,
         match_paths, energy_samples; n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
-    for outer in 1:2
-        # (c) global scale + Poisson weights at the current field
-        pred = flux_only_at(rho_fit, w_matched)
-        s = opt_logscale(pred); obs = meas_v ./ s
-        σ = sqrt.(max.(obs, 0.0) ./ args.exposure); σ .= max.(σ, 1e-12 * maximum(obs))
-        Wobs = (1.0 ./ σ .^ 2) .* fit_mask
-        # (d) non-negative per-cell water field on top of the uniform mix (density pinned)
-        w_matched, _ = gauss_newton_reconstruct(model_rho, obs; w0 = w_matched, n_iter = 6,
-            prior = sm_prior, weights = Wobs, relinearize = true, box = (0.0, MAX_WATER_FRACTION))
-        pred = flux_only_at(rho_fit, w_matched); s = opt_logscale(pred)
-        println(@sprintf("  [round %d] w0=%.3f  s=%.3e  w mean=%.3f  rel resid=%.3f  log-std=%.3f",
-                         outer, w0_fit, s, mean(w_matched), rel_resid(pred, meas_v ./ s), log_std(pred)))
+    # Aquifer-masked operator: zero the Jacobian columns outside the aquifer (only those cells fit).
+    model_aq = function (w)
+        pr, J = model_rho(w)
+        return pr, J * maskdiag
+    end
+    # SELF-CONSISTENT RECURSION: re-calibrate the CSDA->MC correction THROUGH the current
+    # reconstructed field, then re-solve, N times. Iteration 1 uses the calibration done at w=0
+    # (dry rock); later iterations re-calibrate through the recovered water field, so the
+    # differentiable surrogate matches full MC for the medium it is actually fitting.
+    n_recur = max(1, args.papermatch_recursions)
+    damp = clamp(args.papermatch_damp, 0.0, 1.0)
+    w0_fit = 0.0
+    w_prev = zeros(n_cells)        # converged field from the previous pass (warm start + damping)
+    prev_coef = nothing            # previous correction coefficients (convergence check)
+    for recur in 1:n_recur
+        if recur > 1
+            println(@sprintf("  [recursion %d/%d] re-calibrating CSDA->MC through the current reconstructed field (geometric residual frozen)...",
+                             recur, n_recur))
+            # Re-fit only the material-coupled (kappa_strag, kappa_hard) through the recovered
+            # field; the material-independent geometric residual stays frozen at its pass-1 value,
+            # so it cannot drift to absorb the band's mean water absorption.
+            calibrate_correction_to_mc(physics, shallow_flags, matcfg, match_site, paths,
+                copy(w_prev), energy_samples, args; fit_geometric = false)
+        end
+        # (a) diagnostic global water-mix shape fit (reported, not added to the field)
+        w0_fit = golden(logvar_w0, 0.0, MAX_WATER_FRACTION)
+        # (b) per-cell aquifer GN, warm-started from the previous pass (faster + path-stable)
+        w_solved = copy(w_prev)
+        for outer in 1:2
+            pred = flux_only_at(rho_fit, w_solved)
+            s = opt_logscale(pred); obs = meas_v ./ s
+            σ = sqrt.(max.(obs, 0.0) ./ args.exposure); σ .= max.(σ, 1e-12 * maximum(obs))
+            Wobs = (1.0 ./ σ .^ 2) .* fit_mask
+            w_solved, _ = gauss_newton_reconstruct(model_aq, obs; w0 = w_solved, n_iter = 6,
+                prior = sm_prior, weights = Wobs, relinearize = true, box = (0.0, MAX_WATER_FRACTION))
+            w_solved[.!aquifer_mask] .= 0.0   # keep water inside the aquifer rock cells only
+        end
+        # under-relaxation between passes (pass 1 takes the solve as-is; w_prev=0 there)
+        w_matched = recur == 1 ? w_solved : (damp .* w_solved .+ (1.0 - damp) .* w_prev)
+        w_matched[.!aquifer_mask] .= 0.0
+        predr = flux_only_at(rho_fit, w_matched); s = opt_logscale(predr)
+        # convergence diagnostics: relative L2 change in the field and the correction coefficients
+        cur = get_csda_correction()
+        coef = [cur.kappa_strag, cur.kappa_hard, cur.resid_a, cur.resid_b, cur.resid_c, cur.resid_d]
+        dfield = norm(w_matched .- w_prev) / max(norm(w_matched), 1e-12)
+        dcoef = prev_coef === nothing ? NaN : norm(coef .- prev_coef) / max(norm(coef), 1e-12)
+        println(@sprintf("  [recursion %d/%d] w0=%.3f  s=%.3e  w mean=%.4f  rel resid=%.3f  log-std=%.3f  | dfield=%.2e dcoef=%.2e",
+                         recur, n_recur, w0_fit, s, mean(w_matched), rel_resid(predr, meas_v ./ s),
+                         log_std(predr), dfield, isnan(dcoef) ? -1.0 : dcoef))
+        w_prev = copy(w_matched)
+        prev_coef = coef
+        if recur > 1 && dfield < args.papermatch_recur_tol && dcoef < args.papermatch_recur_tol
+            println(@sprintf("  [recursion] self-consistent: dfield & dcoef < tol=%.2e after %d passes; stopping.",
+                             args.papermatch_recur_tol, recur))
+            break
+        end
     end
 
     # Final state under its own optimal scale.
@@ -2721,43 +2792,9 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     map_stats = write_single_muon_2d_comparison(match_paths, valid_bins, obs, pred_m, s;
         output_csv = map_csv, output_plot = map_plot)
 
-    # --- ULTIMATE TEST: push the reconstructed aquifer through FULL backward Monte Carlo
-    # transport (the high-fidelity stochastic model, scattering+straggling) and confirm it still
-    # reproduces the measured 2D flux. The calibrated CSDA operator only supplies the
-    # differentiable Jacobian for the inversion; this independent full-MC check rules out the
-    # recovered field being an artefact of that surrogate. A dry-rock baseline is run alongside
-    # so the improvement is measured under MC, not just under CSDA.
+    # --- Reconstructed-field outputs written FIRST (fast), so the 3D field/figure data are
+    # available immediately after the fit, before the slow full-MC validation below.
     matcfg_fit = mk_cfg(rho_fit)
-    println("Full-MC validation of the reconstructed field over $(length(valid_bins)) bins " *
-            "($(args.papermatch_mc_samples) MC samples/bin, scattering+straggling)...")
-    mc_samp = sample_energy_set(args.papermatch_mc_samples, args.energy_min, args.energy_max, args.seed + 777)
-    mats_r, dens_r = build_cell_properties_for_mc(shallow_flags, w_matched, matcfg_fit)
-    mats_0, dens_0 = build_cell_properties_for_mc(shallow_flags, zeros(n_cells), matcfg_fit)
-    mc_rec = Vector{Float64}(undef, length(valid_bins))
-    mc_base = Vector{Float64}(undef, length(valid_bins))
-    Threads.@threads for k in eachindex(valid_bins)
-        p = match_paths[valid_bins[k]]
-        mc_rec[k] = first(compute_directional_flux_mc(physics, matcfg_fit, match_site, p, mats_r, dens_r,
-            mc_samp, args.seed + 900_000 + k; straggling = args.straggling,
-            energy_threshold_low = args.energy_threshold_low, scattering = true))
-        mc_base[k] = first(compute_directional_flux_mc(physics, matcfg_fit, match_site, p, mats_0, dens_0,
-            mc_samp, args.seed + 800_000 + k; straggling = args.straggling,
-            energy_threshold_low = args.energy_threshold_low, scattering = true))
-    end
-    s_mc = opt_logscale(mc_rec); s_mc0 = opt_logscale(mc_base)
-    res_mc = rel_resid(mc_rec, meas_v ./ s_mc); res_mc0 = rel_resid(mc_base, meas_v ./ s_mc0)
-    logstd_mc = log_std(mc_rec); logstd_mc0 = log_std(mc_base)
-    println(@sprintf("  full-MC residual (fit bins): dry rock %.3f -> reconstructed %.3f   (CSDA fit was %.3f -> %.3f)",
-                     res_mc0, res_mc, res_base, res_m))
-    println(@sprintf("  full-MC log model/measured std: dry %.3f -> reconstructed %.3f", logstd_mc0, logstd_mc))
-    mcv_csv = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.csv")
-    mcv_plot = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.html")
-    mc_stats = write_single_muon_2d_comparison(match_paths, valid_bins, meas_v ./ s_mc, mc_rec, s_mc;
-        output_csv = mcv_csv, output_plot = mcv_plot)
-
-    # --- Outputs (water field, water-increase map, w CSV, summary table) ---
-    # Effective densities and the water-increase map are referenced to the pinned standard-rock
-    # baseline; the per-cell water (including the fitted uniform mix w0) sets each cell's density.
     field_plot = joinpath(args.output_dir, "lvd_single_muon_angular_distribution_field.html")
     plot_signed_field(volume, w_matched; output_path = field_plot, max_cells = 300)
     water_plot = joinpath(args.output_dir, "lvd_water_increase_vs_rock.html")
@@ -2771,6 +2808,65 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                                  i, cx, cy, cz, w_matched[i], cell_density(w_matched[i], false, matcfg_fit)))
         end
     end
+    println("  reconstructed-field outputs: $field_plot , $water_plot , $w_csv")
+
+    # --- ULTIMATE TEST: push the reconstructed aquifer through FULL backward Monte Carlo
+    # transport (scattering+straggling) and confirm it reproduces the measured 2D flux. The CSDA
+    # operator only supplies the differentiable Jacobian for the inversion; this independent
+    # full-MC check rules out the recovered field being an artefact of that surrogate.
+    # Validate ALL theta<60 fit bins plus a STRATIFIED subset of the high-theta
+    # (long-slant) bins, so the check spans the full depth range of the fit and not
+    # only the vertical bins. Full MC on every horizontal bin is prohibitively slow.
+    mc_cap = 60.0
+    vert = [k for k in eachindex(valid_bins) if fit_mask[k] > 0.0 && match_paths[valid_bins[k]].zenith < mc_cap]
+    horiz_all = [k for k in eachindex(valid_bins) if fit_mask[k] > 0.0 && match_paths[valid_bins[k]].zenith >= mc_cap]
+    sort!(horiz_all; by = k -> match_paths[valid_bins[k]].zenith)
+    nhz = clamp(args.papermatch_val_horiz, 0, length(horiz_all))
+    horiz = nhz > 0 ? horiz_all[unique(round.(Int, range(1, length(horiz_all); length = nhz)))] : Int[]
+    val_set = sort(unique(vcat(vert, horiz)))
+    println(@sprintf("Full-MC validation over %d bins (%d theta<%.0f + %d stratified theta>=%.0f; %d MC samples/bin, scattering+straggling)...",
+                     length(val_set), length(vert), mc_cap, length(horiz), mc_cap, args.papermatch_mc_samples))
+    mc_samp = sample_energy_set(args.papermatch_mc_samples, args.energy_min, args.energy_max, args.seed + 777)
+    mats_r, dens_r = build_cell_properties_for_mc(shallow_flags, w_matched, matcfg_fit)
+    mc_rec = fill(NaN, length(valid_bins))
+    mc_err = fill(NaN, length(valid_bins))
+    Threads.@threads for j in eachindex(val_set)
+        k = val_set[j]
+        p = match_paths[valid_bins[k]]
+        mc_rec[k], mc_err[k] = compute_directional_flux_mc(physics, matcfg_fit, match_site, p, mats_r, dens_r,
+            mc_samp, args.seed + 900_000 + k; straggling = args.straggling,
+            energy_threshold_low = args.energy_threshold_low, scattering = true)
+    end
+    idx = findall(k -> isfinite(mc_rec[k]) && fit_mask[k] > 0.0, eachindex(valid_bins))
+    s_mc = exp(mean(log.(meas_v[idx]) .- log.(max.(mc_rec[idx], 1e-300))))
+    relres = ii -> norm(mc_rec[ii] .- meas_v[ii] ./ s_mc) / max(norm(meas_v[ii] ./ s_mc), 1e-30)
+    res_mc = relres(idx)
+    logstd_mc = std(log.(max.(mc_rec[idx], 1e-300)) .- log.(max.(meas_v[idx], 1e-300)))
+    vidx = [k for k in idx if match_paths[valid_bins[k]].zenith < mc_cap]
+    hidx = [k for k in idx if match_paths[valid_bins[k]].zenith >= mc_cap]
+    res_mc_v = isempty(vidx) ? NaN : relres(vidx)
+    res_mc_h = isempty(hidx) ? NaN : relres(hidx)
+    println(@sprintf("  full-MC residual (%d bins): reconstructed %.3f   (CSDA fit was %.3f -> %.3f)",
+                     length(idx), res_mc, res_base, res_m))
+    println(@sprintf("    by depth: theta<%.0f (%d bins) %.3f ; theta>=%.0f (%d bins) %.3f",
+                     mc_cap, length(vidx), res_mc_v, mc_cap, length(hidx), res_mc_h))
+    println(@sprintf("  full-MC log model/measured std: %.3f  (CSDA %.3f)", logstd_mc, log_std_m))
+    mcv_csv = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.csv")
+    mcv_plot = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.html")
+    mc_stats = write_single_muon_2d_comparison(match_paths, valid_bins[idx], meas_v[idx] ./ s_mc, mc_rec[idx], s_mc;
+        output_csv = mcv_csv, output_plot = mcv_plot)
+    # Per-bin measured vs full-MC simulated flux WITH the MC error band, for the 3D angular plot.
+    band_csv = joinpath(args.output_dir, "lvd_mc_flux_band.csv")
+    open(band_csv, "w") do io
+        println(io, "bin_idx,zenith_deg,azimuth_deg,measured_flux,mc_flux,mc_err")
+        for k in idx
+            b = valid_bins[k]
+            println(io, @sprintf("%d,%.4f,%.4f,%.8e,%.8e,%.8e",
+                                 b, match_paths[b].zenith, mod(match_paths[b].azimuth, 360.0),
+                                 meas_v[k], mc_rec[k] * s_mc, mc_err[k] * s_mc))
+        end
+    end
+    println("  full-MC flux band: $band_csv")
     pm_txt = joinpath(args.output_dir, "lvd_single_muon_angular_distribution.txt")
     open(pm_txt, "w") do io
         println(io, "Water-content reconstruction from the measured 2D LVD single-muon angular surface")
@@ -2803,8 +2899,10 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io)
         println(io, "FULL backward-MC validation of the reconstructed field (scattering+straggling, the verdict):")
         println(io, @sprintf("  MC samples/bin: %d", args.papermatch_mc_samples))
-        println(io, @sprintf("  relative data residual (fit bins): dry rock %.4f -> reconstructed %.4f", res_mc0, res_mc))
-        println(io, @sprintf("  log model/measured std: dry %.4f -> reconstructed %.4f", logstd_mc0, logstd_mc))
+        println(io, @sprintf("  validated bins: %d (theta<60: %d, stratified theta>=60: %d)", length(idx), length(vidx), length(hidx)))
+        println(io, @sprintf("  relative data residual (fit bins): reconstructed %.4f  (CSDA fit %.4f)", res_mc, res_m))
+        println(io, @sprintf("  by depth: theta<60 %.4f ; theta>=60 %.4f", res_mc_v, res_mc_h))
+        println(io, @sprintf("  log model/measured std: %.4f  (CSDA %.4f)", logstd_mc, log_std_m))
         println(io, @sprintf("  (CSDA-fit residual was %.4f -> %.4f; full MC confirms the improvement)", res_base, res_m))
         println(io, @sprintf("  2D map residual RMS under MC: %.4f", mc_stats.rms_rel))
         println(io, "  csv: lvd_single_muon_2d_mc_validation.csv (measured / full-MC model / residual)")
