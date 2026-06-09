@@ -1314,6 +1314,15 @@ function parse_commandline()
                                        # (1 = take each solve as-is; <1 damps oscillation)
         papermatch_val_horiz = 80,     # # of stratified theta>=60 (long-slant) bins added to the
                                        # full-MC validation on top of all theta<60 fit bins
+        papermatch_dem_unc = 0.15,     # per-bin relative DEM/topography uncertainty slope: the data
+                                       # σ gets a term (dem_unc·(secθ−1))·flux in quadrature, so
+                                       # long-slant bins (largest terrain error) are DOWN-weighted,
+                                       # not excluded. 0 = pure-Poisson weighting.
+        papermatch_robust_c = 3.0,     # Cauchy IRLS scale in units of the robust log-residual MAD
+                                       # (smaller = more aggressive tail rejection). Tames the heavy
+                                       # residual tail (faint topography-artifact bins) in the GN fit.
+        papermatch_abs_scale = 0.0,    # if >0, PIN the forward→measured normalization to this absolute
+                                       # value (breaks the shape/scale degeneracy); 0 = free log-scale fit.
         detectability = false,         # run the matched-resolution detectability study (then exit)
         detection_benchmark = false,   # run the CSDA gradient matched-filter detection benchmark (then exit)
         reconstruction_sweep = false,  # (b) reconstruction RMSE/SSIM vs exposure (then exit)
@@ -1439,6 +1448,12 @@ function parse_commandline()
             args = merge(args, (papermatch_damp = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--papermatch-val-horiz"
             args = merge(args, (papermatch_val_horiz = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-dem-unc"
+            args = merge(args, (papermatch_dem_unc = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-robust-c"
+            args = merge(args, (papermatch_robust_c = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-abs-scale"
+            args = merge(args, (papermatch_abs_scale = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--detectability"
             args = merge(args, (detectability = true,)); i += 1
         elseif arg == "--detection-benchmark"
@@ -1528,7 +1543,9 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
                                     site::SiteConfig, paths::Vector{DirectionalPath},
                                     water_fractions::Vector{Float64},
                                     energy_samples::Vector{EnergySample}, args;
-                                    fit_geometric::Bool = true)
+                                    fit_geometric::Bool = true,
+                                    kh_anchor::Union{Nothing,Float64} = nothing,
+                                    kh_anchor_weight::Float64 = 0.0)
     if !args.correction
         set_csda_correction!(enabled = false)
         println("CSDA fluctuation correction: DISABLED (pure CSDA).")
@@ -1558,8 +1575,9 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
         mcflux[k] = f
     end
     ks, kh, stats = calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
-        water_fractions, energy_samples, mcflux, cbins; fit_geometric = fit_geometric)
-    println(@sprintf("  fitted kappa_strag=%.3f kappa_hard=%.3f (%s geometric residual) | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
+        water_fractions, energy_samples, mcflux, cbins; fit_geometric = fit_geometric,
+        kh_anchor = kh_anchor, kh_anchor_weight = kh_anchor_weight)
+    println(@sprintf("  fitted α_strag=%.3f (physical ½b(b+1) enhancement) κ_hard=%.3f (%s geometric residual) | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
                      ks, kh, fit_geometric ? "+ fitted" : "frozen", 100 * stats.rel_before, 100 * stats.rel_after))
     return (ks, kh, stats)
 end
@@ -2705,6 +2723,24 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     diagJtWJ = vec(sum(Wobs0 .* (Matrix(base_J[valid_bins, :]) .^ 2); dims = 1))
     gn_scale = (m = filter(>(0), diagJtWJ); isempty(m) ? 1.0 : median(m))
     sm_prior = SmoothnessPrior(cell_neighbors(volume), args.papermatch_reg * gn_scale)
+    # Reference in-fit data-weight level the prior weight `gn_scale` is calibrated to.
+    # The robust + DEM reweighting below is RELATIVE (per-bin) — we renormalize each
+    # GN pass so its median in-fit weight matches this reference, otherwise shrinking
+    # the absolute weight level would let the fixed smoothness prior over-regularize
+    # the field to zero.
+    ref_wmed = (p = filter(>(0), Wobs0); isempty(p) ? 1.0 : median(p))
+    # Per-fit-bin DEM/topography down-weight: the long-slant (high-zenith) rays traverse
+    # the most laterally-extended, least-resolved terrain, so their column density carries
+    # the largest geometric error. We apply a BOUNDED multiplicative weight that falls from
+    # 1 (vertical) toward ~1/5 (near-horizontal), wdem = 1/(1+(dem_unc·(secθ−1))²). A
+    # variance-in-quadrature form would be wrong here: at exposure≈1e8 the Poisson σ is
+    # ~1e-4 relative, so any absolute DEM fraction would dominate σ by orders of magnitude
+    # and collapse all non-vertical weights, leaving the fit driven by a handful of vertical
+    # bins (→ zero water). The bounded multiplicative factor down-weights slant bins gently.
+    zen_v = Float64[match_paths_v[i].zenith for i in eachindex(match_paths_v)]
+    dem_slant = args.papermatch_dem_unc .* max.(1.0 ./ cosd.(zen_v) .- 1.0, 0.0)
+    wdem = 1.0 ./ (1.0 .+ dem_slant .^ 2)
+    fit_idx = findall(>(0.0), fit_mask)   # in-fit (non-artifact) bins, for the robust scale
     model_rho = make_csda_operator(physics, shallow_flags, mk_cfg(rho_fit), match_site,
         match_paths, energy_samples; n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
     # Aquifer-masked operator: zero the Jacobian columns outside the aquifer (only those cells fit).
@@ -2725,21 +2761,49 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         if recur > 1
             println(@sprintf("  [recursion %d/%d] re-calibrating CSDA->MC through the current reconstructed field (geometric residual frozen)...",
                              recur, n_recur))
-            # Re-fit only the material-coupled (kappa_strag, kappa_hard) through the recovered
-            # field; the material-independent geometric residual stays frozen at its pass-1 value,
-            # so it cannot drift to absorb the band's mean water absorption.
+            # Re-fit only the hard-loss κ_hard through the recovered field (the physical
+            # straggling enhancement and the material-independent geometric residual are
+            # both pinned). A gentle ridge anchors κ_hard toward its previous-pass value so
+            # MC noise in the calibration reference cannot make the recursion oscillate.
             calibrate_correction_to_mc(physics, shallow_flags, matcfg, match_site, paths,
-                copy(w_prev), energy_samples, args; fit_geometric = false)
+                copy(w_prev), energy_samples, args; fit_geometric = false,
+                kh_anchor = get_csda_correction().kappa_hard, kh_anchor_weight = 1.0e-3)
         end
         # (a) diagnostic global water-mix shape fit (reported, not added to the field)
         w0_fit = golden(logvar_w0, 0.0, MAX_WATER_FRACTION)
-        # (b) per-cell aquifer GN, warm-started from the previous pass (faster + path-stable)
+        # (b) per-cell aquifer GN, warm-started from the previous pass (faster + path-stable).
+        # IRLS: the FIRST solve (recur==1 & outer==1, the cold start) uses pure
+        # inverse-variance weighting — at initialization the dry baseline is wrong
+        # *everywhere*, so the large-residual bins are the INFORMATIVE deep ones, not
+        # outliers; robust down-weighting them there would suppress the very signal that
+        # drives the water reconstruction. Robustness is introduced only once a water
+        # field exists and the residual scatter reflects genuine outliers.
         w_solved = copy(w_prev)
-        for outer in 1:2
+        for outer in 1:3
+            cold = (recur == 1 && outer == 1)
             pred = flux_only_at(rho_fit, w_solved)
             s = opt_logscale(pred); obs = meas_v ./ s
+            # Poisson inverse-variance weights, with a BOUNDED DEM down-weight (wdem) and a
+            # robust outlier down-weight (rweight); both are relative and the renorm below
+            # restores the overall data-vs-prior balance.
             σ = sqrt.(max.(obs, 0.0) ./ args.exposure); σ .= max.(σ, 1e-12 * maximum(obs))
-            Wobs = (1.0 ./ σ .^ 2) .* fit_mask
+            # Robust IRLS: Cauchy weight on the log-residual, scale set from the robust
+            # (MAD) spread of the in-fit residuals, so the heavy tail of faint
+            # topography-artifact bins is smoothly down-weighted (not L2-dominant). Skipped
+            # at the cold start (every bin mis-fits there → large residual ≠ outlier).
+            rweight = ones(length(obs))
+            if !cold
+                lr = log.(max.(pred, 1e-300)) .- log.(max.(obs, 1e-300))
+                lr_med = median(lr[fit_idx])
+                mad = median(abs.(lr[fit_idx] .- lr_med))
+                cscale = max(1.4826 * mad * args.papermatch_robust_c, 1e-6)
+                rweight = 1.0 ./ (1.0 .+ ((lr .- lr_med) ./ cscale) .^ 2)
+            end
+            Wobs = (1.0 ./ σ .^ 2) .* fit_mask .* wdem .* rweight
+            # renormalize to the reference in-fit weight level so the robust+DEM
+            # reweighting stays RELATIVE and the prior balance is preserved.
+            wmed_cur = (p = Wobs[fit_idx]; q = filter(>(0), p); isempty(q) ? 1.0 : median(q))
+            Wobs .*= ref_wmed / max(wmed_cur, 1e-300)
             w_solved, _ = gauss_newton_reconstruct(model_aq, obs; w0 = w_solved, n_iter = 6,
                 prior = sm_prior, weights = Wobs, relinearize = true, box = (0.0, MAX_WATER_FRACTION))
             w_solved[.!aquifer_mask] .= 0.0   # keep water inside the aquifer rock cells only
@@ -2765,13 +2829,37 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         end
     end
 
-    # Final state under its own optimal scale.
+    # Final state. The global forward→measured normalization s is otherwise a FREE
+    # log-scale fit, so it absorbs the absolute flux level and only the shape is
+    # constrained. Estimate s (and its uncertainty) from the most RELIABLE bins —
+    # the near-vertical in-fit bins, least affected by DEM error — as the per-bin
+    # log(measured/model) spread, and report the implied absolute-scale band. With
+    # --papermatch-abs-scale>0 the scale is PINNED to that absolute value instead,
+    # turning the shape fit into a quantitative (absolute) water-content result.
     pred_m = flux_only_at(rho_fit, w_matched)
-    s = opt_logscale(pred_m)
+    vert_fit = [k for k in eachindex(valid_bins)
+                if fit_mask[k] > 0.0 && match_zen[valid_bins[k]] < 40.0 && pred_m[k] > 0.0]
+    s_log = isempty(vert_fit) ? log(opt_logscale(pred_m)) :
+            mean(log.(meas_v[vert_fit]) .- log.(pred_m[vert_fit]))
+    s_reliable = exp(s_log)
+    s_relsd = length(vert_fit) > 1 ?
+              std(log.(meas_v[vert_fit]) .- log.(pred_m[vert_fit])) / sqrt(length(vert_fit)) : NaN
+    s = args.papermatch_abs_scale > 0.0 ? args.papermatch_abs_scale : opt_logscale(pred_m)
     obs = meas_v ./ s
     res_m = rel_resid(pred_m, obs)
     log_std_base = log_std(flux0); log_std_m = log_std(pred_m)
-    pinned = count(x -> x <= 1e-3 || x >= MAX_WATER_FRACTION - 1e-3, w_matched)
+    # Box-saturation diagnostic: split pinned cells into the DRY floor (w=0) and the
+    # WATER-SATURATED ceiling (w=MAX). Ceiling cells are directions the water-only
+    # model cannot explain (they would need ρ<water): flag them as "water-insufficient".
+    floor_pinned = count(x -> x <= 1e-3, w_matched)
+    ceil_pinned  = count(x -> x >= MAX_WATER_FRACTION - 1e-3, w_matched)
+    aq_ceiling   = count(i -> aquifer_mask[i] && w_matched[i] >= MAX_WATER_FRACTION - 1e-3, 1:n_cells)
+    pinned = floor_pinned + ceil_pinned
+    println(@sprintf("  global scale s=%.4e (free log-fit) ; reliable-bin s=%.4e (±%.1f%% from %d vertical in-fit bins)%s",
+                     opt_logscale(pred_m), s_reliable, isnan(s_relsd) ? 0.0 : 100 * s_relsd, length(vert_fit),
+                     args.papermatch_abs_scale > 0.0 ? @sprintf(" ; PINNED to %.4e", s) : ""))
+    println(@sprintf("  box saturation: %d/%d cells at dry floor (w=0), %d at water ceiling (w=%.1f; %d in aquifer = water-insufficient directions)",
+                     floor_pinned, n_cells, ceil_pinned, MAX_WATER_FRACTION, aq_ceiling))
     println(@sprintf("  rock density pinned at standard rock %.0f kg/m^3; global water-mix fraction w0=%.3f",
                      rho_fit, w0_fit))
     n_vert = count(i -> match_zen[i] < 60.0, valid_bins)
@@ -2883,13 +2971,19 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  covered bins: %d (theta<60: %d, theta>=60: %d, max theta %.0f deg)",
                              length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins])))
         println(io, @sprintf("  topography-artifact bins excluded from the fit: %d (baseline off by >15x vs the median ratio)", n_art))
-        println(io, @sprintf("  forward->measured normalization: %.4e", s))
+        println(io, @sprintf("  forward->measured normalization: %.4e%s", s,
+                             args.papermatch_abs_scale > 0.0 ? " (PINNED, absolute)" : " (free log-fit)"))
+        println(io, @sprintf("  reliable-bin scale: %.4e ± %.1f%% (from %d near-vertical in-fit bins; the absolute anchor)",
+                             s_reliable, isnan(s_relsd) ? 0.0 : 100 * s_relsd, length(vert_fit)))
         println(io, @sprintf("  relative data residual (fit bins): baseline %.4f -> matched %.4f", res_base, res_m))
         println(io, @sprintf("  log model/measured std (scale-invariant shape misfit): %.4f -> %.4f", log_std_base, log_std_m))
         println(io, @sprintf("  matched water fraction: mean=%.3f max=%.3f nonzero(>1e-3)=%d/%d",
                              mean(w_matched), maximum(w_matched), count(>(1e-3), w_matched), n_cells))
         println(io, @sprintf("  water increased (w>0.02) in %d / %d cells", count(>(0.02), w_matched), n_cells))
-        println(io, @sprintf("  box-pinned cells (w=0 or w=%.1f): %d / %d", MAX_WATER_FRACTION, pinned, n_cells))
+        println(io, @sprintf("  box-pinned cells (w=0 or w=%.1f): %d / %d (dry floor %d, water ceiling %d)",
+                             MAX_WATER_FRACTION, pinned, n_cells, floor_pinned, ceil_pinned))
+        println(io, @sprintf("  water-insufficient (aquifer cells at the w=%.1f ceiling, water-only model under-explains): %d",
+                             MAX_WATER_FRACTION, aq_ceiling))
         println(io)
         println(io, "2D measured-vs-model map (CSDA surrogate used for the fit):")
         println(io, @sprintf("  bins used: %d", map_stats.n_bins))

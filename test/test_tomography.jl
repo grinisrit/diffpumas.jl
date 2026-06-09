@@ -72,6 +72,31 @@ using Random
         end
     end
 
+    @testset "2b. CSDA AD vs forward FD with MC correction ENABLED" begin
+        # The default fixture runs with the correction disabled, so it never
+        # exercises the physical-straggling enhancement term (which depends on w
+        # through the surface energy / spectral index). Enable it here and confirm
+        # the sparse AD Jacobian still matches the forward finite-difference: this
+        # locks in the differentiability of `local_spectral_index`/`csda_var_correction`.
+        set_csda_correction!(enabled=true, kappa_strag=1.0, kappa_hard=7.0,
+                             resid_a=0.1, resid_b=-0.05, resid_c=0.01, resid_d=0.2)
+        try
+            fv, cells, grad = directional_flux_and_grad_csda(physics, shallow, matcfg, site, path, wfield, samples)
+            @test isfinite(fv) && fv > 0
+            h = 1e-5
+            for (k, c) in enumerate(cells)
+                wp = copy(wfield); wp[c] += h
+                wm = copy(wfield); wm[c] -= h
+                fp = compute_directional_flux_csda(physics, shallow, matcfg, site, path, wp, samples)
+                fm = compute_directional_flux_csda(physics, shallow, matcfg, site, path, wm, samples)
+                fd = (fp - fm) / (2h)
+                @test grad[k] ≈ fd rtol=1e-4
+            end
+        finally
+            set_csda_correction!(enabled=false)   # restore default for later testsets
+        end
+    end
+
     @testset "3. CSDA AD vs stochastic MC finite-difference" begin
         # FD on the full Monte-Carlo transport must agree with the CSDA AD
         # gradient within the MC statistical error.

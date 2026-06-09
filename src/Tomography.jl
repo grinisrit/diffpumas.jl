@@ -89,11 +89,19 @@ const MC_STEP_EPSILON_M = 1e-7
 
 mutable struct CsdaCorrection
     enabled::Bool
-    # MC-calibrated multiplicative flux correction exp(−κ_strag·V/E² − κ_hard·H/E)
-    # applied per energy sample. The CSDA↔MC deficit is catastrophic-hard-loss
-    # dominated; V/E² serves as an additional flexible depth-dependent suppression
-    # basis (phenomenological — κ_strag is not the physical straggling coefficient).
-    kappa_strag::Float64       # weight on V/E²  (depth-dependent suppression basis)
+    # MC-calibrated multiplicative flux correction applied per energy sample, split
+    # into two PHYSICALLY DISTINCT effects (see `csda_var_correction`):
+    #   exp( +α · ½b(b+1) · V/E²   −   κ_hard · H/E ).
+    # The first term is the soft-straggling flux ENHANCEMENT: a Gaussian surface-
+    # energy spread of variance V, folded against a locally-power-law surface flux of
+    # spectral index b, enhances the transmitted flux by ½b(b+1)·V/E² (the power-law
+    # convolution moment). b is COMPUTED from the flux model, so the coefficient is
+    # parameter-free physics and α (`kappa_strag`) is only a near-unity calibration
+    # multiplier (default 1). The second term is the catastrophic-hard-loss DEFICIT
+    # (brem/pair/photonuclear removed stochastically by MIXED/MC but continuous in
+    # CSDA), κ_hard fitted. Splitting enhancement (+, pinned) from deficit (−, fitted)
+    # removes the κ_strag↔κ_hard degeneracy of the old two-suppression form.
+    kappa_strag::Float64       # α: near-unity multiplier on the computed straggling enhancement
     kappa_hard::Float64        # weight on H/E   (catastrophic hard-loss deficit)
     # Smooth geometric residual `exp(a + b·logL + c·logL² + d·cosθ)` (L = rock path
     # length, m; θ = zenith), fit to the convolution-corrected MC residual to absorb
@@ -273,16 +281,36 @@ end
 # the integrated hard-loss (GeV), and E_s the surface energy. V and H are
 # accumulated with the *real* energy profile (not a single-point proxy), which
 # is what makes the deficit nearly column-independent the way the MC is.
-# MC-calibrated flux suppression from the accumulated surface-energy spread and the
-# catastrophic hard-loss deficit: ≈ exp(−κ_s·V/E_s² − κ_h·H/E_s). The deficit
-# (MC < CSDA) is hard-loss dominated; the V/E² term provides an additional flexible
-# depth-dependent suppression basis. Phenomenological (κ_s is not the physical
-# straggling coefficient) but the best deterministic fit (~10% vs full MC).
-@inline function csda_var_correction(energy_surface, V, H)
+# Local differential spectral index b = −d lnΦ/d lnE of the SURFACE flux at
+# (E, cosθ), from a well-conditioned symmetric log-difference of `flux_gccly`.
+# Fully differentiable in E (Zygote-safe — `flux_gccly` is the same flux used in
+# the forward) and charge-independent (the charge fraction cancels in the
+# log-derivative). b runs ≈2 (E∼10 GeV) → 3.7 (E≳1 TeV), so the straggling
+# enhancement coefficient ½b(b+1) runs ≈3 → 8.7.
+@inline function local_spectral_index(E, cos_theta)
+    η = 1.0e-2
+    fp = flux_gccly(cos_theta, E * (one(E) + η), one(E))
+    fm = flux_gccly(cos_theta, E * (one(E) - η), one(E))
+    return -(log(fp) - log(fm)) / (2η)
+end
+
+# MC-calibrated CSDA→MC flux correction, exp( +α·½b(b+1)·V/E²  −  κ_h·H/E ):
+#   • soft energy-loss straggling → ENHANCEMENT. The steeply-falling surface
+#     spectrum convolved with the Gaussian surface-energy spread of variance V
+#     (GeV²) enhances the transmitted flux by ½b(b+1)·V/E², with b the local
+#     spectral index (computed, not fitted) and α (`kappa_strag`) a near-unity
+#     calibration multiplier.
+#   • catastrophic hard radiative losses → DEFICIT exp(−κ_h·H/E), H the integrated
+#     (dedx_csda − dedx_mixed) hard-loss (GeV), κ_h fitted to MC.
+# Because the enhancement coefficient is physical (pinned) and only the hard-loss
+# κ_h is fitted, the two terms are no longer degenerate.
+@inline function csda_var_correction(energy_surface, V, H, cos_theta)
     c = CSDA_CORRECTION[]
     c.enabled || return one(typeof(energy_surface))
     e = max(energy_surface, 1.0)
-    return exp(-c.kappa_strag * V / (e * e) - c.kappa_hard * max(H, 0.0) / e)
+    b = local_spectral_index(e, cos_theta)
+    c_strag = 0.5 * b * (b + one(b))
+    return exp(c.kappa_strag * c_strag * V / (e * e) - c.kappa_hard * max(H, 0.0) / e)
 end
 
 # Geometric rock path length (m), w-independent: cells + rock remainder.
@@ -475,7 +503,7 @@ function _directional_flux_core(physics, matcfg::MaterialConfig, site::SiteConfi
                 air_distance, energy, weight)
         end
         if ok
-            corr = csda_var_correction(energy, Vacc, Hacc)
+            corr = csda_var_correction(energy, Vacc, Hacc, cos_theta)
             flux_single = weight * corr * flux_gccly(cos_theta, energy, sample.charge)
         else
             flux_single = zero(eltype(wsel))
@@ -562,7 +590,7 @@ function compute_directional_flux_csda(physics, shallow_flags::AbstractVector{Bo
                 air_distance, energy, weight)
         end
         if ok
-            corr = csda_var_correction(energy, Vacc, Hacc)
+            corr = csda_var_correction(energy, Vacc, Hacc, cos_theta)
             flux_single = weight * corr * flux_gccly(cos_theta, energy, sample.charge)
         else
             flux_single = zero(eltype(water_fractions))
@@ -855,14 +883,19 @@ end
 """
     calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
                               water_fractions, energy_samples, mc_fluxes, bin_indices;
-                              ks_grid, kh_grid, refine=2) -> (kappa_strag, kappa_hard, stats)
+                              kh_grid, refine, fit_geometric, alpha_strag,
+                              kh_anchor, kh_anchor_weight) -> (alpha_strag, kappa_hard, stats)
 
-Fit the CSDA fluctuation/hard-loss coefficients (κ_s, κ_h) so the corrected CSDA
-flux matches the full-MC reference `mc_fluxes` on the calibration bins
-`bin_indices`. Minimises the mean squared log-residual `mean(log(flux_csda/flux_mc)^2)`
-by a coarse-to-fine grid search (the forward is cheap, the objective is smooth and
-2-D). Installs the best coefficients via [`set_csda_correction!`] and returns them
-plus residual statistics (`stats.rel_before`, `stats.rel_after` = mean |1 − csda/mc|).
+Fit the CSDA→MC correction so the corrected CSDA flux matches the full-MC reference
+`mc_fluxes` on the calibration bins `bin_indices`. The straggling enhancement
+coefficient is PHYSICAL (½b(b+1), computed per sample inside `csda_var_correction`),
+scaled by the near-unity multiplier `alpha_strag` (pinned, default 1); only the
+catastrophic-hard-loss `κ_hard` is fitted — a WELL-POSED 1-D search, in contrast to
+the old degenerate 2-D (κ_strag,κ_hard) grid. Minimises `mean(log(flux_csda/flux_mc)²)`
+by a coarse-to-fine 1-D grid, optionally with a ridge `kh_anchor_weight·(κ_h−kh_anchor)²`
+that pins κ_h toward a previous-pass value (recursion damping). Installs the best
+coefficients via [`set_csda_correction!`] and returns `(alpha_strag, κ_hard, stats)`
+with `stats.rel_before`/`stats.rel_after` = mean |1 − csda/mc|.
 """
 function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
                                    matcfg::MaterialConfig, site::SiteConfig,
@@ -871,10 +904,13 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
                                    energy_samples::Vector{EnergySample},
                                    mc_fluxes::AbstractVector{<:Real},
                                    bin_indices::AbstractVector{Int};
-                                   ks_grid = range(0.0, 300.0; length = 31),
-                                   kh_grid = range(0.0, 80.0; length = 33),
+                                   kh_grid = range(0.0, 80.0; length = 41),
                                    refine::Int = 4,
-                                   fit_geometric::Bool = true)
+                                   fit_geometric::Bool = true,
+                                   alpha_strag::Float64 = 1.0,
+                                   kh_anchor::Union{Nothing,Float64} = nothing,
+                                   kh_anchor_weight::Float64 = 0.0,
+                                   ridge_geom::Float64 = 1.0e-3)
     @assert length(mc_fluxes) == length(bin_indices)
     valid = [i for i in eachindex(bin_indices) if isfinite(mc_fluxes[i]) && mc_fluxes[i] > 0]
     isempty(valid) && error("calibrate_csda_correction: no positive MC reference fluxes")
@@ -882,16 +918,22 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
     bins = [bin_indices[i] for i in valid]
 
     # When fit_geometric=false the material-INDEPENDENT geometric residual is held
-    # fixed at its current (pass-1) value and only the material-coupled (κ_strag,
-    # κ_hard) are re-fit. This is used by the self-consistent recursion so the
-    # geometric term cannot drift to absorb the recovered material's mean absorption.
+    # fixed at its current (pass-1) value and only the hard-loss κ_hard is re-fit.
+    # Used by the self-consistent recursion so the geometric term cannot drift to
+    # absorb the recovered material's mean absorption.
     cur = get_csda_correction()
     fa, fb, fc, fd = fit_geometric ? (0.0, 0.0, 0.0, 0.0) :
                      (cur.resid_a, cur.resid_b, cur.resid_c, cur.resid_d)
-    set_corr(ks, kh) = set_csda_correction!(enabled = true, kappa_strag = ks, kappa_hard = kh,
-                                            resid_a = fa, resid_b = fb, resid_c = fc, resid_d = fd)
-    function objective(ks, kh)
-        set_corr(ks, kh)
+    # α (kappa_strag) is the PINNED near-unity multiplier on the computed straggling
+    # enhancement; only κ_hard varies in the fit.
+    set_corr(kh) = set_csda_correction!(enabled = true, kappa_strag = alpha_strag, kappa_hard = kh,
+                                        resid_a = fa, resid_b = fb, resid_c = fc, resid_d = fd)
+    # ridge that pins κ_h toward a supplied anchor (0 weight ⇒ inert); scaled by the
+    # log-objective magnitude so the weight is dimensionless-comparable.
+    anchor_pen(kh) = (kh_anchor === nothing || kh_anchor_weight <= 0.0) ? 0.0 :
+                     kh_anchor_weight * (kh - kh_anchor)^2
+    function objective(kh)
+        set_corr(kh)
         s = 0.0; n = 0
         for (j, b) in enumerate(bins)
             f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
@@ -899,10 +941,9 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
             (isfinite(f) && f > 0) || continue
             d = log(f) - logmc[j]; s += d * d; n += 1
         end
-        return n == 0 ? Inf : s / n
+        return n == 0 ? Inf : s / n + anchor_pen(kh)
     end
-    function rel(ks, kh)
-        set_corr(ks, kh)
+    function rel_only()
         acc = 0.0; n = 0
         for (j, b) in enumerate(bins)
             f = compute_directional_flux_csda(physics, shallow_flags, matcfg, site,
@@ -913,25 +954,28 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
         return n == 0 ? NaN : acc / n
     end
 
-    # Coarse-to-fine 2-D grid over (κ_strag, κ_hard) — both ≈ O(1) for the convolution.
-    rel_before = rel(0.0, 0.0)
-    best_ks, best_kh, best_obj = 0.0, 0.0, Inf
-    ksg, khg = collect(Float64, ks_grid), collect(Float64, kh_grid)
+    # Baseline "before": pure CSDA (no straggling enhancement, no hard-loss deficit).
+    set_csda_correction!(enabled = true, kappa_strag = 0.0, kappa_hard = 0.0,
+                         resid_a = fa, resid_b = fb, resid_c = fc, resid_d = fd)
+    rel_before = rel_only()
+
+    # Coarse-to-fine 1-D grid over κ_hard (well-posed; α pinned at alpha_strag).
+    best_kh, best_obj = 0.0, Inf
+    khg = collect(Float64, kh_grid)
     for _ in 0:refine
-        for ks in ksg, kh in khg
-            o = objective(ks, kh)
-            (o < best_obj) && (best_obj = o; best_ks = ks; best_kh = kh)
+        for kh in khg
+            o = objective(kh)
+            (o < best_obj) && (best_obj = o; best_kh = kh)
         end
-        dks = length(ksg) > 1 ? (ksg[2] - ksg[1]) : 0.5
         dkh = length(khg) > 1 ? (khg[2] - khg[1]) : 0.5
-        ksg = collect(range(max(0.0, best_ks - dks), best_ks + dks; length = 9))
         khg = collect(range(max(0.0, best_kh - dkh), best_kh + dkh; length = 9))
     end
+    best_ks = alpha_strag
 
     # --- geometric residual: fit exp(a + b·logL + c·logL² + d·cosθ) to the
-    # convolution-corrected residual by linear least-squares (absorbs any leftover
-    # smooth depth/angle structure). w-independent, so it is AD-safe. Skipped (held
-    # frozen at the pass-1 value) when fit_geometric=false. ---
+    # convolution-corrected residual by RIDGED linear least-squares (the ridge keeps
+    # the logL² term from chasing a few outlier bins). w-independent, so it is
+    # AD-safe. Skipped (held frozen at the pass-1 value) when fit_geometric=false. ---
     resid_a, resid_b, resid_c, resid_d = fa, fb, fc, fd
     if fit_geometric
         set_csda_correction!(enabled = true, kappa_strag = best_ks, kappa_hard = best_kh)
@@ -948,7 +992,9 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
         resid_a = resid_b = resid_c = resid_d = 0.0
         if nfit >= 4
             A = reduce(vcat, transpose.(feats))   # nfit × 4
-            coef = A \ ys                          # least-squares (a, b, c, d)
+            # ridge only the non-constant features (keep the offset unpenalised)
+            R = Diagonal([0.0, ridge_geom, ridge_geom, ridge_geom])
+            coef = (A' * A + R) \ (A' * ys)        # ridged least-squares (a, b, c, d)
             resid_a, resid_b, resid_c, resid_d = coef[1], coef[2], coef[3], coef[4]
         elseif nfit > 0
             resid_a = sum(ys) / nfit               # constant offset only
