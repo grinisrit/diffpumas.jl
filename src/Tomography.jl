@@ -60,6 +60,7 @@ export SmoothnessPrior, laplacian_gradient, apply_laplacian_smoothing
 export EdgePrior, edge_gradient, edge_hessian
 export sart_reconstruct, mlem_reconstruct, gradient_descent_reconstruct, gauss_newton_reconstruct
 export make_csda_operator
+export laplace_posterior, null_model_tests, profile_inventory
 export mse, rmse, snr_metric, recon_snr, cnr, psnr, ssim_metric, reconstruction_report
 export point_spread_recovery, resolution_vs_depth, resolution_map, radial_fwhm
 
@@ -150,14 +151,7 @@ struct MaterialConfig
     water_density::Float64
     porous_density::Float64
     porous_top_thickness::Float64
-    # Denser-rock endpoint (same composition as standard rock, higher density) for
-    # the signed mixture parameter m<0. Defaults to rock_density (no-op) so the
-    # negative branch is inert unless a denser value is supplied.
-    dense_density::Float64
 end
-
-MaterialConfig(rm, wm, am, pm, rd, wd, pd, pt) =
-    MaterialConfig(rm, wm, am, pm, rd, wd, pd, pt, rd)
 
 """
     SiteConfig(detector_elevation, primary_altitude)
@@ -232,16 +226,9 @@ end
     return shallow && matcfg.porous_material > 0 && matcfg.porous_top_thickness > 0.0
 end
 
-# Signed mixture parameter `w`:
-#   w ≥ 0 : water fraction — (1-w)·rock + w·water  (lighter; original behaviour)
-#   w < 0 : dense fraction d=-w — (1-d)·rock + d·dense_rock  (heavier than standard rock)
-# Continuous at w=0 (both give pure standard rock). The dense endpoint shares the
-# standard-rock composition, so only the density changes there.
+# Water mixture parameter `w ∈ [0, 1]`:
+#   (1-w)·rock + w·water  (water lightens the cell; w=0 is pure standard rock).
 @inline function cell_density(w, shallow::Bool, matcfg::MaterialConfig)
-    if w < zero(w)
-        d = -w
-        return (1.0 - d) * matcfg.rock_density + d * matcfg.dense_density
-    end
     if is_shallow_porous(shallow, matcfg)
         return 0.5 * (1.0 - w) * matcfg.porous_density +
                0.5 * (1.0 - w) * matcfg.rock_density +
@@ -251,11 +238,6 @@ end
 end
 
 @inline function cell_stopping_power(physics, w, shallow::Bool, matcfg::MaterialConfig, energy)
-    if w < zero(w)
-        # dense rock: standard-rock composition (stopping power per grammage is the
-        # same as rock; the extra mass enters through cell_density's grammage).
-        return property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy)
-    end
     if is_shallow_porous(shallow, matcfg)
         sp_p = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.porous_material, energy)
         sp_r = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy)
@@ -699,12 +681,6 @@ end
 # ===========================================================================
 
 function mc_cell_mixture_and_density(w::Float64, shallow::Bool, matcfg::MaterialConfig)
-    if w < 0.0
-        # dense rock: standard-rock composition, density interpolated to dense_density.
-        d = -w
-        density = (1.0 - d) * matcfg.rock_density + d * matcfg.dense_density
-        return MaterialMixture(matcfg.rock_material), density
-    end
     if is_shallow_porous(shallow, matcfg)
         if w <= 1e-12
             return MaterialMixture(matcfg.porous_material), matcfg.porous_density

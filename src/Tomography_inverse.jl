@@ -689,3 +689,192 @@ function resolution_map(reconstruct, centroids::AbstractMatrix{<:Real},
     floors = [max(cell_size_m, depths[k] * Δθ) for k in 1:nd]
     return (depths = depths, azimuths = azimuths, fwhm = fwhm, counts = counts, floor = floors)
 end
+
+# ===========================================================================
+# Rigorous inverse-problem statistics: Laplace posterior, null-model tests,
+# and nuisance-parameter (absolute-level) profiling.
+#
+# These turn a point reconstruction into an uncertainty-aware result. The key
+# physical separation, made explicit below, is:
+#   * the Laplace posterior gives the CONDITIONAL (given the global normalisation
+#     s) per-cell SHAPE uncertainty — what the angular data constrain;
+#   * the inventory profile gives the ABSOLUTE-LEVEL uncertainty — the direction
+#     that is degenerate with s and is therefore left to a 1-D profile likelihood.
+# ===========================================================================
+
+"""
+    laplace_posterior(model, w, weights; prior, free) -> NamedTuple
+
+Gaussian-linear (Laplace) posterior at the MAP field `w`. Rebuilds the AD
+Jacobian `J = ∂pred/∂w` at `w`, forms the posterior precision
+`Λ = JᵀWJ + H_R` (the Gauss–Newton / penalised-fit Hessian, with `H_R` the
+quadratic smoothness-prior Laplacian), and inverts it on the free index set
+`free` (the cells that may carry signal — e.g. the aquifer cells).
+
+This is the CONDITIONAL posterior given the global normalisation `s`: it
+quantifies the per-cell shape that the angular data constrain. The absolute
+level (degenerate with `s`) is handled by [`profile_inventory`](@ref).
+
+Returns `(sigma, z, p_eff, resolution, JtWJ, HR)` where `sigma` (per-cell
+posterior std), `z = w/σ`, and `resolution` (averaging-kernel diagonal,
+`R = ΣΛ_data`) are length-`N` and zero outside `free`; `p_eff = tr(R)` is the
+effective number of resolved parameters.
+"""
+function laplace_posterior(model, w::AbstractVector;
+                           weights::AbstractVector,
+                           prior::Union{Nothing,SmoothnessPrior,EdgePrior} = nothing,
+                           free::AbstractVector{Bool},
+                           ridge::Float64 = 1e-9)
+    _, J = model(w)
+    W = collect(Float64, weights)
+    WJ = W .* J
+    JtWJ = Matrix(transpose(J) * WJ)                 # data Fisher information (N×N)
+    HR = prior === nothing ? zeros(size(JtWJ)) :
+         (prior isa EdgePrior ? Matrix(edge_hessian(prior, w)) :
+          Matrix(edge_hessian(EdgePrior(prior.neighbors, prior.weight, Inf), w)))
+    Λ = JtWJ .+ HR
+    n = length(w)
+    idx = findall(free)
+    sigma = zeros(n); zsc = zeros(n); res = zeros(n); p_eff = 0.0
+    if !isempty(idx)
+        Λff = Λ[idx, idx]
+        rg = ridge * (tr(Λff) / length(idx) + 1.0)
+        Σff = inv(Symmetric(Λff + rg * I))            # ≤ |free|³, trivial here
+        dvar = diag(Σff)
+        Rff = Σff * JtWJ[idx, idx]                    # averaging kernel (resolution)
+        p_eff = tr(Rff)
+        for (a, i) in enumerate(idx)
+            sigma[i] = sqrt(max(dvar[a], 0.0))
+            zsc[i] = sigma[i] > 0 ? w[i] / sigma[i] : 0.0
+            res[i] = Rff[a, a]
+        end
+    end
+    return (sigma = sigma, z = zsc, p_eff = p_eff, resolution = res, JtWJ = JtWJ, HR = HR)
+end
+
+# χ²(field) under statistical (Poisson × DEM, fit-mask) weights, with the global
+# log-scale s refit to the field so the comparison is over shape only.
+function _weighted_chi2(flux_only, w, meas, fit_mask, wdem, exposure)
+    pred = flux_only(w)
+    mw = sum(fit_mask)
+    s = exp(sum(fit_mask .* (log.(max.(meas, 1e-300)) .- log.(max.(pred, 1e-300)))) / max(mw, 1e-30))
+    obs = meas ./ s
+    σ2 = max.(obs, 0.0) ./ exposure
+    Wv = fit_mask .* wdem ./ max.(σ2, 1e-300)
+    return sum(Wv .* (pred .- obs) .^ 2), s
+end
+
+# Wilson–Hilferty: number of Gaussian σ for an observed χ² value with k DOF
+# (no external dependency). For k≤0 returns 0.
+function _chi2_sigma(chi2::Float64, k::Float64)
+    k <= 0 && return 0.0
+    t = (chi2 / k)^(1.0 / 3.0)
+    m = 1.0 - 2.0 / (9.0 * k)
+    sd = sqrt(2.0 / (9.0 * k))
+    return (t - m) / sd
+end
+
+"""
+    null_model_tests(flux_only, w_map, w0_uniform, free, meas, fit_mask, wdem,
+                     exposure; p_eff) -> NamedTuple
+
+Likelihood-ratio comparison of the structured reconstruction against two nulls:
+`N0` dry standard rock (`w≡0`) and `N1` a uniform band water-mix (`w≡w0` on
+`free`). Reports weighted χ² for each, `Δχ²` against the effective added DOF
+(`p_eff` for dry→fit, `p_eff−1` for uniform→fit), a Wilson–Hilferty Gaussian
+significance, and AIC/BIC (with effective parameter counts) so the extra water
+cells are penalised, not merely rewarded.
+
+The published LVD intensities carry no absolute count uncertainty, so `exposure`
+only sets an arbitrary overall χ² scale. We therefore CALIBRATE to a reduced χ²
+of unity: the variance scale `φ = χ²_fit/(ndata−p_eff)` is estimated from the
+fit residuals and the significances use `Δχ²/φ` (an F-test), making them
+independent of the nominal exposure. `φ` is returned as `var_scale`.
+"""
+function null_model_tests(flux_only, w_map::AbstractVector, w0_uniform::Float64,
+                          free::AbstractVector{Bool}, meas, fit_mask, wdem, exposure;
+                          p_eff::Float64)
+    w_dry  = zeros(length(w_map))
+    w_unif = [free[i] ? w0_uniform : 0.0 for i in eachindex(w_map)]
+    c_dry,  _ = _weighted_chi2(flux_only, w_dry,  meas, fit_mask, wdem, exposure)
+    c_unif, _ = _weighted_chi2(flux_only, w_unif, meas, fit_mask, wdem, exposure)
+    c_fit,  _ = _weighted_chi2(flux_only, w_map,  meas, fit_mask, wdem, exposure)
+    ndata = count(>(0.0), fit_mask)
+    # reduced-χ²=1 calibration: estimate the per-bin variance scale from the fit
+    var_scale = max(c_fit / max(ndata - p_eff, 1.0), 1e-30)
+    dchi_dry  = c_dry  - c_fit
+    dchi_unif = c_unif - c_fit
+    dp_dry  = max(p_eff, 1e-6)
+    dp_unif = max(p_eff - 1.0, 1e-6)
+    # AIC/BIC on the calibrated (reduced) deviance so the penalty is on the same scale
+    aic(c, p) = c / var_scale + 2p
+    bic(c, p) = c / var_scale + p * log(max(ndata, 1))
+    return (chi2_dry = c_dry, chi2_unif = c_unif, chi2_fit = c_fit, ndata = ndata,
+            var_scale = var_scale,
+            dchi2_dry = dchi_dry, dchi2_unif = dchi_unif, p_eff = p_eff,
+            sigma_dry = _chi2_sigma(max(dchi_dry, 0.0) / var_scale, dp_dry),
+            sigma_unif = _chi2_sigma(max(dchi_unif, 0.0) / var_scale, dp_unif),
+            aic = (dry = aic(c_dry, 0.0), unif = aic(c_unif, 1.0), fit = aic(c_fit, p_eff)),
+            bic = (dry = bic(c_dry, 0.0), unif = bic(c_unif, 1.0), fit = bic(c_fit, p_eff)))
+end
+
+"""
+    profile_inventory(flux_only, w_map, free, meas, fit_mask, wdem, exposure;
+                      var_scale=1.0, n_grid=21, span=(0.2,3.0), w_max=MAX_WATER_FRACTION)
+        -> NamedTuple
+
+Profile likelihood for the water amplitude: the reconstructed shape `w_map` is
+rescaled to a grid of overall levels (clamped to the box) and the global
+normalisation `s` is refit at each, tracing `χ²(T)` for the inventory
+`T = Σ_free w` (equivalently the mean band fraction `w̄ = T/|free|`).
+
+This profiles the AMPLITUDE along the reconstructed shape — it constrains the
+overall water level given that shape and the priors; it is not a full
+shape-marginalised profile (the residual shape freedom is carried by the per-cell
+[`laplace_posterior`](@ref)). `Δχ²` is calibrated by `var_scale` (the reduced-χ²
+variance scale `φ` from [`null_model_tests`](@ref)) so the confidence thresholds
+(1 → 68%, 3.84 → 95%) are exposure-independent.
+
+Returns `(T, w_mean, chi2, dchi2, dchi2_cal, T_map, T_min, w_mean_min, ci68, ci95,
+var_scale)`; `dchi2_cal = dchi2/var_scale` and the CIs are `w̄` bounds (NaN where
+the profile does not cross the threshold within the grid).
+"""
+function profile_inventory(flux_only, w_map::AbstractVector, free::AbstractVector{Bool},
+                           meas, fit_mask, wdem, exposure;
+                           var_scale::Float64 = 1.0,
+                           n_grid::Int = 21, span::Tuple{Float64,Float64} = (0.2, 3.0),
+                           w_max::Float64 = MAX_WATER_FRACTION)
+    nfree = max(count(free), 1)
+    T_map = sum(w_map)
+    scales = collect(range(span[1], span[2], length = n_grid))
+    Ts = Float64[]; wbar = Float64[]; chis = Float64[]
+    for sc in scales
+        w = clamp.(sc .* w_map, 0.0, w_max)
+        T = sum(w)
+        c, _ = _weighted_chi2(flux_only, w, meas, fit_mask, wdem, exposure)
+        push!(Ts, T); push!(wbar, T / nfree); push!(chis, c)
+    end
+    kmin = argmin(chis)
+    dchi = chis .- chis[kmin]
+    dchi_cal = dchi ./ max(var_scale, 1e-30)
+    # crossing of (calibrated) Δχ²=thr on each side of the minimum, in w̄ units
+    function crossings(thr)
+        lo = NaN; hi = NaN
+        for k in kmin:-1:2
+            if dchi_cal[k] <= thr <= dchi_cal[k-1]
+                f = (thr - dchi_cal[k]) / (dchi_cal[k-1] - dchi_cal[k] + 1e-30)
+                lo = wbar[k] + f * (wbar[k-1] - wbar[k]); break
+            end
+        end
+        for k in kmin:(length(dchi_cal)-1)
+            if dchi_cal[k] <= thr <= dchi_cal[k+1]
+                f = (thr - dchi_cal[k]) / (dchi_cal[k+1] - dchi_cal[k] + 1e-30)
+                hi = wbar[k] + f * (wbar[k+1] - wbar[k]); break
+            end
+        end
+        return (lo, hi)
+    end
+    return (T = Ts, w_mean = wbar, chi2 = chis, dchi2 = dchi, dchi2_cal = dchi_cal,
+            T_map = T_map, T_min = Ts[kmin], w_mean_min = wbar[kmin],
+            ci68 = crossings(1.0), ci95 = crossings(3.84), var_scale = var_scale)
+end

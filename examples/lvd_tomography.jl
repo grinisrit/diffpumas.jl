@@ -67,11 +67,8 @@ Options:
     --min-eval-depth FLOAT        Exclude cells shallower than this (m above detector) from
                                   reconstruction metrics and resolution (default: 350)
     --primary-altitude-km FLOAT   Gaisser/primary flux sampling altitude above detector (default: 30)
-    --rock-density FLOAT          Base rock density kg/m^3; 0 = physics-table value. The paper-match
-                                  uses 2710 (Gran Sasso rock, Kudryavtsev 2009) not 2650 standard rock
-    --dense-rock-density FLOAT    Denser-rock endpoint kg/m^3 for the signed mixture w<0 (default: 3000)
-    --dense-w FLOAT               Dense anomaly value (w<0) in the rich ground truth (default: -0.5)
-    --m-min FLOAT                 Most-dense reconstruction bound / box lower limit (default: -1.0)
+    --rock-density FLOAT          Base rock density kg/m^3; 0 = physics-table value (StandardRock,
+                                  2650 kg/m^3), at which the paper-match pins the overburden rock
     --papermatch                  Run the final section: GN material-mixture match to the measured
                                   LVD flux + Fig.7 angular-distribution reproduction, with MC+syst error
     --papermatch-only             Run ONLY geometry+calibration+paper-match (skip the inverse demo) —
@@ -719,14 +716,13 @@ function create_initial_water_field(volume::AbstractSensitivityVolume, args)
         return fractions
     end
 
-    # Richer multi-anomaly truth chosen to exercise the operator's nonlinearity at
+    # Multi-anomaly water truth chosen to exercise the operator's nonlinearity at
     # different angles/depths (grid z-layer midpoints ≈ 160/479/799/1119/1438/1758 m).
-    # Includes a DENSE block (w<0) that positivity-only MLEM/SART cannot represent — so
-    # the signed AAD solvers (GN/GD) win on this problem:
+    # All anomalies are non-negative water fractions; overlaps resolve to the strongest
+    # feature via max():
     #   1. shallow LOW-contrast slab  (z≈479 m, broad)         — near-vertical rays
     #   2. deep HIGH-contrast lens     (z≈1119 m, compact, w≈0.9) — long-path nonlinearity (AAD edge)
     #   3. dipping interface           (tilted sheet z = z0 + slope·x) — oblique high-zenith rays
-    # Overlaps resolve to the strongest feature via max().
     slab_w = clamp(args.slab_w, 0.0, MAX_WATER_FRACTION)
     lens_w = clamp(args.lens_w, 0.0, MAX_WATER_FRACTION)
     dip_w  = clamp(args.dip_w,  0.0, MAX_WATER_FRACTION)
@@ -745,11 +741,7 @@ function create_initial_water_field(volume::AbstractSensitivityVolume, args)
         if abs((z - 799.0) - 0.4 * x) <= 220.0 && abs(y) <= 1600.0
             w = max(w, dip_w)
         end
-        # 4. DENSE rock block (w < 0): a compact body heavier than standard rock, set
-        #    apart from the water anomalies. Positivity-constrained MLEM/SART cannot
-        #    represent w < 0, so only the signed AAD solvers (GN/GD) recover it.
-        dense_here = abs(z - 959.0) <= 160.0 && abs(x + 800.0) <= 600.0 && abs(y + 800.0) <= 600.0
-        fractions[idx] = dense_here ? clamp(args.dense_w, args.m_min, 0.0) : w
+        fractions[idx] = w
     end
 
     return fractions
@@ -926,7 +918,7 @@ end
 
 function finite_difference_bounds(w0::Float64, delta::Float64)
     hi = min(MAX_WATER_FRACTION, w0 + delta)
-    lo = max(-1.0, w0 - delta)   # signed mixture: allow dense (w<0) range
+    lo = max(0.0, w0 - delta)   # water-only: clamp the FD interval to the non-negative box
     if hi > lo + 1e-12
         return lo, hi
     end
@@ -1290,13 +1282,8 @@ function parse_commandline()
         exposure = 1.0e8,          # detector exposure (sets Poisson noise level)
         edge_delta = 0.03,         # Huber transition for the edge-preserving GN prior
         primary_altitude_km = 30.0,    # Gaisser/primary flux sampling altitude above detector
-        rock_density = 0.0,            # base rock density (kg/m^3); 0 = use the physics-table value.
-                                       # The paper-match uses 2710 (Gran Sasso rock, Kudryavtsev 2009)
-                                       # rather than the 2650 standard-rock table value.
-        dense_rock_density = 3000.0,   # denser-rock endpoint (kg/m^3) for the signed mixture w<0
-        dense_w = 0.0,                 # dense anomaly (w<0) in the synthetic truth; 0 = water-only
-                                       # demo (GN/GD beat classics in the positivity-regularized regime)
-        m_min = -1.0,                  # most-dense reconstruction bound (box lower limit)
+        rock_density = 0.0,            # base rock density (kg/m^3); 0 = use the physics-table value
+                                       # (StandardRock, 2650 kg/m^3), at which the paper-match pins it.
         papermatch = false,            # run the final paper-matching section
         papermatch_only = false,       # run ONLY geometry+calibration+paper-match (skip inverse demo)
         match_data = DEFAULT_MATCH_DATA,      # measured 2D single-muon intensity map
@@ -1305,7 +1292,7 @@ function parse_commandline()
         papermatch_mc_samples = 64,    # MC samples/bin for the paper-match uncertainty grid
         papermatch_paper_samples = 2000,  # MC samples for the Fig.8 energy spectrum
         papermatch_reg = 1.0,          # smoothness-prior weight (× data curvature) for the
-                                       # signed match — replaces positivity regularization
+                                       # water-only match
         papermatch_recursions = 1,     # self-consistent recursion: re-calibrate CSDA->MC at the
                                        # current reconstructed field and re-solve, up to N times (1 = off)
         papermatch_recur_tol = 0.02,   # stop the recursion once both the field and the correction
@@ -1418,12 +1405,6 @@ function parse_commandline()
             args = merge(args, (primary_altitude_km = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--rock-density"
             args = merge(args, (rock_density = parse(Float64, ARGS[i + 1]),)); i += 2
-        elseif arg == "--dense-rock-density"
-            args = merge(args, (dense_rock_density = parse(Float64, ARGS[i + 1]),)); i += 2
-        elseif arg == "--dense-w"
-            args = merge(args, (dense_w = parse(Float64, ARGS[i + 1]),)); i += 2
-        elseif arg == "--m-min"
-            args = merge(args, (m_min = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--papermatch"
             args = merge(args, (papermatch = true,)); i += 1
         elseif arg == "--papermatch-only"
@@ -1698,8 +1679,8 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     # reported metrics and the resolution map use this evaluation mask.
     zc_all = volume.centroids[3, :]
     eval_mask = zc_all .>= args.min_eval_depth
-    roi_mask = (abs.(w_true) .> 1e-9) .& eval_mask   # signal = any anomaly (water w>0 OR dense w<0)
-    bg_mask  = (abs.(w_true) .<= 1e-9) .& eval_mask
+    roi_mask = (w_true .> 1e-9) .& eval_mask   # signal = water anomaly (w>0)
+    bg_mask  = (w_true .<= 1e-9) .& eval_mask
 
     results = Dict{String,Any}()
     runset = args.solver == "all" ? ("sart", "mlem", "gd", "gn") : (args.solver,)
@@ -1718,10 +1699,9 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             # AD Jacobian), inverse-variance weighted, with the same edge-preserving
             # prior as GN. The Jacobi preconditioner keeps the background sparse
             # (Adam marched every cell to the box and collapsed the reconstruction).
-            # Positive box: positivity regularizes this ill-posed inverse (opening the
-            # box to dense w<0 lets GD fill the background with spurious dense rock and
-            # collapses the reconstruction — see the box-isolation study). The dense
-            # endpoint is exercised in the paper-match section, which adds a strong prior.
+            # Non-negative box [0, w_max]: positivity regularizes this ill-posed inverse
+            # and keeps the background sparse (an unbounded-below box lets GD fill the
+            # background with spurious material and collapses the reconstruction).
             w_rec, hist = gradient_descent_reconstruct(csda_model, obs;
                 w0 = zeros(n_cells), n_iter = args.gd_iters,
                 lr = args.gd_lr, optimizer = :pgd, prior = edge_prior,
@@ -2028,30 +2008,28 @@ function nmap_result_for(physics, shallow_flags, matcfg::MaterialConfig, site::S
     return LVDTopo.NMapFluxResult(copy(czen), copy(caz), flux, smc, ssy, sto, rock)
 end
 
-# Diverging 3D scatter of a SIGNED mixture field (dense w<0 blue ↔ water w>0 red),
-# ranked by |w| so both anomaly signs are shown (unlike the sensitivity plot which
-# ranks by value and would drop the negative/dense cells).
-function plot_signed_field(volume, w::Vector{Float64}; output_path::String, max_cells::Int = 200)
-    order = sortperm(abs.(w), rev = true)
+# 3D scatter of the non-negative water-content field, ranked by w so the strongest
+# water cells are shown (the field is water-only: w ≥ 0 everywhere).
+function plot_water_field(volume, w::Vector{Float64}; output_path::String, max_cells::Int = 200)
+    order = sortperm(w, rev = true)
     sel = order[1:min(max_cells, length(order))]
-    sel = [i for i in sel if abs(w[i]) > 1e-6]
+    sel = [i for i in sel if w[i] > 1e-6]
     isempty(sel) && (sel = order[1:min(max_cells, length(order))])
-    cmax = maximum(abs.(w[sel]); init = 1e-6)
+    cmax = maximum(w[sel]; init = 1e-6)
     traces = GenericTrace[
         scatter3d(x = [volume.centroids[1, i] for i in sel],
                   y = [volume.centroids[2, i] for i in sel],
                   z = [volume.centroids[3, i] for i in sel],
                   mode = "markers",
                   marker = attr(size = 5, color = [w[i] for i in sel],
-                                colorscale = "RdBu", reversescale = true,
-                                cmin = -cmax, cmax = cmax,
-                                colorbar = attr(title = "w  (>0 water, <0 dense)")),
-                  name = "mixture"),
+                                colorscale = "Blues", cmin = 0.0, cmax = cmax,
+                                colorbar = attr(title = "water fraction w")),
+                  name = "water"),
         scatter3d(x = [0.0], y = [0.0], z = [0.0], mode = "markers+text",
                   marker = attr(size = 7, color = "black"), text = ["LVD"],
                   textposition = "top center", name = "Detector"),
     ]
-    layout = Layout(title = "Reconstructed material-mixture field (single muon angular distribution)",
+    layout = Layout(title = "Reconstructed water-content field (single muon angular distribution)",
         scene = attr(xaxis = attr(title = "East (m)"), yaxis = attr(title = "North (m)"),
                      zaxis = attr(title = "Height above detector (m)"), aspectmode = "data"),
         width = 1000, height = 800)
@@ -2628,7 +2606,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     # flux over the covered bins at a given (ρ_rock, water field).
     mk_cfg = ρ -> MaterialConfig(matcfg.rock_material, matcfg.water_material, matcfg.air_material,
         matcfg.porous_material, ρ, matcfg.water_density, matcfg.porous_density,
-        matcfg.porous_top_thickness, matcfg.dense_density)
+        matcfg.porous_top_thickness)
     # Flux-only forward over the covered bins (no Jacobian) — cheap enough to call many times
     # inside the 1-D density search even on a dense mesh.
     flux_only_at = (ρ, wv) -> begin
@@ -2871,6 +2849,65 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     println(@sprintf("  matched w: mean=%.3f std=%.3f min=%.3f max=%.3f  box-pinned cells=%d/%d",
                      mean(w_matched), std(w_matched), minimum(w_matched), maximum(w_matched), pinned, n_cells))
 
+    # --- Rigorous inverse-problem statistics: posterior uncertainty map (Laplace),
+    # null-model comparison, and nuisance-parameter (absolute-level) profiling.
+    # Statistical weights are the pure Poisson × DEM down-weight on the fit bins
+    # (no robust/conditioning rescale): the honest data covariance. The Laplace
+    # posterior is CONDITIONAL on the normalisation s (the per-cell shape the
+    # angular data constrain); the absolute level, degenerate with s, is left to
+    # the inventory profile.
+    println("Posterior uncertainty + null-model tests + absolute-level profile...")
+    obs_stat = meas_v ./ s
+    W_stat = fit_mask .* wdem .* (args.exposure ./ max.(obs_stat, 1e-300))
+    flux_w = w -> flux_only_at(rho_fit, w)
+    post = laplace_posterior(model_aq, w_matched; weights = W_stat, prior = sm_prior, free = aquifer_mask)
+    nulls = null_model_tests(flux_w, w_matched, w0_fit, aquifer_mask,
+                             meas_v, fit_mask, wdem, args.exposure; p_eff = post.p_eff)
+    prof = profile_inventory(flux_w, w_matched, aquifer_mask,
+                             meas_v, fit_mask, wdem, args.exposure; var_scale = nulls.var_scale)
+    aq_idx = findall(aquifer_mask)
+    n_aq = max(length(aq_idx), 1)
+    # Calibrate the posterior covariance to reduced-χ²=1: the nominal exposure is
+    # arbitrary, so inflate σ by √φ. The resolution (averaging kernel) and p_eff are
+    # scale-invariant and need no calibration.
+    sigfac = sqrt(nulls.var_scale)
+    sigma_cal = post.sigma .* sigfac
+    z_cal = post.z ./ sigfac
+    sig_med = isempty(aq_idx) ? 0.0 : median(sigma_cal[aq_idx])
+    res_med = isempty(aq_idx) ? 0.0 : median(post.resolution[aq_idx])
+    z_resolved = count(i -> z_cal[i] >= 2.0, aq_idx)
+    wbar_map = prof.T_map / n_aq          # mean band fraction at the GN MAP
+    wbar_min = prof.w_mean_min            # amplitude-profile maximum-likelihood level
+    println(@sprintf("  posterior (Laplace, conditional on s; σ calibrated to reduced-χ²=1): p_eff=%.1f effective DOF of %d cells; median resolution=%.2f; median σ_w=%.2f; %d cells at w/σ≥2",
+                     post.p_eff, length(aq_idx), res_med, sig_med, z_resolved))
+    println(@sprintf("  null-model (calibrated, φ=%.0f): water-vs-dry %.0fσ; structure-vs-uniform %.0fσ  [χ² dry=%.3e unif=%.3e fit=%.3e, ndata=%d]",
+                     nulls.var_scale, nulls.sigma_dry, nulls.sigma_unif,
+                     nulls.chi2_dry, nulls.chi2_unif, nulls.chi2_fit, nulls.ndata))
+    println(@sprintf("  model selection: AIC dry=%.0f unif=%.0f fit=%.0f | BIC dry=%.0f unif=%.0f fit=%.0f (lower favoured)",
+                     nulls.aic.dry, nulls.aic.unif, nulls.aic.fit, nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
+    println(@sprintf("  amplitude profile (shape fixed, s profiled out): GN-MAP w̄=%.3f; profile-ML w̄=%.3f; 68%% CI w̄∈[%.3f, %.3f]; 95%% CI w̄∈[%.3f, %.3f]",
+                     wbar_map, wbar_min, prof.ci68[1], prof.ci68[2], prof.ci95[1], prof.ci95[2]))
+    unc_csv = joinpath(args.output_dir, "lvd_water_uncertainty.csv")
+    open(unc_csv, "w") do io
+        println(io, "cell_idx,x_m,y_m,z_m,w,sigma_w,z_score,resolution,pinned")
+        for i in aq_idx
+            cx, cy, cz = cell_centroid(volume, i)
+            pin = w_matched[i] <= 1e-3 ? "floor" :
+                  (w_matched[i] >= MAX_WATER_FRACTION - 1e-3 ? "ceiling" : "free")
+            println(io, @sprintf("%d,%.1f,%.1f,%.1f,%.4f,%.4f,%.3f,%.3f,%s",
+                                 i, cx, cy, cz, w_matched[i], sigma_cal[i], z_cal[i], post.resolution[i], pin))
+        end
+    end
+    prof_csv = joinpath(args.output_dir, "lvd_water_profile.csv")
+    open(prof_csv, "w") do io
+        println(io, "T_inventory,w_mean,chi2,delta_chi2,delta_chi2_calibrated")
+        for k in eachindex(prof.T)
+            println(io, @sprintf("%.4f,%.5f,%.4f,%.4f,%.4f",
+                                 prof.T[k], prof.w_mean[k], prof.chi2[k], prof.dchi2[k], prof.dchi2_cal[k]))
+        end
+    end
+    println("  uncertainty + profile CSVs: $unc_csv , $prof_csv")
+
     # --- Reproduce the measured 2D azimuth/zenith map (measured / model / residual per bin).
     # The reconstruction targets this surface directly; no 1D angular-curve projection is
     # produced (the 2D map is the detector observable).
@@ -2884,7 +2921,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     # available immediately after the fit, before the slow full-MC validation below.
     matcfg_fit = mk_cfg(rho_fit)
     field_plot = joinpath(args.output_dir, "lvd_single_muon_angular_distribution_field.html")
-    plot_signed_field(volume, w_matched; output_path = field_plot, max_cells = 300)
+    plot_water_field(volume, w_matched; output_path = field_plot, max_cells = 300)
     water_plot = joinpath(args.output_dir, "lvd_water_increase_vs_rock.html")
     plot_water_increase(volume, w_matched, matcfg_fit; output_path = water_plot)
     w_csv = joinpath(args.output_dir, "lvd_matched_mixture_field.csv")
@@ -2985,6 +3022,33 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  water-insufficient (aquifer cells at the w=%.1f ceiling, water-only model under-explains): %d",
                              MAX_WATER_FRACTION, aq_ceiling))
         println(io)
+        println(io, "Posterior uncertainty, null-model comparison, and water-amplitude profile:")
+        println(io, "  Laplace posterior (Gauss-Newton Hessian JtWJ + prior; conditional on the normalization s,")
+        println(io, "  i.e. the per-cell SHAPE the angular data constrain; sigma calibrated to reduced-chi^2=1):")
+        println(io, @sprintf("    effective resolved DOF p_eff = %.1f of %d aquifer cells; median averaging-kernel resolution = %.2f",
+                             post.p_eff, length(aq_idx), res_med))
+        println(io, @sprintf("    median calibrated posterior sigma_w = %.2f; cells at w/sigma >= 2: %d / %d   (csv: lvd_water_uncertainty.csv)",
+                             sig_med, z_resolved, length(aq_idx)))
+        println(io, "  Null-model likelihood-ratio. The published LVD intensities carry no absolute count error,")
+        println(io, @sprintf("  so chi^2 is calibrated to reduced-chi^2 = 1 (variance scale phi = %.0f; ndata = %d fit bins):",
+                             nulls.var_scale, nulls.ndata))
+        println(io, @sprintf("    raw chi^2: dry standard rock = %.3e ; uniform band water-mix = %.3e ; structured fit = %.3e",
+                             nulls.chi2_dry, nulls.chi2_unif, nulls.chi2_fit))
+        println(io, @sprintf("    water vs dry rock:         Delta chi2/phi on p_eff=%.1f dof   -> %.0f sigma",
+                             post.p_eff, nulls.sigma_dry))
+        println(io, @sprintf("    structure vs uniform band: Delta chi2/phi on p_eff-1=%.1f dof -> %.0f sigma",
+                             max(post.p_eff - 1, 0.0), nulls.sigma_unif))
+        println(io, @sprintf("    AIC (reduced): dry=%.0f uniform=%.0f fit=%.0f | BIC: dry=%.0f uniform=%.0f fit=%.0f (lower favoured)",
+                             nulls.aic.dry, nulls.aic.unif, nulls.aic.fit,
+                             nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
+        println(io, "  Water-amplitude profile: the reconstructed shape is rescaled and s refit, profiling the")
+        println(io, "  overall level (mean band fraction w_bar) given the shape and priors. This constrains the")
+        println(io, "  amplitude along the reconstructed shape; the residual shape freedom is in the per-cell posterior above.")
+        println(io, @sprintf("    GN-MAP w_bar = %.3f ; amplitude-profile maximum-likelihood w_bar = %.3f", wbar_map, wbar_min))
+        println(io, @sprintf("    68%% CI: w_bar in [%.3f, %.3f] ; 95%% CI: w_bar in [%.3f, %.3f]  (NaN = not bounded within the grid)",
+                             prof.ci68[1], prof.ci68[2], prof.ci95[1], prof.ci95[2]))
+        println(io, "    csv: lvd_water_profile.csv (T, w_mean, chi2, delta_chi2, delta_chi2_calibrated)")
+        println(io)
         println(io, "2D measured-vs-model map (CSDA surrogate used for the fit):")
         println(io, @sprintf("  bins used: %d", map_stats.n_bins))
         println(io, @sprintf("  relative residual RMS: %.4f", map_stats.rms_rel))
@@ -3061,16 +3125,16 @@ function main()
     water_idx == -1 && error("Water not found")
     air_idx == -1 && error("Air not found")
 
+    rock_dens = args.rock_density > 0 ? args.rock_density : Float64(physics.tables[rock_idx].density)
     matcfg = MaterialConfig(
         rock_idx,
         water_idx,
         air_idx,
         porous_idx,
-        args.rock_density > 0 ? args.rock_density : Float64(physics.tables[rock_idx].density),
+        rock_dens,
         Float64(physics.tables[water_idx].density),
         porous_idx > 0 ? Float64(physics.tables[porous_idx].density) : 0.0,
         args.porous_top_thickness,
-        args.dense_rock_density,
     )
 
     println("Building / loading LVD topography...")

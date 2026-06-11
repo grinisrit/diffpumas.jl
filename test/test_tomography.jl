@@ -11,6 +11,7 @@ import Zygote
 using SparseArrays
 using Statistics
 using Random
+using LinearAlgebra
 
 @testset "Tomography" begin
 
@@ -287,6 +288,43 @@ using Random
         @test rmse_gn < rmse_mlem            # our method beats MLEM under model mismatch
         @test rmse_gn < 0.7 * rmse_mlem      # …by a clear margin
         @test ssim_metric(w_gn, w_true) > ssim_metric(w_mlem, w_true)
+    end
+
+    @testset "9. posterior / null-model / inventory-profile statistics" begin
+        Random.seed!(7)
+        n, m = 6, 40
+        A = abs.(randn(m, n)) .+ 0.2
+        wtrue = [0.0, 0.4, 0.0, 0.6, 0.1, 0.0]
+        free = trues(n)
+
+        # (a) Laplace posterior σ and p_eff vs closed form, on a linear model
+        lin = w -> (A * w, sparse(A))
+        Wv = fill(50.0, m)
+        post = laplace_posterior(lin, wtrue; weights = Wv,
+            prior = SmoothnessPrior([Int[] for _ in 1:n], 0.0), free = free)
+        Σ = inv(Symmetric(transpose(A) * Diagonal(Wv) * A))
+        @test isapprox(post.sigma, sqrt.(diag(Σ)); rtol = 1e-5)
+        @test isapprox(post.p_eff, Float64(n); atol = 1e-5)        # no prior → p_eff = #params
+        # a smoothness prior shrinks the effective DOF
+        post_s = laplace_posterior(lin, wtrue; weights = Wv,
+            prior = SmoothnessPrior([[mod1(i + 1, n)] for i in 1:n], 5.0), free = free)
+        @test post_s.p_eff < post.p_eff
+
+        # (b)+(c) null-model and profile on a NONLINEAR forward exp(-A·w): the global
+        # log-scale s cannot absorb a uniform water scaling, so the tests are informative
+        f = w -> exp.(-(A * w))
+        meas = f(wtrue)
+        fitm = ones(m); wdem = ones(m); expo = 1e8
+        nulls = null_model_tests(f, wtrue, 0.3, free, meas, fitm, wdem, expo; p_eff = post.p_eff)
+        @test nulls.chi2_fit < nulls.chi2_dry
+        @test nulls.chi2_fit < nulls.chi2_unif
+        @test nulls.sigma_dry > 3.0                                # water strongly favoured over dry rock
+        @test nulls.aic.fit < nulls.aic.dry                        # AIC favours the fit even with penalty
+
+        prof = profile_inventory(f, wtrue, free, meas, fitm, wdem, expo; n_grid = 41)
+        @test isapprox(prof.T_map, sum(wtrue); rtol = 1e-9)
+        @test all(prof.dchi2 .>= -1e-9)                            # Δχ² ≥ 0 (min subtracted)
+        @test abs(prof.T[argmin(prof.chi2)] - sum(wtrue)) < 0.2 * sum(wtrue)  # min at MAP inventory
     end
 
 end
