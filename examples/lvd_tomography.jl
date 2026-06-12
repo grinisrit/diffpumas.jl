@@ -1763,12 +1763,15 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     resmap = resolution_map(recon_lin, centroids, zeros(n_cells), res_cells;
         depth_edges = layer_edges, azimuth_edges = azimuth_edges, contrast = args.contrast,
         zenith_step_deg = args.zenith_step_deg, cell_size_m = estimate_cell_size(volume))
-    # depth-only summary (median over directions) for the console + return value
+    # depth-only summary (median over directions) for the console + return value.
+    # The empirical FWHM is clipped at the per-depth geometric floor: a recovered
+    # point-spread confined to the impulse cell is "at the grid limit", not 0 m.
     rvd = NamedTuple[]
     for k in eachindex(resmap.depths)
         finite = filter(isfinite, resmap.fwhm[k, :])
         isempty(finite) && continue
-        push!(rvd, (depth_m = resmap.depths[k], fwhm_m = median(finite),
+        push!(rvd, (depth_m = resmap.depths[k],
+                    fwhm_m = max(median(finite), resmap.floor[k]),
                     floor_m = resmap.floor[k], n_cells = sum(resmap.counts[k, :])))
     end
 
@@ -1874,6 +1877,8 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
         println(io)
 
         # Full resolution map: recovered FWHM[m] for all depths × all directions.
+        # Entries below the per-depth geometric floor (cell size / angular sampling)
+        # are grid-limited and reported as "<=floor"; "-" marks sectors with no cells.
         println(io, "Resolution FWHM[m] map — all depths (rows) × azimuth directions (cols, deg):")
         azhdr = "  " * rpad("depth[m]", 9) *
                 join([rpad(@sprintf("%.0f", a), 7) for a in resmap.azimuths]) * rpad("floor", 7)
@@ -1882,7 +1887,25 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             row = "  " * rpad(@sprintf("%.0f", resmap.depths[k]), 9)
             for a in eachindex(resmap.azimuths)
                 v = resmap.fwhm[k, a]
-                row *= rpad(isfinite(v) ? @sprintf("%.0f", v) : "-", 7)
+                entry = !isfinite(v) ? "-" :
+                        (v < resmap.floor[k] ? @sprintf("<=%.0f", resmap.floor[k]) :
+                                               @sprintf("%.0f", v))
+                row *= rpad(entry, 7)
+            end
+            row *= rpad(@sprintf("%.0f", resmap.floor[k]), 7)
+            println(io, row)
+        end
+        println(io, @sprintf("  (azimuth sectors of %.0f deg; cells evaluated below %.0f m)",
+                             360.0 / length(resmap.azimuths), args.min_eval_depth))
+        println(io)
+
+        # Companion cell-count map so unsampled sectors are explicit in the figure.
+        println(io, "Resolution cell-count map — all depths (rows) × azimuth directions (cols, deg):")
+        println(io, azhdr)
+        for k in eachindex(resmap.depths)
+            row = "  " * rpad(@sprintf("%.0f", resmap.depths[k]), 9)
+            for a in eachindex(resmap.azimuths)
+                row *= rpad(string(resmap.counts[k, a]), 7)
             end
             row *= rpad(@sprintf("%.0f", resmap.floor[k]), 7)
             println(io, row)

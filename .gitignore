@@ -42,6 +42,9 @@ examples/data/*.bin
 examples/data/lvd_results/
 examples/data/lvd_results_old/
 
+# LVD paper/talk bundle (local archive; diffmuontomoLVD.zip covered by *.zip)
+diffmuontomoLVD/
+
 # Claude Code — commit domain skills; ignore personal overlay
 .claude/*
 !.claude/skills/
