@@ -111,6 +111,12 @@ const DEFAULT_MATCH_DATA = LVDTopo.DEFAULT_MATCH_DATA
 const MAX_WATER_FRACTION = 0.9
 const POINT_EPS = 1e-4
 const SURFACE_SEARCH_STEP_M = 40.0
+# Reconstruction volume floor: the meshed overburden surface is clamped to this many metres
+# ABOVE the detector plane (z=0). Terrain the inverted nm_c.inc map places below the detector
+# (distant mountain flanks descending past 963 m a.s.l., and the data-free far field defaulted
+# to VALLEY_FLOOR=600 m) carries no upward-muon information and would otherwise form inverted
+# cells (the TetGen "segments intersect at z≈0" failures). See build_surface_grid.
+const MIN_MESH_OVERBURDEN_M = 1.0
 const CSDA_MAX_RELATIVE_GAIN = 0.02
 const CSDA_MAX_STEP_M = 60.0
 const MC_STEP_MIN_M = 1e-6
@@ -243,8 +249,11 @@ function build_surface_grid(emap::ElevationMap,
     z_local = zeros(Float64, length(y_nodes_km), length(x_nodes_km))
 
     for iy in eachindex(y_nodes_km), ix in eachindex(x_nodes_km)
-        z_local[iy, ix] = local_surface_height(emap, 1000.0 * x_nodes_km[ix], 1000.0 * y_nodes_km[iy])
-        isfinite(z_local[iy, ix]) || error("Topography sampling left the LVD map at x=$(x_nodes_km[ix]) km, y=$(y_nodes_km[iy]) km")
+        z_raw = local_surface_height(emap, 1000.0 * x_nodes_km[ix], 1000.0 * y_nodes_km[iy])
+        isfinite(z_raw) || error("Topography sampling left the LVD map at x=$(x_nodes_km[ix]) km, y=$(y_nodes_km[iy]) km")
+        # Mesh only the overburden ABOVE the detector; clamp sub-detector terrain to a thin
+        # floor (the forward ray tracer keeps the true surface, so rock columns are unchanged).
+        z_local[iy, ix] = max(z_raw, MIN_MESH_OVERBURDEN_M)
     end
 
     return x_nodes_km .* 1000.0, y_nodes_km .* 1000.0, z_local
@@ -1571,7 +1580,8 @@ function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfi
                                    cache_path::String)
     sig = (length(paths), length(valid), args.inverse_mc_samples, args.seed, args.zenith_step_deg,
            args.azimuth_step_deg, args.geometry, hash(w_true), args.straggling,
-           args.energy_min, args.energy_max, args.energy_threshold_low)
+           args.energy_min, args.energy_max, args.energy_threshold_low,
+           matcfg.rock_density, matcfg.water_density, matcfg.porous_density)
     if isfile(cache_path)
         try
             cached = Serialization.deserialize(cache_path)
@@ -2655,7 +2665,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     # under-resolves the true rock thickness (a near-zero measured count under a bright model
     # bin); they carry no material information. They are kept in the 2D map CSV/figure (so the
     # artifact is shown honestly) but given zero weight in the fit.
-    rho_pin = 2650.0                                  # standard rock — density pinned at the floor
+    rho_pin = matcfg.rock_density                     # overburden rock density pinned at the configured
+                                                       # floor (--rock-density; 2710 kg/m³ = rr.for Gran Sasso)
     flux0 = flux_only_at(rho_pin, zeros(n_cells))     # dry standard-rock baseline
     lr0 = log.(max.(flux0, 1e-300)) .- log.(max.(meas_v, 1e-300))
     lr_center = median(lr0)
@@ -3018,8 +3029,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     pm_txt = joinpath(args.output_dir, "lvd_single_muon_angular_distribution.txt")
     open(pm_txt, "w") do io
         println(io, "Water-content reconstruction from the measured 2D LVD single-muon angular surface")
-        println(io, "(standard rock + a fitted global water-mix + a non-negative per-cell water field; no signed/denser-rock endpoint)")
-        println(io, @sprintf("rock density PINNED at standard rock = %.0f kg/m^3 (the data prefer lighter than rock; lightening comes from water)",
+        println(io, "(pinned overburden rock + a fitted global water-mix + a non-negative per-cell water field; no signed/denser-rock endpoint)")
+        println(io, @sprintf("rock density PINNED at the configured Gran Sasso value = %.0f kg/m^3 (rr.for; the data prefer lighter, lightening comes from water)",
                              rho_fit))
         println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (uniform 'wet standard rock' background, scale-invariant shape fit)",
                              w0_fit))
