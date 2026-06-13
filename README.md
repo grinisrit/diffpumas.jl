@@ -14,14 +14,26 @@ A Julia port of the [PUMAS](https://github.com/niess/pumas) library for transpor
 - **Particle Types**: Muon (μ±) and tau (τ±) leptons
 - **Mixed materials**: Runtime material mixtures via mass fractions (e.g. rock–water–air for aquifer muography); weighted stopping power, straggling, DEL/EHS, and scattering
 
+## Documentation
+
+Extensive documentation is available in [`docs/`](docs/):
+
+- [`docs/README.md`](docs/README.md) — documentation landing page and workflow map
+- [`docs/getting-started.md`](docs/getting-started.md) — setup, physics dumps, first flux call, and tests
+- [`docs/physics-and-transport.md`](docs/physics-and-transport.md) — materials, physics tables, transport modes, flux, and uncertainties
+- [`docs/differentiable-flux.md`](docs/differentiable-flux.md) — Zygote workflows, density gradients, water-fraction sensitivities, and AD checks
+- [`docs/muography-and-tomography.md`](docs/muography-and-tomography.md) — flat muography, LVD topography, tomography forward models, and inverse solvers
+- [`docs/examples.md`](docs/examples.md) — runnable example commands from smoke tests to LVD workflows
+- [`docs/api-reference.md`](docs/api-reference.md) — exported API grouped by workflow
+
 ## Installation
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/your-repo/DiffPumas.jl")
+Pkg.develop(path="/path/to/diffpumas.jl")
 ```
 
-Or in development mode:
+Or from the Julia package prompt:
 
 ```julia
 ] dev /path/to/diffpumas.jl
@@ -81,7 +93,7 @@ println("∂flux/∂ρ = $grad")
 The package is organized into several modules:
 
 | Module | Description |
-|--------|-------------|
+| --- | --- |
 | `Constants` | Physical constants (masses, decay lengths, etc.) |
 | `Types` | Core data structures (State, Locals, Medium, etc.) |
 | `Materials` | Material properties and DCS calculations |
@@ -175,7 +187,9 @@ mix_aquifer = MaterialMixture([rock_idx, water_idx], [0.5, 0.5])
 # Effective density ρ_eff = 0.5*2650 + 0.5*1000 ≈ 1825 kg/m³
 ```
 
-See `examples/muography.jl` for aquifer flux calculations with layered mixtures.
+See `examples/flat_muography.jl`, `examples/lvd_aquifer_validation.jl`, and
+`examples/lvd_tomography.jl` for aquifer flux calculations with layered
+mixtures and water-fraction sensitivities.
 
 ## Physics Models
 
@@ -188,7 +202,7 @@ See `examples/muography.jl` for aquifer flux calculations with layered mixtures.
 ### Differential Cross-Sections
 
 | Process | Model |
-|---------|-------|
+| --- | --- |
 | Bremsstrahlung | SSR (Sandrock et al., 2019) |
 | Pair Production | SSR |
 | Photonuclear | DRSS (Dutta et al., 2001) |
@@ -213,9 +227,16 @@ include("test/runtests.jl")
 ## Running Examples
 
 ```bash
+julia --project=. examples/loader_example.jl --mdf examples/data/materials.xml --dump examples/data/materials.pumas
 julia --project=. examples/loader_example.jl
-julia --project=. examples/diff_flux.jl [ROCK_THICKNESS] [ELEVATION] [ENERGY_MIN] [ENERGY_MAX]
+julia --project=. examples/diff_flux.jl --thickness 100 --zenith-max 45 --samples 100
+julia --project=. examples/flat_muography.jl --output-dir examples/data/flat_smoke --part 1 --samples 20
+julia --project=. examples/lvd_aquifer_validation.jl 30 0
+julia --project=. examples/lvd_tomography.jl --output-dir examples/data/lvd_tomo_smoke --geometry grid --grid-nz 3 --zenith-max 10 --azimuth-step 30 --samples 2 --mc-samples 4 --validation-cases 1
 ```
+
+See [`docs/examples.md`](docs/examples.md) for detailed commands and guidance on
+sample counts.
 
 ## API Reference
 
@@ -236,6 +257,8 @@ transport_with_density(physics, state, ...)  # Differentiable transport
 compute_flux(physics, density, ...)          # Compute flux
 compute_flux_gradient(physics, density, ...) # Compute flux + gradient
 ```
+
+For a broader API map, see [`docs/api-reference.md`](docs/api-reference.md).
 
 ## References
 
