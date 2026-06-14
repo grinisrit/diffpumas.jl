@@ -43,7 +43,3 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 
 - `.cursor/skills/diffpumas-transport/` — MC, physics tables, examples
 - `.cursor/skills/diffpumas-ad/` — differentiable flux and Zygote
-
-## Unrelated stacks
-
-No dependency on `atra` / `pyatra` — keep changes self-contained.
