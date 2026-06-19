@@ -226,15 +226,19 @@ end
     return shallow && matcfg.porous_material > 0 && matcfg.porous_top_thickness > 0.0
 end
 
-# Water mixture parameter `w ∈ [0, 1]`:
-#   (1-w)·rock + w·water  (water lightens the cell; w=0 is pure standard rock).
+# Water mixture parameter `w ∈ [0, 1]` is the water **mass fraction** (w=0 is pure
+# standard rock, w lightens the cell). When two materials of well-defined densities
+# combine by mass, the specific volumes add, not the densities:
+#   1/ρ = (1-w)/ρ_rock + w/ρ_water        (PUMAS composite convention),
+# while the mass stopping power and straggling combine linearly,
+#   S = (1-w)·S_rock + w·S_water          (see `cell_stopping_power`).
 @inline function cell_density(w, shallow::Bool, matcfg::MaterialConfig)
     if is_shallow_porous(shallow, matcfg)
-        return 0.5 * (1.0 - w) * matcfg.porous_density +
-               0.5 * (1.0 - w) * matcfg.rock_density +
-               w * matcfg.water_density
+        return 1.0 / (0.5 * (1.0 - w) / matcfg.porous_density +
+                      0.5 * (1.0 - w) / matcfg.rock_density +
+                      w / matcfg.water_density)
     end
-    return (1.0 - w) * matcfg.rock_density + w * matcfg.water_density
+    return 1.0 / ((1.0 - w) / matcfg.rock_density + w / matcfg.water_density)
 end
 
 @inline function cell_stopping_power(physics, w, shallow::Bool, matcfg::MaterialConfig, energy)
@@ -254,6 +258,37 @@ end
 @inline function rock_hardloss(physics, matcfg::MaterialConfig, energy)
     return property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy) -
            property_stopping_power(physics, ENERGY_LOSS_MIXED, matcfg.rock_material, energy)
+end
+
+# Mixture per-mass straggling and hard-loss bases. Both are quantities per unit mass
+# thickness, so — like the stopping power — they combine linearly in the water mass
+# fraction w:  Ω(w)=(1-w)Ω_rock+wΩ_water,  H(w)=(1-w)H_rock+wH_water.  This keeps the
+# fluctuation bases V=∫ΩdX and H=∫H dX consistent with the convex mixture used for the
+# density (Eq. rho-mixture) and stopping power; departures are absorbed by the MC
+# calibration of Section 3.4.
+@inline function cell_straggling(physics, w, shallow::Bool, matcfg::MaterialConfig, energy)
+    if is_shallow_porous(shallow, matcfg)
+        sp = property_straggling(physics, matcfg.porous_material, energy)
+        sr = property_straggling(physics, matcfg.rock_material, energy)
+        sw = property_straggling(physics, matcfg.water_material, energy)
+        return 0.5 * (1.0 - w) * sp + 0.5 * (1.0 - w) * sr + w * sw
+    end
+    sr = property_straggling(physics, matcfg.rock_material, energy)
+    sw = property_straggling(physics, matcfg.water_material, energy)
+    return (1.0 - w) * sr + w * sw
+end
+
+@inline function cell_hardloss(physics, w, shallow::Bool, matcfg::MaterialConfig, energy)
+    hr = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.rock_material, energy) -
+         property_stopping_power(physics, ENERGY_LOSS_MIXED, matcfg.rock_material, energy)
+    hw = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.water_material, energy) -
+         property_stopping_power(physics, ENERGY_LOSS_MIXED, matcfg.water_material, energy)
+    if is_shallow_porous(shallow, matcfg)
+        hp = property_stopping_power(physics, ENERGY_LOSS_CSDA, matcfg.porous_material, energy) -
+             property_stopping_power(physics, ENERGY_LOSS_MIXED, matcfg.porous_material, energy)
+        return 0.5 * (1.0 - w) * hp + 0.5 * (1.0 - w) * hr + w * hw
+    end
+    return (1.0 - w) * hr + w * hw
 end
 
 # Flux suppression from the *accumulated* surface-energy spread. The steeply
@@ -462,9 +497,10 @@ function _directional_flux_core(physics, matcfg::MaterialConfig, site::SiteConfi
                 physics, wsel[seg_pos[k]], seg_shallow[k], matcfg, seg_dist[k], energy, weight)
             ok || break
             e_rep = 0.5 * (e_in + energy)
-            gx = seg_dist[k] * cell_density(wsel[seg_pos[k]], seg_shallow[k], matcfg)
-            Vacc += property_straggling(physics, matcfg.rock_material, e_rep) * gx
-            Hacc += rock_hardloss(physics, matcfg, e_rep) * gx
+            wseg = wsel[seg_pos[k]]
+            gx = seg_dist[k] * cell_density(wseg, seg_shallow[k], matcfg)
+            Vacc += cell_straggling(physics, wseg, seg_shallow[k], matcfg, e_rep) * gx
+            Hacc += cell_hardloss(physics, wseg, seg_shallow[k], matcfg, e_rep) * gx
         end
         if ok && path.remaining_rock_distance > 1e-8
             e_in = energy
@@ -548,10 +584,11 @@ function compute_directional_flux_csda(physics, shallow_flags::AbstractVector{Bo
                 matcfg, seg.distance, energy, weight)
             ok || break
             e_rep = 0.5 * (e_in + energy)
-            gx = seg.distance * cell_density(water_fractions[seg.cell_idx],
-                                             shallow_flags[seg.cell_idx], matcfg)
-            Vacc += property_straggling(physics, matcfg.rock_material, e_rep) * gx
-            Hacc += rock_hardloss(physics, matcfg, e_rep) * gx
+            wseg = water_fractions[seg.cell_idx]
+            shseg = shallow_flags[seg.cell_idx]
+            gx = seg.distance * cell_density(wseg, shseg, matcfg)
+            Vacc += cell_straggling(physics, wseg, shseg, matcfg, e_rep) * gx
+            Hacc += cell_hardloss(physics, wseg, shseg, matcfg, e_rep) * gx
         end
         if ok && path.remaining_rock_distance > 1e-8
             e_in = energy
@@ -690,15 +727,17 @@ function mc_cell_mixture_and_density(w::Float64, shallow::Bool, matcfg::Material
         mix = MaterialMixture(
             [matcfg.porous_material, matcfg.rock_material, matcfg.water_material],
             [porous_frac, rock_frac, w])
-        density = porous_frac * matcfg.porous_density +
-                  rock_frac * matcfg.rock_density + w * matcfg.water_density
+        # Mass fractions combine the specific volumes (harmonic density), matching
+        # `cell_density` and the PUMAS composite convention (Eq. rho-mixture).
+        density = 1.0 / (porous_frac / matcfg.porous_density +
+                         rock_frac / matcfg.rock_density + w / matcfg.water_density)
         return mix, density
     end
     if w <= 1e-12
         return MaterialMixture(matcfg.rock_material), matcfg.rock_density
     end
     mix = MaterialMixture([matcfg.rock_material, matcfg.water_material], [1.0 - w, w])
-    density = (1.0 - w) * matcfg.rock_density + w * matcfg.water_density
+    density = 1.0 / ((1.0 - w) / matcfg.rock_density + w / matcfg.water_density)
     return mix, density
 end
 
