@@ -17,12 +17,11 @@ Manifest.toml
 .vs/
 venv
 .venv/
-# Cursor — commit domain skills; ignore personal overlay
-.cursor/*
-!.cursor/skills/
-!.cursor/skills/**
-.cursor/skills/activate-repo/
+# Cursor / Claude — local editor overlay only
+.cursor/
 .cursorrules
+.claude/
+
 *.code-workspace
 .julia*
 *.zip
@@ -45,12 +44,6 @@ examples/data/*_backup_*/
 
 # LVD paper/talk bundle (local archive; diffmuontomoLVD.zip covered by *.zip)
 diffmuontomoLVD/
-
-# Claude Code — commit domain skills; ignore personal overlay
-.claude/*
-!.claude/skills/
-!.claude/skills/**
-.claude/skills/activate-repo/
 
 # Agent Skills — commit .agents/skills/; ignore personal overlay
 .agents/skills/activate-repo/
