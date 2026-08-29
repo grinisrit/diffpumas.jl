@@ -41,5 +41,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 
 ## Skills
 
-- `.cursor/skills/diffpumas-transport/` — MC, physics tables, examples
-- `.cursor/skills/diffpumas-ad/` — differentiable flux and Zygote
+Canonical path: `.agents/skills/<name>/`.
+
+- `diffpumas-transport` — MC, physics tables, examples
+- `diffpumas-ad` — differentiable flux and Zygote

@@ -52,3 +52,6 @@ diffmuontomoLVD/
 !.claude/skills/**
 .claude/skills/activate-repo/
 
+# Agent Skills — commit .agents/skills/; ignore personal overlay
+.agents/skills/activate-repo/
+
