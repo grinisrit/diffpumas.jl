@@ -368,12 +368,38 @@ using Random
         loaded = load_physics(tmp_path)
         @test loaded !== nothing
         @test loaded.particle == physics.particle
+        # Both documented entry points share one generic, avoiding ambiguous exports.
+        @test load_or_create_physics === DiffPumas.Loader.load_or_create_physics
+        @test DiffPumas.Pumas.load_or_create_physics === load_or_create_physics
+        @test load_or_create_physics(MUON; dump_path=tmp_path).particle == MUON
         @test length(loaded.tables) == length(physics.tables)
 
         # Clean up
         rm(tmp_path, force=true)
     end
 
+    @testset "Portable data configuration" begin
+        withenv("PUMAS_MATERIALS_PATH" => "/explicit/materials") do
+            @test PhysicsSettings().dedx_path == "/explicit/materials"
+            @test find_dedx_file("StandardRock") ==
+                  joinpath("/explicit/materials", "dedx", "muon", "standard_rock.txt")
+        end
+    end
+
+    @testset "Bundled ray intersection" begin
+        tri = Triangle(Point(0., 0., 0.), Point(1., 0., 0.), Point(0., 1., 0.))
+        hit = DiffPumas.TriangleIntersect.intersect(
+            Ray(Point(0.25, 0.25, 1.), [0., 0., -1.]), tri)
+        @test hit.is_intersection
+        @test hit.id ≈ 1.
+        @test hit.ip.z ≈ 0.
+        miss = DiffPumas.TriangleIntersect.intersect(
+            Ray(Point(2., 2., 1.), [0., 0., -1.]), tri)
+        @test !miss.is_intersection
+    end
+
+    include("test_loader_parity.jl")
+    include("test_geometry_ad.jl")
     include("test_tomography.jl")
 end
 

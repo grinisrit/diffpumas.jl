@@ -1,0 +1,25 @@
+{
+  "dataset_repository": "https://github.com/niess/pumas-materials",
+  "dataset_commit": "d00fd31e5365b699b2d077232313f0c36343a837",
+  "particle": "muon",
+  "material_xml_source": "examples/data/materials.xml",
+  "data_files": [
+    "dedx/muon/standard_rock.txt",
+    "dedx/muon/water.txt",
+    "dedx/muon/air.txt"
+  ],
+  "generation_command": "PUMAS_MATERIALS_PATH=\"$PWD/examples/data/revision_physics/pumas-materials\" JULIA_NUM_THREADS=2 julia --project=. examples/loader_example.jl --mdf examples/data/revision_physics/materials.xml --dump examples/data/revision_physics/materials.pumas",
+  "julia_version": "1.11.7",
+  "zygote_version": "0.7.10",
+  "physics_settings": {
+    "cutoff": 0.05,
+    "elastic_ratio": 0.05,
+    "bremsstrahlung": "SSR",
+    "pair_production": "SSR",
+    "photonuclear": "DRSS"
+  },
+  "regenerate_command": "bash dev/create_revision_physics.sh /path/to/new-output",
+  "historical_dump": "examples/data/materials.pumas (left unchanged; its source is not inferred from its filename)",
+  "generated_dump_sha256": "5179ed2823c2b5c98cf347d9cc390c7d3df92349f719edcc626f668e01c1edf3",
+  "comparison_note": "Historical and pinned dumps use cutoff0.05/elastic_ratio0.05 and SSR/SSR/DRSS. All five material stopping powers at10GeV match; source provenance is established only for the new dump. See dump_comparison.log."
+}

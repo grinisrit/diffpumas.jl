@@ -40,7 +40,8 @@ Options:
     --zenith-max FLOAT            Exclusive zenith bound in degrees (default: 60.0)
     --zenith-step FLOAT           Zenith step in degrees (default: 1.0)
     --azimuth-step FLOAT          Azimuth step in degrees (default: 1.0)
-    --samples, -n INT             CSDA energy samples per angular bin (default: 8)
+    --samples, -n INT             CSDA energy nodes per angular bin (default: 32)
+    --csda-quadrature STR          midpoint (default) or legacy random; MC remains random
     --mc-samples INT              MC samples per validation case (default: 64)
     --energy-min FLOAT            Minimum detector energy in GeV (default: 1e-3)
     --energy-max FLOAT            Maximum detector energy in GeV (default: 1e9)
@@ -75,6 +76,10 @@ Options:
                                   fast iteration on the reconstruction figures
     --match-data PATH             Measured 2D single-muon intensity map
                                  (default: data/lvd_conf/lvd_single_muon_flux_2d.csv)
+    --papermatch-prior-cutoff FLOAT  Minimum aquifer-cell height in m (default: 500)
+    --papermatch-mask-ratio FLOAT   Centered dry model/data ratio threshold (default: 15; Inf disables)
+    --papermatch-calibration-water FLOAT  Initial uniform MC calibration fraction (default: 0)
+    --papermatch-fit-only          Save nonlinear fit/recursion/coverage diagnostics, skip posterior/plots/final MC
     --papermatch-mc-samples INT   MC samples/bin for the paper-match uncertainty grid (default: 64)
     --papermatch-paper-samples INT  MC samples for the Fig.8 energy spectrum (default: 2000)
     --max-plot-cells INT          Maximum cells rendered in the 3D sensitivity plot (default: 150)
@@ -343,10 +348,15 @@ function create_topography_plc(x_nodes::Vector{Float64},
 end
 
 function tetra_centroids(mesh::RawTetGenIO{Float64})
+    # TetGen.jl RawTetGenIO uses Julia (one-based) connectivity.
+    # Adding one again produces npoints+1 for tetrahedra touching the last point.
+    isempty(mesh.tetrahedronlist) || (minimum(mesh.tetrahedronlist) >= 1 &&
+        maximum(mesh.tetrahedronlist) <= size(mesh.pointlist, 2)) ||
+        throw(ArgumentError("Expected one-based TetGen connectivity within pointlist"))
     n_tets = size(mesh.tetrahedronlist, 2)
     centroids = zeros(Float64, 3, n_tets)
     for i in 1:n_tets
-        tet = mesh.tetrahedronlist[:, i] .+ 1
+        tet = Int.(mesh.tetrahedronlist[:, i])
         centroids[:, i] .= vec(sum(mesh.pointlist[:, tet]; dims=2) ./ 4.0)
     end
     return centroids
@@ -394,7 +404,7 @@ function build_tetra_neighbors(mesh::RawTetGenIO{Float64})
     face_map = Dict{NTuple{3,Int}, Vector{Tuple{Int,Int}}}()
 
     for tet_idx in 1:n_tets
-        tet = mesh.tetrahedronlist[:, tet_idx] .+ 1
+        tet = Int.(mesh.tetrahedronlist[:, tet_idx])
         for (face_idx, face) in enumerate(tetra_face_indices(tet))
             key = sort_face_key(face)
             push!(get!(face_map, key, Tuple{Int,Int}[]), (tet_idx, face_idx))
@@ -432,7 +442,7 @@ end
 function find_tetrahedron_containing_point(volume::TetraVolume, p::Point)
     mesh = volume.mesh
     for tet_idx in 1:size(mesh.tetrahedronlist, 2)
-        tet = mesh.tetrahedronlist[:, tet_idx] .+ 1
+        tet = Int.(mesh.tetrahedronlist[:, tet_idx])
         if point_in_tetrahedron(p, tet, mesh.pointlist)
             return tet_idx
         end
@@ -440,25 +450,47 @@ function find_tetrahedron_containing_point(volume::TetraVolume, p::Point)
     return nothing
 end
 
+# Shared-edge hits may have barycentric coordinates a few ulps outside [0,1].
+# Preserve those boundary intersections without changing the core intersection API.
+function tolerant_tetra_face_hit(p::Point,dir::NTuple{3,Float64},triangle::Triangle)
+    a=[triangle.p1.x,triangle.p1.y,triangle.p1.z]
+    e1=[triangle.p2.x,triangle.p2.y,triangle.p2.z].-a
+    e2=[triangle.p3.x,triangle.p3.y,triangle.p3.z].-a
+    d=collect(dir); n=cross(e1,e2); denominator=dot(n,d)
+    abs(denominator)>1e-12*norm(n) || return nothing
+    origin=[p.x,p.y,p.z]
+    distance=dot(n,a.-origin)/denominator
+    distance>1e-8 || return nothing
+    offset=origin.+distance.*d.-a
+    aa=dot(e1,e1);ab=dot(e1,e2);bb=dot(e2,e2)
+    determinant=aa*bb-ab*ab
+    determinant>0 || return nothing
+    u=(bb*dot(offset,e1)-ab*dot(offset,e2))/determinant
+    v=(aa*dot(offset,e2)-ab*dot(offset,e1))/determinant
+    min(u,v,1-u-v)>=-1e-10 || return nothing
+    q=origin.+distance.*d
+    return distance,Point(q[1],q[2],q[3])
+end
+
 function nearest_tetra_face_intersection(volume::TetraVolume,
                                          tet_idx::Int,
                                          p::Point,
                                          dir::NTuple{3,Float64})
     mesh = volume.mesh
-    tet = mesh.tetrahedronlist[:, tet_idx] .+ 1
-    ray = Ray(p, Point(p.x + 100_000.0 * dir[1],
-                       p.y + 100_000.0 * dir[2],
-                       p.z + 100_000.0 * dir[3]))
+    tet = Int.(mesh.tetrahedronlist[:, tet_idx])
+    ray = Ray(p, Float64[dir[1],dir[2],dir[3]])
 
     best_face = 0
     best_dist = Inf
     best_point = p
     for (face_idx, face) in enumerate(tetra_face_indices(tet))
-        hit = intersect(ray, tetra_face_triangle(face, mesh.pointlist))
-        if hit.is_intersection && hit.id > 1e-8 && hit.id < best_dist
+        triangle=tetra_face_triangle(face,mesh.pointlist)
+        hit=intersect(ray,triangle)
+        candidate=hit.is_intersection ? (hit.id,hit.ip) : tolerant_tetra_face_hit(p,dir,triangle)
+        if candidate !== nothing && candidate[1] > 1e-8 && candidate[1] < best_dist
             best_face = face_idx
-            best_dist = hit.id
-            best_point = hit.ip
+            best_dist = candidate[1]
+            best_point = candidate[2]
         end
     end
     return best_face, best_dist, best_point
@@ -599,6 +631,15 @@ function create_sensitivity_volume(emap::ElevationMap,
     end
 
     if args.geometry in ("auto", "tetra")
+        _, _, sampled_surface = build_surface_grid(emap,args.mesh_half_km,args.surface_step_km)
+        if any(z -> z <= MIN_MESH_OVERBURDEN_M, sampled_surface)
+            if args.geometry == "auto"
+                @warn "Sampled terrain reaches the detector-plane floor; using a structured grid to avoid tetrahedral quality refinement of thin peripheral slabs" floor_m=MIN_MESH_OVERBURDEN_M
+                return create_voxel_volume(emap,matcfg;half_width_km=args.mesh_half_km,
+                    surface_step_km=args.surface_step_km,nz=args.grid_nz)
+            end
+            @warn "Explicit tetrahedral mesh includes thin floor-clamped peripheral slabs; TetGen quality refinement may require substantial memory. Use a smaller central domain or --geometry grid." floor_m=MIN_MESH_OVERBURDEN_M
+        end
         try
             println("Building tetrahedral sensitivity volume...")
             return create_tetra_volume(emap, matcfg;
@@ -1087,7 +1128,7 @@ function create_volume_sensitivity_plot(volume::TetraVolume,
     traces = GenericTrace[]
 
     for (rank, cell_idx) in enumerate(selected)
-        tet = volume.mesh.tetrahedronlist[:, cell_idx] .+ 1
+        tet = Int.(volume.mesh.tetrahedronlist[:, cell_idx])
         x = [volume.mesh.pointlist[1, v] for v in tet]
         y = [volume.mesh.pointlist[2, v] for v in tet]
         z = [volume.mesh.pointlist[3, v] for v in tet]
@@ -1252,7 +1293,8 @@ function parse_commandline()
         zenith_max_deg = 60.0,
         zenith_step_deg = 1.0,
         azimuth_step_deg = 1.0,
-        n_samples = 8,
+        n_samples = 32,
+        csda_quadrature = "midpoint",
         mc_samples = 64,
         energy_min = 1e-3,
         energy_max = 1e9,
@@ -1300,6 +1342,10 @@ function parse_commandline()
         papermatch_azimuth_step = 4.0,
         papermatch_mc_samples = 64,    # MC samples/bin for the paper-match uncertainty grid
         papermatch_paper_samples = 2000,  # MC samples for the Fig.8 energy spectrum
+        papermatch_prior_cutoff = 500.0, # water-bearing cells must lie above this height (m)
+        papermatch_mask_ratio = 15.0,    # centered dry log-ratio rejection; Inf disables
+        papermatch_calibration_water = 0.0, # uniform initial MC calibration medium
+        papermatch_fit_only = false,     # save fit diagnostics/field; skip posterior, plots and final MC
         papermatch_reg = 1.0,          # smoothness-prior weight (× data curvature) for the
                                        # water-only match
         papermatch_recursions = 1,     # self-consistent recursion: re-calibrate CSDA->MC at the
@@ -1316,7 +1362,7 @@ function parse_commandline()
                                        # not excluded. 0 = pure-Poisson weighting.
         papermatch_robust_c = 3.0,     # Cauchy IRLS scale in units of the robust log-residual MAD
                                        # (smaller = more aggressive tail rejection). Tames the heavy
-                                       # residual tail (faint topography-artifact bins) in the GN fit.
+                                       # residual tail (faint baseline-ratio outliers) in the GN fit.
         papermatch_abs_scale = 0.0,    # if >0, PIN the forward→measured normalization to this absolute
                                        # value (breaks the shape/scale degeneracy); 0 = free log-scale fit.
         detectability = false,         # run the matched-resolution detectability study (then exit)
@@ -1354,6 +1400,8 @@ function parse_commandline()
             args = merge(args, (azimuth_step_deg = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg in ("--samples", "-n")
             args = merge(args, (n_samples = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--csda-quadrature"
+            args = merge(args, (csda_quadrature = lowercase(ARGS[i + 1]),)); i += 2
         elseif arg == "--mc-samples"
             args = merge(args, (mc_samples = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--energy-min"
@@ -1428,6 +1476,14 @@ function parse_commandline()
             args = merge(args, (papermatch_mc_samples = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--papermatch-paper-samples"
             args = merge(args, (papermatch_paper_samples = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-prior-cutoff"
+            args = merge(args, (papermatch_prior_cutoff = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-mask-ratio"
+            args = merge(args, (papermatch_mask_ratio = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-calibration-water"
+            args = merge(args, (papermatch_calibration_water = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-fit-only"
+            args = merge(args, (papermatch = true, papermatch_only = true, papermatch_fit_only = true)); i += 1
         elseif arg == "--papermatch-reg"
             args = merge(args, (papermatch_reg = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--papermatch-recursions"
@@ -1480,9 +1536,13 @@ function parse_commandline()
         end
     end
 
+    args.csda_quadrature in ("midpoint","random") || error("--csda-quadrature must be midpoint or random")
     args.geometry in ("auto", "tetra", "grid") || error("--geometry must be auto, tetra, or grid")
     args.solver in ("all", "sart", "mlem", "gd", "gn") || error("--solver must be all, sart, mlem, gd, or gn")
     args.inverse_data in ("mc", "csda") || error("--inverse-data must be mc or csda")
+    args.papermatch_mask_ratio > 1 || error("--papermatch-mask-ratio must exceed 1 (Inf disables masking)")
+    0 <= args.papermatch_calibration_water <= MAX_WATER_FRACTION || error("--papermatch-calibration-water must be in [0,0.9]")
+    isfinite(args.papermatch_prior_cutoff) || error("--papermatch-prior-cutoff must be finite")
     return args
 end
 
@@ -2659,21 +2719,32 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         out
     end
 
-    # Exclude a few topography-artifact bins from the FIT objective: directions where the
-    # uniform-rock baseline disagrees with the measurement by more than ~15x relative to the
-    # bulk (median) log-ratio. These are bins in which the digital elevation model
-    # under-resolves the true rock thickness (a near-zero measured count under a bright model
-    # bin); they carry no material information. They are kept in the 2D map CSV/figure (so the
-    # artifact is shown honestly) but given zero weight in the fit.
+    # Data-driven outlier rejection using the centered dry model/measured log ratio.
+    # This identifies discrepant bins; it does not independently establish their cause.
+    # The actual mask and unscaled baseline predictions are exported for inspection.
     rho_pin = matcfg.rock_density                     # overburden rock density pinned at the configured
                                                        # floor (--rock-density; 2710 kg/m³ = rr.for Gran Sasso)
     flux0 = flux_only_at(rho_pin, zeros(n_cells))     # dry standard-rock baseline
     lr0 = log.(max.(flux0, 1e-300)) .- log.(max.(meas_v, 1e-300))
     lr_center = median(lr0)
-    fit_mask = Float64.(abs.(lr0 .- lr_center) .<= log(15.0))   # 1 = used in the fit, 0 = artifact
+    fit_mask = Float64.(abs.(lr0 .- lr_center) .<= log(args.papermatch_mask_ratio))   # 1 = in fit; 0 = rejected by baseline ratio
     n_art = Int(length(fit_mask) - sum(fit_mask))
     mw = sum(fit_mask)
-    opt_logscale = pred -> exp(sum(fit_mask .* (log.(max.(meas_v, 1e-300)) .- log.(max.(pred, 1e-300)))) / mw)
+    mw > 0 || error("Baseline log-ratio mask rejected every covered bin")
+    covered_lookup = Dict(b => k for (k,b) in enumerate(valid_bins))
+    open(joinpath(args.output_dir, "lvd_fit_mask.csv"), "w") do io
+        println(io,"bin_idx,zenith_deg,azimuth_deg,slant_m,ray_valid,covered,fit_mask,measured_flux,dry_csda_flux,centered_dry_log_ratio")
+        for b in eachindex(match_paths)
+            k = get(covered_lookup,b,0)
+            println(io,join((b,match_paths[b].zenith,match_paths[b].azimuth,match_paths[b].surface_distance,
+                match_paths[b].valid,k>0,k>0 ? fit_mask[k] : 0.0,meas[b],
+                k>0 ? flux0[k] : base_flux[b],k>0 ? lr0[k]-lr_center : NaN),','))
+        end
+    end
+    # An absolute-scale scenario must pin normalization throughout every GN/IRLS
+    # solve, rather than changing the scale only after the field has been fitted.
+    opt_logscale = pred -> args.papermatch_abs_scale > 0.0 ? args.papermatch_abs_scale :
+        exp(sum(fit_mask .* (log.(max.(meas_v, 1e-300)) .- log.(max.(pred, 1e-300)))) / mw)
     rel_resid = (pred, ob) -> norm(fit_mask .* (pred .- ob)) / max(norm(fit_mask .* ob), 1e-30)
     log_std = pred -> (lr = log.(max.(pred, 1e-300)) .- log.(max.(meas_v, 1e-300));
                        μ = sum(fit_mask .* lr) / mw; sqrt(sum(fit_mask .* (lr .- μ) .^ 2) / mw))
@@ -2703,18 +2774,19 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     end
 
     # GEOLOGICAL PRIOR: the known Gran Sasso saturated cave layer / aquifer sits ~550 m above the
-    # detector. We restrict the reconstructed water to cells ABOVE 500 m; everything below stays
+    # detector. The configurable height cutoff (default 500 m) restricts water-bearing cells; lower cells stay
     # dry standard rock. The free (volume-filling) fit is unphysical -- this anchors the water to
     # the aquifer region that the single-viewpoint data cannot localise on their own.
     cell_z = Float64[cell_centroid(volume, i)[3] for i in 1:n_cells]
     # Only ROCK cells crossed by the measured rays count (a cell with no ray sensitivity is air,
     # above the topographic surface) -- otherwise the smoothness prior bleeds water into air cells
-    # above the mountain. Aquifer = above 500 m AND inside the rock (nonzero column in the forward J).
+    # above the mountain. Aquifer = above the configured cutoff AND inside the rock (nonzero column in the forward J).
     crossed = vec(sum(abs.(base_J[valid_bins, :]); dims = 1)) .> 0.0
-    aquifer_mask = (cell_z .> 500.0) .& crossed
+    aquifer_mask = (cell_z .> args.papermatch_prior_cutoff) .& crossed
     n_aq = count(aquifer_mask)
+    n_aq > 0 || error("Aquifer prior leaves no ray-crossed water-bearing cells")
     maskdiag = Diagonal(Float64.(aquifer_mask))
-    println(@sprintf("  aquifer prior: water restricted to %d / %d rock cells above 500 m (below surface)", n_aq, n_cells))
+    println(@sprintf("  aquifer prior: water restricted to %d / %d rock cells above %.1f m (below surface)", n_aq, n_cells, args.papermatch_prior_cutoff))
 
     # Density pinned at the standard-rock floor; the lightening is carried by a uniform water-mix
     # fraction w0 over the AQUIFER cells, fitted by the scale-invariant shape misfit.
@@ -2769,6 +2841,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     w0_fit = 0.0
     w_prev = zeros(n_cells)        # converged field from the previous pass (warm start + damping)
     prev_coef = nothing            # previous correction coefficients (convergence check)
+    recursion_rows = NamedTuple[]
+    recursion_converged = false
     for recur in 1:n_recur
         if recur > 1
             println(@sprintf("  [recursion %d/%d] re-calibrating CSDA->MC through the current reconstructed field (geometric residual frozen)...",
@@ -2801,7 +2875,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
             σ = sqrt.(max.(obs, 0.0) ./ args.exposure); σ .= max.(σ, 1e-12 * maximum(obs))
             # Robust IRLS: Cauchy weight on the log-residual, scale set from the robust
             # (MAD) spread of the in-fit residuals, so the heavy tail of faint
-            # topography-artifact bins is smoothly down-weighted (not L2-dominant). Skipped
+            # baseline-ratio outliers is smoothly down-weighted (not L2-dominant). Skipped
             # at the cold start (every bin mis-fits there → large residual ≠ outlier).
             rweight = ones(length(obs))
             if !cold
@@ -2832,13 +2906,39 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(@sprintf("  [recursion %d/%d] w0=%.3f  s=%.3e  w mean=%.4f  rel resid=%.3f  log-std=%.3f  | dfield=%.2e dcoef=%.2e",
                          recur, n_recur, w0_fit, s, mean(w_matched), rel_resid(predr, meas_v ./ s),
                          log_std(predr), dfield, isnan(dcoef) ? -1.0 : dcoef))
+        push!(recursion_rows,(pass=recur,dfield=dfield,dcoef=dcoef,relative_residual=rel_resid(predr,meas_v./s),
+            log_std=log_std(predr),normalization=s,mean_water=mean(w_matched),
+            kappa_strag=coef[1],kappa_hard=coef[2],resid_a=coef[3],resid_b=coef[4],resid_c=coef[5],resid_d=coef[6]))
+        open(joinpath(args.output_dir,"lvd_recursion_history.csv"),"w") do io
+            println(io,join(string.(keys(first(recursion_rows))),','))
+            for row in recursion_rows; println(io,join(values(row),',')); end
+        end
         w_prev = copy(w_matched)
         prev_coef = coef
         if recur > 1 && dfield < args.papermatch_recur_tol && dcoef < args.papermatch_recur_tol
+            recursion_converged = true
             println(@sprintf("  [recursion] self-consistent: dfield & dcoef < tol=%.2e after %d passes; stopping.",
                              args.papermatch_recur_tol, recur))
             break
         end
+    end
+
+    open(joinpath(args.output_dir,"lvd_recursion_status.txt"),"w") do io
+        println(io,"passes=$(length(recursion_rows))")
+        println(io,"converged=$recursion_converged")
+        println(io,"termination=$(recursion_converged ? "tolerance" : "maximum_passes")")
+        println(io,"relative_tolerance=$(args.papermatch_recur_tol)")
+        println(io,"mask_ratio=$(args.papermatch_mask_ratio)")
+        println(io,"prior_cutoff_m=$(args.papermatch_prior_cutoff)")
+        println(io,"regularization_relative=$(args.papermatch_reg)")
+        println(io,"initial_calibration_water=$(args.papermatch_calibration_water)")
+        println(io,"seed=$(args.seed)")
+        println(io,"csda_energy_samples=$(args.n_samples)")
+        println(io,"csda_quadrature=$(args.csda_quadrature)")
+        println(io,"calibration_mc_samples=$(args.calibration_mc_samples)")
+        println(io,"rock_density_kg_m3=$(matcfg.rock_density)")
+        println(io,"julia_version=$VERSION")
+        println(io,"Convergence and uniqueness are not established by reaching the maximum pass count.")
     end
 
     # Final state. The global forward→measured normalization s is otherwise a FREE
@@ -2876,12 +2976,57 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                      rho_fit, w0_fit))
     n_vert = count(i -> match_zen[i] < 60.0, valid_bins)
     n_horiz = length(valid_bins) - n_vert
-    println(@sprintf("  fit bins=%d (excluded %d topography-artifact bins; theta<60: %d, theta>=60: %d, up to %.0f deg)",
+    println(@sprintf("  fit bins=%d (excluded %d baseline-ratio outlier bins; theta<60: %d, theta>=60: %d, up to %.0f deg)",
                      length(valid_bins) - n_art, n_art, n_vert, n_horiz, maximum(match_zen[valid_bins])))
     println(@sprintf("  norm=%.3e  rel resid (fit bins) %.3f -> %.3f  log-std %.3f -> %.3f",
                      s, res_base, res_m, log_std_base, log_std_m))
     println(@sprintf("  matched w: mean=%.3f std=%.3f min=%.3f max=%.3f  box-pinned cells=%d/%d",
                      mean(w_matched), std(w_matched), minimum(w_matched), maximum(w_matched), pinned, n_cells))
+
+    # Persist enough results for inexpensive nonlinear robustness comparisons.
+    open(joinpath(args.output_dir,"lvd_fit_field.csv"),"w") do io
+        println(io,"cell_idx,x_m,y_m,z_m,aquifer_mask,w")
+        for c in 1:n_cells
+            x,y,z=cell_centroid(volume,c)
+            println(io,join((c,x,y,z,aquifer_mask[c],w_matched[c]),','))
+        end
+    end
+    open(joinpath(args.output_dir,"lvd_fit_predictions.csv"),"w") do io
+        println(io,"bin_idx,fit_mask,dry_csda_flux,matched_csda_flux,normalization,measured_flux")
+        for k in eachindex(valid_bins)
+            println(io,join((valid_bins[k],fit_mask[k],flux0[k],pred_m[k],s,meas_v[k]),','))
+        end
+    end
+    mc_cap = 60.0
+    vert = [k for k in eachindex(valid_bins) if fit_mask[k] > 0.0 && match_paths[valid_bins[k]].zenith < mc_cap]
+    horiz_all = [k for k in eachindex(valid_bins) if fit_mask[k] > 0.0 && match_paths[valid_bins[k]].zenith >= mc_cap]
+    sort!(horiz_all; by = k -> match_paths[valid_bins[k]].zenith)
+    nhz = clamp(args.papermatch_val_horiz, 0, length(horiz_all))
+    horiz = nhz > 0 ? horiz_all[unique(round.(Int, range(1, length(horiz_all); length = nhz)))] : Int[]
+    val_set = sort(unique(vcat(vert, horiz)))
+    selected_mc = Set(val_set)
+    # Coverage sensitivity is explicitly a dry-reference diagnostic using the
+    # initial calibration; it is not the final recovered-field Jacobian.
+    dry_aquifer_sensitivity = vec(sum(abs.(base_J[valid_bins,findall(aquifer_mask)]);dims=2))
+    open(joinpath(args.output_dir,"lvd_mc_coverage.csv"),"w") do io
+        println(io,"bin_idx,zenith_deg,azimuth_deg,slant_m,fit_mask,selected_mc,dry_reference_flux,dry_aquifer_abs_sensitivity,dry_logflux_aquifer_abs_sensitivity")
+        for k in eachindex(valid_bins)
+            p=match_paths[valid_bins[k]]
+            println(io,join((valid_bins[k],p.zenith,p.azimuth,p.surface_distance,fit_mask[k],k in selected_mc,
+                base_flux[valid_bins[k]],dry_aquifer_sensitivity[k],
+                dry_aquifer_sensitivity[k]/max(abs(base_flux[valid_bins[k]]),1e-30)),','))
+        end
+    end
+    open(joinpath(args.output_dir,"lvd_mc_coverage_summary.csv"),"w") do io
+        println(io,"zenith_lo_deg,zenith_hi_deg,covered_bins,fit_bins,selected_mc,slant_min_m,slant_median_m,slant_max_m")
+        for (lo,hi) in ((0,40),(40,60),(60,75),(75,90))
+            ks=[k for k in eachindex(valid_bins) if lo<=match_paths[valid_bins[k]].zenith<hi]
+            sl=[match_paths[valid_bins[k]].surface_distance for k in ks]
+            println(io,join((lo,hi,length(ks),count(k->fit_mask[k]>0,ks),count(k->k in selected_mc,ks),
+                isempty(sl) ? NaN : minimum(sl),isempty(sl) ? NaN : median(sl),isempty(sl) ? NaN : maximum(sl)),','))
+        end
+    end
+    args.papermatch_fit_only && return (water=w_matched,converged=recursion_converged,passes=length(recursion_rows))
 
     # --- Rigorous inverse-problem statistics: posterior uncertainty map (Laplace),
     # null-model comparison, and nuisance-parameter (absolute-level) profiling.
@@ -2969,20 +3114,11 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     end
     println("  reconstructed-field outputs: $field_plot , $water_plot , $w_csv")
 
-    # --- ULTIMATE TEST: push the reconstructed aquifer through FULL backward Monte Carlo
-    # transport (scattering+straggling) and confirm it reproduces the measured 2D flux. The CSDA
-    # operator only supplies the differentiable Jacobian for the inversion; this independent
-    # full-MC check rules out the recovered field being an artefact of that surrogate.
+    # Full-MC consistency check of the recovered field. Because this field enters
+    # the recalibration loop, this check is not an independent blind validation.
     # Validate ALL theta<60 fit bins plus a STRATIFIED subset of the high-theta
     # (long-slant) bins, so the check spans the full depth range of the fit and not
     # only the vertical bins. Full MC on every horizontal bin is prohibitively slow.
-    mc_cap = 60.0
-    vert = [k for k in eachindex(valid_bins) if fit_mask[k] > 0.0 && match_paths[valid_bins[k]].zenith < mc_cap]
-    horiz_all = [k for k in eachindex(valid_bins) if fit_mask[k] > 0.0 && match_paths[valid_bins[k]].zenith >= mc_cap]
-    sort!(horiz_all; by = k -> match_paths[valid_bins[k]].zenith)
-    nhz = clamp(args.papermatch_val_horiz, 0, length(horiz_all))
-    horiz = nhz > 0 ? horiz_all[unique(round.(Int, range(1, length(horiz_all); length = nhz)))] : Int[]
-    val_set = sort(unique(vcat(vert, horiz)))
     println(@sprintf("Full-MC validation over %d bins (%d theta<%.0f + %d stratified theta>=%.0f; %d MC samples/bin, scattering+straggling)...",
                      length(val_set), length(vert), mc_cap, length(horiz), mc_cap, args.papermatch_mc_samples))
     mc_samp = sample_energy_set(args.papermatch_mc_samples, args.energy_min, args.energy_max, args.seed + 777)
@@ -3000,6 +3136,37 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     s_mc = exp(mean(log.(meas_v[idx]) .- log.(max.(mc_rec[idx], 1e-300))))
     relres = ii -> norm(mc_rec[ii] .- meas_v[ii] ./ s_mc) / max(norm(meas_v[ii] ./ s_mc), 1e-30)
     res_mc = relres(idx)
+    # Compare all three predictions on identical directions. Preserve both the
+    # original fitted scale and separately profiled subset scales explicitly;
+    # a free renormalization can otherwise hide a global transport mismatch.
+    subset_scale = pred -> exp(mean(log.(max.(meas_v[idx],1e-300)) .- log.(max.(pred[idx],1e-300))))
+    s_dry_subset = subset_scale(flux0)
+    s_csda_subset = subset_scale(pred_m)
+    subset_residual = (pred,scale) -> norm(pred[idx].-meas_v[idx]./scale) / max(norm(meas_v[idx]./scale),1e-30)
+    residual_dry_common = subset_residual(flux0,s)
+    residual_csda_common = subset_residual(pred_m,s)
+    residual_mc_common = subset_residual(mc_rec,s)
+    residual_dry_profiled = subset_residual(flux0,s_dry_subset)
+    residual_csda_profiled = subset_residual(pred_m,s_csda_subset)
+    residual_mc_profiled = subset_residual(mc_rec,s_mc)
+    open(joinpath(args.output_dir,"lvd_mc_common_subset.csv"),"w") do io
+        println(io,"bin_idx,zenith_deg,azimuth_deg,slant_m,measured_raw,dry_csda_unscaled,wet_csda_unscaled,wet_mc_unscaled,wet_mc_sigma_unscaled,common_scale,dry_subset_scale,csda_subset_scale,mc_subset_scale,dry_common_scaled,csda_common_scaled,mc_common_scaled,mc_sigma_common_scaled")
+        for k in idx
+            b=valid_bins[k];p=match_paths[b]
+            println(io,join((b,p.zenith,p.azimuth,p.surface_distance,meas_v[k],flux0[k],pred_m[k],mc_rec[k],mc_err[k],
+                s,s_dry_subset,s_csda_subset,s_mc,s*flux0[k],s*pred_m[k],s*mc_rec[k],s*mc_err[k]),','))
+        end
+    end
+    open(joinpath(args.output_dir,"lvd_mc_common_subset_summary.csv"),"w") do io
+        println(io,"model,bins,common_scale,profiled_subset_scale,relative_residual_common_scale,relative_residual_profiled_scale")
+        println(io,join(("dry_csda_initial_calibration",length(idx),s,s_dry_subset,residual_dry_common,residual_dry_profiled),','))
+        println(io,join(("wet_csda_final_calibration",length(idx),s,s_csda_subset,residual_csda_common,residual_csda_profiled),','))
+        println(io,join(("wet_mc",length(idx),s,s_mc,residual_mc_common,residual_mc_profiled),','))
+    end
+    println(@sprintf("  identical %d-bin subset, fixed fitted scale %.4e: dry CSDA %.4f, wet CSDA %.4f, wet MC %.4f",
+        length(idx),s,residual_dry_common,residual_csda_common,residual_mc_common))
+    println(@sprintf("  same subset, independently profiled scales: dry CSDA %.4f, wet CSDA %.4f, wet MC %.4f",
+        residual_dry_profiled,residual_csda_profiled,residual_mc_profiled))
     logstd_mc = std(log.(max.(mc_rec[idx], 1e-300)) .- log.(max.(meas_v[idx], 1e-300)))
     vidx = [k for k in idx if match_paths[valid_bins[k]].zenith < mc_cap]
     hidx = [k for k in idx if match_paths[valid_bins[k]].zenith >= mc_cap]
@@ -3041,7 +3208,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  match data: %s", args.match_data))
         println(io, @sprintf("  covered bins: %d (theta<60: %d, theta>=60: %d, max theta %.0f deg)",
                              length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins])))
-        println(io, @sprintf("  topography-artifact bins excluded from the fit: %d (baseline off by >15x vs the median ratio)", n_art))
+        println(io, @sprintf("  baseline-ratio outliers excluded from the fit: %d (threshold %.2fx relative to median ratio)", n_art, args.papermatch_mask_ratio))
         println(io, @sprintf("  forward->measured normalization: %.4e%s", s,
                              args.papermatch_abs_scale > 0.0 ? " (PINNED, absolute)" : " (free log-fit)"))
         println(io, @sprintf("  reliable-bin scale: %.4e ± %.1f%% (from %d near-vertical in-fit bins; the absolute anchor)",
@@ -3095,7 +3262,12 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  relative data residual (fit bins): reconstructed %.4f  (CSDA fit %.4f)", res_mc, res_m))
         println(io, @sprintf("  by depth: theta<60 %.4f ; theta>=60 %.4f", res_mc_v, res_mc_h))
         println(io, @sprintf("  log model/measured std: %.4f  (CSDA %.4f)", logstd_mc, log_std_m))
-        println(io, @sprintf("  (CSDA-fit residual was %.4f -> %.4f; full MC confirms the improvement)", res_base, res_m))
+        println(io, @sprintf("  identical subset of %d bins at fixed fitted scale %.8e: dry-CSDA %.5f; wet-CSDA %.5f; wet-MC %.5f",
+            length(idx),s,residual_dry_common,residual_csda_common,residual_mc_common))
+        println(io, @sprintf("  same subset with separately profiled scales: dry-CSDA %.5f; wet-CSDA %.5f; wet-MC %.5f",
+            residual_dry_profiled,residual_csda_profiled,residual_mc_profiled))
+        println(io, @sprintf("  subset scales: dry %.8e; wet-CSDA %.8e; wet-MC %.8e",s_dry_subset,s_csda_subset,s_mc))
+        println(io,"  csv: lvd_mc_common_subset.csv and lvd_mc_common_subset_summary.csv preserve unscaled/common-scale comparisons")
         println(io, @sprintf("  2D map residual RMS under MC: %.4f", mc_stats.rms_rel))
         println(io, "  csv: lvd_single_muon_2d_mc_validation.csv (measured / full-MC model / residual)")
         println(io, "Caveat: the global forward->measured normalization absorbs the absolute flux scale;")
@@ -3127,7 +3299,7 @@ function main()
     println("  Tet max volume:    $(args.tet_max_volume) m^3")
     println("  Grid NZ:           $(args.grid_nz)")
     println("  Angular grid:      theta < $(args.zenith_max_deg) by $(args.zenith_step_deg) deg, phi by $(args.azimuth_step_deg) deg")
-    println("  CSDA samples/bin:  $(args.n_samples)")
+    println("  CSDA nodes/bin:    $(args.n_samples) ($(args.csda_quadrature))")
     println("  MC samples/case:   $(args.mc_samples)")
     println("  Energy range:      $(args.energy_min) - $(args.energy_max) GeV")
     println("  Threshold:         $(args.energy_threshold_low) GeV")
@@ -3199,13 +3371,18 @@ function main()
     paths = precompute_paths(volume, emap, zeniths, azimuths)
     println()
 
-    energy_samples = sample_energy_set(args.n_samples, args.energy_min, args.energy_max, args.seed)
+    energy_samples = args.csda_quadrature == "midpoint" ?
+        csda_energy_quadrature(args.n_samples,args.energy_min,args.energy_max) :
+        sample_energy_set(args.n_samples,args.energy_min,args.energy_max,args.seed)
 
     # Calibrate the differentiable CSDA fluctuation/hard-loss correction to full
     # MC (Part A) BEFORE assembling the Jacobian, so the forward operator and its
     # sensitivities use the corrected (MC-matched) physics.
+    # Freeze calibration independently of any synthetic truth used below.
+    # Paper-match starting-medium tests may explicitly select uniform wet rock.
+    calibration_field = fill(args.papermatch ? args.papermatch_calibration_water : 0.0,num_cells(volume))
     calibrate_correction_to_mc(physics, shallow_flags, matcfg, site, paths,
-        water_fractions, energy_samples, args)
+        calibration_field, energy_samples, args)
     println()
 
     # (b) Reconstruction accuracy vs exposure (then exit).

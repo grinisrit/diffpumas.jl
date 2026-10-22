@@ -21,7 +21,7 @@ export TurtleError, TurtleReturn
 export ecef_from_geodetic, ecef_to_geodetic
 export ecef_from_horizontal, ecef_to_horizontal
 export Projection, LambertProjection, UTMProjection
-export projection_project, projection_unproject
+export projection_project, projection_unproject, parse_projection
 export ElevationMap, MapInfo
 export map_create, map_load, map_dump, map_fill, map_node
 export map_elevation, map_gradient, map_meta, map_projection

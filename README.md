@@ -31,6 +31,7 @@ Extensive documentation is available in [`docs/`](docs/):
 ```julia
 using Pkg
 Pkg.develop(path="/path/to/diffpumas.jl")
+Pkg.instantiate()
 ```
 
 Or from the Julia package prompt:
@@ -38,6 +39,10 @@ Or from the Julia package prompt:
 ```julia
 ] dev /path/to/diffpumas.jl
 ```
+
+For a fresh checkout, run `julia --project=. -e 'using Pkg; Pkg.instantiate()'`.
+No unregistered dependencies are needed. See [setup and optional PUMAS data](docs/getting-started.md)
+for data acquisition and the distinction between empirical and tabulated physics.
 
 ## Quick Start
 
@@ -61,6 +66,15 @@ result = run_backward_mc(
 println("Flux: $(result.flux) ± $(result.sigma) m⁻² s⁻¹ sr⁻¹")
 println("∂flux/∂density: $(result.gradient)")
 ```
+
+With gradients enabled, `result.gradient` differentiates the deterministic CSDA
+flux averaged over the MC run's sampled energies, charges, and integration
+weights. `result.gradient_flux` is that surrogate flux, and
+`result.gradient_method == :deterministic_csda_sample_average` identifies it.
+`result.flux` and `result.sigma` describe the stochastic transport estimate;
+the gradient holds the sampled inputs fixed and does not differentiate
+stochastic straggling or scattering. The metadata fields are `nothing` when
+gradients are disabled.
 
 ## Differentiable Flux Calculation
 
@@ -182,9 +196,9 @@ water_idx = get_material_index(physics, "Water")
 # Single material (backward compatible)
 mix_pure = MaterialMixture(rock_idx)
 
-# Rock–water mixture: 50% rock + 50% water
+# Rock–water mixture: 50% rock + 50% water by mass
 mix_aquifer = MaterialMixture([rock_idx, water_idx], [0.5, 0.5])
-# Effective density ρ_eff = 0.5*2650 + 0.5*1000 ≈ 1825 kg/m³
+# Additive-volume density ρ_eff = 1/(0.5/2650 + 0.5/1000) ≈ 1452 kg/m³
 ```
 
 See `examples/flat_muography.jl`, `examples/lvd_aquifer_validation.jl`, and

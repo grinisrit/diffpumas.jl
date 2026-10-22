@@ -1,0 +1,16 @@
+points = 53
+auto_5km_floor_nodes = 17
+process_peak_rss_bytes = 0x2b19e000
+allocated_bytes = 7247336
+julia_version = "1.11.7"
+threads = 2
+half_width_km = 1.0
+tetrahedra = 102
+surface_min_m = 569.0472433334876
+auto_5km_geometry = "grid"
+scope = "central1km real-topography tetrahedral geometry and12traced paths; no transport/inverse claim"
+surface_step_km = 0.5
+max_tetra_volume_m3 = 5.0e8
+valid_test_paths = 12
+surface_floor_nodes = 0
+geometry_seconds = 0.070229756

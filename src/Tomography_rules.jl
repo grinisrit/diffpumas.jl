@@ -11,7 +11,7 @@
 # `∂weight_out/∂weight_in = G` and `∂energy_out/∂weight_in = 0`).
 #
 # This keeps reverse-mode AD (Zygote) and the full physics — we only hand the
-# differentiator an analytic-quality adjoint for the inner loop instead of
+# differentiator an numerical finite-difference adjoint for the inner loop instead of
 # making it trace every step. Parity with the traced path is covered in
 # test/test_tomography.jl (sparse adjoint vs full Zygote vs finite difference).
 # ===========================================================================
@@ -21,10 +21,22 @@ using ChainRulesCore: NoTangent, ZeroTangent, AbstractZero
 
 @inline _as_real(x) = x isa AbstractZero ? 0.0 : Float64(x)
 
-# Relative finite-difference step for the internal scalar derivatives. The maps
-# are smooth (table interpolation is piecewise-linear in log-energy and the
-# mixtures are linear in w), so a central difference is accurate to ~1e-9.
-const _RRULE_FD_REL = 1.0e-6
+# Relative finite-difference step for the internal scalar derivatives. These
+# maps are piecewise smooth: interpolation knots and adaptive stepping branches
+# can limit central-difference accuracy. Validate stability with step sweeps;
+# no fixed accuracy is guaranteed. At water-fraction endpoints the local central
+# difference uses the algebraic mixture extension outside the physical box.
+const _RRULE_FD_REL = Ref(1.0e-6)
+
+"""Internal scalar adjoint central-difference step (dimensionless relative energy step).
+Set only between derivative evaluations; changing it concurrently is unsupported.
+"""
+get_adjoint_fd_step() = _RRULE_FD_REL[]
+function set_adjoint_fd_step!(step::Real)
+    isfinite(step) && 0 < step < 0.1 || throw(ArgumentError("adjoint FD step must be finite and in (0, 0.1)"))
+    _RRULE_FD_REL[] = Float64(step)
+end
+export get_adjoint_fd_step, set_adjoint_fd_step!
 
 # --- rock/water cell segment: differentiable in (w, energy, weight) ---------
 function ChainRulesCore.rrule(::typeof(propagate_csda_cell_segment),
@@ -37,8 +49,8 @@ function ChainRulesCore.rrule(::typeof(propagate_csda_cell_segment),
         if !ok || wt == 0.0 || !(isfinite(Δe) && isfinite(Δw))
             return (NoTangent(), NoTangent(), ZeroTangent(), NoTangent(), NoTangent(), NoTangent(), ZeroTangent(), ZeroTangent())
         end
-        hw = _RRULE_FD_REL
-        he = _RRULE_FD_REL * max(abs(ef), 1.0)
+        hw = _RRULE_FD_REL[]
+        he = _RRULE_FD_REL[] * max(abs(ef), 1.0)
         # Re-run the primal with weight = 1 to isolate the energy-only weight
         # factor G and the energy map; partials by central finite difference.
         ePw, GPw, _ = propagate_csda_cell_segment(physics, wf + hw, shallow, matcfg, distance, ef, 1.0)
@@ -67,7 +79,7 @@ function ChainRulesCore.rrule(::typeof(propagate_csda_uniform_segment),
         if !ok || wt == 0.0 || !(isfinite(Δe) && isfinite(Δw))
             return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), ZeroTangent(), ZeroTangent())
         end
-        he = _RRULE_FD_REL * max(abs(ef), 1.0)
+        he = _RRULE_FD_REL[] * max(abs(ef), 1.0)
         ePe, GPe, _ = propagate_csda_uniform_segment(physics, material, density, distance, ef + he, 1.0)
         eMe, GMe, _ = propagate_csda_uniform_segment(physics, material, density, distance, ef - he, 1.0)
         deout_de = (ePe - eMe) / (2he); dG_de = (GPe - GMe) / (2he)
@@ -91,7 +103,7 @@ function ChainRulesCore.rrule(::typeof(propagate_csda_air_segment),
         if !ok || wt == 0.0 || !(isfinite(Δe) && isfinite(Δw))
             return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), ZeroTangent(), ZeroTangent())
         end
-        he = _RRULE_FD_REL * max(abs(ef), 1.0)
+        he = _RRULE_FD_REL[] * max(abs(ef), 1.0)
         ePe, GPe, _ = propagate_csda_air_segment(physics, air_material, site, start_z, cos_theta, distance, ef + he, 1.0)
         eMe, GMe, _ = propagate_csda_air_segment(physics, air_material, site, start_z, cos_theta, distance, ef - he, 1.0)
         deout_de = (ePe - eMe) / (2he); dG_de = (GPe - GMe) / (2he)

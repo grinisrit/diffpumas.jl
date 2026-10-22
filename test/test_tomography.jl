@@ -41,6 +41,48 @@ using LinearAlgebra
     wfield = [0.10, 0.20, 0.05, 0.15]
     samples = sample_energy_set(6, 1e-3, 1e6, 42)
 
+    @testset "Deterministic CSDA energy quadrature" begin
+        nodes = csda_energy_quadrature(32, 1.0, 100.0)
+        @test length(nodes) == 32
+        @test all(node -> node.charge == 0.0, nodes)
+        @test all(node -> 1.0 < node.energy < 100.0, nodes)
+        span = log(100.0)
+        # Midpoints integrate constant and linear functions of log energy
+        # exactly under d(log E), including the existing factor two.
+        @test sum(2node.weight / node.energy for node in nodes) / length(nodes) ≈ span
+        @test sum(2node.weight * log(node.energy) / node.energy for node in nodes) /
+              length(nodes) ≈ span^2 / 2
+        # Physical-energy constant/log integrals converge under refinement.
+        fine = csda_energy_quadrature(256, 1.0, 100.0)
+        @test sum(2node.weight for node in fine) / length(fine) ≈ 99.0 rtol=2e-5
+        @test sum(2node.weight * log(node.energy) for node in fine) / length(fine) ≈
+              100log(100.0) - 99.0 rtol=3e-5
+        for args in ((0, 1., 100.), (2, 0., 100.), (2, 1., 1.),
+                     (2, 2., 1.), (2, NaN, 100.), (2, 1., Inf))
+            @test_throws ArgumentError csda_energy_quadrature(args...)
+        end
+        paired = [EnergySample(node.energy, charge, 2node.weight)
+                  for node in nodes for charge in (-1.0, 1.0)]
+        f(nodes, ww) = compute_directional_flux_csda(
+            physics, shallow, matcfg, site, path, ww, nodes)
+        @test f(nodes, wfield) ≈ f(paired, wfield) rtol=1e-13
+        value, cells, grad = directional_flux_and_grad_csda(
+            physics, shallow, matcfg, site, path, wfield, nodes)
+        paired_value, paired_cells, paired_grad = directional_flux_and_grad_csda(
+            physics, shallow, matcfg, site, path, wfield, paired)
+        @test value ≈ paired_value rtol=1e-13
+        @test cells == paired_cells
+        @test grad ≈ paired_grad rtol=1e-10
+        plus, minus = copy(wfield), copy(wfield)
+        h = 1e-4
+        plus[1] += h; minus[1] -= h
+        @test grad[findfirst(==(1), cells)] ≈ (f(nodes, plus) - f(nodes, minus)) / (2h) rtol=1e-3
+        materials, densities = build_cell_properties_for_mc(shallow, wfield, matcfg)
+        @test_throws ArgumentError compute_directional_flux_mc(
+            physics, matcfg, site, path, materials, densities, nodes, 1;
+            straggling=true, energy_threshold_low=100.0)
+    end
+
     @testset "1. sparse adjoint vs Zygote full-vector" begin
         for p in paths
             fv, cells, grad = directional_flux_and_grad_csda(physics, shallow, matcfg, site, p, wfield, samples)

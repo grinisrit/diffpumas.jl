@@ -25,6 +25,7 @@ venv
 *.code-workspace
 .julia*
 *.zip
+__pycache__/
 
 # examples/data — generated outputs; see lvd_conf exceptions for committed CSV/JSON
 examples/data/*.html
@@ -38,6 +39,11 @@ examples/data/*.bin
 # LVD generated outputs; keep the committed lvd_conf input data visible.
 examples/data/lvd_*/
 examples/data/*_backup_*/
+# Revision executions stay local; curated evidence is copied into docs/revision_evidence.
+examples/data/revision_20*/
+examples/data/revision_quadrature_*/
+examples/data/revision_robustness_*/
+examples/data/tetra_geometry_verification_*/
 # Re-include lvd_conf LAST so the input data stays tracked (must follow the globs above).
 !examples/data/lvd_conf/
 !examples/data/lvd_conf/**

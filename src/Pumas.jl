@@ -16,6 +16,7 @@ using ..Types: MUON
 using ..Physics
 using ..Materials
 using ..Loader
+import ..Loader: load_or_create_physics
 using ..GaisserFlux: flux_gaisser
 
 export zenith_to_elevation, load_or_create_physics, compute_gaisser_flux_grid
@@ -37,12 +38,13 @@ zenith_to_elevation(zenith::Float64) = 90.0 - zenith
     load_or_create_physics(dump_path; mdf_path=nothing, verbose=true)
 
 Load physics tables from dump file, or create new ones if not found.
-When `mdf_path` is provided, `<composite>` elements in the MDF get their
-own precomputed tables (matching PUMAS C).
+When `mdf_path` is provided, base materials and composites are read from that
+MDF. Existing caches are checked for its required material names; use a fresh
+dump path after changing a material recipe.
 
 # Arguments
 - `dump_path`: Path to the .pumas binary dump file
-- `mdf_path`: Path to MDF XML file (optional; composites are parsed from here)
+- `mdf_path`: Path to MDF XML file (optional; base materials and composites are parsed from here)
 - `verbose`: Print status messages (default: true)
 
 # Returns
@@ -56,13 +58,13 @@ function load_or_create_physics(dump_path::String;
         verbose && println("  Dump file: $(dump_path)")
         physics = load_physics(dump_path)
         if physics !== nothing
-            required = ["StandardRock", "Air", "Water"]
-            if mdf_path !== nothing
-                mats_by_name = Dict{String,BaseMaterial}(
-                    "StandardRock" => STANDARD_ROCK, "Air" => AIR, "Water" => WATER)
-                for c in Loader.parse_mdf_composites(mdf_path; materials_by_name=mats_by_name)
-                    push!(required, c.name)
-                end
+            required = if mdf_path === nothing
+                ["StandardRock", "Air", "Water"]
+            else
+                base_materials = Loader.parse_mdf(mdf_path)
+                mats_by_name = Dict{String,BaseMaterial}(m.name => m for m in base_materials)
+                composites = Loader.parse_mdf_composites(mdf_path; materials_by_name=mats_by_name)
+                vcat([m.name for m in base_materials], [c.name for c in composites])
             end
             missing_mats = filter(m -> !haskey(physics.materials, m), required)
             if isempty(missing_mats)
@@ -77,19 +79,12 @@ function load_or_create_physics(dump_path::String;
     
     verbose && println("Physics dump not found, creating new physics tables...")
 
-    comps = CompositeMaterial[]
-    if mdf_path !== nothing
-        mats_by_name = Dict{String,BaseMaterial}(
-            "StandardRock" => STANDARD_ROCK, "Air" => AIR, "Water" => WATER)
-        comps = Loader.parse_mdf_composites(mdf_path; materials_by_name=mats_by_name)
-        verbose && println("  Parsed $(length(comps)) composites from $(mdf_path)")
-    end
-
-    physics = create_physics(MUON; n_energies=200, K_min=1e-3, K_max=1e9,
-                              materials=[STANDARD_ROCK, AIR, WATER],
-                              composites=comps)
-    mkpath(dirname(dump_path))
-    save_physics(physics, dump_path)
+    # Use the same full-MDF material definitions as the particle overload. In
+    # particular, StandardRock's effective element and Water's excitation
+    # energy must not silently revert to the built-in recipes on this path.
+    physics = Loader.load_or_create_physics(MUON; dump_path=dump_path,
+        mdf_path=mdf_path, materials=[STANDARD_ROCK, AIR, WATER],
+        n_energies=200, K_min=1e-3, K_max=1e9)
     verbose && println("✓ Physics tables created and saved to $(dump_path)")
     return physics
 end

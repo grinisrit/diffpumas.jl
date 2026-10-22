@@ -1,0 +1,10 @@
+quartile_edges_zenith_deg = [0.0, 15.0, 30.0]
+quartile_edges_slant_m = [1359.0990397803216, 1390.5790964652442, 1483.8373209883684]
+quartile_edges_abs_sensitivity = [0.00016338774390079415, 0.00021555330980578202, 0.0003137224499890829]
+selected_joint_strata = 24
+scope = "reconstructed frozen calibrated midpoint32 Jacobian; excludes zero sensitivities and near-horizontal measured directions"
+population_nonzero_entries = 701
+exact_seeded_selection_reproduced = true
+quartile_edges_cell_height_m = [280.5079500262201, 654.5185500611802, 1028.5291500961403]
+selected_pairs = 24
+population_joint_strata = 81

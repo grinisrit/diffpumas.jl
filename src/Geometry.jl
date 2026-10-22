@@ -369,6 +369,55 @@ function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
                                    step_distance; rng=rng, straggling=straggling)
 end
 
+# Keep rejection sampling out of the deterministic step's reverse-mode trace.
+# Random draws and all three straggling regimes retain their original physics.
+function _sample_backward_straggling_energy(physics::PhysicsTables{T}, mix::MaterialMixture,
+                                             ki::T, kf_csda::T, grammage_step::T,
+                                             rng::AbstractRNG) where T<:Real
+    kf = kf_csda
+    Omega_i = property_straggling(physics, mix, ki)
+    Omega_f = property_straggling(physics, mix, kf_csda)
+    dk_var = T(0.5) * grammage_step * (Omega_i + Omega_f)
+
+    if dk_var > zero(T)
+        dk_sigma = sqrt(dk_var)
+        dk_expected = kf_csda - ki
+
+        if dk_expected > T(3) * dk_sigma
+            u = box_muller_randn(rng)
+            while abs(u) > T(3)
+                u = box_muller_randn(rng)
+            end
+            u = u / T(1.015387)
+            kf = kf_csda + u * dk_sigma
+        elseif dk_expected > T(1.7320508) * dk_sigma
+            u = T(1.7320508) * (one(T) - T(2) * rand(rng))
+            kf = kf_csda + u * dk_sigma
+        else
+            dk32 = T(3) * dk_var
+            dk02 = dk_expected * dk_expected
+            a = one(T) - (dk32 - dk02) / (dk32 + T(3) * dk02)
+            if rand(rng) <= a
+                b = T(0.5) * (dk32 + T(3) * dk02) / max(dk_expected, T(1e-12))
+                kf = ki + b * rand(rng)
+            else
+                kf = ki
+            end
+        end
+        kf = max(kf, ki)
+    end
+    return kf
+end
+
+# Dispatch on the RNG so a deterministic call has no stochastic branch on its
+# reverse tape (including short-circuit conditions involving `nothing`).
+_backward_step_energy(physics, mix, ki, kf, grammage, ::Nothing, straggling) = kf
+function _backward_step_energy(physics, mix, ki::T, kf, grammage,
+                               rng::AbstractRNG, straggling) where T
+    return straggling && ki < T(100) ?
+        _sample_backward_straggling_energy(physics, mix, ki, kf, grammage, rng) : kf
+end
+
 function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
                                   mix::MaterialMixture, density::T, 
                                   step_distance::T;
@@ -382,42 +431,8 @@ function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
     Xi = property_range(physics, ENERGY_LOSS_CSDA, mix, ki)
     Xf_csda = Xi + grammage_step
     kf_csda = property_kinetic_energy(physics, ENERGY_LOSS_CSDA, mix, Xf_csda)
-    kf = kf_csda
-    
-    if rng !== nothing && straggling && ki < T(100.0)
-        Omega_i = property_straggling(physics, mix, ki)
-        Omega_f = property_straggling(physics, mix, kf_csda)
-        dk_var = T(0.5) * grammage_step * (Omega_i + Omega_f)
-        
-        if dk_var > zero(T)
-            dk_sigma = sqrt(dk_var)
-            dk_expected = kf_csda - ki
-            
-            if dk_expected > T(3) * dk_sigma
-                u = box_muller_randn(rng)
-                while abs(u) > T(3)
-                    u = box_muller_randn(rng)
-                end
-                u = u / T(1.015387)
-                kf = kf_csda + u * dk_sigma
-            elseif dk_expected > T(1.7320508) * dk_sigma
-                u = T(1.7320508) * (one(T) - T(2) * rand(rng))
-                kf = kf_csda + u * dk_sigma
-            else
-                dk32 = T(3) * dk_var
-                dk02 = dk_expected * dk_expected
-                a = one(T) - (dk32 - dk02) / (dk32 + T(3) * dk02)
-                if rand(rng) <= a
-                    b = T(0.5) * (dk32 + T(3) * dk02) / max(dk_expected, T(1e-12))
-                    kf = ki + b * rand(rng)
-                else
-                    kf = ki
-                end
-            end
-            kf = max(kf, ki)
-        end
-    end
-    
+    kf = _backward_step_energy(physics, mix, ki, kf_csda, grammage_step, rng, straggling)
+
     gamma_i = one(T) + ki / mass
     gamma_csda = one(T) + kf_csda / mass
     gamma_avg = (gamma_i + gamma_csda) / 2
@@ -436,6 +451,51 @@ function transport_backward_step(physics::PhysicsTables{T}, state::State{T},
         state.grammage + grammage_step, state.time + proper_time_step,
         new_weight, new_position, state.direction, state.decayed
     )
+end
+
+# Compute each adaptive limit in its own branch before combining them. This
+# avoids loop-carried branch-local values in Zygote's reverse control flow.
+function _backward_geometric_step_limit(physics::PhysicsTables{T}, state::State{T},
+                                         material::Int, density::T, uz_motion::T,
+                                         in_air::Bool, use_scattering::Bool) where T<:Real
+    accuracy = T(0.01)
+    Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
+    range_limit = accuracy * Xi / max(density, T(1e-6))
+    scattering_limit = if use_scattering
+        lb1 = property_transport_path(physics, material, state.energy)
+        lb1 > zero(T) && density > zero(T) ? accuracy * lb1 / density : T(Inf)
+    else
+        T(Inf)
+    end
+    # Bound density changes in the exponential atmosphere.
+    air_limit = in_air ? T(0.05) * T(12e3) / max(abs(uz_motion), T(0.05)) : T(Inf)
+    return min(range_limit, scattering_limit, air_limit)
+end
+
+# Keep the stochastic mode-selection branches outside the adaptive loop's
+# reverse tape. The no-RNG path has always used deterministic CSDA.
+function _backward_geometry_step(physics, state, material, density, step_size,
+                                  ::Nothing, use_straggled, use_mixed_mode,
+                                  use_scattering, energy_limit)
+    return transport_backward_step(physics, state, material, density, step_size)
+end
+
+function _backward_geometry_step(physics, state, material, density, step_size,
+                                  rng::AbstractRNG, use_straggled, use_mixed_mode,
+                                  use_scattering, energy_limit)
+    if use_straggled && use_scattering
+        result, _ = transport_backward_step_full(physics, state, material, density,
+            step_size, rng; mode=:straggled, scattering=true, energy_limit=energy_limit)
+        return result
+    elseif use_mixed_mode
+        return transport_backward_step_mixed(physics, state, material, density,
+                                              step_size, rng; energy_limit=energy_limit)
+    elseif use_straggled
+        return transport_backward_step(physics, state, material, density, step_size;
+                                         rng=rng, straggling=true)
+    else
+        return transport_backward_step(physics, state, material, density, step_size)
+    end
 end
 
 """
@@ -575,35 +635,10 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
                 end
             end
             
-            # Adaptive step sizing for accuracy
-            # PUMAS C uses DEFAULT_ACCURACY = 1E-02 (1% of range)
-            Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
-            
-            accuracy = T(0.01)
-            max_grammage_step = accuracy * Xi
-            max_geometric_step = max_grammage_step / max(density, T(1e-6))
-            
-            # PUMAS C: when scattering is MIXED, also limit by transport path
-            # stepT = accuracy / invlb1  (pumas.c line 6349)
-            if use_scattering
-                lb1 = property_transport_path(physics, material, state.energy)
-                if lb1 > zero(T)
-                    invlb1 = density / lb1
-                    if invlb1 > zero(T)
-                        step_scattering = accuracy / invlb1
-                        max_geometric_step = min(max_geometric_step, step_scattering)
-                    end
-                end
-            end
-            
-            # For non-uniform air, also limit by density change
-            if z >= geometry.rock_thickness
-                h = T(12e3)  # Scale height
-                uz_abs = max(abs(uz_motion), T(0.05))
-                altitude_step = T(0.05) * h / uz_abs
-                max_geometric_step = min(max_geometric_step, altitude_step)
-            end
-            
+            max_geometric_step = _backward_geometric_step_limit(
+                physics, state, material, density, uz_motion,
+                z >= geometry.rock_thickness, use_scattering)
+
             # Final step size (add small epsilon to cross boundaries)
             step_size = min(step_to_boundary + STEP_EPSILON, max_geometric_step)
             step_size = clamp(step_size, T(STEP_MIN), T(1000.0))
@@ -613,31 +648,10 @@ function transport_backward_through_geometry(physics::PhysicsTables{T},
             # - Below threshold: STRAGGLED + MIXED scattering (full physics)
             # - Above threshold: MIXED energy loss (no full straggling, no scattering)
             # NOTE: Mode flags are set at outer loop, use them consistently (no redundant energy check)
-            if use_straggled && use_scattering && rng !== nothing
-                # Full physics below threshold: STRAGGLED + MIXED scattering
-                # Pass energy_limit so step is limited to stop exactly at threshold (like PUMAS C)
-                state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
-                                                        mode=:straggled,
-                                                        scattering=true,
-                                                        energy_limit=current_energy_limit)
-            elseif use_mixed_mode && rng !== nothing
-                # Above threshold: MIXED mode (deterministic CEL + stochastic DEL, no scattering)
-                state = transport_backward_step_mixed(physics, state, material, density, step_size, rng;
-                                                      energy_limit=current_energy_limit)
-            elseif use_straggled && rng !== nothing
-                # Below threshold without scattering (straggling only)
-                state = transport_backward_step(physics, state, material, density, step_size;
-                                                rng=rng, straggling=true)
-            elseif use_straggled && rng === nothing
-                # Straggling requested but no RNG (for Zygote/AD compatibility)
-                # Use deterministic CSDA as differentiable approximation
-                state = transport_backward_step(physics, state, material, density, step_size;
-                                                rng=nothing, straggling=false)
-            else
-                # Pure CSDA (no straggling, no scattering)
-                state = transport_backward_step(physics, state, material, density, step_size;
-                                                rng=nothing, straggling=false)
-            end
+            state = _backward_geometry_step(physics, state, material, density, step_size,
+                                            rng, use_straggled, use_mixed_mode,
+                                            use_scattering, current_energy_limit)
+
         end
     end
     
@@ -827,6 +841,83 @@ function compute_flux_single_with_state(physics::PhysicsTables{T},
     end
 end
 
+function _compute_flux_estimate(physics::PhysicsTables{T},
+                      rock_density::T,
+                      rock_thickness::T,
+                      elevation::T,
+                      energy_min::T,
+                      energy_max::T;
+                      n_samples::Int = 1000,
+                      seed::Int = 42,
+                      straggling::Bool = true,
+                      scattering::Bool = true,
+                      energy_threshold_low::T = T(100.0),
+                      porous_material::Int = -1,
+                      porous_density::T = zero(T),
+                      porous_thickness::T = zero(T),
+                      primary_altitude::T = T(PRIMARY_ALTITUDE),
+                      record_samples::Bool = false) where T<:Real
+    
+    rng = Random.MersenneTwister(seed)
+    
+    # Create geometry
+    rock_idx = get_material_index(physics, "StandardRock")
+    air_idx = get_material_index(physics, "Air")
+    
+    if rock_idx == -1
+        rock_idx = 1
+    end
+    if air_idx == -1
+        air_idx = length(physics.tables)
+    end
+    
+    geometry = TwoLayerGeometry{T}(rock_thickness, rock_density, rock_idx, air_idx,
+                                   porous_material, porous_density, porous_thickness,
+                                   primary_altitude)
+    
+    # Integration bounds (log-uniform sampling)
+    rk = log(energy_max / energy_min)
+    
+    # Accumulate flux
+    samples = record_samples ? NTuple{3,T}[] : nothing
+    w_sum = zero(T)
+    w2_sum = zero(T)
+    
+    for i in 1:n_samples
+        # Sample final energy (log-uniform)
+        if rk > zero(T)
+            kf = energy_min * exp(rk * rand(rng))
+            wf = kf * rk  # Jacobian for log-uniform sampling
+        else
+            kf = energy_min
+            wf = one(T)
+        end
+        
+        # Sample charge (50-50)
+        charge = rand(rng) > 0.5 ? one(T) : -one(T)
+        wf *= T(2)  # Account for charge sampling
+        record_samples && push!(samples, (kf, charge, wf))
+        
+        # Compute contribution with optional straggling and scattering
+        wi = wf * compute_flux_single(physics, geometry, kf, elevation, charge;
+                                      rng=rng, straggling=straggling, scattering=scattering,
+                                      energy_threshold_low=energy_threshold_low)
+        
+        w_sum += wi
+        w2_sum += wi * wi
+    end
+    
+    # Average flux
+    flux_avg = w_sum / n_samples
+    
+    # Proper standard error: σ = sqrt(Var(X)/n) where Var(X) = E[X²] - E[X]²
+    # This matches PUMAS C implementation
+    variance = (w2_sum / n_samples) - flux_avg * flux_avg
+    sigma = rock_thickness > zero(T) ? sqrt(max(variance, zero(T)) / n_samples) : zero(T)
+    
+    return flux_avg, sigma, samples
+end
+
 """
     compute_flux(physics, rock_density, rock_thickness, elevation, energy_min, energy_max; n_samples, seed, straggling, scattering, energy_threshold_low, porous_material, porous_density, porous_thickness)
 
@@ -853,79 +944,29 @@ Compute integrated muon flux using backward Monte Carlo.
 - `flux`: Average flux in m⁻² s⁻¹ sr⁻¹
 - `sigma`: Standard error of the mean (proper variance calculation matching PUMAS C)
 """
-function compute_flux(physics::PhysicsTables{T}, 
-                      rock_density::T,
-                      rock_thickness::T,
-                      elevation::T,
-                      energy_min::T,
-                      energy_max::T;
-                      n_samples::Int = 1000,
-                      seed::Int = 42,
-                      straggling::Bool = true,
-                      scattering::Bool = true,
-                      energy_threshold_low::T = T(100.0),
-                      porous_material::Int = -1,
-                      porous_density::T = zero(T),
-                      porous_thickness::T = zero(T),
-                      primary_altitude::T = T(PRIMARY_ALTITUDE)) where T<:Real
-    
-    rng = Random.MersenneTwister(seed)
-    
-    # Create geometry
-    rock_idx = get_material_index(physics, "StandardRock")
-    air_idx = get_material_index(physics, "Air")
-    
-    if rock_idx == -1
-        rock_idx = 1
-    end
-    if air_idx == -1
-        air_idx = length(physics.tables)
-    end
-    
-    geometry = TwoLayerGeometry{T}(rock_thickness, rock_density, rock_idx, air_idx,
-                                   porous_material, porous_density, porous_thickness,
-                                   primary_altitude)
-    
-    # Integration bounds (log-uniform sampling)
-    rk = log(energy_max / energy_min)
-    
-    # Accumulate flux
-    w_sum = zero(T)
-    w2_sum = zero(T)
-    
-    for i in 1:n_samples
-        # Sample final energy (log-uniform)
-        if rk > zero(T)
-            kf = energy_min * exp(rk * rand(rng))
-            wf = kf * rk  # Jacobian for log-uniform sampling
-        else
-            kf = energy_min
-            wf = one(T)
-        end
-        
-        # Sample charge (50-50)
-        charge = rand(rng) > 0.5 ? one(T) : -one(T)
-        wf *= T(2)  # Account for charge sampling
-        
-        # Compute contribution with optional straggling and scattering
-        wi = wf * compute_flux_single(physics, geometry, kf, elevation, charge;
-                                      rng=rng, straggling=straggling, scattering=scattering,
-                                      energy_threshold_low=energy_threshold_low)
-        
-        w_sum += wi
-        w2_sum += wi * wi
-    end
-    
-    # Average flux
-    flux_avg = w_sum / n_samples
-    
-    # Proper standard error: σ = sqrt(Var(X)/n) where Var(X) = E[X²] - E[X]²
-    # This matches PUMAS C implementation
-    variance = (w2_sum / n_samples) - flux_avg * flux_avg
-    sigma = rock_thickness > zero(T) ? sqrt(max(variance, zero(T)) / n_samples) : zero(T)
-    
-    return flux_avg, sigma
+function compute_flux(physics::PhysicsTables{T}, rock_density::T, rock_thickness::T,
+                      elevation::T, energy_min::T, energy_max::T; kwargs...) where T<:Real
+    flux, sigma, _ = _compute_flux_estimate(physics, rock_density, rock_thickness,
+                                          elevation, energy_min, energy_max; kwargs...)
+    return flux, sigma
 end
+
+# Differentiate the deterministic CSDA surrogate at the exact energy and charge
+# samples used by the MC estimate, including their quadrature weights.
+function _sampled_csda_flux_gradient(physics, density, thickness, elevation, samples)
+    flux = zero(density)
+    gradient = zero(density)
+    # Linearity lets us release each particle's reverse tape immediately, rather
+    # than retaining one geometry tape for every MC sample at once.
+    for (energy, charge, weight) in samples
+        particle_flux, particle_gradient = compute_flux_gradient(
+            physics, density, thickness, elevation, energy, charge)
+        flux += weight * particle_flux
+        gradient += weight * particle_gradient
+    end
+    return flux / length(samples), gradient / length(samples)
+end
+
 
 """
     compute_flux_differentiable(physics, rock_density, rock_thickness, elevation, energy_final, charge; straggling=false, scattering=false, energy_threshold_low=100.0)
@@ -1003,7 +1044,8 @@ function compute_flux_gradient(physics::PhysicsTables{T},
     flux = f(rock_density)
     grad = Zygote.gradient(f, rock_density)[1]
     
-    return flux, grad
+    # Zygote uses `nothing` when the density is unused (e.g. zero rock).
+    return flux, something(grad, zero(T))
 end
 
 # =============================================================================
@@ -1239,6 +1281,14 @@ export compute_flux_csda_direct, compute_flux_differentiable_csda, compute_flux_
 
 Run the backward Monte Carlo flux calculation example.
 Equivalent to the geometry.c example.
+
+With `compute_gradient=true`, `gradient` differentiates a deterministic CSDA
+surrogate averaged over the same sampled energies, charges, and integration
+weights as the MC estimate. `gradient_flux` is that surrogate's flux and
+`gradient_method` is `:deterministic_csda_sample_average`. The gradient is not a
+derivative of stochastic straggling or scattering, and holds the sampled inputs
+fixed as density changes. With gradients disabled, both metadata fields are
+`nothing`.
 """
 function run_backward_mc(physics::PhysicsTables{T};
                          rock_thickness::T = T(100.0),
@@ -1267,26 +1317,29 @@ function run_backward_mc(physics::PhysicsTables{T};
     @info "  Energy threshold: $(energy_threshold_low) GeV"
     
     # Compute flux (now returns flux and proper sigma)
-    flux, sigma = compute_flux(physics, rock_density, rock_thickness, elevation,
+    flux, sigma, samples = _compute_flux_estimate(physics, rock_density, rock_thickness, elevation,
                         energy_min, energy_max; n_samples=n_samples, seed=seed,
                         straggling=straggling, scattering=scattering,
-                        energy_threshold_low=energy_threshold_low)
+                        energy_threshold_low=energy_threshold_low,
+                        record_samples=compute_gradient)
     
     # Compute gradient if requested
     grad_density = nothing
+    gradient_flux = nothing
+    gradient_method = nothing
     if compute_gradient
-        @info "Computing gradient ∂flux/∂density..."
-        energy_mid = sqrt(energy_min * energy_max)
-        _, grad_density = compute_flux_gradient(
-            physics, rock_density, rock_thickness, elevation, energy_mid, one(T)
-        )
-        @info "  ∂flux/∂density ≈ $(grad_density)"
+        @info "Computing density gradient of sampled deterministic CSDA flux..."
+        gradient_flux, grad_density = _sampled_csda_flux_gradient(
+            physics, rock_density, rock_thickness, elevation, samples)
+        gradient_method = :deterministic_csda_sample_average
+        @info "  ∂CSDA flux/∂density = $(grad_density)"
     end
     
     unit = energy_max > energy_min ? "" : "GeV⁻¹ "
     @info "Flux: $(flux) ± $(sigma) $(unit)m⁻² s⁻¹ sr⁻¹"
     
-    return (flux = flux, sigma = sigma, gradient = grad_density)
+    return (flux = flux, sigma = sigma, gradient = grad_density,
+            gradient_flux = gradient_flux, gradient_method = gradient_method)
 end
 
 # Keep old functions for compatibility

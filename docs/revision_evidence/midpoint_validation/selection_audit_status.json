@@ -1,0 +1,5 @@
+{
+  "exit_code": 0,
+  "verified_utc": "2026-10-22T23:53:27.373196+00:00",
+  "note": "Successful audit rerun. A terminated earlier attempt wrote delayed stderr to the shared log; that output is preserved separately in selection_audit_interrupted_attempt.log."
+}

@@ -11,6 +11,24 @@ The most reliable AD path is deterministic direct CSDA. Full stochastic Monte
 Carlo is used for value estimates and validation, while sensitivities are usually
 computed with direct CSDA or finite differences with common random numbers.
 
+## Gradient Returned By `run_backward_mc`
+
+`run_backward_mc(...; compute_gradient=true)` records the sampled detector
+energies, charges, and integration weights from its MC run. It differentiates
+the average deterministic CSDA flux at exactly those samples, holding them fixed
+as density changes. This fixes the scale and energy integration of the density
+sensitivity returned by the high-level helper.
+
+The result reports `flux` and `sigma` for the MC estimate, `gradient` for this
+CSDA surrogate's derivative, `gradient_flux` for the surrogate's value, and
+`gradient_method = :deterministic_csda_sample_average`. The latter two fields
+are `nothing` when gradients are disabled. The surrogate and MC values can
+differ when stochastic straggling or scattering is enabled; `gradient` is not
+an AD derivative through those random transport events. Monte Carlo errors in
+`result.sigma` describe the flux estimate, not the uncertainty of its surrogate
+gradient. Validate the stochastic density response separately, for example
+with repeated finite differences using common random numbers.
+
 ## Why Deterministic Paths Matter
 
 Reverse-mode AD differentiates a deterministic program trace. Random draws and

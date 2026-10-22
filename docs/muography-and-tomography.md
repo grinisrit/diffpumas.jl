@@ -28,6 +28,28 @@ For LVD workflows, `examples/lvd_muography.jl` reconstructs topography from the
 Gran Sasso `nm_c.inc` slant-rock table and supporting geometry files in
 `examples/data/lvd_conf/`.
 
+## Adapting To Another Site
+
+The transport and tomography APIs accept site-independent arrays and geometry.
+The `lvd_*.jl` scripts additionally reconstruct a particular Gran Sasso site
+from `examples/data/lvd_conf/`; changing a rock density or output directory does
+not replace that site model. A new site needs these inputs:
+
+| Input | Minimum information and API mapping |
+| --- | --- |
+| Detector and coordinates | Detector location/elevation, orientation, distance units, and zenith/azimuth conventions. Set `SiteConfig` and construct rays in the same local frame. |
+| Terrain and overburden | A terrain surface or directional rock lengths, the inversion volume/grid, and each ray's cell lengths and external rock length. Construct `DirectionalPath` records; avoid counting the volume twice in external overburden. |
+| Materials | Rock composition, densities, optional shallow layer, and a declared water-fraction convention. Set `MaterialConfig` and physics tables, recording the stopping-power source. |
+| Incident spectrum | Surface muon spectrum, energy limits, charge convention, and primary sampling altitude consistent with the selected forward model. |
+| Observations for inversion | Directional fluxes or event counts with detector acceptance, exposure, efficiency, angular binning, and uncertainties needed to compare data with predicted flux. Synthetic truth fields replace these only for simulations. |
+
+`MaterialMixture` accepts **mass fractions**. For additive constituent volumes,
+its bulk density is `1 / sum(w_i / rho_i)`. A cell's water volume fraction must
+first be converted to mass fractions before computing mixture stopping powers;
+the tomography helpers perform that conversion. Report the grid, priors, masks,
+regularization, random seeds, and solver settings alongside site inputs for a
+reproducible inversion.
+
 ## Flat Muography
 
 `examples/flat_muography.jl` runs synthetic studies in a flat/cubic geometry:
@@ -313,11 +335,20 @@ Tetrahedral geometry run:
 julia --project=. examples/lvd_tomography.jl \
   --output-dir examples/data/lvd_tomo_tetra \
   --geometry tetra \
-  --mesh-half-km 5 \
-  --surface-step-km 1 \
-  --samples 8 \
+  --mesh-half-km 1 \
+  --surface-step-km 0.5 \
+  --zenith-step 10 --azimuth-step 15 \
+  --samples 32 --csda-quadrature midpoint \
   --mc-samples 64
 ```
+
+This uses a central 1 km half-width to avoid thin peripheral slabs where the terrain
+falls to the detector-plane floor. A 5 km tetrahedral domain can trigger extensive
+TetGen quality refinement even with a large maximum cell volume; use `--geometry grid`
+for that domain. In `auto` mode, floor-clamped sampled terrain selects the grid.
+The geometry-only check is reproducible with
+`python3 dev/run_bounded.py --cpus 2 --memory-gib 12 -- julia --project=. dev/check_tetra_geometry.jl`.
+
 
 Paper-match focused run:
 
@@ -326,9 +357,16 @@ julia --project=. examples/lvd_tomography.jl \
   --output-dir examples/data/lvd_papermatch \
   --papermatch-only \
   --geometry auto \
-  --samples 8 \
+  --samples 32 --csda-quadrature midpoint \
   --papermatch-mc-samples 64
 ```
+
+
+CSDA uses deterministic log-energy midpoint quadrature by default (`--samples 32`).
+Check flux and derivative convergence with more nodes before interpreting numerical
+results. `--csda-quadrature random` reproduces the legacy seeded sampling path;
+small random sample sets can have large flux bias. Monte Carlo transport retains
+independent random energy and charge samples.
 
 The full run can be expensive. Use coarse angular grids and low sample counts for
 smoke tests, then scale up for production figures.

@@ -11,18 +11,11 @@ using ..Constants
 export DEDXData, load_dedx_file, find_dedx_file
 export PUMAS_MATERIALS_PATH
 
-# Default path to pumas-materials (relative to diffpumas.jl in devspace)
-# diffpumas.jl is at devspace/diffpumas.jl, so we go up two levels to devspace, then into pumas-materials
-const PUMAS_MATERIALS_PATH = let
-    # @__DIR__ points to src/, go up to diffpumas.jl/, then up to devspace/, then into pumas-materials/
-    p = joinpath(dirname(dirname(@__DIR__)), "pumas-materials")
-    if !isdir(p)
-        # Fallback: try environment variable
-        get(ENV, "PUMAS_MATERIALS_PATH", p)
-    else
-        p
-    end
-end
+# Respect explicit data selection before the legacy sibling-directory default.
+# Read ENV at call time as package precompilation must not freeze a user's path.
+default_materials_path() = get(ENV, "PUMAS_MATERIALS_PATH",
+    joinpath(dirname(dirname(@__DIR__)), "pumas-materials"))
+const PUMAS_MATERIALS_PATH = default_materials_path()
 
 """
     DEDXData
@@ -204,7 +197,7 @@ Find the dE/dx file for a given material and particle type.
 Returns the full path to the file.
 """
 function find_dedx_file(material_name::String, particle::Symbol=:muon;
-                        base_path::String=PUMAS_MATERIALS_PATH)
+                        base_path::String=default_materials_path())
     # Convert material name to filename format (lowercase, underscores)
     # Handle CamelCase -> snake_case conversion
     name = material_name

@@ -1,0 +1,9 @@
+rock_density = 2710.0
+julia_version = "1.11.7"
+threads = 2
+calibration_sha256 = "650b27e6374c16275c8b00fe7e4933052e1bcf9f00622aac4ec6dc66310838c3"
+cell_selection = "longest intersected segment per ray"
+geometry = "voxel nz8 half-width3km surface-step1.5km, azimuth0deg"
+physics_sha256 = "5179ed2823c2b5c98cf347d9cc390c7d3df92349f719edcc626f668e01c1edf3"
+reference_scope = "paired midpoint256 is a convergence comparator, not exact truth"
+derivative_method = "h=1e-4 central at .3; second-order right difference at 0"

@@ -9,7 +9,7 @@ statically with matplotlib without re-running any transport.  Output:
     examples/data/lvd_results/lvd_topography_grid.csv   (x_km, y_km, elev_m)
 
 The detector sits at the local origin (x=y=0) at DETECTOR_ELEVATION m a.s.l.
-Run:  julia --project=. examples/export_lvd_topography.jl
+Run:  julia --project=. examples/export_lvd_topography.jl [--output-dir PATH]
 """
 
 # Pull in the topography helpers exactly the way lvd_tomography.jl does, inside a
@@ -20,11 +20,16 @@ end
 
 using Printf
 
-function main()
+function main(args=ARGS)
+    out_dir = joinpath(@__DIR__, "data", "lvd_results")
+    if !isempty(args)
+        length(args) == 2 && args[1] == "--output-dir" ||
+            error("Usage: export_lvd_topography.jl [--output-dir PATH]")
+        out_dir = args[2]
+    end
     println("Building LVD elevation map from nm_c.inc + cross-section geometry…")
     emap = LVDTopo.build_elevation_map()
 
-    out_dir = joinpath(@__DIR__, "data", "lvd_results")
     isdir(out_dir) || mkpath(out_dir)
     out_path = joinpath(out_dir, "lvd_topography_grid.csv")
 
@@ -46,4 +51,6 @@ function main()
     return 0
 end
 
-main()
+if abspath(PROGRAM_FILE) == @__FILE__
+    exit(main())
+end

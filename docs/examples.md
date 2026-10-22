@@ -248,11 +248,20 @@ Tetrahedral sensitivity-volume run:
 julia --project=. examples/lvd_tomography.jl \
   --output-dir examples/data/lvd_tomo_tetra \
   --geometry tetra \
-  --mesh-half-km 5 \
-  --surface-step-km 1 \
-  --samples 8 \
+  --mesh-half-km 1 \
+  --surface-step-km 0.5 \
+  --zenith-step 10 --azimuth-step 15 \
+  --samples 32 --csda-quadrature midpoint \
   --mc-samples 64
 ```
+
+This uses a central 1 km half-width to avoid thin peripheral slabs where the terrain
+falls to the detector-plane floor. A 5 km tetrahedral domain can trigger extensive
+TetGen quality refinement even with a large maximum cell volume; use `--geometry grid`
+for that domain. In `auto` mode, floor-clamped sampled terrain selects the grid.
+The geometry-only check is reproducible with
+`python3 dev/run_bounded.py --cpus 2 --memory-gib 12 -- julia --project=. dev/check_tetra_geometry.jl`.
+
 
 Use a simple single-box aquifer truth:
 
@@ -263,7 +272,7 @@ julia --project=. examples/lvd_tomography.jl \
   --simple-field \
   --aquifer-water-fraction 0.7 \
   --aquifer-center-z 700 \
-  --samples 8
+  --samples 32 --csda-quadrature midpoint
 ```
 
 Paper-match focused run:
@@ -272,9 +281,16 @@ Paper-match focused run:
 julia --project=. examples/lvd_tomography.jl \
   --output-dir examples/data/lvd_papermatch \
   --papermatch-only \
-  --samples 8 \
+  --samples 32 --csda-quadrature midpoint \
   --papermatch-mc-samples 64
 ```
+
+
+CSDA uses deterministic log-energy midpoint quadrature by default (`--samples 32`).
+Check flux and derivative convergence with more nodes before interpreting numerical
+results. `--csda-quadrature random` reproduces the legacy seeded sampling path;
+small random sample sets can have large flux bias. Monte Carlo transport retains
+independent random energy and charge samples.
 
 Useful controls:
 
@@ -318,6 +334,36 @@ For paper-quality or validation results:
 - Keep seeds fixed for comparisons.
 - Review MC uncertainty and transport-systematic bands.
 - Prefer dedicated output directories so generated files are not overwritten.
+
+## Sequential LVD Production Run
+
+`dev/run_lvd_paper.sh` runs topography, the main pipeline, reconstruction sweep,
+detection benchmark, and contrast sweep sequentially. It stops on the first
+failed stage and returns its exit status. Defaults are 20 CPU cores, 48 GiB of
+address space per process, one BLAS thread, and `examples/data/lvd_revision`.
+The default physics dump is `examples/data/revision_physics/materials.pumas`;
+tomography stages require it to exist. Pass `--dump PATH` to select another
+verified physics source. See [setup](getting-started.md) for data acquisition.
+The launcher enforces the host allocation limits described in
+`dev/run_bounded.py`; the address-space limit is not an aggregate job memory cap.
+
+Inspect the commands before starting a long run:
+
+```bash
+bash dev/run_lvd_paper.sh --dry-run
+bash dev/run_lvd_paper.sh --threads 20 --memory-gib 48 \
+  --dump examples/data/revision_physics/materials.pumas \
+  --output-dir examples/data/lvd_revision --stages topo,main
+```
+
+The main stage allows up to six self-consistent calibration passes, stopping
+when both field and coefficient changes meet relative tolerance 0.02. Change
+these with `--recursions N --recur-tol X`; reaching the maximum is recorded as
+termination by maximum passes and does not establish convergence.
+
+Use `--stages sweep,detection,contrast` for the remaining stages. Every selected
+stage runs in the supplied order and writes `log_<stage>.txt` under the chosen
+output directory. Run the script inside tmux for unattended production work.
 
 ## Output Hygiene
 

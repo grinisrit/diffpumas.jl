@@ -50,7 +50,7 @@ using SparseArrays
 using Zygote
 
 export MaterialConfig, SiteConfig, EnergySample, CellSegment, DirectionalPath
-export sample_energy_set, direction_vector
+export sample_energy_set, csda_energy_quadrature, direction_vector
 export cell_density, cell_stopping_power
 export compute_directional_flux_csda, directional_flux_and_grad_csda
 export assemble_forward_and_jacobian
@@ -211,6 +211,32 @@ function sample_energy_set(n_samples::Int,
         samples[i] = EnergySample(Float64(kf), charge, Float64(w))
     end
     return samples
+end
+
+"""
+    csda_energy_quadrature(n, energy_min, energy_max)
+
+Construct `n` deterministic midpoint nodes in log energy for the CSDA forward
+operators. Each node carries `charge=0`, selecting the charge-summed surface
+flux, and half the usual energy Jacobian to compensate the CSDA operator's
+existing factor two for charge proposals. CSDA transport is charge independent,
+so this exactly equals averaging explicit positive/negative nodes at each energy.
+
+A zero charge here is an integration convention, not a physical neutral muon.
+These nodes must never be passed to stochastic MC transport; use
+`sample_energy_set` for physical MC energy/charge samples instead.
+"""
+function csda_energy_quadrature(n::Integer, energy_min::Real, energy_max::Real)
+    lower, upper = Float64(energy_min), Float64(energy_max)
+    n > 0 || throw(ArgumentError("CSDA quadrature requires at least one energy node"))
+    isfinite(lower) && isfinite(upper) && 0 < lower < upper ||
+        throw(ArgumentError("CSDA quadrature requires finite 0 < energy_min < energy_max"))
+    log_lower = log(lower)
+    span = log(upper) - log_lower
+    return [begin
+        energy = exp(log_lower + span * (i - 0.5) / n)
+        EnergySample(energy, 0.0, 0.5 * energy * span)
+    end for i in 1:n]
 end
 
 # ===========================================================================
@@ -851,6 +877,8 @@ function compute_directional_flux_mc(physics, matcfg::MaterialConfig, site::Site
                                      energy_samples::Vector{EnergySample}, seed::Int;
                                      straggling::Bool, energy_threshold_low::Float64,
                                      scattering::Bool = false)
+    all(sample -> sample.charge == -1.0 || sample.charge == 1.0, energy_samples) ||
+        throw(ArgumentError("MC requires physical charges ±1; CSDA quadrature nodes are not MC samples"))
     path.valid || return (NaN, NaN)
     cos_theta = cosd(path.zenith)
     cos_theta <= 0.0 && return (NaN, NaN)

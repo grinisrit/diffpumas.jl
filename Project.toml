@@ -17,7 +17,6 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TetGen = "c5d3f3f7-f850-59f6-8a2e-ffc6dc1317ea"
-TriangleIntersect = "dcd768d6-4344-5c62-a673-42b3679449b0"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
 
@@ -36,3 +35,6 @@ julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

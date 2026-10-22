@@ -65,8 +65,9 @@ export plot, Plot, Layout, scatter, scatter3d, bar, heatmap, surface
 using TetGen
 export tetrahedralize, RawTetGenIO, facetlist!
 
-using TriangleIntersect
-import TriangleIntersect: intersect
+include("TriangleIntersect.jl")
+using .TriangleIntersect
+import .TriangleIntersect: intersect
 export Point, Ray, Triangle, Intersection
 # Note: intersect is imported but not exported to avoid conflict with Base.intersect
 # Users should use TriangleIntersect.intersect or import it explicitly
@@ -214,7 +215,7 @@ export sample_energy_loguniform
 
 # Export Tomography (absorption muography forward model + inverse solvers)
 export MaterialConfig, SiteConfig, EnergySample, CellSegment, DirectionalPath
-export sample_energy_set, direction_vector
+export sample_energy_set, csda_energy_quadrature, direction_vector
 export cell_density, cell_stopping_power
 export compute_directional_flux_csda, directional_flux_and_grad_csda
 export assemble_forward_and_jacobian

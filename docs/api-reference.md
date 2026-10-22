@@ -645,9 +645,9 @@ DiffPumas.jl re-exports selected functions/types for convenience:
 - Zygote: `gradient`, `pullback`, `jacobian`.
 - PlotlyJS plotting constructors.
 - TetGen: `tetrahedralize`, `RawTetGenIO`, `facetlist!`.
-- TriangleIntersect: `Point`, `Ray`, `Triangle`, `Intersection`.
+- Bundled `DiffPumas.TriangleIntersect`: `Point`, `Ray`, `Triangle`, `Intersection`.
 
-`TriangleIntersect.intersect` is imported but not exported to avoid conflicting
+`DiffPumas.TriangleIntersect.intersect` is imported but not exported to avoid conflicting
 with `Base.intersect`.
 
 ## Stability Notes

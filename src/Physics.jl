@@ -48,7 +48,7 @@ function PhysicsSettings(;
     bremsstrahlung::String = "SSR",
     pair_production::String = "SSR",
     photonuclear::String = "DRSS",
-    dedx_path::String = PUMAS_MATERIALS_PATH
+    dedx_path::String = DEDXLoader.default_materials_path()
 )
     PhysicsSettings(cutoff, elastic_ratio, bremsstrahlung, pair_production, photonuclear, dedx_path)
 end
