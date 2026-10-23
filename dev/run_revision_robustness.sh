@@ -5,8 +5,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 revision_root="$(realpath -m "${1:-examples/data/revision_robustness_20261023}")"
 mkdir -p "$revision_root"
 revision_dump="${REVISION_PHYSICS_DUMP:-examples/data/revision_physics/materials.pumas}"
+revision_julia="${JULIA_BIN:-julia}"
 [[ -f "$revision_dump" ]] || { printf 'Missing pinned physics dump: %s\n' "$revision_dump" >&2; exit 1; }
-revision_common=(--project=. examples/lvd_tomography.jl --dump "$revision_dump" --papermatch-fit-only
+revision_common=(--startup-file=no --project=. examples/lvd_tomography.jl --dump "$revision_dump" --papermatch-fit-only
     --geometry grid --mesh-half-km 5 --surface-step-km 1 --grid-nz 6
     --zenith-step 10 --azimuth-step 15 --samples 32 --csda-quadrature midpoint
     --calibration-bins 24 --calibration-mc-samples 128
@@ -15,22 +16,23 @@ revision_run() {
     local scenario="$1"
     shift
     local run_dir="$revision_root/$scenario"
-    mkdir -p "$run_dir"
-    if [[ -f "$run_dir/completed.json" ]]; then
+    local -a scenario_command=("$revision_julia" "${revision_common[@]}" --output-dir "$run_dir" "$@")
+    local action
+    action="$(python3 dev/robustness_run_identity.py prepare --cpus 4 --memory-gib 12 \
+        "$run_dir" "$revision_dump" -- "${scenario_command[@]}")"
+    if [[ "$action" == skip ]]; then
         printf 'Using completed scenario: %s\n' "$scenario"
         return
     fi
-    python3 - "$run_dir" "$scenario" "${revision_common[@]}" --output-dir "$run_dir" "$@" <<'PY'
+    [[ "$action" == run ]] || { printf 'Unexpected resume decision: %s\n' "$action" >&2; return 2; }
+    python3 - "$run_dir" "$scenario" "${scenario_command[@]}" <<'PY'
 import datetime,json,pathlib,sys
-pathlib.Path(sys.argv[1],'command.json').write_text(json.dumps(dict(scenario=sys.argv[2],started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),command=['julia']+sys.argv[3:],cpus=4,address_space_gib=12),indent=2)+'\n')
+pathlib.Path(sys.argv[1],'command.json').write_text(json.dumps(dict(scenario=sys.argv[2],started_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),command=sys.argv[3:],cpus=4,address_space_gib=12),indent=2)+'\n')
 PY
     printf 'Starting nonlinear scenario: %s\n' "$scenario"
     if python3 dev/run_bounded.py --cpus 4 --memory-gib 12 -- \
-        julia "${revision_common[@]}" --output-dir "$run_dir" "$@" > "$run_dir/run.log" 2>&1; then
-        python3 - "$run_dir" <<'PY'
-import datetime,json,pathlib,sys
-pathlib.Path(sys.argv[1],'completed.json').write_text(json.dumps(dict(completed_utc=datetime.datetime.now(datetime.timezone.utc).isoformat()))+'\n')
-PY
+        "${scenario_command[@]}" > "$run_dir/run.log" 2>&1; then
+        python3 dev/robustness_run_identity.py complete "$run_dir"
     else
         local exit_code="$?"
         python3 - "$run_dir" "$exit_code" <<'PY'
