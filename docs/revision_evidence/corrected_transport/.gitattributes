@@ -1,0 +1,4 @@
+# Preserve evidence bytes and SHA256 hashes. CSVs use the producer's CRLF;
+# unified patches intentionally contain a context prefix on empty lines.
+*.csv -text whitespace=cr-at-eol
+*.patch -whitespace
