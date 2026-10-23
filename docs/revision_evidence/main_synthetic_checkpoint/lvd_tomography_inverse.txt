@@ -1,0 +1,66 @@
+LVD tomography inverse reconstruction summary
+geometry = grid, n_cells = 600, valid_bins = 21600
+ground-truth nonzero cells = 42, contrast = 0.5
+regularisation weight = 0.0
+
+[SART]  (0.44 s, 200 iters)
+  MSE=1.9381e-02 RMSE=1.3922e-01 PSNR=16.21 dB SSIM=0.3560 SNR=0.06 dB
+  final data misfit ||Jw-b|| = 1.0955e-02
+
+[MLEM]  (0.32 s, 200 iters)
+  MSE=1.0594e-02 RMSE=1.0293e-01 PSNR=18.83 dB SSIM=0.7002 SNR=2.68 dB
+  final data misfit ||Jw-b|| = 5.2678e-03
+
+[GD]  (2746.18 s, 40 iters)
+  MSE=9.5540e-03 RMSE=9.7744e-02 PSNR=19.28 dB SSIM=0.5736 SNR=3.13 dB
+  final data misfit ||Jw-b|| = 3.4435e-03
+
+[GN]  (2672.24 s, 13 iters)
+  MSE=9.9816e-03 RMSE=9.9908e-02 PSNR=19.09 dB SSIM=0.5696 SNR=2.94 dB
+  final data misfit ||Jw-b|| = 2.9607e-03
+
+Reconstruction RMSE by depth band (lower = better):
+  depth band [m]        SART       MLEM       GD         GN         
+  350-702               0.1029     0.1103     0.1189     0.1291     
+  702-1054              0.1051     0.1021     0.0927     0.0929     
+  1054-1406             0.1465     0.0553     0.0582     0.0592     
+  1406-1758             0.1640     0.1169     0.1041     0.1027     
+
+Reconstruction SSIM by depth band (higher = better):
+  depth band [m]        SART       MLEM       GD         GN         
+  350-702               0.6099     0.2427     0.3987     0.1426     
+  702-1054              0.5366     0.7996     0.5204     0.6152     
+  1054-1406             0.5080     0.9414     0.9409     0.8516     
+  1406-1758             0.0778     0.0188     0.0341     0.0420     
+
+Relative data residual ||pred_true - obs||/||obs|| by zenith band:
+  zenith band [deg]     SART       MLEM       GD         GN         
+  0-20                  1.0959     0.9389     0.0471     0.0406     
+  20-39                 1.0643     0.9277     0.0464     0.0422     
+  39-59                 1.3775     0.6512     0.0648     0.0485     
+
+Resolution (linearised point-spread FWHM vs depth):
+  depth[m]     FWHM[m]      floor[m]     n_cells 
+  558.8        2373.7       319.6        12      
+  799.0        1118.6       319.6        14      
+  1118.6       319.6        319.6        20      
+  1438.2       319.6        319.6        19      
+  1678.4       319.6        319.6        8       
+
+Resolution FWHM[m] map — all depths (rows) × azimuth directions (cols, deg):
+  depth[m] 22     68     112    158    202    248    292    338    floor  
+  559      <=320  2237   2374   2739   2374   3620   2374   1050   320    
+  799      639    959    3104   1278   2100   2374   639    959    320    
+  1119     <=320  639    1187   320    <=320  639    <=320  320    320    
+  1438     -      <=320  <=320  <=320  <=320  <=320  <=320  <=320  320    
+  1678     -      -      <=320  <=320  -      <=320  -      -      320    
+  (azimuth sectors of 45 deg; cells evaluated below 350 m)
+
+Resolution cell-count map — all depths (rows) × azimuth directions (cols, deg):
+  depth[m] 22     68     112    158    202    248    292    338    floor  
+  559      1      2      1      2      1      2      1      2      320    
+  799      1      2      1      3      1      3      1      2      320    
+  1119     1      3      2      4      2      4      2      2      320    
+  1438     0      3      3      4      1      5      2      1      320    
+  1678     0      0      3      1      0      4      0      0      320    
+  (azimuth sectors of 45 deg; cells evaluated below 350 m)

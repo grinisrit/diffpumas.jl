@@ -1,0 +1,50 @@
+{
+  "captured_utc": "2026-10-23T09:27:19.139744+00:00",
+  "full_main_stage_completed": false,
+  "remaining_main": "measured fit/closure still active; later coarse stages also pending",
+  "authoritative_metric_source": "lvd_tomography_inverse.txt",
+  "authoritative_metric_source_sha256": "48f5fe24ab923890d092594e8ebb56771c5072021b6f67a417dffabbd9822f51",
+  "metrics_from_final_report_print_precision": {
+    "SART": {
+      "seconds_reported": 0.44,
+      "history_entries_reported": 200,
+      "mse": 0.019381,
+      "rmse": 0.13922,
+      "psnr_db": 16.21,
+      "ssim": 0.356,
+      "snr_db": 0.06
+    },
+    "MLEM": {
+      "seconds_reported": 0.32,
+      "history_entries_reported": 200,
+      "mse": 0.010594,
+      "rmse": 0.10293,
+      "psnr_db": 18.83,
+      "ssim": 0.7002,
+      "snr_db": 2.68
+    },
+    "GD": {
+      "seconds_reported": 2746.18,
+      "history_entries_reported": 40,
+      "mse": 0.009554,
+      "rmse": 0.097744,
+      "psnr_db": 19.28,
+      "ssim": 0.5736,
+      "snr_db": 3.13
+    },
+    "GN": {
+      "seconds_reported": 2672.24,
+      "history_entries_reported": 13,
+      "mse": 0.0099816,
+      "rmse": 0.099908,
+      "psnr_db": 19.09,
+      "ssim": 0.5696,
+      "snr_db": 2.94
+    }
+  },
+  "precision_scope": "The console log is lower precision; the CSV fields are rounded to6decimals. No higher-precision metric was inferred from either. Earlier chat GN .099911/.5703 was a transcription error and is superseded by the final report9.9908e-2/.5696.",
+  "regularization_scope": "Report header regularisation weight0.0 is generic CLI input, NOT absence ofpriors: default sm_w=.05*medianpositivecolumnsum(max(J,0)); edge_w=.01*medianpositive diag(J^TWJ), Huber delta.03. SART usesfixedneighbor smoothing; MLEMusesclippedpriorgradient.",
+  "iteration_scope": "GN13reported historyentries includeinitialstate: cap12iterations, not13acceptedupdates. Other displayedhistories omitinitialstate. No syntheticconvergence certificate was exported.",
+  "domain_scope": "21600finite syntheticrays theta0..59/phi0..359;600cells;truth42nonzero. RMS mesh frominitialrichsyntheticfield, onlytop150rankedcentroids. Heightz isabove detector, notterrain depth.",
+  "uncertainty_scope": "Metrics conditional onone1024-history-per-bin MCtemplate; calibration/referenceuncertainty notpropagated, no domain-wideaccuracy/coverage certificate."
+}
