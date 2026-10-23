@@ -1,18 +1,18 @@
 #!/usr/bin/env julia
 """
-lvd_aquifer_validation.jl — CSDA+AD vs full-MC+FD on a real LVD line of sight.
+lvd_aquifer_validation.jl — CSDA+AD vs fixed-path energy-loss MC+FD on a real LVD line of sight.
 
 Builds one Gran Sasso LVD line of sight from the `nm_c.inc` slant-rock table,
 slices the whole rock overburden into a mesh of `N_CELLS` equal cells along the
 ray, and places a rock/water aquifer in the middle cell (≈ halfway between the
 detector and the surface). It then compares, for the aquifer cell:
 
-  * flux:  direct CSDA          vs  full stochastic backward MC
+  * flux:  direct CSDA          vs  fixed-path stochastic backward energy-loss MC
   * dFlux/dw:  reverse-mode AD  vs  MC finite difference
 
-Both paths share the same material model, energy samples and geometry, so any
-residual difference is the physical CSDA-vs-straggling/fluctuation effect, not a
-modelling mismatch. Run with straggling on and off to separate the two.
+Both calculations prescribe the same straight ray and disable scattering. Their
+residual difference can include energy-loss approximations and quadrature or MC
+sampling error. Run with straggling on and off to examine energy-loss fluctuations.
 
 Usage:
     julia --project=. examples/lvd_aquifer_validation.jl [zenith_deg] [azimuth_deg]
@@ -99,7 +99,7 @@ function check_ad(physics, matcfg, site, path, shallow, samples_ad)
 end
 
 # --- CSDA-vs-MC physics on the large shared quadrature --------------------
-# CSDA value (no tape, cheap at any size) and full stochastic MC use the SAME
+# CSDA value (no tape, cheap at any size) and fixed-path energy-loss MC use the SAME
 # energy samples; MC lo/hi reuse the seed (common random numbers) so the FD
 # difference cancels most of the MC variance.
 function run_case(physics, matcfg, site, path, shallow, samples::Vector{EnergySample}; straggling::Bool)
@@ -115,15 +115,15 @@ function run_case(physics, matcfg, site, path, shallow, samples::Vector{EnergySa
     matsl, densl = build_cell_properties_for_mc(shallow, w_lo, matcfg)
     matsh, densh = build_cell_properties_for_mc(shallow, w_hi, matcfg)
     f0, s0 = compute_directional_flux_mc(physics, matcfg, site, path, mats0, dens0,
-        samples, SEED; straggling=straggling, energy_threshold_low=THRESHOLD_GEV)
+        samples, SEED; straggling=straggling, scattering=false, energy_threshold_low=THRESHOLD_GEV)
     fl, sl = compute_directional_flux_mc(physics, matcfg, site, path, matsl, densl,
-        samples, SEED; straggling=straggling, energy_threshold_low=THRESHOLD_GEV)
+        samples, SEED; straggling=straggling, scattering=false, energy_threshold_low=THRESHOLD_GEV)
     fh, sh = compute_directional_flux_mc(physics, matcfg, site, path, matsh, densh,
-        samples, SEED; straggling=straggling, energy_threshold_low=THRESHOLD_GEV)
+        samples, SEED; straggling=straggling, scattering=false, energy_threshold_low=THRESHOLD_GEV)
 
     grad_mc_fd = (fh - fl) / (hi - lo)
-    # √(σ_lo²+σ_hi²) is an UPPER bound: lo/hi share random numbers, so the common
-    # part cancels in the difference and the true FD error is smaller.
+    # Endpoint-error approximation omits low/high covariance under shared random
+    # numbers; it is not a calibrated finite-difference uncertainty estimate.
     sigma_grad = sqrt(sl^2 + sh^2) / (hi - lo)
 
     return (; flux_csda=fcsda0, flux_mc=f0, sigma_mc=s0, grad_csda_fd, grad_mc_fd,
@@ -150,7 +150,7 @@ function main()
     azimuth_req = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 0.0
 
     println("=" ^ 70)
-    println(" LVD aquifer validation: CSDA+AD vs full-MC+FD")
+    println(" LVD aquifer validation: CSDA+AD vs fixed-path energy-loss MC+FD")
     println("=" ^ 70)
 
     physics = load_or_create_physics(DEFAULT_DUMP; mdf_path = DEFAULT_MDF)
@@ -204,11 +204,11 @@ function main()
     report("no-straggling sanity", r_off)
     println(@sprintf("  (%.1f s)\n", time() - t))
 
-    # 2) Straggling ON: full stochastic transport; reveals the physical
+    # 2) Straggling ON: fixed-path stochastic energy-loss transport; reveals the physical
     #    fluctuation bias on a multi-km path.
     t = time()
     r_on = run_case(physics, matcfg, site, path, shallow, samples_big; straggling=true)
-    report("full stochastic MC", r_on)
+    report("fixed-path energy-loss MC", r_on)
     println(@sprintf("  (%.1f s)", time() - t))
 
     return 0

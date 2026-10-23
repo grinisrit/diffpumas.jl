@@ -99,3 +99,17 @@ end
     @test length(unique(one))==12
     @test Set(paths[p.bin].zenith for p in one)==Set([0,15,30,45,60,75])
 end
+
+@testset "Fixed-path sensitivity envelope excludes scattering" begin
+    variations=NamedTuple[]
+    evaluate=v->begin
+        push!(variations,v)
+        (10.0+2v.straggling+v.energy_threshold_low/1000,0.3)
+    end
+    budget=fixed_path_energy_uncertainty(evaluate;straggling=true,energy_threshold_low=100.0,seed=42)
+    @test budget.value≈12.1
+    @test budget.sigma_syst≈hypot(2.0,0.1)
+    @test budget.sigma_total≈hypot(0.3,hypot(2.0,0.1))
+    @test length(variations)==4
+    @test all(v->!v.scattering && v.seed==42,variations)
+end

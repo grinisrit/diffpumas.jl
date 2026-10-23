@@ -124,6 +124,7 @@ function revision_main(argv=ARGS)
             "selection_scope"=>"seeded round-robin joint quartiles with replacement of overrepresented zenith cases to guarantee each valid requested zenith with nonzero sensitivity; invalid/zero-sensitivity directions recorded, not certified",
             "seed_policy"=>"independent replicate energy and transport seeds; common low/high seeds within replicate",
             "acceptance_scope"=>"illustrative normalized geometric profiles, not measured LVD acceptance",
+            "transport_scope"=>"fixed prescribed-ray stochastic energy-loss MC; scattering disabled, no scattered-boundary retracing or detector-acceptance validation",
             "closure_scope"=>"frozen global dry MC calibration predicts unseen spatially varying wet field with independent MC samples; matched independent dry/wet replicates share energy/transport seeds; paired flux-bias change includes dry/wet covariance; calibration uncertainty not propagated; uncalibrated mode separately records per-bin dry scalar comparator",
             "timing_scope"=>"uncorrected CSDA scaling stages; exact stage warmed once; allocated bytes are cumulative allocations; RSS is process cumulative peak",
             "jacobian_validation_scope"=>o["calibrate"]=="true" ? "frozen independent dry MC calibration against midpoint CSDA reference; wet validation fields and independent MC seeds" : "uncorrected pure CSDA",
@@ -198,8 +199,8 @@ function revision_main(argv=ARGS)
                 energies=sample_energy_set(nmc,1e-3,1e9,sd)
                 lo,hi=finite_difference_bounds(fraction,0.05); wl=copy(wf); wh=copy(wf); wl[c]=lo; wh[c]=hi
                 ml,dl=build_cell_properties_for_mc(shallow,wl,mat); mh,dh=build_cell_properties_for_mc(shallow,wh,mat)
-                fl,sl=compute_directional_flux_mc(physics,mat,site,paths[b],ml,dl,energies,sd+1;straggling=true,scattering=true,energy_threshold_low=100.0)
-                fh,sh=compute_directional_flux_mc(physics,mat,site,paths[b],mh,dh,energies,sd+1;straggling=true,scattering=true,energy_threshold_low=100.0)
+                fl,sl=compute_directional_flux_mc(physics,mat,site,paths[b],ml,dl,energies,sd+1;straggling=true,scattering=false,energy_threshold_low=100.0)
+                fh,sh=compute_directional_flux_mc(physics,mat,site,paths[b],mh,dh,energies,sd+1;straggling=true,scattering=false,energy_threshold_low=100.0)
                 cslo=compute_directional_flux_csda(physics,shallow,mat,site,paths[b],wl,es)
                 cshi=compute_directional_flux_csda(physics,shallow,mat,site,paths[b],wh,es)
                 cssecant=(cshi-cslo)/(hi-lo)
@@ -254,7 +255,7 @@ function revision_main(argv=ARGS)
         drycs=compute_directional_flux_csda(physics,shallow,mat,site,paths[b],dry,es)
         md,dd=build_cell_properties_for_mc(shallow,dry,mat)
         train=sample_energy_set(nmc,1e-3,1e9,seed+500000+b)
-        fm,_=compute_directional_flux_mc(physics,mat,site,paths[b],md,dd,train,seed+510000+b;straggling=true,scattering=true,energy_threshold_low=100.0)
+        fm,_=compute_directional_flux_mc(physics,mat,site,paths[b],md,dd,train,seed+510000+b;straggling=true,scattering=false,energy_threshold_low=100.0)
         correction=fm/max(drycs,1e-30)
         frozen_paper_pred=compute_directional_flux_csda(physics,shallow,mat,site,paths[b],wet,es)
         per_bin_scalar_pred=correction*frozen_paper_pred
@@ -263,8 +264,8 @@ function revision_main(argv=ARGS)
         mw,dw=build_cell_properties_for_mc(shallow,wet,mat)
         for rep in 1:nrep
             sd=seed+600000+100*b+rep; test=sample_energy_set(nmc,1e-3,1e9,sd)
-            drytruth,drysigma=compute_directional_flux_mc(physics,mat,site,paths[b],md,dd,test,sd+1;straggling=true,scattering=true,energy_threshold_low=100.0)
-            truth,sigma=compute_directional_flux_mc(physics,mat,site,paths[b],mw,dw,test,sd+1;straggling=true,scattering=true,energy_threshold_low=100.0)
+            drytruth,drysigma=compute_directional_flux_mc(physics,mat,site,paths[b],md,dd,test,sd+1;straggling=true,scattering=false,energy_threshold_low=100.0)
+            truth,sigma=compute_directional_flux_mc(physics,mat,site,paths[b],mw,dw,test,sd+1;straggling=true,scattering=false,energy_threshold_low=100.0)
             push!(closure,(bin=b,zenith=paths[b].zenith,azimuth=paths[b].azimuth,slant_m=paths[b].surface_distance,replicate=rep,seed=sd,predicted_dry=preddry,frozen_global_dry_prediction=drycs,mc_dry=drytruth,sigma_mc_dry=drysigma,dry_relative_residual=(preddry-drytruth)/max(abs(drytruth),1e-30),paired_bias_change=(pred-truth)-(preddry-drytruth),paired_mc_wetting_increment=truth-drytruth,dry_correction=correction,prediction_mode=o["calibrate"]=="true" ? "frozen_global_dry_calibration" : "per_bin_dry_scalar",predicted_wet=pred,frozen_global_prediction=frozen_paper_pred,per_bin_scalar_prediction=per_bin_scalar_pred,mc_wet=truth,sigma_mc=sigma,relative_residual=(pred-truth)/max(abs(truth),1e-30)))
         end
         csv_rows(joinpath(out,"held_out_closure.csv"),closure)

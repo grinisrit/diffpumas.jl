@@ -11,7 +11,8 @@ aquifer examples from `flat_muography.jl`.
 Two sensitivity paths are compared:
 1. Direct CSDA on cached straight-line path segments with `Zygote.gradient`
 2. Finite-difference sensitivities on a stochastic transport calculation for a
-   small validation set of representative `(direction, cell)` cases
+   small validation set of representative `(direction, cell)` cases. Both
+   calculations prescribe straight rays; stochastic energy-loss MC disables scattering.
 
 The primary geometry path is tetrahedral:
 - Build a watertight PLC from the reconstructed LVD topography plus a flat
@@ -1031,21 +1032,21 @@ function run_validation_cases(physics,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
-            scattering = true,
+            scattering = false,
         )
         flux_lo, sigma_lo = compute_directional_flux_mc(
             physics, matcfg, site, path, low_materials, low_densities, mc_samples,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
-            scattering = true,
+            scattering = false,
         )
         flux_hi, sigma_hi = compute_directional_flux_mc(
             physics, matcfg, site, path, high_materials, high_densities, mc_samples,
             args.seed + case_idx;
             straggling = args.straggling,
             energy_threshold_low = args.energy_threshold_low,
-            scattering = true,
+            scattering = false,
         )
 
         fd_grad = (flux_hi - flux_lo) / (hi - lo)
@@ -1255,18 +1256,16 @@ end
 function write_validation_summary(results,
                                   volume::AbstractSensitivityVolume;
                                   output_path::String)
-    # Diff-CSDA (forward flux + Zygote gradient) vs full MC (straggling + scattering
-    # on; gradient by central finite difference on the cell mixture). The MC flux and
-    # MC-FD gradient are noisy, so the headline test is the z-score (how many MC sigmas
-    # separate CSDA from MC), not the raw percentage mismatch — at these sample counts
-    # a large % can still be <1 sigma. sigma_grad propagates the two endpoint MC errors.
+    # Deterministic-map comparison with fixed-path stochastic energy-loss MC.
+    # Endpoint-error propagation omits low/high covariance and calibration error;
+    # these descriptive scores do not establish calibrated uncertainty coverage.
     flux_z = Float64[]
     grad_z = Float64[]
     open(output_path, "w") do io
         println(io, "LVD tomography validation summary")
         println(io, "geometry = $(geometry_name(volume))")
         println(io, "n_cells = $(num_cells(volume))")
-        println(io, "comparison: diff-CSDA + Zygote   vs   full MC (straggling+scattering) + finite difference")
+        println(io, "comparison: diff-CSDA + Zygote   vs   fixed-path energy-loss MC (straggling, scattering disabled) + finite difference")
         println(io)
 
         for (idx, result) in enumerate(results)
@@ -1298,7 +1297,7 @@ function write_validation_summary(results,
         if n > 0
             flux_ok = count(z -> abs(z) <= 2, flux_z)
             grad_ok = count(z -> abs(z) <= 2, grad_z)
-            println(io, "Aggregate over $n cases (full MC: straggling+scattering on):")
+            println(io, "Aggregate over $n cases (fixed-path energy-loss MC: straggling on, scattering disabled):")
             println(io, @sprintf("  flux within 2 sigma: %d/%d   | median |z| = %.2f", flux_ok, n, median(abs.(flux_z))))
             println(io, @sprintf("  grad within 2 sigma: %d/%d   | median |z| = %.2f", grad_ok, n, median(abs.(grad_z))))
             println(io, "  note: raise --mc-samples / --validation-cases to tighten the MC error bars.")
@@ -1351,9 +1350,9 @@ function parse_commandline()
                                    # (near-surface cells are geometrically unresolvable)
         threaded = true,
         correction = true,         # MC-calibrated CSDA fluctuation/hard-loss correction
-        calibration_bins = 48,     # bins used to fit the CSDA correction to full MC (more = tighter)
+        calibration_bins = 48,     # bins used to fit the CSDA correction to fixed-path energy-loss MC (more = tighter)
         calibration_mc_samples = 512,  # MC samples/bin for the calibration reference (high = low MC noise)
-        inverse_data = "mc",       # observation source: "mc" (full MC) or "csda"
+        inverse_data = "mc",       # observation source: "mc" (fixed-path energy-loss MC) or "csda"
         inverse_mc_samples = 256,  # MC samples per bin for the (low-noise) observations
         exposure = 1.0e8,          # detector exposure (sets Poisson noise level)
         edge_delta = 0.03,         # Huber transition for the edge-preserving GN prior
@@ -1380,7 +1379,7 @@ function parse_commandline()
         papermatch_damp = 0.6,         # under-relaxation on the field between recursion passes
                                        # (1 = take each solve as-is; <1 damps oscillation)
         papermatch_val_horiz = 80,     # # of stratified theta>=60 (long-slant) bins added to the
-                                       # full-MC validation on top of all theta<60 fit bins
+                                       # fixed-path energy-loss MC validation on top of all theta<60 fit bins
         papermatch_dem_unc = 0.15,     # per-bin relative DEM/topography uncertainty slope: the data
                                        # σ gets a term (dem_unc·(secθ−1))·flux in quadrature, so
                                        # long-slant bins (largest terrain error) are DOWN-weighted,
@@ -1611,7 +1610,7 @@ build_site(primary_alt_m::Real = primary_altitude_local()) =
 
 # --- MC-calibrated CSDA fluctuation/hard-loss correction (Part A) ---------
 
-# Fit the differentiable CSDA correction to full MC on a stratified set of bins,
+# Fit the differentiable CSDA correction to fixed-path energy-loss MC on a stratified set of bins,
 # then install it so the Jacobian and the inverse forward use the corrected
 # operator. Returns (kappa_strag, kappa_hard, stats) or nothing when disabled.
 function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConfig,
@@ -1634,20 +1633,19 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
     pick = unique(round.(Int, range(1, length(order); length = nb)))
     cbins = order[pick]
 
-    # High-statistics MC reference: the CSDA↔MC residual is MC-noise-limited at low
-    # sample counts (≈16% at 24 samples, ≈6% at 256), so calibrate against a clean
-    # reference (dedicated --calibration-mc-samples) to approach the ~4% model floor.
+    # Calibration sampling precision and residual model discrepancy must be
+    # measured for the current transport model and angular domain.
     mc_samples = sample_energy_set(args.calibration_mc_samples, args.energy_min, args.energy_max, args.seed + 20_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, water_fractions, matcfg)
-    println("Calibrating CSDA correction to full MC on $(length(cbins)) bins " *
-            "($(args.calibration_mc_samples) MC samples/bin, scattering+straggling)...")
+    println("Calibrating CSDA correction to fixed-path energy-loss MC on $(length(cbins)) bins " *
+            "($(args.calibration_mc_samples) MC samples/bin, energy-loss straggling; scattering disabled)...")
     flush(stdout)
     mcflux = Vector{Float64}(undef, length(cbins))
     Threads.@threads for k in eachindex(cbins)
         f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[cbins[k]], mats, dens,
             mc_samples, args.seed + 30_000 + k;
             straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
-            scattering = true)
+            scattering = false)
         mcflux[k] = f
     end
     ks, kh, stats = calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
@@ -1659,13 +1657,13 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
     return (ks, kh, stats)
 end
 
-# --- full-MC observations for the inverse problem (cached) ----------------
+# --- fixed-path energy-loss MC observations for the inverse problem (cached) ----------------
 
 function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfig,
                                    site::SiteConfig, paths::Vector{DirectionalPath},
                                    w_true::Vector{Float64}, valid::Vector{Int}, args;
                                    cache_path::String)
-    sig = (length(paths), length(valid), args.inverse_mc_samples, args.seed, args.zenith_step_deg,
+    sig = (:fixed_path_energy_loss_no_scattering_v1, length(paths), length(valid), args.inverse_mc_samples, args.seed, args.zenith_step_deg,
            args.azimuth_step_deg, args.geometry, hash(w_true), args.straggling,
            args.energy_min, args.energy_max, args.energy_threshold_low,
            matcfg.rock_density, matcfg.water_density, matcfg.porous_density)
@@ -1681,13 +1679,13 @@ function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfi
     end
     mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, args.seed + 40_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
-    println("  generating full-MC observations for $(length(valid)) bins (scattering+straggling, $(args.inverse_mc_samples) samples)...")
+    println("  generating fixed-path energy-loss MC observations for $(length(valid)) bins (energy-loss straggling; scattering disabled, $(args.inverse_mc_samples) samples)...")
     obs = Vector{Float64}(undef, length(valid))
     Threads.@threads for k in eachindex(valid)
         f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
             mc_samples, args.seed + 50_000 + k;
             straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
-            scattering = true)
+            scattering = false)
         obs[k] = f
     end
     try
@@ -1730,8 +1728,8 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     Jv = base_J[valid_bins, :]
     f0 = base_flux[valid_bins]
 
-    # Observations: NO inverse crime — generated by the full MC (scattering +
-    # straggling) through the true field, then Poisson counting noise. The
+    # Observations use fixed-path stochastic energy-loss MC through the true
+    # field, then Poisson counting noise. Both models share prescribed geometry. The
     # linear solvers invert `Jv`; only our Gauss-Newton fits the true nonlinear
     # corrected-CSDA operator, which is its edge over MLEM.
     if args.inverse_data == "mc"
@@ -2100,9 +2098,28 @@ function measured_intensity_for_paths(paths::Vector{DirectionalPath}, bins::Vect
     return out
 end
 
+# Fixed-ray sensitivity envelopes omit scattering, which requires geometry retracing.
+# These model-variation envelopes are not calibrated systematic-error coverage.
+function fixed_path_energy_uncertainty(evaluate; straggling::Bool,
+        energy_threshold_low::Float64, seed::Int, threshold_factors=(0.5,2.0))
+    nominal=(straggling=straggling,scattering=false,energy_threshold_low=energy_threshold_low,seed=seed)
+    value,sigma_mc=evaluate(nominal)
+    alternate,_=evaluate(merge(nominal,(straggling=!straggling,)))
+    straggling_envelope=abs(alternate-value)
+    threshold_envelope=0.0
+    if energy_threshold_low>0
+        for factor in threshold_factors
+            variant,_=evaluate(merge(nominal,(energy_threshold_low=energy_threshold_low*factor,)))
+            threshold_envelope=max(threshold_envelope,abs(variant-value))
+        end
+    end
+    sigma_syst=hypot(straggling_envelope,threshold_envelope)
+    (value=value,sigma_mc=sigma_mc,sigma_syst=sigma_syst,sigma_total=hypot(sigma_mc,sigma_syst))
+end
+
 # Build an LVDTopo.NMapFluxResult from the tomography mixture forward on the
 # coarse (nmap-resolution) grid: per-bin MC flux + MC/systematic uncertainty via
-# the generic estimate_transport_uncertainty wrapper, plus the slant-rock grid.
+# straggling/threshold sensitivity envelopes (no scattering term), plus the slant-rock grid.
 function nmap_result_for(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
                          cpaths::Vector{DirectionalPath}, czen::Vector{Float64},
                          caz::Vector{Float64}, w_field::Vector{Float64},
@@ -2120,9 +2137,9 @@ function nmap_result_for(physics, shallow_flags, matcfg::MaterialConfig, site::S
             physics, matcfg, site, path, materials, densities, psamples, variation.seed;
             straggling = variation.straggling,
             energy_threshold_low = variation.energy_threshold_low,
-            scattering = variation.scattering)
-        budget = estimate_transport_uncertainty(evaluate;
-            straggling = args.straggling, scattering = true,
+            scattering = false)
+        budget = fixed_path_energy_uncertainty(evaluate;
+            straggling = args.straggling,
             energy_threshold_low = Float64(args.energy_threshold_low),
             seed = base_seed + idx, threshold_factors = (0.5, 2.0))
         flux[z, a] = budget.value; smc[z, a] = budget.sigma_mc
@@ -2539,7 +2556,7 @@ end
 
 # (b) Benchmark 1 as a sweep: reconstruction accuracy (RMSE, SSIM vs the true field) vs
 # detector exposure, all four solvers with the FULL NONLINEAR operator (GD/GN relinearize
-# each step, as in the headline result). Clean observations are the full MC (computed once,
+# each step, as in the headline result). Clean observations are the fixed-path energy-loss MC (computed once,
 # no inverse crime); only the counting noise scales with exposure. Use a reduced-but-
 # overdetermined angular grid so the nonlinear GN sweep is affordable.
 function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
@@ -2573,7 +2590,7 @@ function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig
     rmse = Dict(s => zeros(length(exps)) for s in solvers)
     ssimv = Dict(s => zeros(length(exps)) for s in solvers)
     M = max(3, args.sweep_realizations ÷ 10)
-    println("Reconstruction-accuracy sweep (NONLINEAR operator, full-MC obs): $(length(exps)) exposures × $M realizations...")
+    println("Reconstruction-accuracy sweep (NONLINEAR operator, fixed-path energy-loss MC obs): $(length(exps)) exposures × $M realizations...")
     rng = MersenneTwister(args.seed + 9000)
     for (ei, τ) in enumerate(exps)
         σ = sqrt.(max.(clean_obs, 0.0) ./ τ); σ .= max.(σ, 1e-12 * maximum(clean_obs)); W = 1.0 ./ σ .^ 2
@@ -2602,7 +2619,7 @@ function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig
     end
 
     open(output_path, "w") do io
-        println(io, "Reconstruction accuracy vs exposure (nonlinear operator, full-MC obs; truth = multi-anomaly field)")
+        println(io, "Reconstruction accuracy vs exposure (nonlinear operator, fixed-path energy-loss MC obs; truth = multi-anomaly field)")
         println(io, @sprintf("%d realizations/point; eval depth ≥ %.0f m", M, args.min_eval_depth))
         for metric in ("RMSE", "SSIM")
             d = metric == "RMSE" ? rmse : ssimv
@@ -2865,7 +2882,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     # SELF-CONSISTENT RECURSION: re-calibrate the CSDA->MC correction THROUGH the current
     # reconstructed field, then re-solve, N times. Iteration 1 uses the calibration done at w=0
     # (dry rock); later iterations re-calibrate through the recovered water field, so the
-    # differentiable surrogate matches full MC for the medium it is actually fitting.
+    # differentiable surrogate matches fixed-path energy-loss MC for the medium it is actually fitting.
     n_recur = max(1, args.papermatch_recursions)
     damp = clamp(args.papermatch_damp, 0.0, 1.0)
     w0_fit = 0.0
@@ -3135,7 +3152,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         output_csv = map_csv, output_plot = map_plot)
 
     # --- Reconstructed-field outputs written FIRST (fast), so the 3D field/figure data are
-    # available immediately after the fit, before the slow full-MC validation below.
+    # available immediately after the fit, before the slow fixed-path energy-loss MC validation below.
     matcfg_fit = mk_cfg(rho_fit)
     field_plot = joinpath(args.output_dir, "lvd_single_muon_angular_distribution_field.html")
     plot_water_field(volume, w_matched; output_path = field_plot, max_cells = 300)
@@ -3152,12 +3169,12 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     end
     println("  reconstructed-field outputs: $field_plot , $water_plot , $w_csv")
 
-    # Full-MC consistency check of the recovered field. Because this field enters
+    # Fixed-path energy-loss MC consistency check of the recovered field. Because this field enters
     # the recalibration loop, this check is not an independent blind validation.
     # Validate ALL theta<60 fit bins plus a STRATIFIED subset of the high-theta
     # (long-slant) bins, so the check spans the full depth range of the fit and not
-    # only the vertical bins. Full MC on every horizontal bin is prohibitively slow.
-    println(@sprintf("Full-MC validation over %d bins (%d theta<%.0f + %d stratified theta>=%.0f; %d MC samples/bin, scattering+straggling)...",
+    # only the vertical bins. Energy-loss MC on every horizontal bin is prohibitively slow.
+    println(@sprintf("Fixed-path energy-loss MC check over %d bins (%d theta<%.0f + %d stratified theta>=%.0f; %d MC samples/bin, energy-loss straggling; scattering disabled)...",
                      length(val_set), length(vert), mc_cap, length(horiz), mc_cap, args.papermatch_mc_samples))
     mc_samp = sample_energy_set(args.papermatch_mc_samples, args.energy_min, args.energy_max, args.seed + 777)
     mats_r, dens_r = build_cell_properties_for_mc(shallow_flags, w_matched, matcfg_fit)
@@ -3168,7 +3185,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         p = match_paths[valid_bins[k]]
         mc_rec[k], mc_err[k] = compute_directional_flux_mc(physics, matcfg_fit, match_site, p, mats_r, dens_r,
             mc_samp, args.seed + 900_000 + k; straggling = args.straggling,
-            energy_threshold_low = args.energy_threshold_low, scattering = true)
+            energy_threshold_low = args.energy_threshold_low, scattering = false)
     end
     idx = findall(k -> isfinite(mc_rec[k]) && fit_mask[k] > 0.0, eachindex(valid_bins))
     s_mc = exp(mean(log.(meas_v[idx]) .- log.(max.(mc_rec[idx], 1e-300))))
@@ -3210,16 +3227,16 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     hidx = [k for k in idx if match_paths[valid_bins[k]].zenith >= mc_cap]
     res_mc_v = isempty(vidx) ? NaN : relres(vidx)
     res_mc_h = isempty(hidx) ? NaN : relres(hidx)
-    println(@sprintf("  full-MC residual (%d bins): reconstructed %.3f   (CSDA fit was %.3f -> %.3f)",
+    println(@sprintf("  fixed-path energy-loss MC residual (%d bins): reconstructed %.3f   (CSDA fit was %.3f -> %.3f)",
                      length(idx), res_mc, res_base, res_m))
     println(@sprintf("    by depth: theta<%.0f (%d bins) %.3f ; theta>=%.0f (%d bins) %.3f",
                      mc_cap, length(vidx), res_mc_v, mc_cap, length(hidx), res_mc_h))
-    println(@sprintf("  full-MC log model/measured std: %.3f  (CSDA %.3f)", logstd_mc, log_std_m))
+    println(@sprintf("  fixed-path energy-loss MC log model/measured std: %.3f  (CSDA %.3f)", logstd_mc, log_std_m))
     mcv_csv = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.csv")
     mcv_plot = joinpath(args.output_dir, "lvd_single_muon_2d_mc_validation.html")
     mc_stats = write_single_muon_2d_comparison(match_paths, valid_bins[idx], meas_v[idx] ./ s_mc, mc_rec[idx], s_mc;
         output_csv = mcv_csv, output_plot = mcv_plot)
-    # Per-bin measured vs full-MC simulated flux WITH the MC error band, for the 3D angular plot.
+    # Per-bin measured vs fixed-path energy-loss MC simulated flux WITH the MC error band, for the 3D angular plot.
     band_csv = joinpath(args.output_dir, "lvd_mc_flux_band.csv")
     open(band_csv, "w") do io
         println(io, "bin_idx,zenith_deg,azimuth_deg,measured_flux,mc_flux,mc_err")
@@ -3230,7 +3247,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                                  meas_v[k], mc_rec[k] * s_mc, mc_err[k] * s_mc))
         end
     end
-    println("  full-MC flux band: $band_csv")
+    println("  fixed-path energy-loss MC flux band: $band_csv")
     pm_txt = joinpath(args.output_dir, "lvd_single_muon_angular_distribution.txt")
     open(pm_txt, "w") do io
         println(io, "Water-content reconstruction from the measured 2D LVD single-muon angular surface")
@@ -3295,7 +3312,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  relative residual bias: %.4f", map_stats.bias_rel))
         println(io, "  csv: lvd_single_muon_2d_match.csv (per-bin measured/model/residual)")
         println(io)
-        println(io, "FULL backward-MC validation of the reconstructed field (scattering+straggling, the verdict):")
+        println(io, "Fixed-path stochastic energy-loss check of the reconstructed field (scattering disabled):")
         println(io, @sprintf("  MC samples/bin: %d", args.papermatch_mc_samples))
         println(io, @sprintf("  validated bins: %d (theta<60: %d, stratified theta>=60: %d)", length(idx), length(vidx), length(hidx)))
         println(io, @sprintf("  relative data residual (fit bins): reconstructed %.4f  (CSDA fit %.4f)", res_mc, res_m))
@@ -3308,9 +3325,9 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  subset scales: dry %.8e; wet-CSDA %.8e; wet-MC %.8e",s_dry_subset,s_csda_subset,s_mc))
         println(io,"  csv: lvd_mc_common_subset.csv and lvd_mc_common_subset_summary.csv preserve unscaled/common-scale comparisons")
         println(io, @sprintf("  2D map residual RMS under MC: %.4f", mc_stats.rms_rel))
-        println(io, "  csv: lvd_single_muon_2d_mc_validation.csv (measured / full-MC model / residual)")
+        println(io, "  csv: lvd_single_muon_2d_mc_validation.csv (measured / fixed-path energy-loss MC model / residual)")
         println(io, "Caveat: the global forward->measured normalization absorbs the absolute flux scale;")
-        println(io, "  the full-MC check is the high-fidelity confirmation that the CSDA-reconstructed field holds up.")
+        println(io, "  this check compares energy-loss models on prescribed rays; it does not validate scattering, geometry, acceptance or uncertainty coverage.")
     end
     println("  paper-match outputs: $pm_txt")
     println("  $map_plot")

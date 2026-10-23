@@ -80,7 +80,7 @@ using LinearAlgebra
         materials, densities = build_cell_properties_for_mc(shallow, wfield, matcfg)
         @test_throws ArgumentError compute_directional_flux_mc(
             physics, matcfg, site, path, materials, densities, nodes, 1;
-            straggling=true, energy_threshold_low=100.0)
+            straggling=true, scattering=false, energy_threshold_low=100.0)
     end
 
     @testset "1. sparse adjoint vs Zygote full-vector" begin
@@ -155,9 +155,9 @@ using LinearAlgebra
         mats_lo, dens_lo = build_cell_properties_for_mc(shallow, w_lo, matcfg)
         mats_hi, dens_hi = build_cell_properties_for_mc(shallow, w_hi, matcfg)
         flo, slo = compute_directional_flux_mc(physics, matcfg, site, path, mats_lo, dens_lo, mc_samples, 100;
-            straggling=true, energy_threshold_low=100.0)
+            straggling=true, scattering=false, energy_threshold_low=100.0)
         fhi, shi = compute_directional_flux_mc(physics, matcfg, site, path, mats_hi, dens_hi, mc_samples, 100;
-            straggling=true, energy_threshold_low=100.0)
+            straggling=true, scattering=false, energy_threshold_low=100.0)
         grad_fd = (fhi - flo) / (hi - lo)
         sigma = sqrt(slo^2 + shi^2) / (hi - lo)
         @test isfinite(grad_fd)
