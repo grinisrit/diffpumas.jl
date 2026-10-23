@@ -78,3 +78,7 @@ After active source audits finish:
 
 No source or test changes, new simulations, or claims of a verified fix are
 part of this note.
+
+## Deferred candidate validation (2026-10-23)
+
+A minimal candidate that removes the pure-porous shortcut has now passed 73 deterministic consistency checks in an isolated Julia process, with the original helper retained as a negative control. The candidate was defined under a separate method name; no tracked runtime file was changed. The reviewed patch, fixture, log and source-hash check are preserved in [`revision_evidence/deferred_shallow_fix/`](revision_evidence/deferred_shallow_fix/README.md). The fix remains unapplied while production is running. These tests establish mixture-recipe consistency, not stochastic-transport accuracy. Apply and run integrated package tests only after the production audits and strict reports finish.

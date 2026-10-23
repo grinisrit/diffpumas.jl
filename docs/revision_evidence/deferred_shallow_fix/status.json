@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "julia_version": "1.11.7",
+  "frozen_files_checked": 47,
+  "changed_files": [],
+  "patch_applied": false,
+  "scope": "In-memory candidate under separate name; deterministic consistency only; not stochastic validation"
+}

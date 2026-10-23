@@ -1,0 +1,12 @@
+--- a/src/Tomography.jl
++++ b/src/Tomography.jl
+@@ -747,9 +747,6 @@
+ 
+ function mc_cell_mixture_and_density(w::Float64, shallow::Bool, matcfg::MaterialConfig)
+     if is_shallow_porous(shallow, matcfg)
+-        if w <= 1e-12
+-            return MaterialMixture(matcfg.porous_material), matcfg.porous_density
+-        end
+         porous_frac = 0.5 * (1.0 - w)
+         rock_frac = 0.5 * (1.0 - w)
+         mix = MaterialMixture(
