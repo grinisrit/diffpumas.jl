@@ -1,5 +1,11 @@
 # Corrected backward-muon transport evidence
 
+The **final replay** is in [`final_precision/`](final_precision/), using core
+commit 6498e86. Its complete launcher exits 0 and verifies identical source hashes
+before/after all three-seed controls and the 102-point grid. The parent directory
+retains the earlier 916ae68 comparison and its explicitly annotated cache-only
+source change. Paper figures should consume the final replay.
+
 This directory curates small, inspectable artifacts from the corrected revision
 runs. Complete binaries, dumps, generated C wrappers, logs, and input copies
 remain under `examples/data/revision_flat_corrected_20261023/` and
