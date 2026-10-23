@@ -98,9 +98,9 @@ def summarize(label, directory):
         report['metrics']['common_subset_identity']=dict(bins=len(rows),
             unique_bins=len({r['bin_idx'] for r in rows}),
             common_scales=sorted({r['common_scale'] for r in rows}),
-            scope='Dry CSDA uses initial calibration; wet CSDA final calibration. '
-                  'Wet MC uses prescribed rays; inspect run provenance for transport scope. '
-                  'This measured-data residual check is not independent held-out closure.')
+            scope='Per-bin recorded common-scale comparison; calibration and transport '
+                  'semantics require corresponding run provenance. This table alone '
+                  'does not establish independent held-out closure.')
     # Preserve source line numbers and printed precision. No regex-derived or
     # rounded numerical claim is silently promoted to an exact computed value.
     for name in REPORTS:
