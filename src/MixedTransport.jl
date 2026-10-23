@@ -158,16 +158,27 @@ function transport_mixed_step(c::MixedKernel,state::State{Float64},density::Floa
         if remaining<=eps(max(1.,distance*density));exhausted=false;break;end
         if k>=ceiling;exhausted=false;break;end
         ri=lookup(k,c.energies,c.range);hi=lookup(k,c.energies,c.hazard)
-        targetr=min(ri+remaining,lookup(ceiling,c.energies,c.range))
-        endpoint=lookup(targetr,c.range,c.energies)
+        range_to_ceiling=max(0.,lookup(ceiling,c.energies,c.range)-ri)
+        endpoint_grammage=min(remaining,range_to_ceiling)
+        targetr=ri+endpoint_grammage
+        # Range -> energy -> range is not an exact floating-point roundtrip.
+        # At a tiny final geometry remainder, retain the known path increment.
+        endpoint=endpoint_grammage==range_to_ceiling ? ceiling :
+            max(k,lookup(targetr,c.range,c.energies))
         optical_depth=randexp(rng)
         # Backward hazard increases with energy. An exponential optical depth
         # is independent of arbitrary geometry subdivision (memorylessness).
         eventh=hi+optical_depth
         occurs=eventh<lookup(endpoint,c.energies,c.hazard)
-        pre=occurs ? lookup(eventh,c.hazard,c.energies) : endpoint
-        dx=lookup(pre,c.energies,c.range)-ri
-        dt=(lookup(pre,c.energies,c.proper)-lookup(k,c.energies,c.proper))/density
+        pre=occurs ? max(k,lookup(eventh,c.hazard,c.energies)) : endpoint
+        dx=occurs ? max(0.,lookup(pre,c.energies,c.range)-ri) : endpoint_grammage
+        # Subtracting two large cumulative proper integrals also loses tiny
+        # increments. Local endpoint quadrature is stable at that resolution.
+        dt=if dx<=8eps(ri) || pre-k<=8eps(k)
+            dx/density*c.mass/2*(inv(sqrt(k*(k+2c.mass)))+inv(sqrt(pre*(pre+2c.mass))))
+        else
+            (lookup(pre,c.energies,c.proper)-lookup(k,c.energies,c.proper))/density
+        end
         weight*=lookup(pre,c.energies,c.stopping)/lookup(k,c.energies,c.stopping)*exp(-dt/c.ctau)
         travelled+=dx;remaining=max(0.,remaining-dx);proper+=dt;k=pre
         if occurs

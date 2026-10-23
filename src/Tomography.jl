@@ -793,6 +793,11 @@ function initial_state(energy_final::Float64, charge::Float64, zenith::Float64, 
         direction = Vec3{Float64}(-dir[1], -dir[2], -dir[3]), decayed = false)
 end
 
+# Bound the minimum adaptive step by the actual remaining segment. Base.clamp
+# assumes ordered bounds and can overshoot when remaining < MC_STEP_MIN_M.
+_mc_segment_step(remaining,max_step) = min(remaining,
+    max(MC_STEP_MIN_M,min(remaining+MC_STEP_EPSILON_M,max_step)))
+
 function propagate_mc_uniform_segment(physics, state::State{Float64}, material, density::Float64,
                                       distance::Float64, rng::AbstractRNG;
                                       straggling::Bool, energy_threshold_low::Float64,
@@ -806,8 +811,9 @@ function propagate_mc_uniform_segment(physics, state::State{Float64}, material, 
         current_limit = state.energy < energy_threshold_low - eps(Float64) ? min(energy_threshold_low,energy_limit) : energy_limit
         Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
         max_step = 0.01 * Xi / max(density, 1e-6)
-        step_size = clamp(min(remaining + MC_STEP_EPSILON_M, max_step), MC_STEP_MIN_M, remaining)
+        step_size = _mc_segment_step(remaining,max_step)
         old_distance=state.distance
+        old_energy=state.energy
         if state.energy < energy_threshold_low - eps(Float64)
             if straggling
                 state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
@@ -826,7 +832,13 @@ function propagate_mc_uniform_segment(physics, state::State{Float64}, material, 
             end
         end
         actual=state.distance-old_distance
-        actual>0 || (state.energy>=energy_limit ? break : error("MC segment made no spatial progress"))
+        (state.weight<=0 || !isfinite(state.weight)) && break
+        # A sub-ULP displacement can still reach the low/high mode boundary.
+        # The energy transition is progress; retain the untravelled segment.
+        if actual<=0 && old_energy<current_limit<energy_limit && state.energy>=current_limit
+            continue
+        end
+        actual>0 || (state.energy>=energy_limit ? break : error("MC segment made no spatial progress: energy=$(state.energy), limit=$(current_limit), remaining=$(remaining), step=$(step_size), density=$(density), distance=$(old_distance), actual=$(actual)"))
         remaining=max(0.,remaining-actual)
     end
     return state
@@ -848,8 +860,9 @@ function propagate_mc_air_segment(physics, state::State{Float64}, air_material::
         Xi = property_range(physics, ENERGY_LOSS_CSDA, air_material, state.energy)
         max_step = 0.01 * Xi / max(density, 1e-8)
         max_step = min(max_step, 0.05 * 12e3 / max(cos_theta, 0.05))
-        step_size = clamp(min(remaining + MC_STEP_EPSILON_M, max_step), MC_STEP_MIN_M, remaining)
+        step_size = _mc_segment_step(remaining,max_step)
         old_distance=state.distance
+        old_energy=state.energy
         if state.energy < energy_threshold_low - eps(Float64)
             if straggling
                 state, _ = transport_backward_step_full(physics, state, air_material, density, step_size, rng;
@@ -868,7 +881,13 @@ function propagate_mc_air_segment(physics, state::State{Float64}, air_material::
             end
         end
         actual=state.distance-old_distance
-        actual>0 || (state.energy>=energy_limit ? break : error("MC segment made no spatial progress"))
+        (state.weight<=0 || !isfinite(state.weight)) && break
+        # A sub-ULP displacement can still reach the low/high mode boundary.
+        # The energy transition is progress; retain the untravelled segment.
+        if actual<=0 && old_energy<current_limit<energy_limit && state.energy>=current_limit
+            continue
+        end
+        actual>0 || (state.energy>=energy_limit ? break : error("MC segment made no spatial progress: energy=$(state.energy), limit=$(current_limit), remaining=$(remaining), step=$(step_size), density=$(density), distance=$(old_distance), actual=$(actual)"))
         remaining=max(0.,remaining-actual)
     end
     return state

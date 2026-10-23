@@ -129,3 +129,50 @@ end
     @test final.energy>=2.
     @test final.position[3]<100.
 end
+
+@testset "Sub-ULP range increments preserve spatial transport" begin
+    # Energy is large enough that a small grammage increment disappears when
+    # rounded through inverse range and back, while the spatial step is resolved.
+    e0=9.690953602732087e8
+    c=MixedKernel(MUON_MASS,MUON_C_TAU,.05,[1.,1e9],[1e-6,1e-6],[0.,0.],
+        [0.,(1e9-1)*1e6],[0.,0.],[0.,1e8],(),Inf)
+    distance=7.821108738426119e-8;density=.09128485154324607
+    state=State{Float64}(energy=e0,charge=1.,distance=29999.999899921786)
+    range=DiffPumas.MixedTransport.lookup(e0,c.energies,c.range)
+    @test range+distance*density == range
+    result=transport_mixed_step(c,state,density,distance,MersenneTwister(42);energy_limit=1e9)
+    @test result.distance-state.distance ≈ distance atol=4eps(state.distance)
+    @test result.grammage ≈ distance*density rtol=1e-12
+    @test result.energy>=state.energy
+    @test result.time>state.time
+    @test result.weight>0
+end
+
+@testset "Zero spatial increment at mode changes and killed events" begin
+    p=create_physics(MUON;n_energies=12,K_min=1.,K_max=1e6,
+        settings=PhysicsSettings(dedx_path="/nonexistent"))
+    state=State{Float64}(energy=prevfloat(100.),charge=1.,distance=1000.)
+    c=prepare_mixed_kernel(p,1)
+    # Force the positive component of the small-step fluctuation mixture,
+    # then place hard-event optical depths beyond both requested pieces.
+    boundary_rng=MixedScriptedRNG([1e-12,.5,1e10,1e10])
+    final=DiffPumas.Tomography.propagate_mc_uniform_segment(p,state,1,2650.,.001,boundary_rng;
+        straggling=true,energy_threshold_low=100.,kernel_context=c)
+    @test final.energy>=100.
+    @test final.distance-state.distance ≈ .001 atol=4eps(state.distance)
+    @test final.grammage ≈ 2.65 rtol=1e-10
+    killed=MixedKernel(p.mass,p.ctau,p.settings.cutoff,[1.,1e6],[2.,2.],[.1,.1],
+        [0.,(1e6-1)/2],[0.,(1e6-1)*.05],[0.,0.],(),1.,WeakRef(p.tables),((1,),(1.,)))
+    initial=State{Float64}(energy=1000.,charge=1.,distance=1000.)
+    result=DiffPumas.Tomography.propagate_mc_uniform_segment(p,initial,1,2650.,.001,
+        MixedScriptedRNG([0.,.5]);straggling=true,energy_threshold_low=100.,kernel_context=killed)
+    @test result.weight==0
+    @test result.distance==initial.distance
+end
+
+@testset "Adaptive segment floor never overshoots a short remainder" begin
+    for remaining in (2e-8,5e-7,1e-6,1e-4), maximum_step in (1e-10,remaining/2,1.)
+        step=DiffPumas.Tomography._mc_segment_step(remaining,maximum_step)
+        @test 0<step<=remaining
+    end
+end
