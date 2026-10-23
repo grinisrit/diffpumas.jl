@@ -46,4 +46,19 @@ using DiffPumas.Constants: AVOGADRO_NUMBER
         @test .1energy * moments[1] <= moments[2] <= .5energy * moments[1]
         @test .1energy * moments[2] <= moments[3] <= .5energy * moments[2]
     end
+
+    # Independent histories must produce the same DCS regardless of scheduling.
+    # Vary both bounds and material so shared quadrature scratch cannot be valid
+    # for two simultaneous calls. Run with JULIA_NUM_THREADS=2 or greater.
+    cases = [(11. + i % 4, 22. + i % 7, 10. * (1 + i % 15), .1 + .01 * (i % 30))
+             for i in 1:256]
+    expected = [dcs_photonuclear_drss(z, a, MUON_MASS, k, x*k) for (z,a,k,x) in cases]
+    concurrent = zeros(length(cases))
+    Threads.@threads for i in eachindex(cases)
+        z, a, k, x = cases[i]
+        for _ in 1:32
+            concurrent[i] = dcs_photonuclear_drss(z, a, MUON_MASS, k, x*k)
+        end
+    end
+    @test concurrent == expected
 end

@@ -894,9 +894,6 @@ end
     return cf * F2A * dds / q
 end
 
-const _PHOTO_NODES = Vector{Float64}(undef, 9)
-const _PHOTO_WEIGHTS = Vector{Float64}(undef, 9)
-
 function dcs_photonuclear_drss(Z::Real, A::Real, m::Real, K::T, q::T) where T<:Real
     (Z <= 0 || A <= 0 || m <= 0 || K <= 0 || q <= 0) && return zero(T)
 
@@ -912,13 +909,17 @@ function dcs_photonuclear_drss(Z::Real, A::Real, m::Real, K::T, q::T) where T<:R
     Q2max = 2.0 * M * (q - mpi) - mpi^2
     (Q2max < Q2min || Q2min < 0.0) && return zero(T)
 
-    gauss_quad_logscale!(_PHOTO_NODES, _PHOTO_WEIGHTS, 9, Float64(Q2min), Float64(Q2max))
+    # Transform immutable quadrature coefficients locally. Shared writable
+    # nodes/weights race when independent MC histories evaluate DCS concurrently.
+    xref, wref = gauss_quad_coefficients(9)
+    lmin = log(Float64(Q2min))
+    dx = log(Float64(Q2max)) - lmin
     ds = 0.0
     @inbounds for i in 1:9
-        Q2 = _PHOTO_NODES[i]
+        Q2 = exp(lmin + dx * xref[i])
         val = _dcs_photonuclear_d2_DRSS(Float64(Z), Float64(A), Float64(m),
                                          Float64(K), Float64(q), Q2)
-        val > 0.0 && (ds += val * _PHOTO_WEIGHTS[i])
+        val > 0.0 && (ds += val * (wref[i] * dx * Q2))
     end
 
     return T(ds < 0.0 ? 0.0 : ds)
