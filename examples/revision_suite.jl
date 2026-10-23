@@ -13,8 +13,8 @@ using Dates
 
 function revision_options(argv)
     o = Dict("output" => joinpath(@__DIR__, "data", "revision"), "rays-step" => "30",
-             "samples" => "16", "mc-samples" => "64", "cases" => "12",
-             "replicates" => "3", "seed" => "20261022", "rock-density" => "2710", "calibrate" => "true", "dump" => joinpath(@__DIR__,"data","revision_physics","materials.pumas"))
+             "samples" => "32", "mc-samples" => "64", "cases" => "12",
+             "validation-zeniths" => "0,15,30,45,60,75", "replicates" => "3", "seed" => "20261022", "rock-density" => "2710", "calibrate" => "true", "dump" => joinpath(@__DIR__,"data","revision_physics","materials.pumas"))
     iseven(length(argv)) || error("Options require --name value pairs")
     for k in 1:2:length(argv)
         key = replace(argv[k], r"^--" => "")
@@ -29,7 +29,14 @@ function revision_options(argv)
     angularstep=parse(Float64,o["rays-step"])
     0 < angularstep <= 60 || error("rays-step must be in (0,60]")
     isapprox(60/angularstep,round(60/angularstep);atol=1e-8) || error("rays-step must divide 60 degrees")
+    parse(Int,o["cases"])>=length(validation_zeniths(o)) || error("cases must cover each requested validation zenith")
     o
+end
+
+function validation_zeniths(o)
+    values=parse.(Float64,split(o["validation-zeniths"],','))
+    !isempty(values) && all(x->isfinite(x) && 0<=x<90,values) && length(unique(values))==length(values) || error("validation-zeniths must be unique finite angles in [0,90)")
+    sort(values)
 end
 
 function csv_rows(path, rows)
@@ -77,6 +84,23 @@ function stratified_pairs(paths, volume, J, count_cases, rng)
     [(bin=bi[k],cell=ci[k]) for k in chosen]
 end
 
+function validation_pairs(paths,vol,J,ncase,rng,zeniths)
+    pairs=stratified_pairs(paths,vol,J,ncase,rng)
+    # Guarantee representation of each requested valid zenith when case budget allows.
+    represented=Set(paths[p.bin].zenith for p in pairs)
+    ncase>=length(zeniths) || error("cases must cover each requested validation zenith")
+    for theta in zeniths
+        theta in represented && continue
+        candidates=[(bin=b,cell=c) for (b,c,v) in zip(findnz(J)...) if paths[b].zenith==theta && isfinite(v) && v!=0]
+        isempty(candidates) && continue
+        counts=Dict(t=>count(p->paths[p.bin].zenith==t,pairs) for t in unique(p.zenith for p in paths))
+        replaceindex=findlast(p->counts[paths[p.bin].zenith]>1,pairs)
+        replaceindex===nothing && error("Insufficient pair budget for zenith coverage")
+        pairs[replaceindex]=rand(rng,candidates);push!(represented,theta)
+    end
+    pairs
+end
+
 function revision_main(argv=ARGS)
     o=revision_options(argv)
     isfile(o["dump"]) || error("Physics dump not found: $(o["dump"]). Run dev/create_revision_physics.sh before revision experiments.")
@@ -97,9 +121,10 @@ function revision_main(argv=ARGS)
             "adjoint_rules_sha256"=>bytes2hex(sha256(read(joinpath(@__DIR__,"..","src","Tomography_rules.jl")))),
             "manifest_sha256"=>isfile(joinpath(@__DIR__,"..","Manifest.toml")) ? bytes2hex(sha256(read(joinpath(@__DIR__,"..","Manifest.toml")))) : "absent",
             "threads"=>Threads.nthreads(),"cpu_threads"=>Sys.CPU_THREADS,
+            "selection_scope"=>"seeded round-robin joint quartiles with replacement of overrepresented zenith cases to guarantee each valid requested zenith with nonzero sensitivity; invalid/zero-sensitivity directions recorded, not certified",
             "seed_policy"=>"independent replicate energy and transport seeds; common low/high seeds within replicate",
             "acceptance_scope"=>"illustrative normalized geometric profiles, not measured LVD acceptance",
-            "closure_scope"=>"frozen global dry MC calibration predicts unseen spatially varying wet field with independent MC samples; calibration uncertainty not propagated; uncalibrated mode separately records per-bin dry scalar comparator",
+            "closure_scope"=>"frozen global dry MC calibration predicts unseen spatially varying wet field with independent MC samples; matched independent dry/wet replicates share energy/transport seeds; paired flux-bias change includes dry/wet covariance; calibration uncertainty not propagated; uncalibrated mode separately records per-bin dry scalar comparator",
             "timing_scope"=>"uncorrected CSDA scaling stages; exact stage warmed once; allocated bytes are cumulative allocations; RSS is process cumulative peak",
             "jacobian_validation_scope"=>o["calibrate"]=="true" ? "frozen independent dry MC calibration against midpoint CSDA reference; wet validation fields and independent MC seeds" : "uncorrected pure CSDA",
             "robustness_scope"=>"local linearized wet increments; prior center, ridge strength, angular mask and flux normalization only; not nonlinear measured-data refits")))
@@ -142,11 +167,21 @@ function revision_main(argv=ARGS)
         calibrate_correction_to_mc(physics,shallow,mat,site,paths,zeros(length(w)),es,calargs)
         flux,J=assemble_forward_and_jacobian(physics,shallow,mat,site,paths,w,es;n_cells=length(w),threaded=false)
     end
+    # Scaling/acceptance retain their original 0<=theta<60 angular domain.
+    scaling_state=(paths,flux,J)
+    requested=precompute_paths(vol,emap,validation_zeniths(o),exclusive_degree_grid(360.0,step))
+    coverage=[(zenith=theta,requested_rays=count(p->p.zenith==theta,requested),valid_rays=count(p->p.zenith==theta && p.valid,requested)) for theta in validation_zeniths(o)]
+    paths=filter(p->p.valid,requested)
+    isempty(paths) && error("No valid validation paths")
+    flux,J=assemble_forward_and_jacobian(physics,shallow,mat,site,paths,w,es;n_cells=length(w),threaded=false)
     correction=get_csda_correction()
     open(joinpath(out,"calibration.toml"),"w") do io
         TOML.print(io,Dict(string(name)=>getfield(correction,name) for name in fieldnames(typeof(correction))))
     end
-    pairs=stratified_pairs(paths,vol,J,ncase,rng); fdrows=NamedTuple[]; mcrows=NamedTuple[]
+    pairs=validation_pairs(paths,vol,J,ncase,rng,validation_zeniths(o)); fdrows=NamedTuple[]; mcrows=NamedTuple[]
+    validation_bi,_,validation_values=findnz(J)
+    csv_rows(joinpath(out,"validation_coverage.csv"),[(;row...,selected_rays=length(unique(p.bin for p in pairs if paths[p.bin].zenith==row.zenith)),selected_pairs=count(p->paths[p.bin].zenith==row.zenith,pairs),population_nonzero_entries=count(k->paths[validation_bi[k]].zenith==row.zenith && isfinite(validation_values[k]) && validation_values[k]!=0,eachindex(validation_values))) for row in coverage])
+    csv_rows(joinpath(out,"selected_pairs.csv"),[(case=k,bin=p.bin,cell=p.cell,zenith=paths[p.bin].zenith,azimuth=paths[p.bin].azimuth,slant_m=paths[p.bin].surface_distance,cell_z_m=vol.centroids[3,p.cell],reference_jacobian=J[p.bin,p.cell]) for (k,p) in enumerate(pairs)])
     for fraction in (0.0,0.3,0.8)
         wf=fill(fraction,length(w)); f,Jf=assemble_forward_and_jacobian(physics,shallow,mat,site,paths,wf,es;n_cells=length(w),threaded=false)
         for (k,pair) in enumerate(pairs)
@@ -224,14 +259,17 @@ function revision_main(argv=ARGS)
         frozen_paper_pred=compute_directional_flux_csda(physics,shallow,mat,site,paths[b],wet,es)
         per_bin_scalar_pred=correction*frozen_paper_pred
         pred=o["calibrate"]=="true" ? frozen_paper_pred : per_bin_scalar_pred
+        preddry=o["calibrate"]=="true" ? drycs : correction*drycs
         mw,dw=build_cell_properties_for_mc(shallow,wet,mat)
         for rep in 1:nrep
             sd=seed+600000+100*b+rep; test=sample_energy_set(nmc,1e-3,1e9,sd)
+            drytruth,drysigma=compute_directional_flux_mc(physics,mat,site,paths[b],md,dd,test,sd+1;straggling=true,scattering=true,energy_threshold_low=100.0)
             truth,sigma=compute_directional_flux_mc(physics,mat,site,paths[b],mw,dw,test,sd+1;straggling=true,scattering=true,energy_threshold_low=100.0)
-            push!(closure,(bin=b,replicate=rep,seed=sd,dry_correction=correction,prediction_mode=o["calibrate"]=="true" ? "frozen_global_dry_calibration" : "per_bin_dry_scalar",predicted_wet=pred,frozen_global_prediction=frozen_paper_pred,per_bin_scalar_prediction=per_bin_scalar_pred,mc_wet=truth,sigma_mc=sigma,relative_residual=(pred-truth)/max(abs(truth),1e-30)))
+            push!(closure,(bin=b,zenith=paths[b].zenith,azimuth=paths[b].azimuth,slant_m=paths[b].surface_distance,replicate=rep,seed=sd,predicted_dry=preddry,frozen_global_dry_prediction=drycs,mc_dry=drytruth,sigma_mc_dry=drysigma,dry_relative_residual=(preddry-drytruth)/max(abs(drytruth),1e-30),paired_bias_change=(pred-truth)-(preddry-drytruth),paired_mc_wetting_increment=truth-drytruth,dry_correction=correction,prediction_mode=o["calibrate"]=="true" ? "frozen_global_dry_calibration" : "per_bin_dry_scalar",predicted_wet=pred,frozen_global_prediction=frozen_paper_pred,per_bin_scalar_prediction=per_bin_scalar_pred,mc_wet=truth,sigma_mc=sigma,relative_residual=(pred-truth)/max(abs(truth),1e-30)))
         end
         csv_rows(joinpath(out,"held_out_closure.csv"),closure)
     end
+    paths,flux,J=scaling_state
     # Fisher matched-filter versus summed-ROI counting; all profiles normalized
     # to equal mean acceptance, hence equal integrated nominal exposure.
     # Midpoint angular cells integrate the sampled 0<=zenith<60 domain. The

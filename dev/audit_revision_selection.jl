@@ -12,7 +12,8 @@ set_csda_correction!(;(Symbol(k)=>v for (k,v) in coeff)...)
 emap=LVDTopo.build_elevation_map()
 volume=create_voxel_volume(emap,mat;half_width_km=3.0,surface_step_km=1.5,nz=8)
 step=parse(Float64,cfg["rays-step"])
-paths=filter(p->p.valid,precompute_paths(volume,emap,exclusive_degree_grid(60.0,step),exclusive_degree_grid(360.0,step)))
+zeniths=haskey(cfg,"validation-zeniths") ? validation_zeniths(cfg) : exclusive_degree_grid(60.0,step)
+paths=filter(p->p.valid,precompute_paths(volume,emap,zeniths,exclusive_degree_grid(360.0,step)))
 water=fill(0.3,num_cells(volume));shallow=falses(length(water))
 es=csda_energy_quadrature(parse(Int,cfg["samples"]),1e-3,1e9)
 flux,J=assemble_forward_and_jacobian(physics,shallow,mat,build_site(30000.0),paths,water,es;n_cells=length(water),threaded=false)
@@ -24,7 +25,8 @@ for (n,line) in enumerate(eachline(joinpath(out,"fd_steps.csv")))
     row=Dict(zip(header,fields))
     observed[(parse(Int,row["bin"]),parse(Int,row["cell"]))]=parse(Int,row["case"])
 end
-expected=stratified_pairs(paths,volume,J,parse(Int,cfg["cases"]),MersenneTwister(parse(Int,cfg["seed"])))
+rng=MersenneTwister(parse(Int,cfg["seed"]))
+expected=haskey(cfg,"validation-zeniths") ? validation_pairs(paths,volume,J,parse(Int,cfg["cases"]),rng,zeniths) : stratified_pairs(paths,volume,J,parse(Int,cfg["cases"]),rng)
 @assert Set(keys(observed))==Set((p.bin,p.cell) for p in expected)
 bi,ci,vals=findnz(J)
 keep=findall(k->isfinite(vals[k]) && vals[k]!=0,eachindex(vals))
@@ -46,6 +48,7 @@ open(joinpath(out,"selection_audit.toml"),"w") do io
         "population_joint_strata"=>length(population_strata),"population_nonzero_entries"=>length(keep),
         "exact_seeded_selection_reproduced"=>true,"quartile_edges_zenith_deg"=>edges[1],
         "quartile_edges_slant_m"=>edges[2],"quartile_edges_cell_height_m"=>edges[3],"quartile_edges_abs_sensitivity"=>edges[4],
-        "scope"=>"reconstructed frozen calibrated midpoint32 Jacobian; excludes zero sensitivities and near-horizontal measured directions"))
+        "validation_zeniths_deg"=>zeniths,
+        "scope"=>"reconstructed frozen calibrated midpoint Jacobian; excludes zero sensitivities; angular coverage is explicitly recorded, not domain-wide validation"))
 end
 println("Selection audit passed: $(length(observed)) pairs from $(length(selected_strata)) joint strata of $(length(population_strata)) populated strata")
