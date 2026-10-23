@@ -339,19 +339,23 @@ For paper-quality or validation results:
 
 `dev/run_lvd_paper.sh` runs topography, the main pipeline, reconstruction sweep,
 detection benchmark, and contrast sweep sequentially. It stops on the first
-failed stage and returns its exit status. Defaults are 20 CPU cores, 48 GiB of
+failed stage and returns its exit status. Defaults are 16 CPU cores, 36 GiB of
 address space per process, one BLAS thread, and `examples/data/lvd_revision`.
 The default physics dump is `examples/data/revision_physics/materials.pumas`;
 tomography stages require it to exist. Pass `--dump PATH` to select another
 verified physics source. See [setup](getting-started.md) for data acquisition.
-The launcher enforces the host allocation limits described in
+The launcher uses the lower host/cgroup CPU and RAM budgets described in
 `dev/run_bounded.py`; the address-space limit is not an aggregate job memory cap.
+Together with the 4-CPU/12-GiB robustness launcher, the defaults total 20 CPUs
+and 48 GiB; reserve 1 CPU/2 GiB for controls and pause other computations during
+production. Julia startup files are disabled. Manifests record the selected
+Julia binary/version/hash and transitive LVD helper source hashes.
 
 Inspect the commands before starting a long run:
 
 ```bash
 bash dev/run_lvd_paper.sh --dry-run
-bash dev/run_lvd_paper.sh --threads 20 --memory-gib 48 \
+bash dev/run_lvd_paper.sh --threads 16 --memory-gib 36 \
   --dump examples/data/revision_physics/materials.pumas \
   --output-dir examples/data/lvd_revision --stages topo,main
 ```

@@ -6,8 +6,8 @@ cd "$(dirname "$0")/.."
 
 OUT=examples/data/lvd_revision
 DUMP=examples/data/revision_physics/materials.pumas
-THREADS=20
-MEMORY_GIB=48
+THREADS=16
+MEMORY_GIB=36
 RECURSIONS=6
 RECUR_TOL=0.02
 STAGES=topo,main,sweep,detection,contrast
@@ -19,8 +19,8 @@ usage() {
 Usage: bash dev/run_lvd_paper.sh [options]
   --output-dir PATH   Results and stage logs (default examples/data/lvd_revision)
   --dump PATH         Physics dump (default examples/data/revision_physics/materials.pumas)
-  --threads N         CPU affinity and Julia threads (default 20)
-  --memory-gib N      Per-process address-space limit (default 48)
+  --threads N         CPU affinity and Julia threads (default 16)
+  --memory-gib N      Per-process address-space limit (default 36)
   --recursions N      Maximum paper calibration passes (default 6)
   --recur-tol X       Relative field/coefficient tolerance (default 0.02)
   --stages LIST       Comma-separated sequential stages (default all five):
@@ -28,7 +28,9 @@ Usage: bash dev/run_lvd_paper.sh [options]
   --dry-run           Print commands without creating outputs or running Julia
   --help              Show this help
 Set JULIA_BIN to select a Julia executable. BLAS uses one thread. The bounded
-launcher validates allocations against host limits. Stages stop at first error;
+launcher validates against the lower host/cgroup limits. Main defaults plus the
+4-CPU/12-GiB robustness launcher total 20 CPUs/48 GiB; reserve 1 CPU/2 GiB for
+controls and pause other computations during production. Stages stop at first error;
 rerun selected stages explicitly after diagnosing the corresponding log.
 HELP
 }
@@ -70,13 +72,13 @@ for stage in "${selected_stages[@]}"; do
 done
 ((DRY_RUN)) || mkdir -p "$OUT"
 if ((!DRY_RUN)); then
-    python3 dev/record_revision_run.py "$OUT" "$DUMP" bash dev/run_lvd_paper.sh "${ORIGINAL_ARGS[@]}"
+    python3 dev/record_revision_run.py --julia "$JULIA_BIN" "$OUT" "$DUMP" bash dev/run_lvd_paper.sh "${ORIGINAL_ARGS[@]}"
 fi
 
 run_stage() {
     local name=$1; shift
     local -a command=(python3 dev/run_bounded.py --cpus "$THREADS" --memory-gib "$MEMORY_GIB"
-                      -- "$JULIA_BIN" --project=. "$@")
+                      -- "$JULIA_BIN" --startup-file=no --project=. "$@")
     if ((DRY_RUN)); then
         printf '[%s] ' "$name"
         printf '%q ' "${command[@]}"
