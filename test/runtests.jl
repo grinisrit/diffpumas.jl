@@ -403,6 +403,9 @@ using Random
     include("test_threaded_dcs.jl")
     include("test_dedx_first_record.jl")
     include("test_ehs_thinning.jl")
+    include("test_physics_metadata.jl")
+    include("test_mixed_kernel.jl")
+    include("test_mixture_cache.jl")
     include("test_geometry_ad.jl")
     include("test_tomography.jl")
 end

@@ -34,6 +34,8 @@ Zygote), so the AD hot path allocates no `MaterialMixture` and stays type-stable
 """
 module Tomography
 
+using ..MixedTransport
+
 using ..Types: MaterialMixture, State, Vec3
 using ..Physics: property_stopping_power, property_range, property_straggling,
                  ENERGY_LOSS_CSDA, ENERGY_LOSS_MIXED
@@ -794,19 +796,22 @@ end
 function propagate_mc_uniform_segment(physics, state::State{Float64}, material, density::Float64,
                                       distance::Float64, rng::AbstractRNG;
                                       straggling::Bool, energy_threshold_low::Float64,
-                                      scattering::Bool = false)
+                                      scattering::Bool = false, kernel_context=nothing)
+    scattering && throw(ArgumentError("Fixed RayPath MC supports energy-loss fluctuations only; scattering requires geometry retracing"))
+    context = straggling ? (kernel_context===nothing ? MixedTransport.prepare_mixed_kernel(physics,material) : kernel_context) : nothing
     remaining = distance
-    energy_limit = 1e12
+    energy_limit = min(1e9,minimum(last(t.energies) for t in physics.tables))
     while remaining > 1e-8 && state.energy < energy_limit - eps(Float64)
         (state.weight <= 0.0 || !isfinite(state.weight)) && break
-        current_limit = state.energy < energy_threshold_low - eps(Float64) ? energy_threshold_low : energy_limit
+        current_limit = state.energy < energy_threshold_low - eps(Float64) ? min(energy_threshold_low,energy_limit) : energy_limit
         Xi = property_range(physics, ENERGY_LOSS_CSDA, material, state.energy)
         max_step = 0.01 * Xi / max(density, 1e-6)
         step_size = clamp(min(remaining + MC_STEP_EPSILON_M, max_step), MC_STEP_MIN_M, remaining)
+        old_distance=state.distance
         if state.energy < energy_threshold_low - eps(Float64)
             if straggling
                 state, _ = transport_backward_step_full(physics, state, material, density, step_size, rng;
-                    mode = :straggled, scattering = scattering, energy_limit = current_limit)
+                    mode = :straggled, scattering = scattering, energy_limit = current_limit,kernel_context=context)
             else
                 state = transport_backward_step(physics, state, material, density, step_size;
                     rng = nothing, straggling = false)
@@ -814,13 +819,15 @@ function propagate_mc_uniform_segment(physics, state::State{Float64}, material, 
         else
             if straggling
                 state = transport_backward_step_mixed(physics, state, material, density, step_size, rng;
-                    energy_limit = current_limit)
+                    energy_limit = current_limit,kernel_context=context)
             else
                 state = transport_backward_step(physics, state, material, density, step_size;
                     rng = nothing, straggling = false)
             end
         end
-        remaining -= step_size
+        actual=state.distance-old_distance
+        actual>0 || (state.energy>=energy_limit ? break : error("MC segment made no spatial progress"))
+        remaining=max(0.,remaining-actual)
     end
     return state
 end
@@ -828,22 +835,25 @@ end
 function propagate_mc_air_segment(physics, state::State{Float64}, air_material::Int, site::SiteConfig,
                                   distance::Float64, cos_theta::Float64, rng::AbstractRNG;
                                   straggling::Bool, energy_threshold_low::Float64,
-                                  scattering::Bool = false)
+                                  scattering::Bool = false, kernel_context=nothing)
+    scattering && throw(ArgumentError("Fixed RayPath MC supports energy-loss fluctuations only; scattering requires geometry retracing"))
+    context = straggling ? (kernel_context===nothing ? MixedTransport.prepare_mixed_kernel(physics,air_material) : kernel_context) : nothing
     remaining = distance
-    energy_limit = 1e12
+    energy_limit = min(1e9,minimum(last(t.energies) for t in physics.tables))
     while remaining > 1e-8 && state.energy < energy_limit - eps(Float64)
         (state.weight <= 0.0 || !isfinite(state.weight)) && break
-        current_limit = state.energy < energy_threshold_low - eps(Float64) ? energy_threshold_low : energy_limit
+        current_limit = state.energy < energy_threshold_low - eps(Float64) ? min(energy_threshold_low,energy_limit) : energy_limit
         altitude = site.detector_elevation + state.position[3]
         density = locals_air_at_altitude(altitude).density
         Xi = property_range(physics, ENERGY_LOSS_CSDA, air_material, state.energy)
         max_step = 0.01 * Xi / max(density, 1e-8)
         max_step = min(max_step, 0.05 * 12e3 / max(cos_theta, 0.05))
         step_size = clamp(min(remaining + MC_STEP_EPSILON_M, max_step), MC_STEP_MIN_M, remaining)
+        old_distance=state.distance
         if state.energy < energy_threshold_low - eps(Float64)
             if straggling
                 state, _ = transport_backward_step_full(physics, state, air_material, density, step_size, rng;
-                    mode = :straggled, scattering = scattering, energy_limit = current_limit)
+                    mode = :straggled, scattering = scattering, energy_limit = current_limit,kernel_context=context)
             else
                 state = transport_backward_step(physics, state, air_material, density, step_size;
                     rng = nothing, straggling = false)
@@ -851,13 +861,15 @@ function propagate_mc_air_segment(physics, state::State{Float64}, air_material::
         else
             if straggling
                 state = transport_backward_step_mixed(physics, state, air_material, density, step_size, rng;
-                    energy_limit = current_limit)
+                    energy_limit = current_limit,kernel_context=context)
             else
                 state = transport_backward_step(physics, state, air_material, density, step_size;
                     rng = nothing, straggling = false)
             end
         end
-        remaining -= step_size
+        actual=state.distance-old_distance
+        actual>0 || (state.energy>=energy_limit ? break : error("MC segment made no spatial progress"))
+        remaining=max(0.,remaining-actual)
     end
     return state
 end
@@ -877,6 +889,7 @@ function compute_directional_flux_mc(physics, matcfg::MaterialConfig, site::Site
                                      energy_samples::Vector{EnergySample}, seed::Int;
                                      straggling::Bool, energy_threshold_low::Float64,
                                      scattering::Bool = false)
+    scattering && throw(ArgumentError("Fixed RayPath MC supports energy-loss fluctuations only; use Geometry for scattered boundary retracing"))
     all(sample -> sample.charge == -1.0 || sample.charge == 1.0, energy_samples) ||
         throw(ArgumentError("MC requires physical charges ±1; CSDA quadrature nodes are not MC samples"))
     path.valid || return (NaN, NaN)
@@ -885,31 +898,41 @@ function compute_directional_flux_mc(physics, matcfg::MaterialConfig, site::Site
     rng = MersenneTwister(seed)
     w_sum = 0.0
     w2_sum = 0.0
+    # Only prepare intersected cells; repeated recipes share an immutable key.
+    used=unique(seg.cell_idx for seg in path.segments)
+    materials=[cell_materials[i] for i in used]
+    append!(materials,[MaterialMixture(matcfg.rock_material),MaterialMixture(matcfg.air_material)])
+    keys=[(Tuple(m.materials),Tuple(m.fractions)) for m in materials]
+    unique_keys=unique(keys)
+    unique_materials=[materials[findfirst(==(key),keys)] for key in unique_keys]
+    kernels=straggling ? MixedTransport.prepare_mixed_kernels(physics,unique_materials) : nothing
+    contexts=straggling ? [kernels[findfirst(==(key),unique_keys)] for key in keys] : nothing
+    cell_context=straggling ? Dict(i=>contexts[j] for (j,i) in enumerate(used)) : nothing
+    source_energy_max=min(1e9,minimum(last(t.energies) for t in physics.tables))
     for sample in energy_samples
         state = initial_state(sample.energy, sample.charge, path.zenith, path.azimuth)
         for seg in path.segments
             state = propagate_mc_uniform_segment(physics, state, cell_materials[seg.cell_idx],
                 cell_densities[seg.cell_idx], seg.distance, rng;
                 straggling = straggling, energy_threshold_low = energy_threshold_low,
-                scattering = scattering)
+                scattering = scattering,kernel_context=straggling ? cell_context[seg.cell_idx] : nothing)
             (state.weight <= 0.0 || !isfinite(state.weight)) && break
         end
         if state.weight > 0.0 && isfinite(state.weight) && path.remaining_rock_distance > 1e-8
             state = propagate_mc_uniform_segment(physics, state, MaterialMixture(matcfg.rock_material),
                 matcfg.rock_density, path.remaining_rock_distance, rng;
                 straggling = straggling, energy_threshold_low = energy_threshold_low,
-                scattering = scattering)
+                scattering = scattering,kernel_context=straggling ? contexts[end-1] : nothing)
         end
         if state.weight > 0.0 && isfinite(state.weight)
             air_distance = max(0.0, site.primary_altitude - path.surface_exit_z) / max(cos_theta, 1e-3)
             state = propagate_mc_air_segment(physics, state, matcfg.air_material, site,
                 air_distance, cos_theta, rng;
                 straggling = straggling, energy_threshold_low = energy_threshold_low,
-                scattering = scattering)
+                scattering = scattering,kernel_context=straggling ? contexts[end] : nothing)
         end
         flux_single = 0.0
-        if state.weight > 0.0 && isfinite(state.weight) &&
-           state.position[3] >= site.primary_altitude - 1.0
+        if state.weight > 0.0 && isfinite(state.weight) && state.energy<source_energy_max
             flux_single = state.weight * flux_gccly(cos_theta, state.energy, sample.charge)
         end
         wi = 2.0 * sample.weight * flux_single

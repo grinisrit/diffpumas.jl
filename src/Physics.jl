@@ -17,6 +17,8 @@ using ..Coulomb: compute_coulomb_tables!
 using LinearAlgebra
 using ChainRulesCore
 using Random
+using SHA
+using Serialization
 
 export PhysicsSettings, PhysicsTables
 export create_physics, create_composite_table
@@ -111,6 +113,8 @@ struct PhysicsTables{T<:Real}
     materials::Dict{String, Int}  # Material name -> index mapping
     tables::Vector{MaterialTable{T}}
 end
+
+include("PhysicsMetadata.jl")
 
 """
     create_energy_grid(n_energies, K_min, K_max)
@@ -587,7 +591,10 @@ function create_physics(particle::Particle = MUON;
                                               particle, mass, settings))
     end
     
-    return PhysicsTables{Float64}(particle, mass, ctau, settings, material_dict, tables)
+    physics = PhysicsTables{Float64}(particle, mass, ctau, settings, material_dict, tables)
+    recipes = vcat(materials, [flatten_to_base_material(c) for c in composites])
+    register_material_recipes!(physics, Tuple(snapshot_recipe(m) for m in recipes))
+    return physics
 end
 
 
@@ -964,16 +971,50 @@ struct MixtureTable{T<:Real}
     csda_proper_time::Vector{T}
 end
 
-const _MIXTURE_TABLE_CACHE = Dict{Tuple{UInt64, Vector{Int}, Vector{Float64}}, MixtureTable{Float64}}()
+mutable struct MixtureCacheBucket{T<:Real}
+    owner::WeakRef
+    tables::Dict{Tuple,MixtureTable{T}}
+    insertion_order::Vector{Tuple}
+    next_eviction::Int
+end
+
+const _MIXTURE_TABLE_CACHE = Dict{UInt,Any}()
 const _MIXTURE_TABLE_LOCK  = ReentrantLock()
+const _MIXTURE_CACHE_LIMIT = 1024
 
 """
     _mixture_cache_key(physics, mix)
 
-Deterministic cache key: (objectid of physics, materials, fractions).
+Immutable numeric key within the weakly owned physics-table bucket.
 """
 @inline function _mixture_cache_key(physics::PhysicsTables{T}, mix::MaterialMixture) where T
-    return (objectid(physics), mix.materials, mix.fractions)
+    return (physics.mass, Tuple(mix.materials), Tuple(mix.fractions))
+end
+
+function _prune_mixture_cache!()
+    # Caller holds _MIXTURE_TABLE_LOCK. Values never strongly retain their owner.
+    for key in collect(keys(_MIXTURE_TABLE_CACHE))
+        _MIXTURE_TABLE_CACHE[key].owner.value === nothing && delete!(_MIXTURE_TABLE_CACHE,key)
+    end
+end
+
+"""
+    clear_mixture_cache!(physics)
+
+Invalidate integrated mixture tables after intentional numeric-table changes.
+Never mutate physics or mixture arrays during transport/batches. This only
+invalidates the deterministic cache; it does not revalidate stochastic recipes,
+which require physics regeneration after numeric-table modification.
+"""
+function clear_mixture_cache!(physics::PhysicsTables)
+    lock(_MIXTURE_TABLE_LOCK) do
+        _prune_mixture_cache!()
+        bucket=get(_MIXTURE_TABLE_CACHE,objectid(physics.tables),nothing)
+        if bucket!==nothing && bucket.owner.value === physics.tables
+            delete!(_MIXTURE_TABLE_CACHE,objectid(physics.tables))
+        end
+    end
+    return nothing
 end
 
 """
@@ -984,7 +1025,18 @@ trapezoidal integration of the mixture stopping power over the reference
 energy grid — exactly the same procedure used for precomputed composite
 and base-material tables.
 """
-function build_mixture_table(physics::PhysicsTables{T}, mix::MaterialMixture) where T<:Real
+function build_mixture_table(physics::PhysicsTables, mix::MaterialMixture)
+    return _build_mixture_table(physics,Tuple(mix.materials),Tuple(mix.fractions))
+end
+
+function _build_mixture_table(physics::PhysicsTables{T}, indices::Tuple, fractions::Tuple) where T<:Real
+    function mixture_stopping(mode,energy)
+        value=zero(T)
+        for j in eachindex(indices)
+            value+=T(fractions[j])*property_stopping_power(physics,mode,indices[j],energy)
+        end
+        return value
+    end
     ref = physics.tables[1]
     n = length(ref.energies)
     energies = ref.energies
@@ -995,8 +1047,8 @@ function build_mixture_table(physics::PhysicsTables{T}, mix::MaterialMixture) wh
     mixed_range = zeros(T, n)
     csda_time = zeros(T, n)
 
-    csda_stop_prev = property_stopping_power(physics, ENERGY_LOSS_CSDA, mix, energies[1])
-    mixed_stop_prev = property_stopping_power(physics, ENERGY_LOSS_MIXED, mix, energies[1])
+    csda_stop_prev = mixture_stopping(ENERGY_LOSS_CSDA, energies[1])
+    mixed_stop_prev = mixture_stopping(ENERGY_LOSS_MIXED, energies[1])
 
     csda_range[1] = energies[1] / csda_stop_prev
     mixed_range[1] = energies[1] / mixed_stop_prev
@@ -1006,8 +1058,8 @@ function build_mixture_table(physics::PhysicsTables{T}, mix::MaterialMixture) wh
         K_prev = energies[i-1]
         dK = K - K_prev
 
-        csda_stop = property_stopping_power(physics, ENERGY_LOSS_CSDA, mix, K)
-        mixed_stop = property_stopping_power(physics, ENERGY_LOSS_MIXED, mix, K)
+        csda_stop = mixture_stopping(ENERGY_LOSS_CSDA, K)
+        mixed_stop = mixture_stopping(ENERGY_LOSS_MIXED, K)
 
         csda_range[i] = csda_range[i-1] + dK / ((csda_stop + csda_stop_prev) / 2)
         mixed_range[i] = mixed_range[i-1] + dK / ((mixed_stop + mixed_stop_prev) / 2)
@@ -1030,18 +1082,33 @@ end
 """
     get_mixture_table(physics, mix)
 
-Retrieve or build the cached `MixtureTable` for a given mixture.
-Thread-safe via a ReentrantLock.
+Retrieve or build the cached `MixtureTable` for a given mixture. All dictionary
+access/builds are locked. Immutable ingredient snapshots protect keys from later
+mixture edits. Buckets verify weak table-vector identity and retain at most 1024
+entries each (FIFO eviction). Numeric physics edits require clear_mixture_cache!;
+concurrent mutation of physics/mixtures during a call or batch is unsupported.
 """
 function get_mixture_table(physics::PhysicsTables{T}, mix::MaterialMixture) where T<:Real
     key = _mixture_cache_key(physics, mix)
-    tbl = get(_MIXTURE_TABLE_CACHE, key, nothing)
-    tbl !== nothing && return tbl::MixtureTable{Float64}
-    lock(_MIXTURE_TABLE_LOCK) do
-        tbl = get(_MIXTURE_TABLE_CACHE, key, nothing)
-        tbl !== nothing && return tbl::MixtureTable{Float64}
-        tbl = build_mixture_table(physics, mix)
-        _MIXTURE_TABLE_CACHE[key] = tbl
+    return lock(_MIXTURE_TABLE_LOCK) do
+        _prune_mixture_cache!()
+        identity=objectid(physics.tables)
+        bucket=get(_MIXTURE_TABLE_CACHE,identity,nothing)
+        if bucket===nothing || bucket.owner.value !== physics.tables
+            bucket=MixtureCacheBucket{T}(WeakRef(physics.tables),Dict{Tuple,MixtureTable{T}}(),Tuple[],1)
+            _MIXTURE_TABLE_CACHE[identity]=bucket
+        end
+        tbl=get(bucket.tables,key,nothing)
+        tbl!==nothing && return tbl::MixtureTable{T}
+        tbl=_build_mixture_table(physics,key[2],key[3])
+        if length(bucket.insertion_order)<_MIXTURE_CACHE_LIMIT
+            push!(bucket.insertion_order,key)
+        else
+            delete!(bucket.tables,bucket.insertion_order[bucket.next_eviction])
+            bucket.insertion_order[bucket.next_eviction]=key
+            bucket.next_eviction=mod1(bucket.next_eviction+1,_MIXTURE_CACHE_LIMIT)
+        end
+        bucket.tables[key]=tbl
         return tbl
     end
 end

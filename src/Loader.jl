@@ -33,9 +33,25 @@ function load_physics(filepath::String)
     end
     
     try
-        return open(filepath, "r") do io
-            deserialize(io)
+        data = open(deserialize, filepath)
+        if data isa PhysicsTables
+            # Legacy deterministic compatibility: never infer recipes from names
+            # or adjacent files, and never tag old derived tables as corrected.
+            return data
         end
+        data isa NamedTuple && get(data,:format,nothing) === :DiffPumasPhysics ||
+            error("Unrecognized physics dump format")
+        data.version == Physics.PHYSICS_ENVELOPE_VERSION || error("Unsupported physics dump version")
+        p = data.physics
+        md = data.material_metadata
+        if md !== nothing
+            md.recipe_fingerprint == Physics.recipe_fingerprint(md.recipes) || error("Material recipe fingerprint mismatch")
+            md.fingerprint == Physics.physics_fingerprint(p) || error("Physics dump metadata fingerprint mismatch")
+            md.table_version == Materials.RADIATIVE_DCS_TABLE_VERSION || error("Obsolete derived tables; regenerate into a new dump")
+            Physics.register_material_recipes!(p,md.recipes;fingerprint=md.fingerprint,
+                                               table_version=md.table_version)
+        end
+        return p
     catch e
         @warn "Failed to load physics from $filepath: $e"
         return nothing
@@ -56,6 +72,7 @@ Save physics tables to a binary dump file.
 """
 function save_physics(physics::PhysicsTables, filepath::String)
     try
+        metadata = Physics.material_metadata(physics)
         # Create directory if needed
         dir = dirname(filepath)
         if !isempty(dir) && !isdir(dir)
@@ -63,7 +80,8 @@ function save_physics(physics::PhysicsTables, filepath::String)
         end
         
         open(filepath, "w") do io
-            serialize(io, physics)
+            serialize(io, (format=:DiffPumasPhysics,version=Physics.PHYSICS_ENVELOPE_VERSION,
+                           physics=physics,material_metadata=metadata))
         end
         return true
     catch e

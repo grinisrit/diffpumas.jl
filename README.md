@@ -20,6 +20,7 @@ Extensive documentation is available in [`docs/`](docs/):
 
 - [`docs/README.md`](docs/README.md) — documentation landing page and workflow map
 - [`docs/getting-started.md`](docs/getting-started.md) — setup, physics dumps, first flux call, and tests
+- [`docs/mixed-transport.md`](docs/mixed-transport.md) — versioned recipes, adjoint hard events, source cutoff, and fixed-path MC limits
 - [`docs/physics-and-transport.md`](docs/physics-and-transport.md) — materials, physics tables, transport modes, flux, and uncertainties
 - [`docs/differentiable-flux.md`](docs/differentiable-flux.md) — Zygote workflows, density gradients, water-fraction sensitivities, and AD checks
 - [`docs/muography-and-tomography.md`](docs/muography-and-tomography.md) — flat muography, LVD topography, tomography forward models, and inverse solvers

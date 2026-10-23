@@ -16,7 +16,7 @@ using LinearAlgebra
 @testset "Tomography" begin
 
     # --- shared fixture -----------------------------------------------------
-    physics = create_physics(MUON; n_energies=80, K_min=0.01, K_max=1e6,
+    physics = create_physics(MUON; n_energies=80, K_min=0.001, K_max=1e6,
                              materials=[STANDARD_ROCK, AIR, WATER])
     rock = get_material_index(physics, "StandardRock")
     water = get_material_index(physics, "Water")
