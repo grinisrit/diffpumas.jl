@@ -12,6 +12,10 @@ using ..Types
 using SpecialFunctions
 using ChainRulesCore
 
+# Version 2 removes an extra q/(K+m) factor from radiative DCS moments.
+# Serialized derived tables must record this version before stochastic reuse.
+const RADIATIVE_DCS_TABLE_VERSION = 2
+
 export AtomicElement, BaseMaterial, CompositeMaterial
 export ELEMENTS, MATERIALS, COMPOSITES, STANDARD_ROCK, AIR, WATER
 export effective_density, composite_density, resolve_mixture, flatten_to_base_material
@@ -961,7 +965,6 @@ end
 
     n_intervals = (npoints + 8) ÷ 9
     n_gq = 9
-    E = kinetic + mass
 
     dcsint = 0.0
     lqlow = log(qlow)
@@ -986,7 +989,11 @@ end
                 0.0
             end
 
-            y = val * xi
+            # The raw models return dσ/dq per atom. `wi` already contains
+            # dq = q*d(log(q)); only the requested energy moment remains.
+            # PUMAS's internal wrapper multiplies by E before its integral
+            # divides by E. These raw models need neither factor.
+            y = val
             mode >= 1 && (y *= xi)
             mode >= 2 && (y *= xi)
             dcsint += y * wi
@@ -994,7 +1001,6 @@ end
     end
 
     dcsint *= AVOGADRO_NUMBER / (A * 1e-3)
-    dcsint /= E
 
     return dcsint
 end
