@@ -48,6 +48,10 @@ algorithm. The same adjoint event multiplier is then applied. This low-energy
 scheme remains a numerical stepping approximation and requires C controls;
 passing a high-energy test alone does not establish full MC equivalence.
 
+The separate [radiative angular-moment limitation](coulomb-angular-moment-limitation.md)
+records residual Coulomb scattering-table differences, including a sampled
+20.5% transport-path discrepancy. It is not an equivalent bound on flux error.
+
 The flat `Geometry` API follows deflected directions across layer boundaries.
 The tomography `DirectionalPath` API instead transports energy on an already
 computed path and rejects `scattering=true`: it cannot retrace cell/topography
