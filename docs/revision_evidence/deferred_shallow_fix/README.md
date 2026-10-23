@@ -37,3 +37,14 @@ After production source audits finish: apply the reviewed patch, move these
 regressions into package tests, and run the full suite. Any enabled-layer
 stochastic calibration additionally requires stochastic validation; the current
 production's zero porous thickness leaves this optional branch inactive.
+
+## Integrated regression patch prepared after the candidate run
+
+`shallow-mixture-tests.patch` adds `test/test_shallow_mixture.jl` and one include
+in the existing `test/runtests.jl` structure. Its 77 expected assertions call
+the actual production helper, not the candidate alias. The old implementation
+should fail its declared dry/threshold expectations. It preserves the ordinary
+branch's existing tiny-water shortcut and independently checks all three
+optional-branch disable guards. Julia syntax parsing and `git apply --check`
+passed. **This integrated patch has not been applied or executed**; the 73/73
+candidate result above must not be reported as a package-suite result for it.
