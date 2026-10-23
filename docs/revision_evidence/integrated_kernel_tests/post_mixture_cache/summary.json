@@ -1,0 +1,37 @@
+{
+  "tested_core_commit": "916ae68",
+  "julia_1.11.7": {
+    "passed": 534,
+    "total": 534,
+    "method": "Pkg.test()",
+    "test_seconds": 187.1,
+    "cpus": [
+      22,
+      23
+    ],
+    "threads": 2,
+    "address_space_gib": 8,
+    "log_finished_utc": "2026-10-23T01:05:36.703595+00:00"
+  },
+  "julia_1.10.12": {
+    "passed": 534,
+    "total": 534,
+    "method": "isolated established Julia1.10 environment Pkg.test(\"DiffPumas\")",
+    "test_seconds": 128.4,
+    "cpus": [
+      26,
+      27
+    ],
+    "threads": 2,
+    "address_space_gib": 8,
+    "log_finished_utc": "2026-10-23T01:04:37.338006+00:00"
+  },
+  "post_test_source_check": "All hashes match except src/Tomography.jl: its no-progress error-message instrumentation was edited at01:06:06.460389UTC, after both tests completed. No semantic test-source drift during execution identified. Exact initial source hashes retained.",
+  "scope": "Passing unit suites do not establish production transport or model agreement. A subsequent real-path benchmark failed during air-segment warmup; see coordinator records. New semantic fixes require additional checks.",
+  "evidence_sha256": {
+    "julia-1.10-isolated-pkg-tests.txt": "9ddbcb51b00ac6be73cb249319991712b2b738bf9cd1a5f4a523f80ff663e5df",
+    "post-test-source-check.txt": "d70c5087d6fe62b3a4c11ec32f302e976625b3dc40b21f01886e3b9f322925f6",
+    "julia-1.11-pkg-tests.txt": "62cb82c4cf788d7f78b89e4b326670d25442af7bf0bc619f1b615389810e6110",
+    "source-sha256.txt": "3a79cb8ee59437b4683133c8b986ec43b3c19d3d89a8414b2774a87412541574"
+  }
+}
