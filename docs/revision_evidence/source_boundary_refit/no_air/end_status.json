@@ -1,0 +1,38 @@
+{
+  "returncode": 0,
+  "execution_completed": true,
+  "ended_utc": "2026-10-23T09:12:36.144862+00:00",
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "actual_affinity_record": {
+    "pid": 3718444,
+    "actual_affinity": [
+      20
+    ],
+    "affinity_matches": true
+  },
+  "fit_status": "passes=3\nconverged=false\ntermination=maximum_passes\nrelative_tolerance=0.02\nmask_ratio=15.0\nprior_cutoff_m=500.0\nregularization_relative=1.0\ninitial_calibration_water=0.0\nseed=20261022\ncsda_energy_samples=32\ncsda_quadrature=midpoint\ncalibration_mc_samples=8192\nrock_density_kg_m3=2710.0\njulia_version=1.11.7\nConvergence and uniqueness are not established by reaching the maximum pass count.\n",
+  "output_sha256": {
+    "lvd_fit_mask.csv": "ee9049feaa1f584c4f1007415be076e9ef8a6edf1b027ddd99cabb6725ddfed0",
+    "lvd_mc_calibration_1bc0923606fa01e2.toml": "db22da16856a8975d3dd3e4b45de51e0944ab9a01926644113fcaf2dcde6b2fc",
+    "lvd_mc_coverage_summary.csv": "64bae689fd8fdd15a9b52c0279c3ea2a1de87c2aaf89db976fed624365ac10fe",
+    "execution.json": "b14dbee0dc7170b7ca81394d377045b5b533911efd4c06d0e47643258add1726",
+    "runtime_observation.json": "af30218c0d571377d3ed00b0cb9e97767369d8fe23698c659190335421c3fb96",
+    "lvd_fit_predictions.csv": "c49541b52856885c87b9f37261a0bfba1d53200bd970a46d5b400b4d4f1b3a4b",
+    "run_identity.json": "dfb1b62f37e703e5662b1c61f0f690a3ce71b7a9900c39a88995e31bfa2d073f",
+    "completed.json": "2778237888a20ec1221af746672d25c49d15efa40048151529ae885f2b53b3fa",
+    "lvd_mc_calibration_1bc0923606fa01e2.csv": "bb058adf5aca49b50ad1a61408b3643dc2bd67c52613ba34cda16f0f4715b58a",
+    "run_manifest.json": "67d9d149f04d890b9d2f9587212ee8eb932b126c422ac3a62af587c8659ad462",
+    "lvd_mc_calibration_b7f366d44dc84d18.csv": "1ac992815b86b1ffd4e9be80d262c0a591202995468ac404dcabbb302816980a",
+    "run.log": "816309bdd02bed65d6be8a15ecc857b57d8f5957b5f9d9b520a93616c3b68e3e",
+    "lvd_recursion_history.csv": "bff4fc5226745b72abaf43c3fe4c865728b0bdd8922444c6739a1d37d48e293e",
+    "lvd_recursion_status.txt": "104e31b392562a07ee224fcdd538e694192faa7836f4f196f4623a92b97a6957",
+    "lvd_mc_calibration_b314e3f26830f40b.toml": "d27a4a795dd8509a391a04d09a47c18f03f2db5b66d8c4d914a9f16325519e2d",
+    "lvd_fit_field.csv": "2590f8b7977b48afa7a80d5b2478e1b777816088eda954570f505a31f408e4cc",
+    "lvd_mc_calibration_b314e3f26830f40b.csv": "858eeb6c9b016acb403040a3e74d34b62ffdbfe2abfb7f566f7bad74b958cbbf",
+    "lvd_mc_calibration_b7f366d44dc84d18.toml": "0eba6493adc8486f9019e7fe1bf4fc22049c4ceec608a24c76e7b81f8c2dc062",
+    "lvd_mc_coverage.csv": "1b85e2d4fc9c5cf7c6bc2fb75c075e4ad003fc23551c4e532d9443e3da3018ab"
+  },
+  "failed_attempt_preserved": true
+}

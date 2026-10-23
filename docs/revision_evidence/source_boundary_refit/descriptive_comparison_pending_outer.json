@@ -1,0 +1,95 @@
+{
+  "baseline": {
+    "own": {
+      "relative_residual": 0.37083169046576353,
+      "log_spread": 0.7581128500862994,
+      "bins": 687
+    },
+    "common": {
+      "relative_residual": 0.37083169046576353,
+      "log_spread": 0.7581128500862994,
+      "bins": 687
+    },
+    "normalization": 3914708.8476258386,
+    "mean_all_w": 0.032664057164294324,
+    "mean_supported_w": 0.13332268230324215,
+    "supported_cells": 147,
+    "positive_cells": 117,
+    "dfield": 0.040412773818638385,
+    "dcoef": 0.009928680499203238,
+    "status": {
+      "passes": "3",
+      "converged": "false",
+      "termination": "maximum_passes",
+      "relative_tolerance": "0.02",
+      "mask_ratio": "15.0",
+      "prior_cutoff_m": "500.0",
+      "regularization_relative": "1.0",
+      "initial_calibration_water": "0.0",
+      "seed": "20261022",
+      "csda_energy_samples": "32",
+      "csda_quadrature": "midpoint",
+      "calibration_mc_samples": "8192",
+      "rock_density_kg_m3": "2710.0",
+      "julia_version": "1.11.7"
+    }
+  },
+  "no_air": {
+    "own": {
+      "relative_residual": 0.3712843092963819,
+      "log_spread": 0.767839505478957,
+      "bins": 688
+    },
+    "common": {
+      "relative_residual": 0.3712842868764486,
+      "log_spread": 0.7568553684291477,
+      "bins": 687
+    },
+    "normalization": 3921568.101736278,
+    "mean_all_w": 0.031603121686321727,
+    "mean_supported_w": 0.12899233341355806,
+    "supported_cells": 147,
+    "positive_cells": 117,
+    "dfield": 0.03820877404378981,
+    "dcoef": 0.009461780845498906,
+    "status": {
+      "passes": "3",
+      "converged": "false",
+      "termination": "maximum_passes",
+      "relative_tolerance": "0.02",
+      "mask_ratio": "15.0",
+      "prior_cutoff_m": "500.0",
+      "regularization_relative": "1.0",
+      "initial_calibration_water": "0.0",
+      "seed": "20261022",
+      "csda_energy_samples": "32",
+      "csda_quadrature": "midpoint",
+      "calibration_mc_samples": "8192",
+      "rock_density_kg_m3": "2710.0",
+      "julia_version": "1.11.7"
+    }
+  },
+  "differences": {
+    "relative_field_l2": 0.03465291033427881,
+    "rms_field": 0.003966242514498906,
+    "maximum_abs_field": 0.029600659617235348,
+    "common_fit_bins": 687,
+    "removed_fit_bins": [],
+    "added_fit_bins": [
+      "1010"
+    ],
+    "cell_support_equal": true,
+    "normalization_relative": 0.001752174779128035,
+    "mean_supported_relative": -0.03248021128043854
+  },
+  "scope": "PROVISIONAL descriptive comparison of completed and output-hash-verified individual cases, with no-air end/source/runtime/affinity audit verified; original full10scenario outer audit is still PENDING. Not the formal completed robustness or boundary-fit report. Three passes did not converge; single calibration seed, uncertainty not propagated; no-air is not physical truth.",
+  "source_files_sha256": {
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_corrected_20261023/baseline/completed.json": "c54881523435c08282c2fa7212dcf3a17413891273683fe24200e5d66d916911",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_boundary_fit_20261023/no_air/completed.json": "2778237888a20ec1221af746672d25c49d15efa40048151529ae885f2b53b3fa",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_boundary_fit_20261023/no_air/end_status.json": "77655d31ae487b7e906185513424afb4e218361f6ceb1d667cd9920c7ea2bc74",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_corrected_20261023/baseline/lvd_fit_field.csv": "322f5f9a4c4e0f2b7f779921ad9314a609632a930b8f41555e7c05f9dcf958f3",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_boundary_fit_20261023/no_air/lvd_fit_field.csv": "2590f8b7977b48afa7a80d5b2478e1b777816088eda954570f505a31f408e4cc",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_corrected_20261023/baseline/lvd_fit_predictions.csv": "2ae6357f6f31b03a1dd614c48b33da2ff62a3f71788ee729911e4a95abe7b0e4",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_boundary_fit_20261023/no_air/lvd_fit_predictions.csv": "c49541b52856885c87b9f37261a0bfba1d53200bd970a46d5b400b4d4f1b3a4b"
+  }
+}
