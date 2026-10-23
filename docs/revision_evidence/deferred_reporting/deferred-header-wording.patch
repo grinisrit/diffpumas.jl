@@ -1,0 +1,31 @@
+--- a/examples/lvd_tomography.jl
++++ b/examples/lvd_tomography.jl
+@@ -3371,22 +3371,22 @@
+     pm_txt = joinpath(args.output_dir, "lvd_single_muon_angular_distribution.txt")
+     open(pm_txt, "w") do io
+         println(io, "Water-content reconstruction from the measured 2D LVD single-muon angular surface")
+-        println(io, "(pinned overburden rock + a fitted global water-mix + a non-negative per-cell water field; no signed/denser-rock endpoint)")
+-        println(io, @sprintf("rock density PINNED at the configured Gran Sasso value = %.0f kg/m^3 (rr.for; the data prefer lighter, lightening comes from water)",
++        println(io, "(pinned overburden rock and a non-negative per-cell replacement-mass-fraction field; separate uniform-support w0 diagnostic is NOT added to that field; no signed/denser-rock endpoint)")
++        println(io, @sprintf("rock density PINNED at the configured Gran Sasso value = %.0f kg/m^3 (adopted fixed reference; not fitted here and no denser-rock alternative tested)",
+                              rho_fit))
+-        println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (uniform 'wet standard rock' background, scale-invariant shape fit)",
++        println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (separate uniform-support shape-fit diagnostic; not an additional background component)",
+                              w0_fit))
+-        println(io, @sprintf("water endpoint density = %.0f kg/m^3 (w=+%.1f)", matcfg.water_density, MAX_WATER_FRACTION))
++        println(io, @sprintf("water endpoint density = %.0f kg/m^3 (pure-water material at w=1; configured mixture upper bound w=%.1f)", matcfg.water_density, MAX_WATER_FRACTION))
+         println(io, @sprintf("primary/Gaisser altitude = %.0f km", args.primary_altitude_km))
+         println(io)
+-        println(io, "Joint (rho_rock, water-field) GN match vs the full measured 2D azimuth/zenith surface:")
++        println(io, "Water-field GN fit with rho_rock pinned, against retained bins of the measured 2D azimuth/zenith surface:")
+         println(io, @sprintf("  match data: %s", args.match_data))
+         println(io, @sprintf("  covered bins: %d (theta<60: %d, theta>=60: %d, max theta %.0f deg)",
+                              length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins])))
+         println(io, @sprintf("  baseline-ratio outliers excluded from the fit: %d (threshold %.2fx relative to median ratio)", n_art, args.papermatch_mask_ratio))
+         println(io, @sprintf("  forward->measured normalization: %.4e%s", s,
+                              args.papermatch_abs_scale > 0.0 ? " (PINNED, absolute)" : " (free log-fit)"))
+-        println(io, @sprintf("  reliable-bin scale: %.4e ± %.1f%% (from %d near-vertical in-fit bins; the absolute anchor)",
++        println(io, @sprintf("  reliable-bin scale: %.4e ± %.1f%% (from %d near-vertical in-fit bins; fitted-model scale diagnostic, not independent absolute calibration)",
+                              s_reliable, isnan(s_relsd) ? 0.0 : 100 * s_relsd, length(vert_fit)))
+         println(io, @sprintf("  relative data residual (fit bins): baseline %.4f -> matched %.4f", res_base, res_m))
+         println(io, @sprintf("  log model/measured std (scale-invariant shape misfit): %.4f -> %.4f", log_std_base, log_std_m))

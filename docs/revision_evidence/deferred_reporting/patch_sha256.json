@@ -1,5 +1,6 @@
 {
   "revision-reporting-wording-20261023.patch": "697091be5fad4e6f8e6b92f1f583c229d15844c68c0fbfe84db1466e234653be",
   "deferred-detection-wording.patch": "cc38f5347c5abc95214f86d0bf6ea838fd1a36b67a67f3ebd786ca7ec3c3795b",
-  "deferred-curvature-wording.patch": "2cad3a19eb211b135665fcc9efd5aa3e32c174e74e7ba4451ab5a1f0cade0338"
+  "deferred-curvature-wording.patch": "2cad3a19eb211b135665fcc9efd5aa3e32c174e74e7ba4451ab5a1f0cade0338",
+  "deferred-header-wording.patch": "430f386f9e7b29b4be0b33e12f7622896594c76c09ef1361c44bf76c5b7331ff"
 }
