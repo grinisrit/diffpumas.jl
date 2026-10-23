@@ -1,0 +1,33 @@
+{
+  "command": [
+    "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia",
+    "--startup-file=no",
+    "--project=.",
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/final-field-quadrature-20261023/run.jl",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_quadrature_final_field_20261023/data"
+  ],
+  "bounded_command": [
+    "/home/roland/.venv/bin/python3",
+    "/home/roland/devspace/diffpumas.jl/dev/run_bounded.py",
+    "--cpus",
+    "1",
+    "--memory-gib",
+    "2",
+    "--",
+    "taskset",
+    "-c",
+    "20",
+    "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia",
+    "--startup-file=no",
+    "--project=.",
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/final-field-quadrature-20261023/run.jl",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_quadrature_final_field_20261023/data"
+  ],
+  "output": "/home/roland/devspace/diffpumas.jl/examples/data/revision_quadrature_final_field_20261023",
+  "cpus": 1,
+  "address_space_gib": 2,
+  "requested_affinity": [
+    20
+  ],
+  "scope": "Deterministic convergence on production geometry and final field;512nodes comparator not truth; noMC uncertainty; no-free-parameter rays have flux only."
+}

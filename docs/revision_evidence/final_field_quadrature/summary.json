@@ -1,0 +1,30 @@
+{
+  "node_summary": {
+    "32": {
+      "max_flux_relative": 0.0010334796991943174,
+      "max_gradient_relative": 0.015675599830913267,
+      "flux_cases": 28,
+      "gradient_cases": 20
+    },
+    "64": {
+      "max_flux_relative": 0.0003109129683998013,
+      "max_gradient_relative": 0.008311228478908639,
+      "flux_cases": 28,
+      "gradient_cases": 20
+    },
+    "128": {
+      "max_flux_relative": 0.00019195996869680876,
+      "max_gradient_relative": 0.004996006836379241,
+      "flux_cases": 28,
+      "gradient_cases": 20
+    },
+    "256": {
+      "max_flux_relative": 2.1786426791403635e-05,
+      "max_gradient_relative": 0.0022670206340580368,
+      "flux_cases": 28,
+      "gradient_cases": 20
+    }
+  },
+  "reference_halfstep_max_relative_gradient_change": 3.739759737031445e-05,
+  "scope": "512nodes comparator not truth; deterministicconvergence only; nofreeparameters85/86 fluxonly"
+}

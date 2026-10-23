@@ -1,0 +1,26 @@
+{
+  "returncode": 0,
+  "execution_completed": true,
+  "ended_utc": "2026-10-23T10:21:37.319551+00:00",
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "actual_affinity_record": {
+    "pid": 3006251,
+    "actual_affinity": [
+      20
+    ],
+    "affinity_matches": true
+  },
+  "outputs_sha256": {
+    "execution.json": "1cdbdd58c220b566db254e9492c1b44270b43f2f357a349cc29f22dbab2291de",
+    "runtime_observation.json": "2e8310d0b4dc2598cd17a118ac6c827460c1e9054467fdb435c1080374f2b4d6",
+    "run_manifest.json": "5ac09ccb50ab93414fa834fa60bddb89f2e531e661c2c7b4c2134424e000794a",
+    "run.log": "10a988bbcfb0079794c8e831dc8eaa6f6ce88ad2c72c73a06bdc22b7023c2967",
+    "data/path_coverage.csv": "8790a8051837b3b4e7b22054a0f3f159f65c42588cf6b49c275079cd030c8981",
+    "data/status.toml": "35354e7144d395297aeeba5aa3f1f74a6686d3c6aff18e80eb0ab6536bd96c17",
+    "data/config.toml": "40d49c973f556345e712d06c5754b9f087b0c9c00eb966991531798922bd8a90",
+    "data/measurements.csv": "31e7afcb6fc05011ad25fbd81d5749b289b561adabe695944278dc49340e16ff",
+    "data/comparison.csv": "000cf7517953361b88d5bf498eb9312f71c8e6285f7e3611aefe4cd788e23dd2"
+  }
+}
