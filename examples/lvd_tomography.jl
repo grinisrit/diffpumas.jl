@@ -92,8 +92,7 @@ const lvd_tomography = nothing
 using DiffPumas
 using DiffPumas.Tomography          # forward model, sparse AD Jacobian, solvers, metrics
 using DiffPumas.Physics: get_material_index
-using DiffPumas.Loader: print_physics_summary
-using DiffPumas.Pumas: load_or_create_physics
+using DiffPumas.Loader: print_physics_summary, load_physics
 using DiffPumas.TriangleIntersect: intersect
 using DiffPumas.Turtle: ElevationMap, map_elevation
 using DiffPumas.Types: MaterialMixture
@@ -105,6 +104,7 @@ using LinearAlgebra
 using SparseArrays
 using Logging
 using Serialization
+using SHA
 
 module LVDTopo
 include(joinpath(@__DIR__, "lvd_muography.jl"))
@@ -1657,25 +1657,68 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
     return (ks, kh, stats)
 end
 
+function load_tomography_physics(dump_path::String)
+    instruction="Generate a new corrected dump with `bash dev/create_revision_physics.sh NEW_DIRECTORY`, then pass --dump NEW_DIRECTORY/materials.pumas."
+    isfile(dump_path) || error("Physics dump not found: $dump_path. $instruction")
+    physics=load_physics(dump_path)
+    physics===nothing && error("Physics dump cannot be read or validated: $dump_path. $instruction")
+    physics
+end
+
+function serialized_content_sha256(value)
+    io=IOBuffer()
+    Serialization.serialize(io,value)
+    seekstart(io)
+    bytes2hex(sha256(io))
+end
+
+function inverse_mc_source_paths()
+    root=normpath(joinpath(@__DIR__,".."))
+    vcat(sort(filter(p->endswith(p,".jl"),readdir(joinpath(root,"src");join=true))),
+        [@__FILE__,joinpath(@__DIR__,"lvd_muography.jl"),
+         joinpath(root,"Project.toml"),joinpath(root,"Manifest.toml")])
+end
+
+function inverse_mc_cache_identity(physics,shallow_flags,matcfg,site,paths,w_true,valid,args;
+        source_paths=inverse_mc_source_paths())
+    isfile(args.dump_path) || error("MC cache identity requires an existing physics dump: $(args.dump_path)")
+    sources=[(path=abspath(path),sha256=bytes2hex(sha256(read(path)))) for path in source_paths]
+    metadata=physics isa DiffPumas.Physics.PhysicsTables ? DiffPumas.Physics.material_metadata(physics) : nothing
+    serialized_content_sha256((schema=2,transport=:fixed_path_energy_loss_no_scattering,
+        julia_version=string(VERSION),machine=Sys.MACHINE,threads=Threads.nthreads(),
+        dump_path=abspath(args.dump_path),dump_sha256=bytes2hex(sha256(read(args.dump_path))),
+        source_sha256=sources,physics=physics,material_metadata=metadata,
+        shallow_flags=shallow_flags,material_config=matcfg,site=site,
+        actual_paths=paths,ordered_valid_bins=valid,water_field=w_true,configuration=args))
+end
+
+function read_inverse_mc_cache(cache_path,identity,count_bins)
+    isfile(cache_path) || return nothing
+    try
+        cached=Serialization.deserialize(cache_path)
+        cached isa NamedTuple && get(cached,:schema,nothing)==2 &&
+            get(cached,:identity,nothing)==identity || return nothing
+        observations=get(cached,:obs,nothing)
+        observations isa Vector{Float64} && length(observations)==count_bins &&
+            all(isfinite,observations) || return nothing
+        get(cached,:observations_sha256,nothing)==serialized_content_sha256(observations) || return nothing
+        observations
+    catch
+        nothing
+    end
+end
+
 # --- fixed-path energy-loss MC observations for the inverse problem (cached) ----------------
 
 function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfig,
                                    site::SiteConfig, paths::Vector{DirectionalPath},
                                    w_true::Vector{Float64}, valid::Vector{Int}, args;
                                    cache_path::String)
-    sig = (:fixed_path_energy_loss_no_scattering_v1, length(paths), length(valid), args.inverse_mc_samples, args.seed, args.zenith_step_deg,
-           args.azimuth_step_deg, args.geometry, hash(w_true), args.straggling,
-           args.energy_min, args.energy_max, args.energy_threshold_low,
-           matcfg.rock_density, matcfg.water_density, matcfg.porous_density)
-    if isfile(cache_path)
-        try
-            cached = Serialization.deserialize(cache_path)
-            if cached.sig == sig
-                println("  loaded cached MC observations ($(length(valid)) bins) from $(basename(cache_path))")
-                return cached.obs
-            end
-        catch
-        end
+    identity=inverse_mc_cache_identity(physics,shallow_flags,matcfg,site,paths,w_true,valid,args)
+    cached=read_inverse_mc_cache(cache_path,identity,length(valid))
+    if cached!==nothing
+        println("  loaded content-verified MC observations ($(length(valid)) bins) from $(basename(cache_path))")
+        return cached
     end
     mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, args.seed + 40_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
@@ -1689,7 +1732,12 @@ function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfi
         obs[k] = f
     end
     try
-        Serialization.serialize(cache_path, (sig = sig, obs = obs))
+        mktemp(dirname(cache_path)) do temporary,io
+            Serialization.serialize(io,(schema=2,identity=identity,obs=obs,
+                observations_sha256=serialized_content_sha256(obs)))
+            close(io)
+            mv(temporary,cache_path;force=true)
+        end
     catch e
         @warn "could not cache MC observations" exception=e
     end
@@ -3085,7 +3133,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     # --- Rigorous inverse-problem statistics: posterior uncertainty map (Laplace),
     # null-model comparison, and nuisance-parameter (absolute-level) profiling.
     # Statistical weights are the pure Poisson × DEM down-weight on the fit bins
-    # (no robust/conditioning rescale): the honest data covariance. The Laplace
+    # (no robust/conditioning rescale): an adopted weighting convention because
+    # published intensities have no known absolute count covariance. The Laplace
     # posterior is CONDITIONAL on the normalisation s (the per-cell shape the
     # angular data constrain); the absolute level, degenerate with s, is left to
     # the inventory profile.
@@ -3101,8 +3150,9 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     aq_idx = findall(aquifer_mask)
     n_aq = max(length(aq_idx), 1)
     # Calibrate the posterior covariance to reduced-χ²=1: the nominal exposure is
-    # arbitrary, so inflate σ by √φ. The resolution (averaging kernel) and p_eff are
-    # scale-invariant and need no calibration.
+    # arbitrary, so inflate σ by √φ as a conditional diagnostic. Averaging-kernel
+    # resolution and p_eff remain those of the adopted weights/prior; changing
+    # the noise scale with a fixed prior changes them. Coverage is not calibrated.
     sigfac = sqrt(nulls.var_scale)
     sigma_cal = post.sigma .* sigfac
     z_cal = post.z ./ sigfac
@@ -3375,8 +3425,7 @@ function main()
 
     mkpath(args.output_dir)
 
-    physics = load_or_create_physics(args.dump_path; mdf_path = DEFAULT_MDF)
-    physics === nothing && error("Failed to load physics tables")
+    physics = load_tomography_physics(args.dump_path)
     print_physics_summary(physics)
     println()
 

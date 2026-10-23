@@ -1,0 +1,39 @@
+{
+  "scope": "Integrated corrected-kernel full package tests before the subsequent Physics mixture-cache hardening patch. Exact source hashes identify this snapshot; later source changes need their own checks. No production or uncertainty-coverage claim.",
+  "julia_1.11.7": {
+    "method": "Pkg.test()",
+    "passed": 515,
+    "total": 515,
+    "seconds": 206.2,
+    "cpus": [
+      22,
+      23
+    ],
+    "threads": 2,
+    "address_space_gib": 8
+  },
+  "julia_1.10.12": {
+    "method": "Pkg.resolve();Pkg.test(\"DiffPumas\") in established isolated Julia1.10 environment",
+    "passed": 515,
+    "total": 515,
+    "seconds": 149.2,
+    "cpus": [
+      20,
+      21
+    ],
+    "threads": 2,
+    "address_space_gib": 8,
+    "zygote_version": "0.7.13"
+  },
+  "source_and_root_project_manifest_unchanged_during_tests": true,
+  "initial_1.10_attempt": "Stopped before tests: shared Julia1.11 Manifest contains StyledStrings stdlib unavailable on1.10. Not a package assertion failure.",
+  "evidence_sha256": {
+    "julia-1.10-Manifest.toml": "9e5df1ebd1ff6b078b5186fc8cb51e96a2ea6372aead017984d3af8c9585f46d",
+    "julia-1.10-isolated-pkg-tests.txt": "f8d0068661f1a9cbbb968d44e09582ac1fa31f7b034622dd02e141bf86bc7ac5",
+    "source-unchanged-check.txt": "5cc9f5572e82b50b2ce9414b21bbf0cc608d71ed73188316982debf5847e34c0",
+    "julia-1.10-Project.toml": "92b0a1d3928012fad36980db2326e2ac3f4ea42cc1dbccdfdfa38462d4da2ef3",
+    "julia-1.11-pkg-tests.txt": "5c5c29c2506bc838dab3bcd5150ab06dc392374494bc69162f4ca0b45bb8cd79",
+    "julia-1.10-shared-manifest-environment-failure.txt": "28f741cb3630c6c455e549305576f96b266b4bd67267fbaea6d7f12e48ca45c7",
+    "source-sha256.txt": "1c0f58889ca550ad181f8aed3aec45f15fb6753793f6103ad831136f99fd72cd"
+  }
+}

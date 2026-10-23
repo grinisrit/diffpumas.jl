@@ -113,3 +113,44 @@ end
     @test length(variations)==4
     @test all(v->!v.scattering && v.seed==42,variations)
 end
+
+@testset "Strict physics loading and content-bound MC cache" begin
+    mktempdir() do directory
+        missing=joinpath(directory,"missing.dump")
+        @test_throws ErrorException load_tomography_physics(missing)
+        @test !ispath(missing)
+        dump=joinpath(directory,"physics.dump");write(dump,"invalid physics bytes")
+        original=read(dump)
+        with_logger(NullLogger()) do
+            @test_throws ErrorException load_tomography_physics(dump)
+        end
+        @test read(dump)==original
+        source=joinpath(directory,"source.jl");write(source,"model v1")
+        physics=(loss=[1.0,2.0],)
+        paths=[(zenith=0.0,segments=[(cell=1,distance=10.0),]),
+               (zenith=30.0,segments=[(cell=2,distance=12.0),])]
+        config=(dump_path=dump,seed=42,energy_min=.001,energy_max=1e9)
+        key=(;p=physics,site=(height=30000.0,),rays=paths,bins=[1,2],options=config)->
+            inverse_mc_cache_identity(p,Bool[false,false],:material,site,rays,[.2,.3],bins,options;source_paths=[source])
+        identity=key()
+        @test identity==key(p=deepcopy(physics),rays=deepcopy(paths))
+        @test identity!=key(p=(loss=[1.0,2.1],))
+        @test identity!=key(site=(height=31000.0,))
+        @test identity!=key(rays=reverse(paths))
+        @test identity!=key(bins=[2,1])
+        @test identity!=key(options=merge(config,(seed=43,)))
+        write(dump,"other physics bytes");@test identity!=key();write(dump,original)
+        write(source,"model v2");@test identity!=key();write(source,"model v1")
+        cache=joinpath(directory,"observations.bin");observations=[1.0,2.0]
+        Serialization.serialize(cache,(sig=:historical,obs=observations))
+        @test read_inverse_mc_cache(cache,identity,2)===nothing
+        record=(schema=2,identity=identity,obs=observations,
+            observations_sha256=serialized_content_sha256(observations))
+        Serialization.serialize(cache,record)
+        @test read_inverse_mc_cache(cache,identity,2)==observations
+        @test read_inverse_mc_cache(cache,key(bins=[2,1]),2)===nothing
+        @test read_inverse_mc_cache(cache,identity,1)===nothing
+        Serialization.serialize(cache,merge(record,(obs=[1.0,2.1],)))
+        @test read_inverse_mc_cache(cache,identity,2)===nothing
+    end
+end
