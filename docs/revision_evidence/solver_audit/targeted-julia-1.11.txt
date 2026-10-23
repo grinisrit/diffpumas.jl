@@ -1,0 +1,11 @@
+Precompiling DiffPumas...
+   4777.0 ms  ✓ DiffPumas
+  1 dependency successfully precompiled in 5 seconds. 150 already precompiled.
+┌ Info: GN Jacobian evaluation counts
+│   full = 8
+│   predict_only = 7
+└   primal_trials = 7
+Test Summary:                                 | Pass  Total  Time
+Consistent inverse objectives and constraints |   28     28  9.9s
+Test Summary:                  | Pass  Total  Time
+GN prediction-only line search |    8      8  2.7s

@@ -1,0 +1,11 @@
+{"host": "research_vm_roland", "cpus": [0, 1], "address_space_bytes": 12884901888, "command": ["julia", "--project=.", "test/test_revision_suite.jl"]}
+Test Summary:             | Pass  Total  Time
+TetGen Julia connectivity |    9      9  3.4s
+Test Summary:                      | Pass  Total  Time
+Adjoint finite difference controls |    7      7  0.0s
+Test Summary:          | Pass  Total  Time
+Revision option bounds |    3      3  0.1s
+Test Summary:                | Pass  Total  Time
+Measured robustness controls |    6      6  5.2s
+Test Summary:                       | Pass  Total  Time
+Masked forward/Jacobian consistency |    4      4  0.7s

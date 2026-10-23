@@ -1,0 +1,9 @@
+{"host": "research_vm_roland", "cpus": [0, 1], "address_space_bytes": 12884901888, "command": ["/home/roland/.julia/juliaup/julia-1.10.12+0.x64.linux.gnu/bin/julia", "--project=/mnt/big_data/agent-builds/diffpumas-install-validation", "test/test_inverse_solver.jl"]}
+┌ Info: GN Jacobian evaluation counts
+│   full = 8
+│   predict_only = 7
+└   primal_trials = 7
+Test Summary:                                 | Pass  Total   Time
+Consistent inverse objectives and constraints |   28     28  13.9s
+Test Summary:                  | Pass  Total  Time
+GN prediction-only line search |    8      8  2.5s

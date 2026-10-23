@@ -1,0 +1,286 @@
+{"host": "research_vm_roland", "cpus": [0, 1], "address_space_bytes": 12884901888, "command": ["julia", "--project=.", "-e", "using Pkg; Pkg.test()"]}
+     Testing DiffPumas
+      Status `/tmp/jl_jUdvWw/Project.toml`
+  [c7e460c6] ArgParse v1.2.0
+⌃ [d360d2e6] ChainRulesCore v1.26.0
+  [b2257c3e] DiffPumas v0.2.0 `~/devspace/diffpumas.jl`
+  [9c8b4983] LightXML v0.9.3
+⌅ [a03496cd] PlotlyBase v0.8.22
+⌃ [f0f68f2c] PlotlyJS v0.18.17
+⌃ [276daf66] SpecialFunctions v2.6.1
+⌃ [90137ffa] StaticArrays v1.9.15
+⌃ [10745b16] Statistics v1.11.1
+⌃ [c5d3f3f7] TetGen v2.0.0
+⌃ [e88e6eb3] Zygote v0.7.10
+⌃ [700de1a5] ZygoteRules v0.2.7
+  [37e2e46d] LinearAlgebra v1.11.0
+  [9a3f8284] Random v1.11.0
+  [9e88b42a] Serialization v1.11.0
+  [2f01184e] SparseArrays v1.11.0
+  [8dfed614] Test v1.11.0
+      Status `/tmp/jl_jUdvWw/Manifest.toml`
+  [621f4979] AbstractFFTs v1.5.0
+⌃ [79e6a3ab] Adapt v4.4.0
+  [c7e460c6] ArgParse v1.2.0
+⌃ [bf4720bc] AssetRegistry v0.1.0
+⌃ [d1d4a3ce] BitFlags v0.1.9
+  [ad839575] Blink v0.12.9
+⌃ [082447d4] ChainRules v1.72.6
+⌃ [d360d2e6] ChainRulesCore v1.26.0
+⌃ [944b1d66] CodecZlib v0.7.8
+  [35d6a980] ColorSchemes v3.31.0
+⌃ [3da002f7] ColorTypes v0.12.1
+  [c3611d14] ColorVectorSpace v0.11.0
+⌃ [5ae59095] Colors v0.13.1
+  [bbf7d656] CommonSubexpressions v0.3.1
+  [34da2185] Compat v4.18.1
+⌃ [f0e56b4a] ConcurrentUtilities v2.5.0
+  [187b0558] ConstructionBase v1.6.0
+  [9a962f9c] DataAPI v1.16.0
+  [e2d170a0] DataValueInterfaces v1.0.0
+  [8bb1440f] DelimitedFiles v1.9.1
+  [b2257c3e] DiffPumas v0.2.0 `~/devspace/diffpumas.jl`
+  [163ba53b] DiffResults v1.1.0
+⌃ [b552c78f] DiffRules v1.15.1
+  [ffbed154] DocStringExtensions v0.9.5
+⌃ [460bff9d] ExceptionUnwrapping v0.1.11
+  [411431e0] Extents v0.1.6
+⌃ [1a297f60] FillArrays v1.15.0
+⌅ [53c48c17] FixedPointNumbers v0.8.5
+⌃ [f6369f11] ForwardDiff v1.3.0
+  [de31a74c] FunctionalCollections v0.5.0
+⌃ [46192b85] GPUArraysCore v0.2.0
+⌃ [5c1252a2] GeometryBasics v0.5.10
+⌅ [cd3eb016] HTTP v1.10.19
+  [9fb69e20] Hiccup v0.2.2
+⌃ [7869d1d1] IRTools v0.4.15
+  [92d709cd] IrrationalConstants v0.2.6
+  [c8e1da08] IterTools v1.10.0
+  [82899510] IteratorInterfaceExtensions v1.0.0
+⌃ [692b3bcd] JLLWrappers v1.7.1
+  [97c1335a] JSExpr v0.5.4
+⌅ [682c06a0] JSON v0.21.4
+⌃ [b964fa9f] LaTeXStrings v1.4.0
+  [50d2b5c4] Lazy v0.15.1
+  [9c8b4983] LightXML v0.9.3
+⌅ [2ab3a3ac] LogExpFunctions v0.3.29
+  [e6f89c97] LoggingExtras v1.2.0
+  [1914dd2f] MacroTools v0.5.16
+⌃ [739be429] MbedTLS v1.1.9
+⌃ [ffc61752] Mustache v1.0.21
+  [a975b10e] Mux v1.0.2
+⌃ [77ba4419] NaNMath v1.1.3
+  [510215fc] Observables v0.5.5
+  [4d8831e6] OpenSSL v1.6.1
+⌅ [bac558e1] OrderedCollections v1.8.1
+⌅ [d96e819e] Parameters v0.12.3
+⌅ [69de0a69] Parsers v2.8.3
+  [fa939f87] Pidfile v1.3.0
+⌅ [a03496cd] PlotlyBase v0.8.22
+⌃ [f0f68f2c] PlotlyJS v0.18.17
+  [f2990250] PlotlyKaleido v2.3.1
+⌅ [aea7be01] PrecompileTools v1.2.1
+⌃ [21216c6a] Preferences v1.5.1
+  [c1ae055f] RealDot v0.1.0
+  [189a3867] Reexport v1.2.2
+  [ae029012] Requires v1.3.1
+  [777ac1f9] SimpleBufferStream v1.2.0
+⌃ [dc90abb0] SparseInverseSubset v0.1.2
+⌃ [276daf66] SpecialFunctions v2.6.1
+⌃ [90137ffa] StaticArrays v1.9.15
+  [1e83bf80] StaticArraysCore v1.4.4
+⌃ [10745b16] Statistics v1.11.1
+⌃ [09ab397b] StructArrays v0.7.2
+  [3783bdb8] TableTraits v1.0.1
+⌃ [bd369af6] Tables v1.12.1
+  [62fd8b95] TensorCore v0.1.1
+⌃ [c5d3f3f7] TetGen v2.0.0
+  [b718987f] TextWrap v1.0.2
+  [3bb67fe8] TranscodingStreams v0.11.3
+⌃ [5c2747f8] URIs v1.6.1
+  [3a884ed6] UnPack v1.0.2
+  [0f1e0344] WebIO v0.8.21
+  [104b5d7c] WebSockets v1.6.0
+⌃ [cc8bc4a8] Widgets v0.6.7
+⌃ [e88e6eb3] Zygote v0.7.10
+⌃ [700de1a5] ZygoteRules v0.2.7
+⌅ [5ae413db] EarCut_jll v2.2.4+0
+  [f7e6163d] Kaleido_jll v0.2.1+0
+  [94ce4f54] Libiconv_jll v1.18.0+0
+⌃ [458c3c95] OpenSSL_jll v3.5.4+0
+  [efe28fd5] OpenSpecFun_jll v0.5.6+0
+⌃ [b47fdcd6] TetGen_jll v1.5.3+0
+⌃ [02c8fc9c] XML2_jll v2.15.1+0
+  [0dad84c5] ArgTools v1.1.2
+  [56f22d72] Artifacts v1.11.0
+  [2a0f44e3] Base64 v1.11.0
+  [ade2ca70] Dates v1.11.0
+  [8ba89e20] Distributed v1.11.0
+  [f43a241f] Downloads v1.6.0
+  [7b1f6079] FileWatching v1.11.0
+  [b77e0a4c] InteractiveUtils v1.11.0
+  [b27032c2] LibCURL v0.6.4
+  [76f85450] LibGit2 v1.11.0
+  [8f399da3] Libdl v1.11.0
+  [37e2e46d] LinearAlgebra v1.11.0
+  [56ddb016] Logging v1.11.0
+  [d6f4376e] Markdown v1.11.0
+  [a63ad114] Mmap v1.11.0
+  [ca575930] NetworkOptions v1.2.0
+  [44cfe95a] Pkg v1.11.0
+  [de0858da] Printf v1.11.0
+  [3fa0cd96] REPL v1.11.0
+  [9a3f8284] Random v1.11.0
+  [ea8e919c] SHA v0.7.0
+  [9e88b42a] Serialization v1.11.0
+  [6462fe0b] Sockets v1.11.0
+  [2f01184e] SparseArrays v1.11.0
+  [f489334b] StyledStrings v1.11.0
+  [4607b0f0] SuiteSparse
+  [fa267f1f] TOML v1.0.3
+  [a4e569a6] Tar v1.10.0
+  [8dfed614] Test v1.11.0
+  [cf7118a7] UUIDs v1.11.0
+  [4ec0a83e] Unicode v1.11.0
+  [e66e0078] CompilerSupportLibraries_jll v1.1.1+0
+  [deac9b47] LibCURL_jll v8.6.0+0
+  [e37daf67] LibGit2_jll v1.7.2+0
+  [29816b5a] LibSSH2_jll v1.11.0+1
+  [c8ffd9c3] MbedTLS_jll v2.28.6+0
+  [14a3606d] MozillaCACerts_jll v2023.12.12
+  [4536629a] OpenBLAS_jll v0.3.27+1
+  [05823500] OpenLibm_jll v0.8.5+0
+  [bea87d4a] SuiteSparse_jll v7.7.0+0
+  [83775a58] Zlib_jll v1.2.13+1
+  [8e850b90] libblastrampoline_jll v5.11.0+0
+  [8e850ede] nghttp2_jll v1.59.0+0
+  [3f19e933] p7zip_jll v17.4.0+2
+        Info Packages marked with ⌃ and ⌅ have new versions available. Those with ⌃ may be upgradable, but those with ⌅ are restricted by compatibility constraints from upgrading.
+Precompiling project for configuration --code-coverage=none --color=auto --check-bounds=yes --warn-overwrite=yes --depwarn=yes --inline=yes --startup-file=no --track-allocation=none...
+   6174.1 ms  ✓ DiffPumas
+  1 dependency successfully precompiled in 7 seconds. 150 already precompiled.
+     Testing Running tests...
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+[ Info: Loaded physics from /tmp/jl_S1Y9gTgj0j.pumas
+[ Info: Parsing MDF file: /home/roland/devspace/diffpumas.jl/test/../examples/data/materials.xml
+[ Info:   Parsed 6 elements
+[ Info:   Parsed material: StandardRock (density=2650.0 kg/m³)
+[ Info:   Parsed material: Water (density=1000.0 kg/m³)
+[ Info:   Parsed material: Air (density=1.2049999999999998 kg/m³)
+[ Info:   Total materials: 3
+[ Info:   Parsed composite: WetRock (StandardRock 50.0% + Water 50.0%, ρ_eff=1825.0 kg/m³)
+[ Info:   Parsed composite: PorousWetRock (StandardRock 50.0% + Water 40.0% + Air 10.0%, ρ_eff=1725.1 kg/m³)
+[ Info: Creating physics tables...
+[ Info: Loaded PUMAS tables for StandardRock from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/standard_rock.txt
+[ Info: Loaded PUMAS tables for Water from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/water.txt
+[ Info: Loaded PUMAS tables for Air from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/air.txt
+[ Info: Building composite table for WetRock (StandardRock 50.0% + Water 50.0%)
+[ Info: Building composite table for PorousWetRock (StandardRock 50.0% + Water 40.0% + Air 10.0%)
+[ Info: Saved physics to /tmp/jl_eVnBC0/particle.pumas
+[ Info: Parsing MDF file: /home/roland/devspace/diffpumas.jl/test/../examples/data/materials.xml
+[ Info:   Parsed 6 elements
+[ Info:   Parsed material: StandardRock (density=2650.0 kg/m³)
+[ Info:   Parsed material: Water (density=1000.0 kg/m³)
+[ Info:   Parsed material: Air (density=1.2049999999999998 kg/m³)
+[ Info:   Total materials: 3
+[ Info:   Parsed composite: WetRock (StandardRock 50.0% + Water 50.0%, ρ_eff=1825.0 kg/m³)
+[ Info:   Parsed composite: PorousWetRock (StandardRock 50.0% + Water 40.0% + Air 10.0%, ρ_eff=1725.1 kg/m³)
+[ Info: Creating physics tables...
+[ Info: Loaded PUMAS tables for StandardRock from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/standard_rock.txt
+[ Info: Loaded PUMAS tables for Water from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/water.txt
+[ Info: Loaded PUMAS tables for Air from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/air.txt
+[ Info: Building composite table for WetRock (StandardRock 50.0% + Water 50.0%)
+[ Info: Building composite table for PorousWetRock (StandardRock 50.0% + Water 40.0% + Air 10.0%)
+[ Info: Saved physics to /tmp/jl_eVnBC0/filename.pumas
+[ Info: Parsing MDF file: /tmp/jl_eVnBC0/custom.xml
+[ Info:   Parsed 1 elements
+[ Info:   Parsed material: CustomRock (density=2650.0 kg/m³)
+[ Info:   Total materials: 1
+[ Info:   Parsed composite: CustomMix (CustomRock 100.0%, ρ_eff=2650.0 kg/m³)
+[ Info: Creating physics tables...
+[ Info: Loaded PUMAS tables for CustomRock from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/custom_rock.txt
+[ Info: Building composite table for CustomMix (CustomRock 100.0%)
+[ Info: Saved physics to /tmp/jl_eVnBC0/custom.pumas
+[ Info: Parsing MDF file: /tmp/jl_eVnBC0/custom.xml
+[ Info:   Parsed 1 elements
+[ Info:   Parsed material: CustomRock (density=2650.0 kg/m³)
+[ Info:   Total materials: 1
+[ Info:   Parsed composite: CustomMix (CustomRock 100.0%, ρ_eff=2650.0 kg/m³)
+[ Info: Parsing MDF file: /tmp/jl_eVnBC0/custom.xml
+[ Info:   Parsed 1 elements
+[ Info:   Parsed material: CustomRock (density=2650.0 kg/m³)
+[ Info:   Total materials: 1
+[ Info:   Parsed composite: CustomMix (CustomRock 100.0%, ρ_eff=2650.0 kg/m³)
+[ Info: Parsing MDF file: /tmp/jl_eVnBC0/custom.xml
+[ Info:   Parsed 1 elements
+[ Info:   Parsed material: CustomRock (density=2650.0 kg/m³)
+[ Info:   Total materials: 1
+[ Info:   Parsed composite: CustomMix (CustomRock 100.0%, ρ_eff=2650.0 kg/m³)
+[ Info: Creating physics tables...
+[ Info: Loaded PUMAS tables for CustomRock from /tmp/jl_eVnBC0/pumas-materials/dedx/muon/custom_rock.txt
+[ Info: Building composite table for CustomMix (CustomRock 100.0%)
+[ Info: Saved physics to /tmp/jl_eVnBC0/custom.pumas
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+[ Info: Running backward Monte Carlo flux calculation...
+[ Info:   Rock thickness: 1.0 m
+[ Info:   Rock density: 2650.0 kg/m³
+[ Info:   Elevation: 90.0°
+[ Info:   Energy range: 2.0 - 20.0 GeV
+[ Info:   Samples: 3
+[ Info:   Straggling: false, Scattering: false
+[ Info:   Energy threshold: 100.0 GeV
+[ Info: Computing density gradient of sampled deterministic CSDA flux...
+[ Info:   ∂CSDA flux/∂density = -0.0003049476914604021
+[ Info: Flux: 9.579682749169999 ± 0.6900249647553417 m⁻² s⁻¹ sr⁻¹
+[ Info: Running backward Monte Carlo flux calculation...
+[ Info:   Rock thickness: 0.0 m
+[ Info:   Rock density: 2650.0 kg/m³
+[ Info:   Elevation: 90.0°
+[ Info:   Energy range: 10.0 - 10.0 GeV
+[ Info:   Samples: 1
+[ Info:   Straggling: false, Scattering: false
+[ Info:   Energy threshold: 100.0 GeV
+[ Info: Computing density gradient of sampled deterministic CSDA flux...
+[ Info:   ∂CSDA flux/∂density = 0.0
+[ Info: Flux: 0.4612840622755491 ± 0.0 GeV⁻¹ m⁻² s⁻¹ sr⁻¹
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /home/roland/devspace/pumas-materials/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Air at /home/roland/devspace/pumas-materials/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Warning: PUMAS dE/dx file not found for Water at /home/roland/devspace/pumas-materials/dedx/muon/water.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:564
+┌ Info: GN Jacobian evaluation counts
+│   full = 8
+│   predict_only = 7
+└   primal_trials = 7
+Test Summary: | Pass  Total     Time
+DiffPumas.jl  |  295    295  3m17.3s
+
+All tests passed! ✓
+     Testing DiffPumas tests passed 

@@ -1,0 +1,2 @@
+Independent nonlinear MAP oracle: [0.24287936055790554, 0.4]
+Callback/full model calls: (7, 8) same solution=[0.8]

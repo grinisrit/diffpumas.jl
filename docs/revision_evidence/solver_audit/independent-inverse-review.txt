@@ -1,0 +1,8 @@
+┌ Info: GN Jacobian evaluation counts
+│   full = 8
+│   predict_only = 7
+└   primal_trials = 7
+Test Summary:                                 | Pass  Total   Time
+Consistent inverse objectives and constraints |   28     28  10.7s
+Test Summary:                  | Pass  Total  Time
+GN prediction-only line search |    8      8  2.7s

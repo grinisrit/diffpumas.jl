@@ -1,0 +1,237 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3], "address_space_bytes": 12884901888, "command": ["julia", "--project=.", "examples/lvd_tomography.jl", "--dump", "examples/data/revision_physics/materials.pumas", "--papermatch-fit-only", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6", "--zenith-step", "10", "--azimuth-step", "15", "--samples", "32", "--csda-quadrature", "midpoint", "--calibration-bins", "24", "--calibration-mc-samples", "128", "--papermatch-recursions", "3", "--rock-density", "2710", "--seed", "20261022", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_20261023/baseline"]}
+
+[2273269] signal 15: Terminated
+in expression starting at /home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl:3484
+unknown function (ip: 0x72d8a363ed6f)
+pthread_cond_wait at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+uv_cond_wait at /workspace/srcdir/libuv/src/unix/thread.c:822
+jl_parallel_gc_threadfun at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/scheduler.c:148
+unknown function (ip: 0x72d8a3642aa3)
+__clone at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+unknown function (ip: (nil))
+unknown function (ip: 0x72d8a374735b)
+ijl_new_bits at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/datatype.c:1108
+ijl_get_nth_field at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/datatype.c:1798
+ijl_get_nth_field_checked at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/datatype.c:1814
+getindex at ./tuple.jl:31
+jfptr_getindex_53514.1 at /home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+Pullback at /home/roland/.julia/packages/Zygote/55SqB/src/compiler/interface2.jl:100
+unknown function (ip: 0x72d85cd6ed26)
+cell_hardloss at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:310 [inlined]
+Pullback at /home/roland/.julia/packages/Zygote/55SqB/src/compiler/interface2.jl:0
+unknown function (ip: 0x72d85cd6d5e6)
+_directional_flux_core at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:529 [inlined]
+Pullback at /home/roland/.julia/packages/Zygote/55SqB/src/compiler/interface2.jl:0
+#4 at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:675 [inlined]
+Pullback at /home/roland/.julia/packages/Zygote/55SqB/src/compiler/interface2.jl:0
+#88 at /home/roland/.julia/packages/Zygote/55SqB/src/compiler/interface.jl:97
+unknown function (ip: 0x72d85cd43976)
+withgradient at /home/roland/.julia/packages/Zygote/55SqB/src/compiler/interface.jl:219
+directional_flux_and_grad_csda at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:677
+#7 at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:705
+macro expansion at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:714 [inlined]
+#1049#threadsfor_fun#8 at ./threadingconstructs.jl:253
+#1049#threadsfor_fun at ./threadingconstructs.jl:220 [inlined]
+#1 at ./threadingconstructs.jl:154
+unknown function (ip: 0x72d85cd0e3bf)
+jl_apply at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/julia.h:2157 [inlined]
+start_task at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/task.c:1202
+unknown function (ip: (nil))
+unknown function (ip: 0x72d8a363ed6f)
+pthread_cond_wait at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+uv_cond_wait at /workspace/srcdir/libuv/src/unix/thread.c:822
+ijl_task_get_next at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/scheduler.c:584
+poptask at ./task.jl:1012
+wait at ./task.jl:1021
+task_done_hook at ./task.jl:694
+jfptr_task_done_hook_66680.1 at /home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+jl_apply at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/julia.h:2157 [inlined]
+jl_finish_task at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/task.c:319
+start_task at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/task.c:1213
+unknown function (ip: (nil))
+epoll_pwait at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+uv__io_poll at /workspace/srcdir/libuv/src/unix/linux.c:1404
+uv_run at /workspace/srcdir/libuv/src/unix/core.c:430
+ijl_task_get_next at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/scheduler.c:522
+poptask at ./task.jl:1012
+wait at ./task.jl:1021
+task_done_hook at ./task.jl:694
+jfptr_task_done_hook_66680.1 at /home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+jl_apply at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/julia.h:2157 [inlined]
+jl_finish_task at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/task.c:319
+start_task at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/task.c:1213
+unknown function (ip: (nil))
+unknown function (ip: 0x72d8a363ed6f)
+pthread_cond_wait at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+uv_cond_wait at /workspace/srcdir/libuv/src/unix/thread.c:822
+ijl_task_get_next at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/scheduler.c:584
+poptask at ./task.jl:1012
+wait at ./task.jl:1021
+#wait#733 at ./condition.jl:130
+wait at ./condition.jl:125 [inlined]
+_wait at ./task.jl:328
+threading_run at ./threadingconstructs.jl:168
+macro expansion at ./threadingconstructs.jl:190 [inlined]
+#assemble_forward_and_jacobian#6 at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:713
+assemble_forward_and_jacobian at /home/roland/devspace/diffpumas.jl/src/Tomography.jl:693 [inlined]
+#42 at /home/roland/devspace/diffpumas.jl/src/Tomography_inverse.jl:432 [inlined]
+#245 at /home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl:2832
+unknown function (ip: 0x72d85cd90e51)
+#gauss_newton_reconstruct#35 at /home/roland/devspace/diffpumas.jl/src/Tomography_inverse.jl:393
+unknown function (ip: 0x72d85cd9956a)
+gauss_newton_reconstruct at /home/roland/devspace/diffpumas.jl/src/Tomography_inverse.jl:329
+unknown function (ip: 0x72d85cd8dcfd)
+run_paper_match at /home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl:2893
+unknown function (ip: 0x72d85cd0e1d7)
+main at /home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl:3427
+unknown function (ip: 0x72d8885ebcaf)
+jl_apply at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/julia.h:2157 [inlined]
+do_call at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/interpreter.c:126
+eval_value at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/interpreter.c:223
+eval_stmt_value at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/interpreter.c:174 [inlined]
+eval_body at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/interpreter.c:666
+jl_interpret_toplevel_thunk at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/interpreter.c:824
+jl_toplevel_eval_flex at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/toplevel.c:943
+jl_toplevel_eval_flex at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/toplevel.c:886
+ijl_toplevel_eval_in at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/toplevel.c:994
+eval at ./boot.jl:430 [inlined]
+include_string at ./loading.jl:2734
+_include at ./loading.jl:2794
+include at ./Base.jl:562
+jfptr_include_46986.1 at /home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+exec_options at ./client.jl:323
+_start at ./client.jl:531
+jfptr__start_73684.1 at /home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/lib/julia/sys.so (unknown line)
+jl_apply at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/julia.h:2157 [inlined]
+true_main at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/jlapi.c:900
+jl_repl_entrypoint at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/src/jlapi.c:1059
+main at /cache/build/builder-demeter6-3/julialang/julia-release-1-dot-11/cli/loader_exe.c:58
+unknown function (ip: 0x72d8a35d01c9)
+__libc_start_main at /lib/x86_64-linux-gnu/libc.so.6 (unknown line)
+unknown function (ip: 0x4010b8)
+unknown function (ip: (nil))
+Allocations: 9552063007 (Pool: 9551415544; Big: 647463); GC: 3783
+[ Info:   Parsed composite: WetRock (StandardRock 50.0% + Water 50.0%, ρ_eff=1825.0 kg/m³)
+[ Info:   Parsed composite: PorousWetRock (StandardRock 50.0% + Water 40.0% + Air 10.0%, ρ_eff=1725.1 kg/m³)
+val already in a list
+Stacktrace:
+ [1] error(s::String)
+   @ Base ./error.jl:35
+ [2] push!
+   @ ./linked_list.jl:53 [inlined]
+ [3] _wait2(c::Base.GenericCondition{Base.Threads.SpinLock}, waiter::Task, first::Bool)
+   @ Base ./condition.jl:87
+ [4] wait(c::Base.GenericCondition{Base.Threads.SpinLock}; first::Bool)
+   @ Base ./condition.jl:127
+ [5] wait
+   @ ./condition.jl:125 [inlined]
+ [6] close(t::Base.AsyncCondition)
+   @ Base ./asyncevent.jl:183
+ [7] (::Base.var"#1191#1194"{Task, Base.AsyncCondition})()
+   @ Base ./Base.jl:627
+ [8] _atexit(exitcode::Int32)
+   @ Base ./initdefs.jl:451
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 10.0 deg, phi by 15.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              20261022
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_20261023/baseline
+
+Loading physics from binary dump...
+  Dump file: examples/data/revision_physics/materials.pumas
+✓ Physics loaded successfully (5 materials)
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.0012 - 1.0e9 GeV
+      Table entries: 192
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.0012 - 1.0e9 GeV
+      Table entries: 192
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.0012 - 1.0e9 GeV
+      Table entries: 192
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.0012 - 1.0e9 GeV
+      Table entries: 192
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.0012 - 1.0e9 GeV
+      Table entries: 192
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 42 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/144] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [144/144] theta=50.0 deg phi=345.0 deg R=2798.6 m
+
+Calibrating CSDA correction to full MC on 24 bins (128 MC samples/bin, scattering+straggling)...
+  fitted α_strag=1.000 (physical ½b(b+1) enhancement) κ_hard=4.320 (+ fitted geometric residual) | CSDA-vs-MC mean rel error 99.6% -> 15.2%
+
+================================================================
+ Single muon angular distribution — water-content reconstruction from the measured 2D LVD surface
+================================================================
+ base rock density = 2710 kg/m^3 (Gran Sasso rock, Kudryavtsev 2009); water-only field w in [0, 0.9]
+GN water-content match to the full measured 2D surface (rock=2710 kg/m^3, altitude=30.0 km)...
+Tracing geometry for 1359 measured-surface bins (0 <= theta <= 90.0 deg)...
+  aquifer prior: water restricted to 147 / 600 rock cells above 500.0 m (below surface)
