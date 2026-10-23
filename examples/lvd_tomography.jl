@@ -105,6 +105,7 @@ using SparseArrays
 using Logging
 using Serialization
 using SHA
+using TOML
 
 module LVDTopo
 include(joinpath(@__DIR__, "lvd_muography.jl"))
@@ -1613,13 +1614,23 @@ build_site(primary_alt_m::Real = primary_altitude_local()) =
 # Fit the differentiable CSDA correction to fixed-path energy-loss MC on a stratified set of bins,
 # then install it so the Jacobian and the inverse forward use the corrected
 # operator. Returns (kappa_strag, kappa_hard, stats) or nothing when disabled.
+function calibration_diagnostic_context(args,initial_correction,energy_samples;
+        fit_geometric=true,kh_anchor=nothing,kh_anchor_weight=0.0,calibration_pass=1)
+    merge(args,(diagnostic_kind=:calibration,initial_correction=initial_correction,
+        csda_energy_samples=energy_samples,calibration_pass=calibration_pass,
+        fit_geometric=fit_geometric,kh_anchor=kh_anchor,kh_anchor_weight=kh_anchor_weight))
+end
+
 function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConfig,
                                     site::SiteConfig, paths::Vector{DirectionalPath},
                                     water_fractions::Vector{Float64},
                                     energy_samples::Vector{EnergySample}, args;
                                     fit_geometric::Bool = true,
                                     kh_anchor::Union{Nothing,Float64} = nothing,
-                                    kh_anchor_weight::Float64 = 0.0)
+                                    kh_anchor_weight::Float64 = 0.0,
+                                    calibration_pass::Int = 1)
+    calibration_pass>0 || error("calibration_pass must be positive")
+    initial_correction=get_csda_correction()
     if !args.correction
         set_csda_correction!(enabled = false)
         println("CSDA fluctuation correction: DISABLED (pure CSDA).")
@@ -1641,16 +1652,42 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
             "($(args.calibration_mc_samples) MC samples/bin, energy-loss straggling; scattering disabled)...")
     flush(stdout)
     mcflux = Vector{Float64}(undef, length(cbins))
+    mcsigma = similar(mcflux)
     Threads.@threads for k in eachindex(cbins)
-        f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[cbins[k]], mats, dens,
+        f, sigma = compute_directional_flux_mc(physics, matcfg, site, paths[cbins[k]], mats, dens,
             mc_samples, args.seed + 30_000 + k;
             straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
             scattering = false)
         mcflux[k] = f
+        mcsigma[k] = sigma
     end
     ks, kh, stats = calibrate_csda_correction(physics, shallow_flags, matcfg, site, paths,
         water_fractions, energy_samples, mcflux, cbins; fit_geometric = fit_geometric,
         kh_anchor = kh_anchor, kh_anchor_weight = kh_anchor_weight)
+    if hasproperty(args,:output_dir)
+        context=calibration_diagnostic_context(args,initial_correction,energy_samples;
+            fit_geometric=fit_geometric,kh_anchor=kh_anchor,kh_anchor_weight=kh_anchor_weight,
+            calibration_pass=calibration_pass)
+        identity=inverse_mc_cache_identity(physics,shallow_flags,matcfg,site,paths,water_fractions,cbins,context)
+        file=joinpath(args.output_dir,"lvd_mc_calibration_$(identity[1:16]).csv")
+        write_mc_bin_diagnostics(file,identity,paths,cbins,mcflux,mcsigma,
+            args.calibration_mc_samples,args.seed+20_000,args.seed+30_000)
+        correction=get_csda_correction()
+        metadata=Dict("identity"=>identity,"fit_geometric"=>fit_geometric,"calibration_pass"=>calibration_pass,
+            "reference_water_fractions"=>water_fractions,
+            "initial_correction"=>Dict(string(k)=>getfield(initial_correction,k) for k in fieldnames(typeof(initial_correction))),
+            "csda_energy_samples_sha256"=>serialized_content_sha256(energy_samples),
+            "csda_energy_samples"=>[Dict("energy"=>v.energy,"charge"=>v.charge,"weight"=>v.weight) for v in energy_samples],
+            "kh_anchor_weight"=>kh_anchor_weight,"kh_anchor_enabled"=>kh_anchor!==nothing,
+            "field_sha256"=>serialized_content_sha256(water_fractions),
+            "csda_energy_nodes"=>length(energy_samples),"samples_per_bin"=>args.calibration_mc_samples,
+            "energy_seed"=>args.seed+20_000,"transport_seed_offset"=>args.seed+30_000,
+            "correction"=>Dict(string(k)=>getfield(correction,k) for k in fieldnames(typeof(correction))),
+            "relative_error_before"=>stats.rel_before,"relative_error_after"=>stats.rel_after,
+            "scope"=>"Marginal MC sampling errors with a shared energy sample set across bins; cross-bin covariance and calibration-coefficient uncertainty are not propagated; reused seeds also correlate fields/passes, so pass errors are not independent replicate errors")
+        kh_anchor!==nothing && (metadata["kh_anchor"]=kh_anchor)
+        open(replace(file,r"\.csv$"=>".toml"),"w") do io;TOML.print(io,metadata);end
+    end
     println(@sprintf("  fitted α_strag=%.3f (physical ½b(b+1) enhancement) κ_hard=%.3f (%s geometric residual) | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
                      ks, kh, fit_geometric ? "+ fitted" : "frozen", 100 * stats.rel_before, 100 * stats.rel_after))
     flush(stdout)
@@ -1684,7 +1721,7 @@ function inverse_mc_cache_identity(physics,shallow_flags,matcfg,site,paths,w_tru
     isfile(args.dump_path) || error("MC cache identity requires an existing physics dump: $(args.dump_path)")
     sources=[(path=abspath(path),sha256=bytes2hex(sha256(read(path)))) for path in source_paths]
     metadata=physics isa DiffPumas.Physics.PhysicsTables ? DiffPumas.Physics.material_metadata(physics) : nothing
-    serialized_content_sha256((schema=2,transport=:fixed_path_energy_loss_no_scattering,
+    serialized_content_sha256((schema=3,transport=:fixed_path_energy_loss_no_scattering,
         julia_version=string(VERSION),machine=Sys.MACHINE,threads=Threads.nthreads(),
         dump_path=abspath(args.dump_path),dump_sha256=bytes2hex(sha256(read(args.dump_path))),
         source_sha256=sources,physics=physics,material_metadata=metadata,
@@ -1696,16 +1733,45 @@ function read_inverse_mc_cache(cache_path,identity,count_bins)
     isfile(cache_path) || return nothing
     try
         cached=Serialization.deserialize(cache_path)
-        cached isa NamedTuple && get(cached,:schema,nothing)==2 &&
+        cached isa NamedTuple && get(cached,:schema,nothing)==3 &&
             get(cached,:identity,nothing)==identity || return nothing
         observations=get(cached,:obs,nothing)
         observations isa Vector{Float64} && length(observations)==count_bins &&
             all(isfinite,observations) || return nothing
         get(cached,:observations_sha256,nothing)==serialized_content_sha256(observations) || return nothing
-        observations
+        sigma=get(cached,:sigma_mc,nothing)
+        sigma isa Vector{Float64} && length(sigma)==count_bins &&
+            all(x->isfinite(x) && x>=0,sigma) || return nothing
+        get(cached,:sigma_sha256,nothing)==serialized_content_sha256(sigma) || return nothing
+        (obs=observations,sigma_mc=sigma)
     catch
         nothing
     end
+end
+
+function write_mc_bin_diagnostics(file,identity,paths,bins,flux,sigma,samples,energy_seed,transport_seed_offset;cache_hit=false)
+    length(bins)==length(flux)==length(sigma) || error("MC diagnostic dimensions differ")
+    all(isfinite,flux) && all(x->isfinite(x) && x>=0,sigma) || error("MC diagnostic values must be finite and sampling errors nonnegative")
+    open(file,"w") do io
+        println(io,"identity,bin_idx,zenith_deg,azimuth_deg,slant_m,mc_flux,sigma_mc,samples,energy_seed,transport_seed,cache_hit")
+        for (k,b) in enumerate(bins)
+            path=paths[b]
+            println(io,join((identity,b,path.zenith,path.azimuth,path.surface_distance,flux[k],sigma[k],
+                samples,energy_seed,transport_seed_offset+k,cache_hit),','))
+        end
+    end
+    file
+end
+
+function export_inverse_mc_diagnostics(cache_path,identity,paths,valid,obs,sigma,args;cache_hit=false)
+    file=joinpath(dirname(cache_path),"lvd_mc_observations_$(identity[1:16]).csv")
+    write_mc_bin_diagnostics(file,identity,paths,valid,obs,sigma,args.inverse_mc_samples,
+        args.seed+40_000,args.seed+50_000;cache_hit=cache_hit)
+    metadata=Dict("identity"=>identity,"samples_per_bin"=>args.inverse_mc_samples,
+        "energy_seed"=>args.seed+40_000,"transport_seed_offset"=>args.seed+50_000,
+        "scope"=>"Synthetic flux observations retain marginal MC sampling error; energy samples are shared across bins, and cross-bin covariance is not stored. Solver observations and weights are unchanged.")
+    open(replace(file,r"\.csv$"=>".toml"),"w") do io;TOML.print(io,metadata);end
+    file
 end
 
 # --- fixed-path energy-loss MC observations for the inverse problem (cached) ----------------
@@ -1718,29 +1784,33 @@ function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfi
     cached=read_inverse_mc_cache(cache_path,identity,length(valid))
     if cached!==nothing
         println("  loaded content-verified MC observations ($(length(valid)) bins) from $(basename(cache_path))")
-        return cached
+        export_inverse_mc_diagnostics(cache_path,identity,paths,valid,cached.obs,cached.sigma_mc,args;cache_hit=true)
+        return cached.obs
     end
     mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, args.seed + 40_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
     println("  generating fixed-path energy-loss MC observations for $(length(valid)) bins (energy-loss straggling; scattering disabled, $(args.inverse_mc_samples) samples)...")
     obs = Vector{Float64}(undef, length(valid))
+    sigma_mc = similar(obs)
     Threads.@threads for k in eachindex(valid)
-        f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
+        f, sigma = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
             mc_samples, args.seed + 50_000 + k;
             straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
             scattering = false)
         obs[k] = f
+        sigma_mc[k] = sigma
     end
     try
         mktemp(dirname(cache_path)) do temporary,io
-            Serialization.serialize(io,(schema=2,identity=identity,obs=obs,
-                observations_sha256=serialized_content_sha256(obs)))
+            Serialization.serialize(io,(schema=3,identity=identity,obs=obs,sigma_mc=sigma_mc,
+                observations_sha256=serialized_content_sha256(obs),sigma_sha256=serialized_content_sha256(sigma_mc)))
             close(io)
             mv(temporary,cache_path;force=true)
         end
     catch e
         @warn "could not cache MC observations" exception=e
     end
+    export_inverse_mc_diagnostics(cache_path,identity,paths,valid,obs,sigma_mc,args)
     return obs
 end
 
@@ -2949,7 +3019,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
             # both pinned). A gentle ridge anchors κ_hard toward its previous-pass value so
             # MC noise in the calibration reference cannot make the recursion oscillate.
             calibrate_correction_to_mc(physics, shallow_flags, matcfg, match_site, paths,
-                copy(w_prev), energy_samples, args; fit_geometric = false,
+                copy(w_prev), energy_samples, args; fit_geometric = false, calibration_pass = recur,
                 kh_anchor = get_csda_correction().kappa_hard, kh_anchor_weight = 1.0e-3)
         end
         # (a) diagnostic global water-mix shape fit (reported, not added to the field)

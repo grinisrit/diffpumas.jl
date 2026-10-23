@@ -163,7 +163,7 @@ function revision_main(argv=ARGS)
     end
     vol,paths,shallow,w,flux,J=finals
     if o["calibrate"]=="true"
-        calargs=(correction=true,calibration_bins=min(ncase,length(paths)),calibration_mc_samples=nmc,
+        calargs=(correction=true,output_dir=out,dump_path=o["dump"],calibration_bins=min(ncase,length(paths)),calibration_mc_samples=nmc,
             energy_min=1e-3,energy_max=1e9,seed=seed,straggling=true,energy_threshold_low=100.0)
         calibrate_correction_to_mc(physics,shallow,mat,site,paths,zeros(length(w)),es,calargs)
         flux,J=assemble_forward_and_jacobian(physics,shallow,mat,site,paths,w,es;n_cells=length(w),threaded=false)

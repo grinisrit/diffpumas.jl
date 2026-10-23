@@ -144,13 +144,70 @@ end
         cache=joinpath(directory,"observations.bin");observations=[1.0,2.0]
         Serialization.serialize(cache,(sig=:historical,obs=observations))
         @test read_inverse_mc_cache(cache,identity,2)===nothing
-        record=(schema=2,identity=identity,obs=observations,
-            observations_sha256=serialized_content_sha256(observations))
+        record=(schema=3,identity=identity,obs=observations,sigma_mc=[0.1,0.2],
+            observations_sha256=serialized_content_sha256(observations),sigma_sha256=serialized_content_sha256([0.1,0.2]))
         Serialization.serialize(cache,record)
-        @test read_inverse_mc_cache(cache,identity,2)==observations
+        @test read_inverse_mc_cache(cache,identity,2)==(obs=observations,sigma_mc=[0.1,0.2])
         @test read_inverse_mc_cache(cache,key(bins=[2,1]),2)===nothing
         @test read_inverse_mc_cache(cache,identity,1)===nothing
+        diagnostic_paths=[(zenith=0.,azimuth=0.,surface_distance=1000.),(zenith=45.,azimuth=0.,surface_distance=1500.)]
+        diagnostic_args=(inverse_mc_samples=256,seed=42)
+        verified=read_inverse_mc_cache(cache,identity,2)
+        csv=export_inverse_mc_diagnostics(cache,identity,diagnostic_paths,[1,2],verified.obs,verified.sigma_mc,diagnostic_args;cache_hit=true)
+        records=readlines(csv)
+        @test length(records)==3
+        @test split(records[2],',')[7]=="0.1"
+        @test split(records[3],',')[7]=="0.2"
+        @test endswith(records[2],",true")
+        Serialization.serialize(cache,merge(record,(sigma_mc=[0.1,0.3],)))
+        @test read_inverse_mc_cache(cache,identity,2)===nothing
+        Serialization.serialize(cache,merge(record,(sigma_mc=[0.1,NaN],sigma_sha256=serialized_content_sha256([0.1,NaN]))))
+        @test read_inverse_mc_cache(cache,identity,2)===nothing
         Serialization.serialize(cache,merge(record,(obs=[1.0,2.1],)))
         @test read_inverse_mc_cache(cache,identity,2)===nothing
+    end
+end
+
+@testset "Calibration identities bind frozen correction and energy nodes" begin
+    mktempdir() do directory
+        dump=joinpath(directory,"physics.dump");write(dump,"identity fixture")
+        source=joinpath(directory,"source.jl");write(source,"source fixture")
+        args=(dump_path=dump,)
+        energies=[EnergySample(10.,0.,1.),EnergySample(20.,0.,2.)]
+        initial=(enabled=true,resid_a=1.0)
+        context(;coefficients=initial,nodes=energies,pass=1)=calibration_diagnostic_context(args,coefficients,nodes;fit_geometric=false,calibration_pass=pass)
+        identity(ctx)=inverse_mc_cache_identity(:physics,Bool[false],:material,:site,:paths,[.3],[1],ctx;source_paths=[source])
+        baseline=identity(context())
+        @test baseline!=identity(context(coefficients=(enabled=true,resid_a=1.1)))
+        @test baseline!=identity(context(nodes=[EnergySample(11.,0.,1.),energies[2]]))
+        @test baseline!=identity(context(pass=2))
+    end
+end
+
+@testset "Production cache hit reexports verified MC sampling errors" begin
+    mktempdir() do directory
+        dump=joinpath(directory,"physics.dump");write(dump,"cache identity fixture")
+        args=(dump_path=dump,inverse_mc_samples=256,seed=42)
+        material=MaterialConfig(1,2,3,4,2710.,1000.,0.,0.)
+        site=SiteConfig(1000.,30000.)
+        paths=[DirectionalPath(0.,0.,[CellSegment(1,100.)],100.,100.,0.,100.,true),
+               DirectionalPath(45.,90.,[CellSegment(1,150.)],150.,150.,0.,100.,true)]
+        valid=[2,1];water=[.3];shallow=Bool[false]
+        identity=inverse_mc_cache_identity(:fixture_physics,shallow,material,site,paths,water,valid,args)
+        cache=joinpath(directory,"observations.bin")
+        observations=[2.,1.];errors=[.2,.1]
+        Serialization.serialize(cache,(schema=3,identity=identity,obs=observations,sigma_mc=errors,
+            observations_sha256=serialized_content_sha256(observations),sigma_sha256=serialized_content_sha256(errors)))
+        # Fixture physics cannot transport: success proves this is the real hit
+        # branch, with the ordered bins and errors restored rather than sampled.
+        result=mc_observations_for_field(:fixture_physics,shallow,material,site,paths,water,valid,args;cache_path=cache)
+        @test result==observations
+        csv=joinpath(directory,"lvd_mc_observations_$(identity[1:16]).csv")
+        lines=readlines(csv)
+        @test split(lines[2],',')[2]=="2"
+        @test split(lines[2],',')[7]=="0.2"
+        @test split(lines[3],',')[2]=="1"
+        @test split(lines[3],',')[7]=="0.1"
+        @test all(line->endswith(line,",true"),lines[2:end])
     end
 end
