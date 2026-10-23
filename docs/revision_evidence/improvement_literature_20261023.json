@@ -1,0 +1,34 @@
+{
+  "retrieved_utc": "2026-10-23",
+  "provider": "Consensus",
+  "scope": "Background for proposed improvements, not new validation of DiffPumas",
+  "papers": [
+    {
+      "id": "3182ca3fa9df5e859104eff76b79da79",
+      "title": "Bayesian dual inversion of experimental telescope acceptance and integrated flux for geophysical muon tomography",
+      "text": "Density tomography of rock volumes with cosmic muons involves telescopes equipped with pixelized matrices of scintillator strips able to simultaneously measure the flux of muons in hundredths of directions. The resulting muon radiography images are a measure of the amount of matter integrated along each line of sight inside the geological target. This information constitutes the primary data at the root of muon density 3-D tomography. Before being used for either interpretation or tomography inversion, the radiographies must be corrected from artefacts due to imperfect detection capacity of the detection matrices. We present a correction method based on a Bayesian inversion to construct a probabilistic model of the distorted telescope acceptance from which undistorted radiographies may be obtained. The method also allows to simultaneously derive a stochastic model for the incident flux of muons. The resulting non-linear inverse problem is solved with the Metropolis-annealing algorithm, which allows to easily implement symmetry constraints to reduce the non-uniqueness. An inversion of real data acquired with one of our field muon telescopes is presented and discussed.\n\nKey takeaway: This paper presents a Bayesian inversion method for correcting telescope artefacts and obtaining undistorted radiographies in geophysical muon tomography, improving accuracy and reducing non-uniqueness.",
+      "url": "https://consensus.app/papers/bayesian-dual-inversion-of-experimental-telescope-lesparre-gibert/3182ca3fa9df5e859104eff76b79da79/?utm_source=chatgpt",
+      "metadata": {
+        "authors": "N. Lesparre, D. Gibert, J. Marteau",
+        "publish_year": "2012",
+        "journal": "Geophysical Journal International",
+        "volume": "188",
+        "pages": "490-497",
+        "citation_count": "22",
+        "doi": "10.1111/j.1365-246x.2011.05268.x"
+      }
+    },
+    {
+      "id": "4036adab4a3c510b97c64e97e09735b7",
+      "title": "Bayesian tomography with prior-knowledge-based parametrization and surrogate modeling",
+      "text": "We present a Bayesian tomography framework operating with prior-knowledge-based parametrization that is accelerated by surrogate models. Standard high-fidelity forward solvers solve wave equations with natural spatial parametrizations based on fine discretization. Similar parametrizations, typically involving tens of thousand of variables, are usually employed to parameterize the subsurface in tomography applications. When the data do not allow to resolve details at such finely parameterized scales, it is often beneficial to instead rely on a prior-knowledge-based parametrization defined on a lower dimension domain (or manifold). Due to the increased identifiability in the reduced domain, the concomitant inversion is better constrained and generally faster. We illustrate the potential of a prior-knowledge-based approach by considering ground penetrating radar (GPR) travel-time tomography in a crosshole configuration. An effective parametrization of the input (i.e., the permittivity distributions) and compression in the output (i.e., the travel-time gathers) spaces are achieved via data-driven principal component decomposition based on random realizations of the prior Gaussian-process model with a truncation determined by the performances of the standard solver on the full and reduced model domains. To accelerate the inversion process, we employ a high-fidelity polynomial chaos expansion (PCE) surrogate model. We show that a few hundreds design data sets is sufficient to provide reliable Markov chain Monte Carlo inversion. Appropriate uncertainty quantification is achieved by reintroducing the truncated higher-order principle components in the original model space after inversion on the manifold and by adapting a likelihood function that accounts for the fact that the truncated higher-order components are not completely located in the null-space.\n\nKey takeaway: Prior-knowledge-based parametrization and surrogate models in Bayesian tomography improve constrained and faster inversion of subsurface data, making it suitable for crosshole configurations.",
+      "url": "https://consensus.app/papers/bayesian-tomography-with-priorknowledgebased-meles-linde/4036adab4a3c510b97c64e97e09735b7/?utm_source=chatgpt",
+      "metadata": {
+        "authors": "G. Meles, N. Linde, Stefano Marelli",
+        "publish_year": "2022",
+        "citation_count": "12",
+        "doi": "10.1093/gji/ggac214"
+      }
+    }
+  ]
+}

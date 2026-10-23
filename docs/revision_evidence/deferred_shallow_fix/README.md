@@ -1,3 +1,5 @@
+> Applied after successful production source audits on 2026-10-23. The notes below describe the historical deferred review. Integrated package results and the computed-to-patched source transition are recorded in `../final_production_completion/`.
+
 # Deferred optional shallow-mixture correction
 
 The patch is **not applied**. It deletes only the shallow branch's pure-porous

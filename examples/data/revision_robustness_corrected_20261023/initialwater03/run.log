@@ -1,0 +1,131 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3], "address_space_bytes": 12884901888, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["/mnt/big_data/agent-builds/julia_pool_robustness_20261023.sh", "--startup-file=no", "--project=.", "examples/lvd_tomography.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--papermatch-fit-only", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6", "--zenith-step", "10", "--azimuth-step", "15", "--samples", "32", "--csda-quadrature", "midpoint", "--calibration-bins", "24", "--calibration-mc-samples", "8192", "--papermatch-recursions", "3", "--rock-density", "2710", "--seed", "20261022", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_corrected_20261023/initialwater03", "--papermatch-calibration-water", "0.3"]}
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 10.0 deg, phi by 15.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              20261022
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_corrected_20261023/initialwater03
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 42 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/144] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [144/144] theta=50.0 deg phi=345.0 deg R=2798.6 m
+
+Calibrating CSDA correction to fixed-path energy-loss MC on 24 bins (8192 MC samples/bin, energy-loss straggling; scattering disabled)...
+  fitted α_strag=1.000 (physical ½b(b+1) enhancement) κ_hard=0.000 (+ fitted geometric residual) | CSDA-vs-MC mean rel error 10.4% -> 0.9%
+
+================================================================
+ Single muon angular distribution — water-content reconstruction from the measured 2D LVD surface
+================================================================
+ base rock density = 2710 kg/m^3 (Gran Sasso rock, Kudryavtsev 2009); water-only field w in [0, 0.9]
+GN water-content match to the full measured 2D surface (rock=2710 kg/m^3, altitude=30.0 km)...
+Tracing geometry for 1359 measured-surface bins (0 <= theta <= 90.0 deg)...
+  aquifer prior: water restricted to 147 / 600 rock cells above 500.0 m (below surface)
+  [recursion 1/3] starting material fit
+  [recursion 1/3] IRLS outer 1/3: Gauss-Newton solve
+  [recursion 1/3] IRLS outer 2/3: Gauss-Newton solve
+  [recursion 1/3] IRLS outer 3/3: Gauss-Newton solve
+  [recursion 1/3] w0=0.899  s=4.578e+06  w mean=0.0322  rel resid=0.402  log-std=0.836  | dfield=1.00e+00 dcoef=-1.00e+00
+  [recursion 2/3] starting material fit
+  [recursion 2/3] re-calibrating CSDA->MC through the current reconstructed field (geometric residual frozen)...
+Calibrating CSDA correction to fixed-path energy-loss MC on 24 bins (8192 MC samples/bin, energy-loss straggling; scattering disabled)...
+  fitted α_strag=1.000 (physical ½b(b+1) enhancement) κ_hard=0.000 (frozen geometric residual) | CSDA-vs-MC mean rel error 6.2% -> 6.0%
+  [recursion 2/3] IRLS outer 1/3: Gauss-Newton solve
+  [recursion 2/3] IRLS outer 2/3: Gauss-Newton solve
+  [recursion 2/3] IRLS outer 3/3: Gauss-Newton solve
+  [recursion 2/3] w0=0.899  s=4.168e+06  w mean=0.0366  rel resid=0.378  log-std=0.791  | dfield=1.21e-01 dcoef=0.00e+00
+  [recursion 3/3] starting material fit
+  [recursion 3/3] re-calibrating CSDA->MC through the current reconstructed field (geometric residual frozen)...
+Calibrating CSDA correction to fixed-path energy-loss MC on 24 bins (8192 MC samples/bin, energy-loss straggling; scattering disabled)...
+  fitted α_strag=1.000 (physical ½b(b+1) enhancement) κ_hard=0.000 (frozen geometric residual) | CSDA-vs-MC mean rel error 5.5% -> 5.4%
+  [recursion 3/3] IRLS outer 1/3: Gauss-Newton solve
+  [recursion 3/3] IRLS outer 2/3: Gauss-Newton solve
+  [recursion 3/3] IRLS outer 3/3: Gauss-Newton solve
+  [recursion 3/3] w0=0.899  s=4.029e+06  w mean=0.0383  rel resid=0.372  log-std=0.775  | dfield=4.69e-02 dcoef=0.00e+00
+  global scale s=4.0286e+06 (free log-fit) ; reliable-bin s=4.0278e+06 (±2.6% from 319 vertical in-fit bins)
+  box saturation: 482/600 cells at dry floor (w=0), 0 at water ceiling (w=0.9; 0 in aquifer = water-insufficient directions)
+  rock density pinned at standard rock 2710 kg/m^3; global water-mix fraction w0=0.899
+  fit bins=687 (excluded 316 baseline-ratio outlier bins; theta<60: 667, theta>=60: 336, up to 86 deg)
+  norm=4.029e+06  rel resid (fit bins) 0.786 -> 0.372  log-std 1.324 -> 0.775
+  matched w: mean=0.038 std=0.127 min=0.000 max=0.863  box-pinned cells=482/600
+
+Paper-match-only outputs written to /home/roland/devspace/diffpumas.jl/examples/data/revision_robustness_corrected_20261023/initialwater03

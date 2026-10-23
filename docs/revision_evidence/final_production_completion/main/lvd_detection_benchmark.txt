@@ -1,0 +1,11 @@
+Detection benchmark — CSDA first-order (flux-gradient) statistics vs SART
+(deep lens w=0.9, 4 cells; DP≥3, 95% detection; Poisson channel)
+Method = optimal info-theory matched filter Ψ=Σ ζ_m k_m, ζ_m=(∂μ_m/∂χ)/μ_m (Benton et al. 2020).
+NO Gauss-Newton / gradient-descent reconstruction is used.
+
+  Ψ matched filter (optimal/Fisher)  τ₉₅ = 3.9608e+01
+  Φ unweighted plume-ROI sum         τ₉₅ = 4.4778e+01   (Ψ 1.13× better)
+  SART reconstruction detector       τ₉₅ = 1.0000e+02   (Ψ 2.52× better)
+
+ROI: 2002 / 2700 bins carry ≥10% of peak |∂flux/∂χ|.
+Ψ is the Neyman–Pearson optimal linear detector, so τ₉₅(Ψ) ≤ τ₉₅(any linear statistic).

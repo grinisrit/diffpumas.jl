@@ -1,0 +1,16 @@
+{
+  "julia1.10.12": {
+    "passed": 634,
+    "total": 634,
+    "seconds": 128.4,
+    "method": "Established isolated Julia1.10 environment Pkg.resolve(); Pkg.test(\"DiffPumas\")"
+  },
+  "julia1.11.7": {
+    "passed": 634,
+    "total": 634,
+    "seconds": 182.8,
+    "method": "Root project Pkg.test(allow_reresolve=false)"
+  },
+  "scope": "Full integrated package suites including77actual-helper shallow-recipe consistency checks; not stochastic optional-layer calibration validation. Sequential versions,8CPU affinity,2test threads,20GiB per-process address-space bound.",
+  "initial_julia110_attempt": "Root Julia1.11 Manifest contains unavailable StyledStrings stdlib; failure before assertions. Retained separately."
+}

@@ -1,8 +1,10 @@
-# Optional shallow-mixture dry-boundary inconsistency
+# Optional shallow-mixture dry-boundary correction
 
 A source inspection on 2026-10-23 found an inconsistency in the optional shallow
-porous branch. No transport simulation was run for this finding, and the frozen
-runtime has not been changed.
+porous branch. After production and reporting audits completed, the reviewed
+correction was applied: the stochastic material helper now uses the same
+continuous three-component recipe as the differentiable helpers, including at
+zero water. The historical diagnosis and verification scope follow.
 
 The branch requires all three conditions in
 [`is_shallow_porous`](../src/Tomography.jl#L253): the cell's shallow flag is true,
@@ -19,19 +21,19 @@ This also applies at `w=0`: the dry background is half porous material and half
 rock by mass. See [`cell_density`, lines 263–267](../src/Tomography.jl#L263)
 and [`cell_stopping_power`, lines 272–277](../src/Tomography.jl#L272).
 
-The stochastic material builder uses that same recipe for `w > 1e-12`, at
+Before the correction, the stochastic material builder used that recipe for `w > 1e-12`, at
 [`mc_cell_mixture_and_density`, lines 753–761](../src/Tomography.jl#L753).
-However, its special case at
-[lines 750–751](../src/Tomography.jl#L750) returns **pure porous material** for
+Its former special case at
+[lines 750–751](../src/Tomography.jl#L750) returned **pure porous material** for
 `w <= 1e-12`. Unless the porous and rock properties happen to coincide, its dry
-background therefore differs from the differentiable one and from its own
+background therefore differed from the differentiable one and from its own
 positive-water limit. The discontinuity concerns density and composition, not
 just the parameter's name. Optional-layer calibrations that compare dry and wet
 states can be affected.
 
-## Scope of the running production calculations
+## Scope of the completed production calculations
 
-The active corrected production configuration does not enable this branch:
+The completed corrected production configuration did not enable this branch:
 
 - The Julia CLI default is `porous_top_thickness = 0.0` in
   [`examples/lvd_tomography.jl`, line 1330](../examples/lvd_tomography.jl#L1330).
@@ -51,10 +53,10 @@ The active corrected production configuration does not enable this branch:
 These are configuration and log checks, not evidence that the optional branch
 is correct. They establish that this specific inconsistency is inactive in the
 recorded production and validation settings. It does not invalidate those
-calculations through an unused branch. Future runs that enable the shallow
-layer require a fix and targeted verification first.
+calculations through an unused branch. Future stochastic calibrations that enable the shallow layer still require
+stochastic validation of that configuration.
 
-## Minimal proposed correction and verification
+## Reviewed correction and verification plan (historical)
 
 Confirm the intended dry recipe before changing code. To preserve the current
 differentiable and positive-water convention, replace the pure-porous shortcut
@@ -76,9 +78,13 @@ After active source audits finish:
    layer enabled before using it in stochastic calibration. Distinguish this
    deterministic consistency check from validation of stochastic physics.
 
-No source or test changes, new simulations, or claims of a verified fix are
-part of this note.
+The original diagnostic note did not change source or tests. The correction and
+integrated regressions were applied after the frozen production completed.
 
 ## Deferred candidate validation (2026-10-23)
 
-A minimal candidate that removes the pure-porous shortcut has now passed 73 deterministic consistency checks in an isolated Julia process, with the original helper retained as a negative control. The candidate was defined under a separate method name; no tracked runtime file was changed. The reviewed patch, fixture, log and source-hash check are preserved in [`revision_evidence/deferred_shallow_fix/`](revision_evidence/deferred_shallow_fix/README.md). The fix remains unapplied while production is running. These tests establish mixture-recipe consistency, not stochastic-transport accuracy. Apply and run integrated package tests only after the production audits and strict reports finish.
+A minimal candidate that removes the pure-porous shortcut has now passed 73 deterministic consistency checks in an isolated Julia process, with the original helper retained as a negative control. The candidate was defined under a separate method name; no tracked runtime file was changed. The reviewed patch, fixture, log and source-hash check are preserved in [`revision_evidence/deferred_shallow_fix/`](revision_evidence/deferred_shallow_fix/README.md). This historical candidate result establishes mixture-recipe consistency, not stochastic-transport accuracy. The subsequent integrated test calls the actual package helper; final suite evidence and original-versus-patched source identities are in [`revision_evidence/final_production_completion/`](revision_evidence/final_production_completion/README.md).
+
+## Integrated validation after application
+
+Full package suites passed **634/634** on Julia 1.10.12 and Julia 1.11.7 after applying the correction and reporting patches. They include 77 assertions against the actual production helper covering independent mixture formulas, disable guards, constant-stopping slab energy and one-sided endpoint derivatives. This does not validate enabled-layer stochastic calibration.

@@ -1,3 +1,5 @@
+> Applied after successful production source audits on 2026-10-23. The notes below describe the historical deferred review. Integrated package results and the computed-to-patched source transition are recorded in `../final_production_completion/`.
+
 # Deferred reporting wording correction
 
 This patch is reviewed but **not applied** while production source audits are active. It changes comments, docstrings and explanatory report/console labels; numerical algorithms, public API names and CSV columns are preserved. The text qualifies weighted-residual amplitude scans, heuristic null-model scores, local fluctuation proxies and the centroid-based resolution diagnostic.

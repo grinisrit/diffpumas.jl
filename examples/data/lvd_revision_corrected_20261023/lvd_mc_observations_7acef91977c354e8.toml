@@ -1,0 +1,5 @@
+energy_seed = 40042
+transport_seed_offset = 50042
+scope = "Synthetic flux observations retain marginal MC sampling error; energy samples are shared across bins, and cross-bin covariance is not stored. Solver observations and weights are unchanged."
+identity = "7acef91977c354e8874014920270886c9ebf149fef48b2ce4073c39e80e97c4e"
+samples_per_bin = 1024

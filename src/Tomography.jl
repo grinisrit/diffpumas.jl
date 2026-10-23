@@ -93,17 +93,15 @@ const MC_STEP_EPSILON_M = 1e-7
 mutable struct CsdaCorrection
     enabled::Bool
     # MC-calibrated multiplicative flux correction applied per energy sample, split
-    # into two PHYSICALLY DISTINCT effects (see `csda_var_correction`):
+    # using two phenomenological soft/hard-loss proxy terms (see `csda_var_correction`):
     #   exp( +α · ½b(b+1) · V/E²   −   κ_hard · H/E ).
-    # The first term is the soft-straggling flux ENHANCEMENT: a Gaussian surface-
-    # energy spread of variance V, folded against a locally-power-law surface flux of
-    # spectral index b, enhances the transmitted flux by ½b(b+1)·V/E² (the power-law
-    # convolution moment). b is COMPUTED from the flux model, so the coefficient is
-    # parameter-free physics and α (`kappa_strag`) is only a near-unity calibration
-    # multiplier (default 1). The second term is the catastrophic-hard-loss DEFICIT
-    # (brem/pair/photonuclear removed stochastically by MIXED/MC but continuous in
-    # CSDA), κ_hard fitted. Splitting enhancement (+, pinned) from deficit (−, fitted)
-    # removes the κ_strag↔κ_hard degeneracy of the old two-suppression form.
+    # A Gaussian convolution motivates the first term only if V represents
+    # surface-energy variance. Here V instead accumulates local soft-loss moments
+    # without downstream energy-map sensitivities; H accumulates local restricted
+    # versus CSDA mean-loss differences. Neither is a computed stochastic surface-
+    # energy distribution. The spectral-curvature factor uses the flux index b;
+    # alpha defaults to one and kappa_hard is fitted. This is a low-dimensional
+    # MC-calibrated correction, not separate identification of soft/hard physics.
     kappa_strag::Float64       # α: near-unity multiplier on the computed straggling enhancement
     kappa_hard::Float64        # weight on H/E   (catastrophic hard-loss deficit)
     # Smooth geometric residual `exp(a + b·logL + c·logL² + d·cosθ)` (L = rock path
@@ -516,7 +514,7 @@ function _directional_flux_core(physics, matcfg::MaterialConfig, site::SiteConfi
     @inbounds for sample in energy_samples
         energy = sample.energy
         weight = one(eltype(wsel)) * 1.0
-        Vacc = zero(eltype(wsel)) + 0.0   # ∫Ω(E)dX  (surface-energy variance)
+        Vacc = zero(eltype(wsel)) + 0.0   # ∫Ω(E)dX  (local soft-loss variance proxy; no downstream energy-map weights)
         Hacc = zero(eltype(wsel)) + 0.0   # ∫(dedx_csda−dedx_mixed)dX (hard-loss)
         ok = true
         for k in 1:nseg
@@ -747,9 +745,6 @@ end
 
 function mc_cell_mixture_and_density(w::Float64, shallow::Bool, matcfg::MaterialConfig)
     if is_shallow_porous(shallow, matcfg)
-        if w <= 1e-12
-            return MaterialMixture(matcfg.porous_material), matcfg.porous_density
-        end
         porous_frac = 0.5 * (1.0 - w)
         rock_frac = 0.5 * (1.0 - w)
         mix = MaterialMixture(

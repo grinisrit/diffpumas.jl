@@ -1,0 +1,59 @@
+Water-content reconstruction from the measured 2D LVD single-muon angular surface
+(pinned overburden rock + a fitted global water-mix + a non-negative per-cell water field; no signed/denser-rock endpoint)
+rock density PINNED at the configured Gran Sasso value = 2710 kg/m^3 (rr.for; the data prefer lighter, lightening comes from water)
+FITTED global water-mix fraction w0 = 0.8986 (uniform 'wet standard rock' background, scale-invariant shape fit)
+water endpoint density = 1000 kg/m^3 (w=+0.9)
+primary/Gaisser altitude = 30 km
+
+Joint (rho_rock, water-field) GN match vs the full measured 2D azimuth/zenith surface:
+  match data: /home/roland/devspace/diffpumas.jl/examples/data/lvd_conf/lvd_single_muon_flux_2d.csv
+  covered bins: 1003 (theta<60: 667, theta>=60: 336, max theta 86 deg)
+  baseline-ratio outliers excluded from the fit: 315 (threshold 15.00x relative to median ratio)
+  forward->measured normalization: 3.9057e+06 (free log-fit)
+  reliable-bin scale: 3.8836e+06 ± 2.6% (from 319 near-vertical in-fit bins; the absolute anchor)
+  relative data residual (fit bins): baseline 0.7370 -> matched 0.3672
+  log model/measured std (scale-invariant shape misfit): 1.2658 -> 0.7557
+  matched water fraction: mean=0.032 max=0.870 nonzero(>1e-3)=117/600
+  water increased (w>0.02) in 97 / 600 cells
+  box-pinned cells (w=0 or w=0.9): 483 / 600 (dry floor 483, water ceiling 0)
+  water-insufficient (aquifer cells at the w=0.9 ceiling, water-only model under-explains): 0
+
+Posterior uncertainty, null-model comparison, and water-amplitude profile:
+  Laplace posterior (Gauss-Newton Hessian JtWJ + prior; conditional on the normalization s,
+  i.e. the per-cell SHAPE the angular data constrain; sigma calibrated to reduced-chi^2=1):
+    effective resolved DOF p_eff = 22.0 of 147 aquifer cells; median averaging-kernel resolution = 0.00
+    median calibrated posterior sigma_w = 0.26; cells at w/sigma >= 2: 16 / 147   (csv: lvd_water_uncertainty.csv)
+  Nominal objective-derived null-model scores. The supplied LVD intensities have no documented absolute count error,
+  so chi^2 is calibrated to reduced-chi^2 = 1 (variance scale phi = 3170; ndata = 688 fit bins):
+    raw chi^2: dry standard rock = 5.863e+06 ; uniform band water-mix = 1.161e+07 ; structured fit = 2.111e+06
+    water vs dry rock:         nominal Delta chi2/phi on p_eff=22.0 dof   -> score 28
+    structure vs uniform band: nominal Delta chi2/phi on p_eff-1=21.0 dof -> score 41
+    AIC (reduced): dry=1850 uniform=3663 fit=710 | BIC: dry=1850 uniform=3668 fit=810 (lower favoured)
+  These scores/intervals are conditional model diagnostics; unknown count/acceptance errors preclude validated discovery significance or interval coverage.
+  Water-amplitude profile: the reconstructed shape is rescaled and s refit, profiling the
+  overall level (mean band fraction w_bar) given the shape and priors. This constrains the
+  amplitude along the reconstructed shape; the residual shape freedom is in the per-cell posterior above.
+    GN-MAP w_bar = 0.133 ; amplitude-profile maximum-likelihood w_bar = 0.201
+    68% CI: w_bar in [0.195, 0.203] ; 95% CI: w_bar in [0.185, 0.210]  (NaN = not bounded within the grid)
+    csv: lvd_water_profile.csv (T, w_mean, chi2, delta_chi2, delta_chi2_calibrated)
+
+2D measured-vs-model map (CSDA surrogate used for the fit):
+  bins used: 1003
+  relative residual RMS: 45.7163
+  relative residual bias: 9.0888
+  csv: lvd_single_muon_2d_match.csv (per-bin measured/model/residual)
+
+Fixed-path stochastic energy-loss check of the reconstructed field (scattering disabled):
+  MC samples/bin: 8192
+  validated bins: 632 (theta<60: 552, stratified theta>=60: 80)
+  relative data residual (fit bins): reconstructed 0.3819  (CSDA fit 0.3672)
+  by depth: theta<60 0.3815 ; theta>=60 0.6560
+  log model/measured std: 0.7471  (CSDA 0.7557)
+  identical subset of 632 bins at fixed fitted scale 3.90568355e+06: dry-CSDA 0.62597; wet-CSDA 0.36692; wet-MC 0.38011
+  same subset with separately profiled scales: dry-CSDA 0.71741; wet-CSDA 0.36842; wet-MC 0.38185
+  subset scales: dry 7.91469023e+06; wet-CSDA 3.85785835e+06; wet-MC 3.79930704e+06
+  csv: lvd_mc_common_subset.csv and lvd_mc_common_subset_summary.csv preserve unscaled/common-scale comparisons
+  2D map residual RMS under MC: 1.3130
+  csv: lvd_single_muon_2d_mc_validation.csv (measured / fixed-path energy-loss MC model / residual)
+Caveat: the global forward->measured normalization absorbs the absolute flux scale;
+  this check compares energy-loss models on prescribed rays; it does not validate scattering, geometry, acceptance or uncertainty coverage.

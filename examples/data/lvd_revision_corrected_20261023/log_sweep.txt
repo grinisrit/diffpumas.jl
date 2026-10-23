@@ -1,0 +1,118 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "address_space_bytes": 38654705664, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "examples/lvd_tomography.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--rock-density", "2710", "--geometry", "grid", "--samples", "32", "--calibration-mc-samples", "8192", "--inverse-mc-samples", "1024", "--mc-samples", "1024", "--papermatch-mc-samples", "8192", "--csda-quadrature", "midpoint", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/lvd_revision_corrected_20261023", "--zenith-step", "2", "--azimuth-step", "4", "--reconstruction-sweep", "--sweep-realizations", "40", "--gd-iters", "30"]}
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   1024
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   30 / 1.0
+  Output dir:        /home/roland/devspace/diffpumas.jl/examples/data/lvd_revision_corrected_20261023
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 42 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Calibrating CSDA correction to fixed-path energy-loss MC on 48 bins (8192 MC samples/bin, energy-loss straggling; scattering disabled)...
+  fitted α_strag=1.000 (physical ½b(b+1) enhancement) κ_hard=0.000 (+ fitted geometric residual) | CSDA-vs-MC mean rel error 20.3% -> 1.9%
+
+  generating fixed-path energy-loss MC observations for 2700 bins (energy-loss straggling; scattering disabled, 1024 samples)...
+Reconstruction-accuracy sweep (NONLINEAR operator, fixed-path energy-loss MC obs): 13 exposures × 4 realizations...
+  τ=1.00e+05  RMSE  SART=0.143 MLEM=0.102 GD=0.125 GN=0.142
+  τ=2.15e+05  RMSE  SART=0.151 MLEM=0.101 GD=0.119 GN=0.147
+  τ=4.64e+05  RMSE  SART=0.141 MLEM=0.104 GD=0.116 GN=0.180
+  τ=1.00e+06  RMSE  SART=0.144 MLEM=0.102 GD=0.114 GN=0.116
+  τ=2.15e+06  RMSE  SART=0.150 MLEM=0.104 GD=0.104 GN=0.108
+  τ=4.64e+06  RMSE  SART=0.147 MLEM=0.104 GD=0.103 GN=0.100
+  τ=1.00e+07  RMSE  SART=0.146 MLEM=0.102 GD=0.103 GN=0.098
+  τ=2.15e+07  RMSE  SART=0.144 MLEM=0.103 GD=0.100 GN=0.099
+  τ=4.64e+07  RMSE  SART=0.144 MLEM=0.103 GD=0.102 GN=0.098
+  τ=1.00e+08  RMSE  SART=0.144 MLEM=0.102 GD=0.102 GN=0.099
+  τ=2.15e+08  RMSE  SART=0.144 MLEM=0.104 GD=0.101 GN=0.099
+  τ=4.64e+08  RMSE  SART=0.144 MLEM=0.103 GD=0.101 GN=0.099
+  τ=1.00e+09  RMSE  SART=0.144 MLEM=0.103 GD=0.100 GN=0.099
+  reconstruction-sweep outputs: /home/roland/devspace/diffpumas.jl/examples/data/lvd_revision_corrected_20261023/lvd_reconstruction_sweep.txt , /home/roland/devspace/diffpumas.jl/examples/data/lvd_revision_corrected_20261023/lvd_reconstruction_sweep.html
+
+Reconstruction-sweep outputs written to /home/roland/devspace/diffpumas.jl/examples/data/lvd_revision_corrected_20261023

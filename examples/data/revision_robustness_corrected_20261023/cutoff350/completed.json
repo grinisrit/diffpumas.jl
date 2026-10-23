@@ -1,0 +1,10 @@
+{
+  "completed_utc": "2026-10-23T10:16:39.960680+00:00",
+  "run_identity_sha256": "5f69892f1eadcbf147d55d6587677db9fdad0ca6c1f3d2b5e0ff25853b98320d",
+  "outputs_sha256": {
+    "lvd_fit_field.csv": "903f849fc045f4e2ab2d20121f2736484b8f858108a603cf00f375918e90bd99",
+    "lvd_fit_predictions.csv": "3c976c33c0f48e8e07b3ba710824ac3ac662326d338c0fa0a50bb0762bf79f87",
+    "lvd_recursion_status.txt": "d4e4cbf53bfdd3b9ae22df4ac8de1b7d097c4a52ad24874cf7e6b8cca346cf67",
+    "lvd_recursion_history.csv": "2b45680f04731bd19035b47de2a4cec774b0fc9e192e5c07f7dd4b2000722150"
+  }
+}

@@ -2581,12 +2581,14 @@ end
 # docs/muon_tomography_information_theory.md). The muon counts form a Poisson channel
 # k_m ~ Poisson(τ·μ_m); a perturbation χ gives μ_m → μ_m(1 + ζ_m·χ) with the relative
 # sensitivity ζ_m = (∂μ_m/∂χ)/μ_m = (J·Δw)_m / μ_m (our AD Jacobian over the baseline
-# flux). The Neyman–Pearson-optimal LINEAR statistic is the matched filter
+# flux). The locally Fisher-optimal linear score is the matched filter
 #   Ψ = Σ_m ζ_m k_m,
-# whose detection significance is DP = χ·√(τ · Σ_m (∂μ_m/∂χ)²/μ_m) = √(τ·F) — the Fisher
+# whose local Gaussian planning separation is χ·√(τ · Σ_m (∂μ_m/∂χ)²/μ_m) = √(τ·F) — the Fisher
 # information bound, ANALYTIC (no reconstruction, no GN/GD). Compared against the
 # unweighted plume-ROI sum Φ = Σ_{m∈ROI} k_m (Benton's baseline) and the SART
-# reconstruction detector. τ₉₅ = z²/F with z = 3 + Φ⁻¹(0.95) = 4.645 (95% above 3σ).
+# reconstruction detector. τ₉₅ = z²/F uses z = 3 + Φ⁻¹(0.95) = 4.645 as a nominal
+# Gaussian planning target, not a calibrated finite-contrast Poisson operating point.
+# The template remains first-order even for the configured finite 0.9 lens.
 function run_detection_benchmark(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
                                  volume, paths::Vector{DirectionalPath}, energy_samples, args;
                                  output_path::String, plot_path::String)
@@ -2618,10 +2620,11 @@ function run_detection_benchmark(physics, shallow_flags, matcfg::MaterialConfig,
     num = sum(s[roi]); den = sum(μ[roi])
     τ_phi = (den > 0 && num != 0) ? z95^2 * den / num^2 : Inf
 
-    # SART reconstruction detector with a PROPERLY FPR-CONTROLLED test (no GN/GD):
-    # threshold = empirical 3σ one-sided quantile of SART's OWN null distribution (which
-    # is non-Gaussian under positivity), then τ₉₅ = exposure for 95% detection power. This
-    # matches Ψ's operating point (3σ FPR, 95% power) so the comparison is apples-to-apples.
+    # SART planning comparator: Gaussian noise/reconstruction only at one τ0.
+    # A finite-sample null quantile and centered signal outputs are retained;
+    # only mean separation is shifted with sqrt(τ/τ0). Box clipping need not
+    # preserve distribution shape across exposures. This is not fresh Poisson
+    # power calibration; 3000 null draws give only ~4 expected tail exceedances.
     τ0 = sqrt(args.sweep_exp_min * args.sweep_exp_max)
     σ0 = sqrt.(μ ./ τ0); σ0 .= max.(σ0, 1e-12 * maximum(μ))
     excess = s
@@ -2644,6 +2647,7 @@ function run_detection_benchmark(physics, shallow_flags, matcfg::MaterialConfig,
     end
     τ_sart = sart_tau95_fpr(args.seed + 8000)
 
+    println("Detection scope: nominal local-Gaussian exposure estimates; finite first-order template and fixed-reference bounded-SART extrapolation. Exact false-positive rate/power not calibrated.")
     println("Detection benchmark (deep lens, DP≥3, 95% detection; no GN/GD):")
     println(@sprintf("  Ψ matched filter (optimal, Fisher): τ₉₅ = %.3e", τ_psi))
     println(@sprintf("  Φ ROI count sum (Benton baseline):  τ₉₅ = %.3e  (Ψ gain %.2f×)", τ_phi, τ_phi / τ_psi))
@@ -2654,13 +2658,15 @@ function run_detection_benchmark(physics, shallow_flags, matcfg::MaterialConfig,
         println(io, "(deep lens w=$(args.lens_w), $(length(lens_cells)) cells; DP≥3, 95% detection; Poisson channel)")
         println(io, "Method = optimal info-theory matched filter Ψ=Σ ζ_m k_m, ζ_m=(∂μ_m/∂χ)/μ_m (Benton et al. 2020).")
         println(io, "NO Gauss-Newton / gradient-descent reconstruction is used.")
+        println(io, "Scope: nominal Gaussian planning estimates, not certified 3sigma FPR/95% power. Finite lens uses a dry-Jacobian first-order template.")
+        println(io, "SART: 3000 null/600 signal Gaussian reconstructions at one reference exposure; mean-only sqrt(exposure) extrapolation with fixed centered outputs and threshold. Null tail has about 4 expected samples.")
         println(io)
         println(io, @sprintf("  %-34s τ₉₅ = %.4e", "Ψ matched filter (optimal/Fisher)", τ_psi))
         println(io, @sprintf("  %-34s τ₉₅ = %.4e   (Ψ %.2f× better)", "Φ unweighted plume-ROI sum", τ_phi, τ_phi / τ_psi))
         println(io, @sprintf("  %-34s τ₉₅ = %.4e   (Ψ %.2f× better)", "SART reconstruction detector", τ_sart, τ_sart / τ_psi))
         println(io)
         println(io, @sprintf("ROI: %d / %d bins carry ≥10%% of peak |∂flux/∂χ|.", count(roi), length(s)))
-        println(io, "Ψ is the Neyman–Pearson optimal linear detector, so τ₉₅(Ψ) ≤ τ₉₅(any linear statistic).")
+        println(io, "Within the local Fisher/baseline-variance approximation, Ψ maximizes linear-statistic signal-to-noise; this does not establish exact finite-contrast Poisson power or a calibrated comparison to bounded SART.")
     end
 
     methods = ["Ψ matched filter", "Φ ROI sum", "SART recon"]
@@ -2782,11 +2788,13 @@ function run_detection_contrast_sweep(physics, shallow_flags, matcfg::MaterialCo
 
     contrasts = [0.05, 0.1, 0.2, 0.4, 0.8]
     rows = NamedTuple[]
+    println("Detection contrast scope: nominal local-Gaussian planning and fixed-reference bounded-SART extrapolation; no certified FPR/power. 2000 null draws give about 2.7 expected tail samples.")
     println("Detection gain vs contrast (Ψ matched filter vs SART, FPR-controlled)...")
     for (ci, χ) in enumerate(contrasts)
         s = χ .* s_unit
         τ_psi = z95^2 / sum(s .^ 2 ./ μ)
-        # SART τ95 (FPR-controlled) at this contrast; reference exposure scaled so noise ~ signal
+        # Nominal SART τ95 extrapolation at this contrast; τ0 is fixed below.
+        # No new Gaussian/Poisson draws or reconstruction are made during bisection.
         τ0 = τ0base
         σ0 = sqrt.(μ ./ τ0); σ0 .= max.(σ0, 1e-12 * maximum(μ))
         rng = MersenneTwister(args.seed + 9100 + ci); Mn = 2000; Ms = 500
@@ -2810,6 +2818,7 @@ function run_detection_contrast_sweep(physics, shallow_flags, matcfg::MaterialCo
     open(output_path, "w") do io
         println(io, "Detection efficiency gain Ψ (CSDA matched filter) vs SART, vs anomaly contrast")
         println(io, "(deep lens; 95% detection, 3σ FPR-controlled; no GN/GD)")
+        println(io, "Legacy target labels above are nominal: fixed-reference Gaussian SART extrapolation, not certified FPR/power. 2000 null/500 signal reconstructions; approximately 2.7 expected null-tail exceedances; first-order signal at all contrasts.")
         println(io, "  " * rpad("contrast", 10) * rpad("Ψ τ95", 13) * rpad("SART τ95", 13) * "gain")
         for r in rows
             println(io, "  " * rpad(@sprintf("%.2f", r.χ), 10) * rpad(@sprintf("%.3e", r.psi), 13) *
@@ -3200,15 +3209,15 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     flush(stdout)
     args.papermatch_fit_only && return (water=w_matched,converged=recursion_converged,passes=length(recursion_rows))
 
-    # --- Rigorous inverse-problem statistics: posterior uncertainty map (Laplace),
-    # null-model comparison, and nuisance-parameter (absolute-level) profiling.
-    # Statistical weights are the pure Poisson × DEM down-weight on the fit bins
-    # (no robust/conditioning rescale): an adopted weighting convention because
-    # published intensities have no known absolute count covariance. The Laplace
-    # posterior is CONDITIONAL on the normalisation s (the per-cell shape the
-    # angular data constrain); the absolute level, degenerate with s, is left to
-    # the inventory profile.
+    # --- Conditional curvature and separate weighted-residual diagnostics.
+    # W_stat below omits both the Cauchy factors and median renormalization used
+    # in the measured-field IRLS solves. Its JtWJ + fixed prior is therefore NOT
+    # the final IRLS-objective Hessian. The evaluated field is not verified to be
+    # a mode/stationary point under these changed weights. Its inverse and the
+    # post-fit empirical multiplier are conditional diagnostics, not calibrated
+    # posterior covariance. Legacy API/CSV/report result names remain unchanged.
     println("Posterior uncertainty + null-model tests + absolute-level profile...")
+    println("Curvature scope: diagnostic weights omit fitting Cauchy factors and median renormalization; evaluated field is not verified as a mode under these weights. Legacy posterior/sigma labels do not establish calibrated posterior covariance.")
     obs_stat = meas_v ./ s
     W_stat = fit_mask .* wdem .* (args.exposure ./ max.(obs_stat, 1e-300))
     flux_w = w -> flux_only_at(rho_fit, w)
@@ -3230,16 +3239,16 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     res_med = isempty(aq_idx) ? 0.0 : median(post.resolution[aq_idx])
     z_resolved = count(i -> z_cal[i] >= 2.0, aq_idx)
     wbar_map = prof.T_map / n_aq          # mean band fraction at the GN MAP
-    wbar_min = prof.w_mean_min            # amplitude-profile maximum-likelihood level
+    wbar_min = prof.w_mean_min            # weighted-residual scan minimum
     println(@sprintf("  posterior (Laplace, conditional on s; σ calibrated to reduced-χ²=1): p_eff=%.1f effective DOF of %d cells; median resolution=%.2f; median σ_w=%.2f; %d cells at w/σ≥2",
                      post.p_eff, length(aq_idx), res_med, sig_med, z_resolved))
     println(@sprintf("  nominal objective scores (variance rescaling φ=%.0f): water-vs-dry %.0f; structure-vs-uniform %.0f  [χ² dry=%.3e unif=%.3e fit=%.3e, ndata=%d]",
                      nulls.var_scale, nulls.sigma_dry, nulls.sigma_unif,
                      nulls.chi2_dry, nulls.chi2_unif, nulls.chi2_fit, nulls.ndata))
-    println("  Scores and intervals are conditional on model/weight assumptions; unknown LVD count/acceptance uncertainties prevent validated discovery significance or coverage.")
-    println(@sprintf("  model selection: AIC dry=%.0f unif=%.0f fit=%.0f | BIC dry=%.0f unif=%.0f fit=%.0f (lower favoured)",
+    println("  Heuristic scores and reference crossings are descriptive; no likelihood significance or confidence coverage is established.")
+    println(@sprintf("  heuristic legacy AIC score: dry=%.0f unif=%.0f fit=%.0f | legacy BIC score: dry=%.0f unif=%.0f fit=%.0f (lower favoured)",
                      nulls.aic.dry, nulls.aic.unif, nulls.aic.fit, nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
-    println(@sprintf("  amplitude profile (shape fixed, s profiled out): GN-MAP w̄=%.3f; profile-ML w̄=%.3f; 68%% CI w̄∈[%.3f, %.3f]; 95%% CI w̄∈[%.3f, %.3f]",
+    println(@sprintf("  box-clipped amplitude scan (log-ratio normalization): fitted w̄=%.3f; scan-minimum w̄=%.3f; legacy ci68 reference crossings [%.3f, %.3f]; legacy ci95 reference crossings [%.3f, %.3f]",
                      wbar_map, wbar_min, prof.ci68[1], prof.ci68[2], prof.ci95[1], prof.ci95[2]))
     unc_csv = joinpath(args.output_dir, "lvd_water_uncertainty.csv")
     open(unc_csv, "w") do io
@@ -3371,22 +3380,22 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     pm_txt = joinpath(args.output_dir, "lvd_single_muon_angular_distribution.txt")
     open(pm_txt, "w") do io
         println(io, "Water-content reconstruction from the measured 2D LVD single-muon angular surface")
-        println(io, "(pinned overburden rock + a fitted global water-mix + a non-negative per-cell water field; no signed/denser-rock endpoint)")
-        println(io, @sprintf("rock density PINNED at the configured Gran Sasso value = %.0f kg/m^3 (rr.for; the data prefer lighter, lightening comes from water)",
+        println(io, "(pinned overburden rock and a non-negative per-cell replacement-mass-fraction field; separate uniform-support w0 diagnostic is NOT added to that field; no signed/denser-rock endpoint)")
+        println(io, @sprintf("rock density PINNED at the configured Gran Sasso value = %.0f kg/m^3 (adopted fixed reference; not fitted here and no denser-rock alternative tested)",
                              rho_fit))
-        println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (uniform 'wet standard rock' background, scale-invariant shape fit)",
+        println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (separate uniform-support shape-fit diagnostic; not an additional background component)",
                              w0_fit))
-        println(io, @sprintf("water endpoint density = %.0f kg/m^3 (w=+%.1f)", matcfg.water_density, MAX_WATER_FRACTION))
+        println(io, @sprintf("water endpoint density = %.0f kg/m^3 (pure-water material at w=1; configured mixture upper bound w=%.1f)", matcfg.water_density, MAX_WATER_FRACTION))
         println(io, @sprintf("primary/Gaisser altitude = %.0f km", args.primary_altitude_km))
         println(io)
-        println(io, "Joint (rho_rock, water-field) GN match vs the full measured 2D azimuth/zenith surface:")
+        println(io, "Water-field GN fit with rho_rock pinned, against retained bins of the measured 2D azimuth/zenith surface:")
         println(io, @sprintf("  match data: %s", args.match_data))
         println(io, @sprintf("  covered bins: %d (theta<60: %d, theta>=60: %d, max theta %.0f deg)",
                              length(valid_bins), n_vert, n_horiz, maximum(match_zen[valid_bins])))
         println(io, @sprintf("  baseline-ratio outliers excluded from the fit: %d (threshold %.2fx relative to median ratio)", n_art, args.papermatch_mask_ratio))
         println(io, @sprintf("  forward->measured normalization: %.4e%s", s,
                              args.papermatch_abs_scale > 0.0 ? " (PINNED, absolute)" : " (free log-fit)"))
-        println(io, @sprintf("  reliable-bin scale: %.4e ± %.1f%% (from %d near-vertical in-fit bins; the absolute anchor)",
+        println(io, @sprintf("  reliable-bin scale: %.4e ± %.1f%% (from %d near-vertical in-fit bins; fitted-model scale diagnostic, not independent absolute calibration)",
                              s_reliable, isnan(s_relsd) ? 0.0 : 100 * s_relsd, length(vert_fit)))
         println(io, @sprintf("  relative data residual (fit bins): baseline %.4f -> matched %.4f", res_base, res_m))
         println(io, @sprintf("  log model/measured std (scale-invariant shape misfit): %.4f -> %.4f", log_std_base, log_std_m))
@@ -3398,6 +3407,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  water-insufficient (aquifer cells at the w=%.1f ceiling, water-only model under-explains): %d",
                              MAX_WATER_FRACTION, aq_ceiling))
         println(io)
+        println(io, "Curvature scope: JtWJ+prior uses weights without fitting Cauchy factors or median renormalization; it is not the final IRLS-objective Hessian.")
+        println(io, "The fitted point is not verified as a mode under those changed weights. Inverse curvature and empirical rescaling are conditional diagnostics, not calibrated posterior covariance; legacy result names below are retained.")
         println(io, "Posterior uncertainty, null-model comparison, and water-amplitude profile:")
         println(io, "  Laplace posterior (Gauss-Newton Hessian JtWJ + prior; conditional on the normalization s,")
         println(io, "  i.e. the per-cell SHAPE the angular data constrain; sigma calibrated to reduced-chi^2=1):")
@@ -3414,15 +3425,15 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                              post.p_eff, nulls.sigma_dry))
         println(io, @sprintf("    structure vs uniform band: nominal Delta chi2/phi on p_eff-1=%.1f dof -> score %.0f",
                              max(post.p_eff - 1, 0.0), nulls.sigma_unif))
-        println(io, @sprintf("    AIC (reduced): dry=%.0f uniform=%.0f fit=%.0f | BIC: dry=%.0f uniform=%.0f fit=%.0f (lower favoured)",
+        println(io, @sprintf("    heuristic legacy AIC score: dry=%.0f uniform=%.0f fit=%.0f | legacy BIC score: dry=%.0f uniform=%.0f fit=%.0f (lower favoured)",
                              nulls.aic.dry, nulls.aic.unif, nulls.aic.fit,
                              nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
-        println(io, "  These scores/intervals are conditional model diagnostics; unknown count/acceptance errors preclude validated discovery significance or interval coverage.")
-        println(io, "  Water-amplitude profile: the reconstructed shape is rescaled and s refit, profiling the")
-        println(io, "  overall level (mean band fraction w_bar) given the shape and priors. This constrains the")
-        println(io, "  amplitude along the reconstructed shape; the residual shape freedom is in the per-cell posterior above.")
-        println(io, @sprintf("    GN-MAP w_bar = %.3f ; amplitude-profile maximum-likelihood w_bar = %.3f", wbar_map, wbar_min))
-        println(io, @sprintf("    68%% CI: w_bar in [%.3f, %.3f] ; 95%% CI: w_bar in [%.3f, %.3f]  (NaN = not bounded within the grid)",
+        println(io, "  These heuristic scores/reference crossings are not likelihood inference or calibrated confidence bounds.")
+        println(io, "  Mixture-amplitude scan: the fitted field is scaled and box-clipped; log-ratio normalization is refit.")
+        println(io, "  The variance weights change with normalization; no prior penalty or likelihood-normalization terms enter.")
+        println(io, "  Clipping can change the relative pattern. The scan is neither a profile likelihood nor inventory inference.")
+        println(io, @sprintf("    fitted w_bar = %.3f ; weighted-residual scan-minimum w_bar = %.3f", wbar_map, wbar_min))
+        println(io, @sprintf("    legacy ci68/ci95 reference crossings: [%.3f, %.3f] / [%.3f, %.3f] (not confidence bounds; NaN = no grid crossing)",
                              prof.ci68[1], prof.ci68[2], prof.ci95[1], prof.ci95[2]))
         println(io, "    csv: lvd_water_profile.csv (T, w_mean, chi2, delta_chi2, delta_chi2_calibrated)")
         println(io)

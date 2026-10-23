@@ -1,0 +1,153 @@
+LVD tomography validation summary
+geometry = grid
+n_cells = 600
+comparison: diff-CSDA + Zygote   vs   fixed-path energy-loss MC (straggling, scattering disabled) + finite difference
+
+Case 1: lowZenith_highFlux
+  direction: theta=25.0 deg phi=359.0 deg
+  cell: 55 at (-500.0, 500.0, 159.8) m
+  baseline water fraction: 0.000
+  FD interval: [0.000, 0.050]
+  flux_csda: 1.036019e-03
+  flux_mc:   9.678154e-04 +/- 7.46e-05
+  flux:  6.58 % mismatch | -0.91 sigma | AGREE (<2 sigma)
+  grad_csda: 2.730375e-03
+  grad_fd:   1.995266e-03 +/- 2.23e-03
+  grad:  26.92 % mismatch | -0.33 sigma | AGREE (<2 sigma)
+
+Case 2: lowZenith_lowFlux
+  direction: theta=29.0 deg phi=90.0 deg
+  cell: 56 at (500.0, 500.0, 159.8) m
+  baseline water fraction: 0.000
+  FD interval: [0.000, 0.050]
+  flux_csda: 5.865924e-04
+  flux_mc:   4.943983e-04 +/- 3.79e-05
+  flux:  15.72 % mismatch | -2.43 sigma | TENSION (>2 sigma)
+  grad_csda: 1.452205e-03
+  grad_fd:   1.071985e-03 +/- 1.13e-03
+  grad:  26.18 % mismatch | -0.34 sigma | AGREE (<2 sigma)
+
+Case 3: highZenith_highFlux
+  direction: theta=30.0 deg phi=181.0 deg
+  cell: 45 at (-500.0, -500.0, 159.8) m
+  baseline water fraction: 0.000
+  FD interval: [0.000, 0.050]
+  flux_csda: 9.401060e-04
+  flux_mc:   8.448332e-04 +/- 6.51e-05
+  flux:  10.13 % mismatch | -1.46 sigma | AGREE (<2 sigma)
+  grad_csda: 2.554837e-03
+  grad_fd:   1.371500e-03 +/- 1.92e-03
+  grad:  46.32 % mismatch | -0.62 sigma | AGREE (<2 sigma)
+
+Case 4: highZenith_lowFlux
+  direction: theta=51.0 deg phi=157.0 deg
+  cell: 46 at (500.0, -500.0, 159.8) m
+  baseline water fraction: 0.000
+  FD interval: [0.000, 0.050]
+  flux_csda: 5.839448e-04
+  flux_mc:   4.916117e-04 +/- 4.00e-05
+  flux:  15.81 % mismatch | -2.31 sigma | TENSION (>2 sigma)
+  grad_csda: 2.016630e-03
+  grad_fd:   2.822111e-03 +/- 1.27e-03
+  grad:  39.94 % mismatch | +0.63 sigma | AGREE (<2 sigma)
+
+Case 5: midZenith_peak
+  direction: theta=25.0 deg phi=24.0 deg
+  cell: 156 at (500.0, 500.0, 479.4) m
+  baseline water fraction: 0.300
+  FD interval: [0.250, 0.350]
+  flux_csda: 8.966586e-04
+  flux_mc:   8.232247e-04 +/- 6.35e-05
+  flux:  8.19 % mismatch | -1.16 sigma | AGREE (<2 sigma)
+  grad_csda: 1.096199e-03
+  grad_fd:   2.774948e-04 +/- 8.69e-04
+  grad:  74.69 % mismatch | -0.94 sigma | AGREE (<2 sigma)
+
+Case 6: globalPeak
+  direction: theta=43.0 deg phi=161.0 deg
+  cell: 146 at (500.0, -500.0, 479.4) m
+  baseline water fraction: 0.300
+  FD interval: [0.250, 0.350]
+  flux_csda: 6.915183e-04
+  flux_mc:   6.590155e-04 +/- 5.06e-05
+  flux:  4.70 % mismatch | -0.64 sigma | AGREE (<2 sigma)
+  grad_csda: 1.004114e-03
+  grad_fd:   9.291011e-04 +/- 7.36e-04
+  grad:  7.47 % mismatch | -0.10 sigma | AGREE (<2 sigma)
+
+Case 7: globalPeak
+  direction: theta=26.0 deg phi=359.0 deg
+  cell: 255 at (-500.0, 500.0, 799.0) m
+  baseline water fraction: 0.500
+  FD interval: [0.450, 0.550]
+  flux_csda: 1.027833e-03
+  flux_mc:   9.132277e-04 +/- 7.09e-05
+  flux:  11.15 % mismatch | -1.62 sigma | AGREE (<2 sigma)
+  grad_csda: 8.859499e-04
+  grad_fd:   1.694584e-03 +/- 9.58e-04
+  grad:  91.27 % mismatch | +0.84 sigma | AGREE (<2 sigma)
+
+Case 8: globalPeak
+  direction: theta=26.0 deg phi=359.0 deg
+  cell: 155 at (-500.0, 500.0, 479.4) m
+  baseline water fraction: 0.500
+  FD interval: [0.450, 0.550]
+  flux_csda: 1.027833e-03
+  flux_mc:   9.328328e-04 +/- 7.14e-05
+  flux:  9.24 % mismatch | -1.33 sigma | AGREE (<2 sigma)
+  grad_csda: 8.435024e-04
+  grad_fd:   1.286409e-03 +/- 1.05e-03
+  grad:  52.51 % mismatch | +0.42 sigma | AGREE (<2 sigma)
+
+Case 9: globalPeak
+  direction: theta=28.0 deg phi=181.0 deg
+  cell: 245 at (-500.0, -500.0, 799.0) m
+  baseline water fraction: 0.500
+  FD interval: [0.450, 0.550]
+  flux_csda: 9.642184e-04
+  flux_mc:   8.251569e-04 +/- 6.45e-05
+  flux:  14.42 % mismatch | -2.16 sigma | TENSION (>2 sigma)
+  grad_csda: 8.386807e-04
+  grad_fd:   2.058056e-04 +/- 9.23e-04
+  grad:  75.46 % mismatch | -0.69 sigma | AGREE (<2 sigma)
+
+Case 10: globalPeak
+  direction: theta=28.0 deg phi=181.0 deg
+  cell: 145 at (-500.0, -500.0, 479.4) m
+  baseline water fraction: 0.500
+  FD interval: [0.450, 0.550]
+  flux_csda: 9.642184e-04
+  flux_mc:   9.020475e-04 +/- 6.94e-05
+  flux:  6.45 % mismatch | -0.90 sigma | AGREE (<2 sigma)
+  grad_csda: 7.985196e-04
+  grad_fd:   8.142385e-04 +/- 9.64e-04
+  grad:  1.97 % mismatch | +0.02 sigma | AGREE (<2 sigma)
+
+Case 11: globalPeak
+  direction: theta=25.0 deg phi=24.0 deg
+  cell: 256 at (500.0, 500.0, 799.0) m
+  baseline water fraction: 0.500
+  FD interval: [0.450, 0.550]
+  flux_csda: 8.966586e-04
+  flux_mc:   8.117441e-04 +/- 6.37e-05
+  flux:  9.47 % mismatch | -1.33 sigma | AGREE (<2 sigma)
+  grad_csda: 7.646762e-04
+  grad_fd:   9.373273e-04 +/- 9.31e-04
+  grad:  22.58 % mismatch | +0.19 sigma | AGREE (<2 sigma)
+
+Case 12: globalPeak
+  direction: theta=34.0 deg phi=164.0 deg
+  cell: 246 at (500.0, -500.0, 799.0) m
+  baseline water fraction: 0.500
+  FD interval: [0.450, 0.550]
+  flux_csda: 7.598775e-04
+  flux_mc:   7.369124e-04 +/- 5.77e-05
+  flux:  3.02 % mismatch | -0.40 sigma | AGREE (<2 sigma)
+  grad_csda: 6.853741e-04
+  grad_fd:   6.353803e-04 +/- 8.04e-04
+  grad:  7.29 % mismatch | -0.06 sigma | AGREE (<2 sigma)
+
+Aggregate over 12 cases (fixed-path energy-loss MC: straggling on, scattering disabled):
+  flux within 2 sigma: 9/12   | median |z| = 1.33
+  grad within 2 sigma: 12/12   | median |z| = 0.38
+  note: raise --mc-samples / --validation-cases to tighten the MC error bars.

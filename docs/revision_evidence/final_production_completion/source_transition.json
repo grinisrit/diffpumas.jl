@@ -1,0 +1,25 @@
+{
+  "changes": {
+    "examples/lvd_tomography.jl": {
+      "computed_source_sha256": "ee72694bc005e3b6d0d1ec124b559f4ca8fd0b223897bf1cd0d506806919efe4",
+      "patched_source_sha256": "47586fd17f705f4386b1345687e37e5dcad3ed213b2ca1ed046eed3f4f415e63"
+    },
+    "src/Tomography.jl": {
+      "computed_source_sha256": "d0f01f049db5fcb40673585f6240f91d42f9a549fcc364a4a5f44b783dde30fe",
+      "patched_source_sha256": "ad871648bed1dc448fa82b0bf66838b46f0e9640281a28ef92aacc350b350a90"
+    },
+    "src/Tomography_inverse.jl": {
+      "computed_source_sha256": "3a0889d38799e6ba9b69a58e0411d875e353a3763254d319a85a1c670fdbec2b",
+      "patched_source_sha256": "d5af41d37d8c87fb10bb85495fcd47635be3936914741192d37d8045ee3dd3de"
+    },
+    "test/runtests.jl": {
+      "computed_source_sha256": "ea42cc21cbd95095483298b6d86803455495724de3acb69010b2671186818a65",
+      "patched_source_sha256": "6ec179b11d9f798bee7592c126f6569ef3a9ceba41a6028084b4ed45b0191d1d"
+    }
+  },
+  "scope": "Production finished before patch application. Optional porous layer thickness was zero, so the corrected shallow branch was inactive. Reporting edits preserve numeric algorithms and machine columns. No claim of recomputation under the patched source.",
+  "pre_patch_repository_head": "f5a9b3e1891898fdc92864c2bc336d3388c16e95",
+  "added_regression_sha256": {
+    "test/test_shallow_mixture.jl": "042f3828588bf25a88b976576d787020eee8feb6a8285f3a597ae544a8d4c130"
+  }
+}

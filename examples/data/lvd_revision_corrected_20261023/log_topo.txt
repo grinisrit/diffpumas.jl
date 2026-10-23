@@ -1,0 +1,7 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "address_space_bytes": 38654705664, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "examples/export_lvd_topography.jl", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/lvd_revision_corrected_20261023"]}
+Building LVD elevation map from nm_c.inc + cross-section geometry…
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Wrote /home/roland/devspace/diffpumas.jl/examples/data/lvd_revision_corrected_20261023/lvd_topography_grid.csv  (261×261 nodes, elev 600–2911 m, detector at 963 m a.s.l.)

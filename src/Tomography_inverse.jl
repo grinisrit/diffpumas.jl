@@ -727,7 +727,10 @@ via `depth_edges`) and by azimuthal direction about the detector axis
 `fwhm[ndepth, nazim]` (NaN where empty), the cell `counts`, the depth-bin midpoints
 `depths`, azimuth-bin midpoints `azimuths`, and the per-depth geometric floor
 `max(cell_size_m, depth · Δθ)`. Pass all cells (above a minimum depth) to cover
-all directions and all depths.
+all directions and all depths. Counts include only finite recovered PSFs; invalid
+PSFs are skipped, so zero counts do not imply absence of geometric cells.
+The floor is a reporting reference, not an isotropic physical resolution bound;
+for VoxelVolume the supplied cell-size estimate uses vertical spacing only.
 """
 function resolution_map(reconstruct, centroids::AbstractMatrix{<:Real},
                         baseline::AbstractVector{<:Real},
@@ -772,7 +775,7 @@ end
 #   * the Laplace posterior gives the CONDITIONAL (given the global normalisation
 #     s) per-cell SHAPE uncertainty — what the angular data constrain;
 #   * the inventory profile gives the ABSOLUTE-LEVEL uncertainty — the direction
-#     that is degenerate with s and is therefore left to a 1-D profile likelihood.
+#     that is degenerate with s and is examined separately by a weighted-residual amplitude scan.
 # ===========================================================================
 
 """
@@ -850,18 +853,15 @@ end
     null_model_tests(flux_only, w_map, w0_uniform, free, meas, fit_mask, wdem,
                      exposure; p_eff) -> NamedTuple
 
-Likelihood-ratio comparison of the structured reconstruction against two nulls:
-`N0` dry standard rock (`w≡0`) and `N1` a uniform band water-mix (`w≡w0` on
-`free`). Reports weighted χ² for each, `Δχ²` against the effective added DOF
-(`p_eff` for dry→fit, `p_eff−1` for uniform→fit), a Wilson–Hilferty Gaussian
-significance, and AIC/BIC (with effective parameter counts) so the extra water
-cells are penalised, not merely rewarded.
-
-The published LVD intensities carry no absolute count uncertainty, so `exposure`
-only sets an arbitrary overall χ² scale. We therefore CALIBRATE to a reduced χ²
-of unity: the variance scale `φ = χ²_fit/(ndata−p_eff)` is estimated from the
-fit residuals and the significances use `Δχ²/φ` (an F-test), making them
-independent of the nominal exposure. `φ` is returned as `var_scale`.
+Exploratory weighted-residual comparison of the structured fit with dry rock
+and a uniform-support mixture. Each candidate refits normalization by a log-ratio
+rule, which also changes its variance proxy. The quadratic residual omits
+likelihood-normalization terms and is not a specified maximized likelihood.
+Legacy `sigma_*`, `aic` and `bic` fields retain heuristic Wilson–Hilferty and
+penalty-based scores for compatibility; they are not calibrated significance,
+an F-test, or likelihood-derived AIC/BIC. `var_scale` is the empirical residual
+factor `Q_fit/max(ndata-p_eff,1)`. Removing nominal exposure dependence does not
+establish statistical coverage or a verified count/acceptance model.
 """
 function null_model_tests(flux_only, w_map::AbstractVector, w0_uniform::Float64,
                           free::AbstractVector{Bool}, meas, fit_mask, wdem, exposure;
@@ -878,7 +878,7 @@ function null_model_tests(flux_only, w_map::AbstractVector, w0_uniform::Float64,
     dchi_unif = c_unif - c_fit
     dp_dry  = max(p_eff, 1e-6)
     dp_unif = max(p_eff - 1.0, 1e-6)
-    # AIC/BIC on the calibrated (reduced) deviance so the penalty is on the same scale
+    # Heuristic penalty scores on the rescaled residual; legacy aic/bic names are retained.
     aic(c, p) = c / var_scale + 2p
     bic(c, p) = c / var_scale + p * log(max(ndata, 1))
     return (chi2_dry = c_dry, chi2_unif = c_unif, chi2_fit = c_fit, ndata = ndata,
@@ -895,21 +895,19 @@ end
                       var_scale=1.0, n_grid=21, span=(0.2,3.0), w_max=MAX_WATER_FRACTION)
         -> NamedTuple
 
-Profile likelihood for the water amplitude: the reconstructed shape `w_map` is
-rescaled to a grid of overall levels (clamped to the box) and the global
-normalisation `s` is refit at each, tracing `χ²(T)` for the inventory
-`T = Σ_free w` (equivalently the mean band fraction `w̄ = T/|free|`).
+Normalization-adjusted weighted-residual amplitude scan. The fitted field is
+multiplied by a grid of amplitudes and box-clipped, which can change its relative
+spatial pattern. At each point the log-ratio normalization is recomputed; this
+is not minimization of the quadratic residual over normalization. No prior
+penalty or likelihood-normalization terms enter the scan. It is not a profile
+likelihood, posterior, or groundwater-inventory inference.
 
-This profiles the AMPLITUDE along the reconstructed shape — it constrains the
-overall water level given that shape and the priors; it is not a full
-shape-marginalised profile (the residual shape freedom is carried by the per-cell
-[`laplace_posterior`](@ref)). `Δχ²` is calibrated by `var_scale` (the reduced-χ²
-variance scale `φ` from [`null_model_tests`](@ref)) so the confidence thresholds
-(1 → 68%, 3.84 → 95%) are exposure-independent.
-
-Returns `(T, w_mean, chi2, dchi2, dchi2_cal, T_map, T_min, w_mean_min, ci68, ci95,
-var_scale)`; `dchi2_cal = dchi2/var_scale` and the CIs are `w̄` bounds (NaN where
-the profile does not cross the threshold within the grid).
+Legacy output names and numeric values are retained: `T` is the sum of mixture
+parameters (the caller must zero values outside `free`), `w_mean=T/count(free)`,
+`chi2` is the weighted residual Q, and `dchi2_cal=dchi2/var_scale`.
+`ci68` and `ci95` are interpolated reference crossings at 1 and 3.84, respectively,
+NOT calibrated confidence bounds; NaN denotes a crossing absent from the grid.
+The scan minimum is not a maximum-likelihood estimate.
 """
 function profile_inventory(flux_only, w_map::AbstractVector, free::AbstractVector{Bool},
                            meas, fit_mask, wdem, exposure;

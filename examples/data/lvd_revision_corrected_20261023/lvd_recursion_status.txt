@@ -1,0 +1,15 @@
+passes=5
+converged=true
+termination=tolerance
+relative_tolerance=0.02
+mask_ratio=15.0
+prior_cutoff_m=500.0
+regularization_relative=1.0
+initial_calibration_water=0.0
+seed=42
+csda_energy_samples=32
+csda_quadrature=midpoint
+calibration_mc_samples=8192
+rock_density_kg_m3=2710.0
+julia_version=1.11.7
+Convergence and uniqueness are not established by reaching the maximum pass count.
