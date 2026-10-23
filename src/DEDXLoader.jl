@@ -83,7 +83,7 @@ function parse_header(lines::Vector{String})
         
         # Find data start (line after units line)
         if occursin("[MeV]", stripped) && occursin("[MeV/c]", stripped)
-            data_start = i + 2  # Skip header and units line
+            data_start = i + 1  # Current line is already the units line
             break
         end
     end

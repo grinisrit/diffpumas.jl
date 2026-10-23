@@ -401,6 +401,7 @@ using Random
     include("test_loader_parity.jl")
     include("test_material_integrals.jl")
     include("test_threaded_dcs.jl")
+    include("test_dedx_first_record.jl")
     include("test_geometry_ad.jl")
     include("test_tomography.jl")
 end
