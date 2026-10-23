@@ -26,7 +26,8 @@ julia --project=. examples/loader_example.jl --help
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
-The complete package suite passes 216 tests on Julia 1.10.12 with Zygote 0.7.13
+The recorded full-suite verification on 2026-10-23 passed 557 tests on Julia
+1.10.12 with Zygote 0.7.13
 and Julia 1.11.7 with Zygote 0.7.10. The 1.10 environment was resolved from
 `Project.toml` without the local manifest. The loader example was also checked
 on Julia 1.11.7 with Zygote 0.7.10,

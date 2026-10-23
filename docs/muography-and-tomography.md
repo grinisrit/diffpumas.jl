@@ -43,12 +43,29 @@ not replace that site model. A new site needs these inputs:
 | Incident spectrum | Surface muon spectrum, energy limits, charge convention, and primary sampling altitude consistent with the selected forward model. |
 | Observations for inversion | Directional fluxes or event counts with detector acceptance, exposure, efficiency, angular binning, and uncertainties needed to compare data with predicted flux. Synthetic truth fields replace these only for simulations. |
 
-`MaterialMixture` accepts **mass fractions**. For additive constituent volumes,
-its bulk density is `1 / sum(w_i / rho_i)`. A cell's water volume fraction must
-first be converted to mass fractions before computing mixture stopping powers;
-the tomography helpers perform that conversion. Report the grid, priors, masks,
-regularization, random seeds, and solver settings alongside site inputs for a
-reproducible inversion.
+`MaterialMixture` and the tomography helpers take **mass fractions directly**.
+For the two-material rock–water case, `w` is the water mass fraction:
+
+```text
+rho(w) = 1 / ((1-w)/rho_rock + w/rho_water)
+S(w)   = (1-w)*S_rock + w*S_water
+```
+
+The helpers do not convert an input volume fraction. If a water volume fraction
+`phi` is supplied independently, the caller must first convert it within this
+additive-volume model: `w = phi*rho_water / ((1-phi)*rho_rock + phi*rho_water)`.
+
+This parameter is **not pore saturation at fixed porosity and rock skeleton**.
+In a fixed-volume cell, increasing `w` reduces the rock mass and bulk density;
+it describes a changing rock–water mixture. Filling existing air-filled pores
+with water while holding the rock skeleton fixed would instead increase density
+and requires a separate porosity/saturation model. An arithmetic mean of fitted
+`w` values is a mixture-amplitude summary, not a measured water inventory.
+Even a model-implied water mass `sum(w_i*rho(w_i)*V_i)` remains conditional on
+these material and geometric assumptions.
+
+Report the grid, priors, masks, regularization, random seeds, and solver settings
+alongside site inputs for a reproducible inversion.
 
 ## Flat Muography
 
@@ -159,7 +176,7 @@ site = SiteConfig(
 )
 ```
 
-Each cell has a water fraction `w_i`. The helper functions map `w_i` to a
+Each cell has a water **mass fraction** `w_i`. The helper functions map `w_i` directly to a
 material mixture and density:
 
 ```julia
