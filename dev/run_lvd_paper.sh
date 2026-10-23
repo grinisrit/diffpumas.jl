@@ -10,6 +10,11 @@ THREADS=16
 MEMORY_GIB=36
 RECURSIONS=6
 RECUR_TOL=0.02
+SAMPLES=32
+CALIBRATION_MC_SAMPLES=1024
+INVERSE_MC_SAMPLES=256
+MC_SAMPLES=1024
+PAPERMATCH_MC_SAMPLES=512
 STAGES=topo,main,sweep,detection,contrast
 DRY_RUN=0
 JULIA_BIN=${JULIA_BIN:-julia}
@@ -23,6 +28,11 @@ Usage: bash dev/run_lvd_paper.sh [options]
   --memory-gib N      Per-process address-space limit (default 36)
   --recursions N      Maximum paper calibration passes (default 6)
   --recur-tol X       Relative field/coefficient tolerance (default 0.02)
+  --samples N         CSDA midpoint energy nodes (default 32)
+  --calibration-mc-samples N  Histories/bin for calibration (default 1024)
+  --inverse-mc-samples N      Histories/bin for synthetic inverse data (default 256)
+  --mc-samples N       Histories/validation case (default 1024)
+  --papermatch-mc-samples N   Histories/bin for paper uncertainty grid (default 512)
   --stages LIST       Comma-separated sequential stages (default all five):
                       topo,main,sweep,detection,contrast
   --dry-run           Print commands without creating outputs or running Julia
@@ -36,7 +46,7 @@ HELP
 }
 while (($#)); do
     case "$1" in
-        --output-dir|--dump|--threads|--memory-gib|--recursions|--recur-tol|--stages)
+        --output-dir|--dump|--threads|--memory-gib|--recursions|--recur-tol|--stages|--samples|--calibration-mc-samples|--inverse-mc-samples|--mc-samples|--papermatch-mc-samples)
             (($# >= 2)) || { echo "Missing value for $1" >&2; exit 2; }
             case "$1" in
                 --output-dir) OUT=$2 ;;
@@ -46,6 +56,11 @@ while (($#)); do
                 --recursions) RECURSIONS=$2 ;;
                 --recur-tol) RECUR_TOL=$2 ;;
                 --stages) STAGES=$2 ;;
+                --samples) SAMPLES=$2 ;;
+                --calibration-mc-samples) CALIBRATION_MC_SAMPLES=$2 ;;
+                --inverse-mc-samples) INVERSE_MC_SAMPLES=$2 ;;
+                --mc-samples) MC_SAMPLES=$2 ;;
+                --papermatch-mc-samples) PAPERMATCH_MC_SAMPLES=$2 ;;
             esac
             shift 2 ;;
         --dry-run) DRY_RUN=1; shift ;;
@@ -55,6 +70,9 @@ while (($#)); do
 done
 [[ "$THREADS" =~ ^[1-9][0-9]*$ ]] || { echo 'Threads must be a positive integer' >&2; exit 2; }
 [[ "$RECURSIONS" =~ ^[1-9][0-9]*$ ]] || { echo 'Recursions must be a positive integer' >&2; exit 2; }
+for count in "$SAMPLES" "$CALIBRATION_MC_SAMPLES" "$INVERSE_MC_SAMPLES" "$MC_SAMPLES" "$PAPERMATCH_MC_SAMPLES"; do
+    [[ "$count" =~ ^[1-9][0-9]*$ ]] || { echo "Sample counts must be positive integers" >&2; exit 2; }
+done
 [[ -n "$OUT" && -n "$STAGES" && "$STAGES" != ,* && "$STAGES" != *, && "$STAGES" != *,,* ]] || {
     echo 'Output directory and stages must be nonempty' >&2; exit 2;
 }
@@ -98,7 +116,7 @@ run_stage() {
 # rr.for Gran Sasso convention, consistent with NMAP_ROCK_DENSITY.
 RHO=2710
 # Structured grid avoids inverted cells where terrain dips below the detector.
-COMMON=(examples/lvd_tomography.jl --dump "$DUMP" --rock-density "$RHO" --geometry grid --samples 32 --csda-quadrature midpoint --output-dir "$OUT")
+COMMON=(examples/lvd_tomography.jl --dump "$DUMP" --rock-density "$RHO" --geometry grid --samples "$SAMPLES" --calibration-mc-samples "$CALIBRATION_MC_SAMPLES" --inverse-mc-samples "$INVERSE_MC_SAMPLES" --mc-samples "$MC_SAMPLES" --papermatch-mc-samples "$PAPERMATCH_MC_SAMPLES" --csda-quadrature midpoint --output-dir "$OUT")
 # Statistical comparisons use 2 x 4 degree bins, rather than the main 1 x 1 grid.
 COARSE=(--zenith-step 2 --azimuth-step 4)
 for stage in "${selected_stages[@]}"; do

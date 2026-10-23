@@ -7,7 +7,7 @@ import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1]).resolve()
-scenarios = ['baseline', 'cutoff350', 'cutoff650', 'maskInf', 'rho2660', 'rho2760',
+scenarios = ['baseline', 'baseline_seed2', 'cutoff350', 'cutoff650', 'maskInf', 'rho2660', 'rho2760',
              'initialwater03', 'scale_minus5pct', 'scale_plus5pct']
 
 def read_csv(path):
@@ -43,7 +43,7 @@ for scenario in scenarios:
     else:
         relchange = math.nan
     mass = sum(water)
-    row = dict(scenario=scenario,status='complete',mean_band_water=sum(v for v,m in zip(water,aq) if m)/max(sum(aq),1),
+    row = dict(scenario=scenario,comparison_role='MC-noise reference (one alternate seed)' if scenario=='baseline_seed2' else 'baseline' if scenario=='baseline' else 'parameter sensitivity',status='complete',mean_band_water=sum(v for v,m in zip(water,aq) if m)/max(sum(aq),1),
         mean_all_water=sum(water)/len(water),aquifer_cells=sum(aq),positive_cells_gt_1e3=sum(v>1e-3 for v in water),
         positive_cells_gt_002=sum(v>0.02 for v in water),relative_residual=norm(residual)/max(norm(obs),1e-30),
         log_residual_std=math.sqrt(sum((v-logmean)**2 for v in logs)/len(logs)),

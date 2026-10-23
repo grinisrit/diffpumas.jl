@@ -7,10 +7,15 @@ mkdir -p "$revision_root"
 revision_dump="${REVISION_PHYSICS_DUMP:-examples/data/revision_physics/materials.pumas}"
 revision_julia="${JULIA_BIN:-julia}"
 [[ -f "$revision_dump" ]] || { printf 'Missing pinned physics dump: %s\n' "$revision_dump" >&2; exit 1; }
+revision_nodes="${REVISION_CSDA_SAMPLES:-32}"
+revision_calibration_mc="${REVISION_CALIBRATION_MC_SAMPLES:-1024}"
+for count in "$revision_nodes" "$revision_calibration_mc"; do
+    [[ "$count" =~ ^[1-9][0-9]*$ ]] || { echo "Sample counts must be positive integers" >&2; exit 2; }
+done
 revision_common=(--startup-file=no --project=. examples/lvd_tomography.jl --dump "$revision_dump" --papermatch-fit-only
     --geometry grid --mesh-half-km 5 --surface-step-km 1 --grid-nz 6
-    --zenith-step 10 --azimuth-step 15 --samples 32 --csda-quadrature midpoint
-    --calibration-bins 24 --calibration-mc-samples 128
+    --zenith-step 10 --azimuth-step 15 --samples "$revision_nodes" --csda-quadrature midpoint
+    --calibration-bins 24 --calibration-mc-samples "$revision_calibration_mc"
     --papermatch-recursions 3 --rock-density 2710 --seed 20261022)
 revision_run() {
     local scenario="$1"
@@ -45,6 +50,8 @@ PY
     python3 dev/summarize_revision_robustness.py "$revision_root"
 }
 revision_run baseline
+# One alternate seed is a descriptive MC-noise comparison, not a calibrated robustness test.
+revision_run baseline_seed2 --seed 20261023
 revision_run cutoff350 --papermatch-prior-cutoff 350
 revision_run cutoff650 --papermatch-prior-cutoff 650
 revision_run maskInf --papermatch-mask-ratio Inf

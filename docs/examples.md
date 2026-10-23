@@ -351,6 +351,16 @@ and 48 GiB; reserve 1 CPU/2 GiB for controls and pause other computations during
 production. Julia startup files are disabled. Manifests record the selected
 Julia binary/version/hash and transitive LVD helper source hashes.
 
+Sampling budgets are explicit launcher options: `--samples 32` CSDA midpoint
+nodes, `--calibration-mc-samples 1024`, `--inverse-mc-samples 256`,
+`--mc-samples 1024`, and `--papermatch-mc-samples 512`. These are sampling
+budgets, not established convergence thresholds. The robustness launcher accepts
+`REVISION_CSDA_SAMPLES` and `REVISION_CALIBRATION_MC_SAMPLES` (defaults 32 and
+1024). Its `baseline_seed2` scenario changes the seed to 20261023 and provides
+one descriptive MC-noise comparison; it does not establish a robustness
+threshold or independent calibration uncertainty. Commands and their resolved
+sampling counts are bound to the run identity.
+
 Inspect the commands before starting a long run:
 
 ```bash
