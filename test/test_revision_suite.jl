@@ -55,3 +55,17 @@ end
         empty!(ARGS);append!(ARGS,saved)
     end
 end
+
+@testset "Masked forward/Jacobian consistency" begin
+    toy=w->([w[1]+2w[2]],sparse(reshape([1.0,2.0],1,2)))
+    restricted=masked_material_operator(toy,Bool[true,false])
+    w=[0.2,0.8]
+    prediction,J=restricted(w)
+    @test prediction≈[0.2]
+    @test Matrix(J)≈[1.0 0.0]
+    for c in eachindex(w)
+        h=1e-6;delta=zeros(2);delta[c]=h
+        fd=(first(restricted(w+delta))-first(restricted(w-delta)))/(2h)
+        @test fd≈Vector(J[:,c]) atol=1e-10
+    end
+end

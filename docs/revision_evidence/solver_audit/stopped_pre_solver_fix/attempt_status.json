@@ -1,0 +1,6 @@
+{
+  "status": "administratively_stopped",
+  "reason": "Administratively stopped before completion after identifying inconsistent MAP acceptance, prior Hessian and inactive-variable constraints; no completed nonlinear robustness result.",
+  "recorded_utc": "2026-10-23T00:17:00.636118+00:00",
+  "completed_scenarios": 0
+}

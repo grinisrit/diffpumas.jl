@@ -23,9 +23,9 @@ reviews were used as evidence; no submission or correspondence was sent.
   common-subset MC comparisons and coverage. Fixed normalization now participates
   in the nonlinear fit rather than being substituted only after optimization.
 
-The final full suite passes **259/259** checks on Julia 1.10.12 / Zygote 0.7.13
+Before the later inverse and transport audits, the full suite passed **259/259** checks on Julia 1.10.12 / Zygote 0.7.13
 and Julia 1.11.7 / Zygote 0.7.10. The standalone geometry/CLI regressions pass
-25/25. Curated numerical evidence and versioned test logs are in
+29/29. Curated numerical evidence and versioned test logs are in
 `docs/revision_evidence/`. GPT-6.1 Sol agents implemented and independently reviewed
 the changes; review found the custom-material cache issue, which was fixed and tested.
 
@@ -37,11 +37,11 @@ Its input tables, source revision, licenses and checksums are under
 differences from the historical dump; imported stopping powers are identical,
 while some derived scattering and straggling arrays use different material recipes.
 
-The production command is:
+The production command template is (use a new output directory after the transport correction):
 
 ```bash
 bash dev/run_lvd_paper.sh \
-  --output-dir examples/data/lvd_revision_midpoint_20261023 \
+  --output-dir examples/data/lvd_revision_corrected_NEW_RUN \
   --threads 20 --memory-gib 48 --recursions 6 --recur-tol 0.02
 ```
 
@@ -82,3 +82,41 @@ The companion manuscript contains a review-response matrix, numerical figures an
 the full Consensus literature report. Its archived reconstruction and detection
 figures have been improved visually, but remain explicitly marked pending fresh
 production results. The revised manuscript is a working draft.
+
+## Subsequent correctness audits
+
+Production and nonlinear robustness are stopped pending correction of a stochastic transport defect. The fresh common-input C comparison reveals a 45.34% Julia deficit at 800 m thickness and 75 degrees zenith, sustained at45–50% across three seeds. Julia's high-energy mixed helper uses deterministic CSDA without hard-loss sampling. The old general equivalence claim is withdrawn. Evidence is preserved under `revision_evidence/transport_before_fix/`. Stochastic calibration and closure must be recomputed after correction; these observations do not invalidate deterministic AD–finite-difference consistency.
+
+The inverse audit corrected MAP trial acceptance, smoothness curvature (2λL for R=λΣedges differences²), fixed aquifer coordinates throughout optimization, and the affine intercept of frozen models. Edge-prior posterior curvature is distinguished from the IRLS optimizer majorizer. Targeted tests pass 36/36 on both Julia versions with independent Sol6.1 mathematical review; the full package tests pass 295/295 on each version. Aborted earlier reconstruction attempts are diagnostic evidence only.
+
+
+### Inverse solver audit evidence
+
+The regularization convention is `R = lambda * sum((w_i-w_j)^2)` over unique
+undirected edges, with gradient `2*lambda*L*w` and Hessian `2*lambda*L`.
+Prior constructors normalize adjacency once to a symmetric, duplicate-free graph.
+Gauss--Newton trial acceptance uses the complete weighted data-plus-prior objective.
+The `free` mask restricts both the solve and trial updates; fixed coordinates retain
+their projected initial values and their boundary contributions to the prior.
+The aquifer wrapper masks the forward input as well as Jacobian columns.
+
+Frozen models retain their affine intercept. Gradient-descent histories describe
+the returned state, and its projected-gradient stopping rule includes the prior.
+Huber optimization uses an IRLS curvature majorizer, while posterior diagnostics
+use the true local Huber curvature away from its knots. The supplied experimental
+errors remain undocumented, so variance-rescaled objective scores and conditional
+intervals are not validated discovery significances or coverage guarantees.
+
+A deterministic nonlinear regression verifies identical accepted fields and
+residual histories for full-model and prediction-only Gauss--Newton line searches,
+with eight versus seven Jacobian evaluations. A saturated constrained case needs
+only the initial Jacobian; repeated clamped candidates are cached. This comparison
+is between two implementations of the corrected objective, not between the old
+incorrect acceptance objective and the correction.
+
+Full and targeted test logs, independent review/oracle results, unchanged before/
+after source hashes, and the stopped pre-fix attempt are preserved in
+`revision_evidence/solver_audit/`. The earlier robustness run was administratively
+terminated before completing a recursion; it is not a nonlinear robustness result.
+Production and robustness remain paused until the stochastic transport correction
+is separately validated.

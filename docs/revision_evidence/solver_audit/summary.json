@@ -1,0 +1,38 @@
+{
+  "full_tests": {
+    "julia_1.10.12": {
+      "passed": 295,
+      "total": 295
+    },
+    "julia_1.11.7": {
+      "passed": 295,
+      "total": 295
+    }
+  },
+  "targeted_inverse_tests": {
+    "passed": 36,
+    "total": 36,
+    "versions": [
+      "1.10.12",
+      "1.11.7"
+    ]
+  },
+  "example_regressions": {
+    "passed": 29,
+    "total": 29,
+    "version": "1.11.7"
+  },
+  "independent_inverse_review": {
+    "passed": 36,
+    "total": 36,
+    "version": "1.11.7",
+    "additional_oracle": "weighted nonlinear free/fixed boundary"
+  },
+  "jacobian_evaluations": {
+    "full_model_line_search": 8,
+    "prediction_only_line_search": 7,
+    "same_accepted_field_and_history": true
+  },
+  "source_changed_during_tests": [],
+  "scope": "Functional and inverse-math checks. These tests do not establish stochastic transport equivalence to PUMAS or experimental uncertainty coverage."
+}

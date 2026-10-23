@@ -846,6 +846,31 @@ function compute_flux_and_jacobian(physics,
     return flux_values, jacobian
 end
 
+# The prediction must use the same fixed coordinates as the masked derivative.
+function masked_material_operator(model,mask::AbstractVector{Bool})
+    diagonal=Diagonal(Float64.(mask))
+    return w -> begin
+        prediction,jacobian=model(w.*mask)
+        prediction,jacobian*diagonal
+    end
+end
+
+function flux_only_operator(physics,shallow_flags,matcfg,site,paths,energy_samples;threaded=true)
+    return w -> begin
+        prediction=Vector{Float64}(undef,length(paths))
+        if threaded
+            Threads.@threads for b in eachindex(paths)
+                prediction[b]=compute_directional_flux_csda(physics,shallow_flags,matcfg,site,paths[b],w,energy_samples)
+            end
+        else
+            for b in eachindex(paths)
+                prediction[b]=compute_directional_flux_csda(physics,shallow_flags,matcfg,site,paths[b],w,energy_samples)
+            end
+        end
+        prediction
+    end
+end
+
 function vector_to_grid(values::AbstractVector{<:Real},
                         n_zen::Int,
                         n_azi::Int)
@@ -1616,6 +1641,7 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
     mats, dens = build_cell_properties_for_mc(shallow_flags, water_fractions, matcfg)
     println("Calibrating CSDA correction to full MC on $(length(cbins)) bins " *
             "($(args.calibration_mc_samples) MC samples/bin, scattering+straggling)...")
+    flush(stdout)
     mcflux = Vector{Float64}(undef, length(cbins))
     Threads.@threads for k in eachindex(cbins)
         f, _ = compute_directional_flux_mc(physics, matcfg, site, paths[cbins[k]], mats, dens,
@@ -1629,6 +1655,7 @@ function calibrate_correction_to_mc(physics, shallow_flags, matcfg::MaterialConf
         kh_anchor = kh_anchor, kh_anchor_weight = kh_anchor_weight)
     println(@sprintf("  fitted α_strag=%.3f (physical ½b(b+1) enhancement) κ_hard=%.3f (%s geometric residual) | CSDA-vs-MC mean rel error %.1f%% -> %.1f%%",
                      ks, kh, fit_geometric ? "+ fitted" : "frozen", 100 * stats.rel_before, 100 * stats.rel_after))
+    flush(stdout)
     return (ks, kh, stats)
 end
 
@@ -1679,6 +1706,8 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
                           flux_values::Vector{Float64}, jacobian::SparseMatrixCSC,
                           aggregate::Vector{Float64}, args; output_path::String)
     n_cells = num_cells(volume)
+    println("Starting nonlinear/synthetic inverse demonstration...")
+    flush(stdout)
 
     # Ground-truth field: the baseline aquifer if present, otherwise inject a
     # single-cell anomaly at the most informative cell so the demo is non-trivial.
@@ -1743,6 +1772,7 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths,
         energy_samples; n_cells = n_cells, valid_bins = valid_bins,
         threaded = args.threaded)
+    csda_predict = flux_only_operator(physics,shallow_flags,matcfg,site,paths[valid_bins],energy_samples;threaded=args.threaded)
     Wobs = 1.0 ./ σ .^ 2
     # Near-surface cells are crossed only by near-vertical rays and are essentially
     # unrecoverable, so we evaluate quality below a minimum depth (configurable). All
@@ -1783,7 +1813,7 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             w_rec, hist = gauss_newton_reconstruct(csda_model, obs;
                 w0 = zeros(n_cells), n_iter = max(8, args.reco_iters ÷ 16),
                 prior = edge_prior, weights = Wobs, relinearize = true,
-                box = (0.0, MAX_WATER_FRACTION))
+                box = (0.0, MAX_WATER_FRACTION), predict_only = csda_predict)
         else
             error("Unknown solver '$s' (use sart, mlem, gd, gn, or all)")
         end
@@ -2532,6 +2562,7 @@ function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig
         cache_path = joinpath(args.output_dir, "lvd_recon_sweep_obs.bin"))
     csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
         n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
+    csda_predict = flux_only_operator(physics,shallow_flags,matcfg,site,paths[valid_bins],energy_samples;threaded=args.threaded)
     eval_mask = volume.centroids[3, :] .>= args.min_eval_depth
     neighbors = cell_neighbors(volume)
     sens = vec(sum(max.(Jv, 0.0); dims = 1)); sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
@@ -2559,7 +2590,7 @@ function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig
                             weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION))),
                 "gn"   => first(gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
                             n_iter = max(8, args.reco_iters ÷ 16), prior = edge_prior,
-                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION))))
+                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION),predict_only=csda_predict)))
             for s in solvers
                 rep = reconstruction_report(recs[s], w_true; mask = eval_mask)
                 push!(acc[s].r, rep.rmse); push!(acc[s].s, rep.ssim)
@@ -2665,6 +2696,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     println("=" ^ 64)
     println(" Single muon angular distribution — water-content reconstruction from the measured 2D LVD surface")
     println("=" ^ 64)
+    flush(stdout)
     n_cells = num_cells(volume)
     println(@sprintf(" base rock density = %.0f kg/m^3 (Gran Sasso rock, Kudryavtsev 2009); water-only field w in [0, %.1f]",
                      matcfg.rock_density, MAX_WATER_FRACTION))
@@ -2683,6 +2715,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     match_zen = Float64[0.5 * (b.zen_lo + b.zen_hi) for b in match_bins]
     match_az  = Float64[(b.az_hi - b.az_lo >= 359.999) ? 0.0 : 0.5 * (b.az_lo + b.az_hi) for b in match_bins]
     println("Tracing geometry for $(length(match_bins)) measured-surface bins (0 <= theta <= $(round(maximum(match_zen); digits=0)) deg)...")
+    flush(stdout)
     match_paths = [trace_path(volume, match_zen[i], match_az[i], emap) for i in eachindex(match_bins)]
     meas = Float64[b.intensity for b in match_bins]
     base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, match_site,
@@ -2785,7 +2818,6 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     aquifer_mask = (cell_z .> args.papermatch_prior_cutoff) .& crossed
     n_aq = count(aquifer_mask)
     n_aq > 0 || error("Aquifer prior leaves no ray-crossed water-bearing cells")
-    maskdiag = Diagonal(Float64.(aquifer_mask))
     println(@sprintf("  aquifer prior: water restricted to %d / %d rock cells above %.1f m (below surface)", n_aq, n_cells, args.papermatch_prior_cutoff))
 
     # Density pinned at the standard-rock floor; the lightening is carried by a uniform water-mix
@@ -2828,10 +2860,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     model_rho = make_csda_operator(physics, shallow_flags, mk_cfg(rho_fit), match_site,
         match_paths, energy_samples; n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
     # Aquifer-masked operator: zero the Jacobian columns outside the aquifer (only those cells fit).
-    model_aq = function (w)
-        pr, J = model_rho(w)
-        return pr, J * maskdiag
-    end
+    model_aq = masked_material_operator(model_rho,aquifer_mask)
+    predict_aq = w -> flux_only_at(rho_fit,w.*aquifer_mask)
     # SELF-CONSISTENT RECURSION: re-calibrate the CSDA->MC correction THROUGH the current
     # reconstructed field, then re-solve, N times. Iteration 1 uses the calibration done at w=0
     # (dry rock); later iterations re-calibrate through the recovered water field, so the
@@ -2844,6 +2874,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     recursion_rows = NamedTuple[]
     recursion_converged = false
     for recur in 1:n_recur
+        println("  [recursion $recur/$n_recur] starting material fit")
+        flush(stdout)
         if recur > 1
             println(@sprintf("  [recursion %d/%d] re-calibrating CSDA->MC through the current reconstructed field (geometric residual frozen)...",
                              recur, n_recur))
@@ -2866,6 +2898,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         # field exists and the residual scatter reflects genuine outliers.
         w_solved = copy(w_prev)
         for outer in 1:3
+            println("  [recursion $recur/$n_recur] IRLS outer $outer/3: Gauss-Newton solve")
+            flush(stdout)
             cold = (recur == 1 && outer == 1)
             pred = flux_only_at(rho_fit, w_solved)
             s = opt_logscale(pred); obs = meas_v ./ s
@@ -2891,7 +2925,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
             wmed_cur = (p = Wobs[fit_idx]; q = filter(>(0), p); isempty(q) ? 1.0 : median(q))
             Wobs .*= ref_wmed / max(wmed_cur, 1e-300)
             w_solved, _ = gauss_newton_reconstruct(model_aq, obs; w0 = w_solved, n_iter = 6,
-                prior = sm_prior, weights = Wobs, relinearize = true, box = (0.0, MAX_WATER_FRACTION))
+                prior = sm_prior, weights = Wobs, relinearize = true, box = (0.0, MAX_WATER_FRACTION),
+                free = aquifer_mask, predict_only = predict_aq)
             w_solved[.!aquifer_mask] .= 0.0   # keep water inside the aquifer rock cells only
         end
         # under-relaxation between passes (pass 1 takes the solve as-is; w_prev=0 there)
@@ -2906,6 +2941,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(@sprintf("  [recursion %d/%d] w0=%.3f  s=%.3e  w mean=%.4f  rel resid=%.3f  log-std=%.3f  | dfield=%.2e dcoef=%.2e",
                          recur, n_recur, w0_fit, s, mean(w_matched), rel_resid(predr, meas_v ./ s),
                          log_std(predr), dfield, isnan(dcoef) ? -1.0 : dcoef))
+        flush(stdout)
         push!(recursion_rows,(pass=recur,dfield=dfield,dcoef=dcoef,relative_residual=rel_resid(predr,meas_v./s),
             log_std=log_std(predr),normalization=s,mean_water=mean(w_matched),
             kappa_strag=coef[1],kappa_hard=coef[2],resid_a=coef[3],resid_b=coef[4],resid_c=coef[5],resid_d=coef[6]))
@@ -3026,6 +3062,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                 isempty(sl) ? NaN : minimum(sl),isempty(sl) ? NaN : median(sl),isempty(sl) ? NaN : maximum(sl)),','))
         end
     end
+    flush(stdout)
     args.papermatch_fit_only && return (water=w_matched,converged=recursion_converged,passes=length(recursion_rows))
 
     # --- Rigorous inverse-problem statistics: posterior uncertainty map (Laplace),
@@ -3059,9 +3096,10 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     wbar_min = prof.w_mean_min            # amplitude-profile maximum-likelihood level
     println(@sprintf("  posterior (Laplace, conditional on s; σ calibrated to reduced-χ²=1): p_eff=%.1f effective DOF of %d cells; median resolution=%.2f; median σ_w=%.2f; %d cells at w/σ≥2",
                      post.p_eff, length(aq_idx), res_med, sig_med, z_resolved))
-    println(@sprintf("  null-model (calibrated, φ=%.0f): water-vs-dry %.0fσ; structure-vs-uniform %.0fσ  [χ² dry=%.3e unif=%.3e fit=%.3e, ndata=%d]",
+    println(@sprintf("  nominal objective scores (variance rescaling φ=%.0f): water-vs-dry %.0f; structure-vs-uniform %.0f  [χ² dry=%.3e unif=%.3e fit=%.3e, ndata=%d]",
                      nulls.var_scale, nulls.sigma_dry, nulls.sigma_unif,
                      nulls.chi2_dry, nulls.chi2_unif, nulls.chi2_fit, nulls.ndata))
+    println("  Scores and intervals are conditional on model/weight assumptions; unknown LVD count/acceptance uncertainties prevent validated discovery significance or coverage.")
     println(@sprintf("  model selection: AIC dry=%.0f unif=%.0f fit=%.0f | BIC dry=%.0f unif=%.0f fit=%.0f (lower favoured)",
                      nulls.aic.dry, nulls.aic.unif, nulls.aic.fit, nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
     println(@sprintf("  amplitude profile (shape fixed, s profiled out): GN-MAP w̄=%.3f; profile-ML w̄=%.3f; 68%% CI w̄∈[%.3f, %.3f]; 95%% CI w̄∈[%.3f, %.3f]",
@@ -3230,18 +3268,19 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                              post.p_eff, length(aq_idx), res_med))
         println(io, @sprintf("    median calibrated posterior sigma_w = %.2f; cells at w/sigma >= 2: %d / %d   (csv: lvd_water_uncertainty.csv)",
                              sig_med, z_resolved, length(aq_idx)))
-        println(io, "  Null-model likelihood-ratio. The published LVD intensities carry no absolute count error,")
+        println(io, "  Nominal objective-derived null-model scores. The supplied LVD intensities have no documented absolute count error,")
         println(io, @sprintf("  so chi^2 is calibrated to reduced-chi^2 = 1 (variance scale phi = %.0f; ndata = %d fit bins):",
                              nulls.var_scale, nulls.ndata))
         println(io, @sprintf("    raw chi^2: dry standard rock = %.3e ; uniform band water-mix = %.3e ; structured fit = %.3e",
                              nulls.chi2_dry, nulls.chi2_unif, nulls.chi2_fit))
-        println(io, @sprintf("    water vs dry rock:         Delta chi2/phi on p_eff=%.1f dof   -> %.0f sigma",
+        println(io, @sprintf("    water vs dry rock:         nominal Delta chi2/phi on p_eff=%.1f dof   -> score %.0f",
                              post.p_eff, nulls.sigma_dry))
-        println(io, @sprintf("    structure vs uniform band: Delta chi2/phi on p_eff-1=%.1f dof -> %.0f sigma",
+        println(io, @sprintf("    structure vs uniform band: nominal Delta chi2/phi on p_eff-1=%.1f dof -> score %.0f",
                              max(post.p_eff - 1, 0.0), nulls.sigma_unif))
         println(io, @sprintf("    AIC (reduced): dry=%.0f uniform=%.0f fit=%.0f | BIC: dry=%.0f uniform=%.0f fit=%.0f (lower favoured)",
                              nulls.aic.dry, nulls.aic.unif, nulls.aic.fit,
                              nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
+        println(io, "  These scores/intervals are conditional model diagnostics; unknown count/acceptance errors preclude validated discovery significance or interval coverage.")
         println(io, "  Water-amplitude profile: the reconstructed shape is rescaled and s refit, profiling the")
         println(io, "  overall level (mean band fraction w_bar) given the shape and priors. This constrains the")
         println(io, "  amplitude along the reconstructed shape; the residual shape freedom is in the per-cell posterior above.")
@@ -3315,6 +3354,7 @@ function main()
     println("  AAD GD iters/lr:   $(args.gd_iters) / $(args.gd_lr)")
     println("  Output dir:        $(args.output_dir)")
     println()
+    flush(stdout)
 
     mkpath(args.output_dir)
 

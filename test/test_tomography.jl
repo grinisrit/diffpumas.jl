@@ -370,3 +370,5 @@ using LinearAlgebra
     end
 
 end
+
+include("test_inverse_solver.jl")

@@ -17,13 +17,27 @@
 """
     SmoothnessPrior(neighbors, weight)
 
-Graph-Laplacian smoothness prior `R(w) = weight * Σ_i Σ_{j∈N(i)} (w_i - w_j)^2`.
+Graph-Laplacian smoothness prior `R(w) = weight * Σ_{i<j∈edges} (w_i - w_j)^2`.
+Adjacency is normalized once to an undirected, duplicate-free graph.
 `neighbors[i]` lists the cell indices adjacent to cell `i`. Acts as a Bayesian
 MAP prior (MLEM one-step-late) or Tikhonov regulariser (SART/GD).
 """
+function _undirected_neighbors(neighbors::Vector{Vector{Int}})
+    n=length(neighbors)
+    graph=[Set{Int}() for _ in 1:n]
+    for i in 1:n, j in neighbors[i]
+        1<=j<=n || throw(ArgumentError("Prior neighbor index $j is outside 1:$n"))
+        i==j && continue
+        push!(graph[i],j);push!(graph[j],i)
+    end
+    return [sort!(collect(adjacent)) for adjacent in graph]
+end
+
 struct SmoothnessPrior
     neighbors::Vector{Vector{Int}}
     weight::Float64
+    SmoothnessPrior(neighbors::Vector{Vector{Int}},weight::Real) =
+        new(_undirected_neighbors(neighbors),Float64(weight))
 end
 
 """
@@ -111,10 +125,13 @@ end
     mlem_reconstruct(A, b; w0, n_iter=100, box=(0,0.9), prior=nothing, eps=1e-12)
         -> (w, history)
 
-Maximum-likelihood (Poisson) EM for a **nonnegative** system `A ≥ 0, b ≥ 0`:
-`w ← w .* (Aᵀ (b ./ (A w))) ./ (Aᵀ 1 + λ ∂R/∂w)` (one-step-late MAP when `prior`
-is given), then clamp to `box`. For absorption muography pass the transmission
-**deficit** (`b = baseline − flux`, `A = −J`) so both are nonnegative.
+Multiplicative nonnegative algebraic baseline for `A ≥ 0, b ≥ 0`:
+`w ← w .* (Aᵀ (b ./ (A w))) ./ (Aᵀ 1 + max(∂R/∂w, 0))`, then clamp to `box`.
+The prior gradient already includes its weight; clipping it is a smoothing
+heuristic, not exact MAP optimization. The water-replacement examples use
+`b = max(flux-baseline,0)` and `A = max(J,0)` because water raises transmission.
+These clipped flux excesses are not actual Poisson event counts, so this use
+is an algebraic comparison rather than a validated Poisson-likelihood fit.
 """
 function mlem_reconstruct(A::AbstractMatrix, b::AbstractVector;
                           w0::Union{Nothing,AbstractVector} = nothing,
@@ -154,13 +171,16 @@ Edge-preserving prior `R(w) = weight · Σ_{i<j∈N} ρ_δ(w_i − w_j)` with th
 loss `ρ_δ` (quadratic for `|t|≤δ`, linear beyond). Unlike the quadratic
 [`SmoothnessPrior`], it penalises a sharp boundary only linearly, so it
 preserves blocky anomalies (e.g. an aquifer box) instead of blurring them.
-`delta → 0` approaches total variation. Provides the gradient `∂R/∂w` and an
-SPD lagged-diffusivity (IRLS) Hessian `weight·Lᵂ` for Gauss-Newton.
+Scaling `weight` proportionally to `1/delta` gives the total-variation limit as
+`delta → 0`. Adjacency is normalized to unique undirected edges. Provides the
+gradient `∂R/∂w` and a positive-semidefinite lagged-diffusivity (IRLS) Hessian `weight·Lᵂ` for Gauss-Newton.
 """
 struct EdgePrior
     neighbors::Vector{Vector{Int}}
     weight::Float64
     delta::Float64
+    EdgePrior(neighbors::Vector{Vector{Int}},weight::Real,delta::Real) =
+        new(_undirected_neighbors(neighbors),Float64(weight),Float64(delta))
 end
 
 @inline _huber_grad(t, δ) = abs(t) <= δ ? t : δ * sign(t)
@@ -186,8 +206,8 @@ end
     edge_hessian(prior, w) -> SparseMatrixCSC
 
 Lagged-diffusivity (IRLS) Gauss-Newton Hessian `weight · Lᵂ`, a weighted graph
-Laplacian with edge weights `ψ(w_i−w_j) = ρ'_δ/(w_i−w_j)`. SPD, so the
-normal-equation matrix stays positive definite.
+Laplacian with edge weights `ψ(w_i−w_j) = ρ'_δ/(w_i−w_j)`. It is positive
+semidefinite; data information and/or damping are needed for definiteness.
 """
 function edge_hessian(prior::EdgePrior, w::AbstractVector{<:Real})
     n = length(w); λ = prior.weight; δ = prior.delta
@@ -203,6 +223,48 @@ function edge_hessian(prior::EdgePrior, w::AbstractVector{<:Real})
     end
     return sparse(I, J, V, n, n)
 end
+
+"""
+    prior_value(prior, w)
+
+Scalar regularization objective consistent with the prior gradient and curvature.
+Smoothness uses `weight*sum((w[i]-w[j])^2)` over unique undirected edges;
+EdgePrior uses `weight*sum(Huber_delta(w[i]-w[j]))` over those same edges.
+"""
+prior_value(::Nothing,w::AbstractVector) = 0.0
+function prior_value(prior::SmoothnessPrior,w::AbstractVector)
+    total=0.0
+    for i in eachindex(prior.neighbors),j in prior.neighbors[i]
+        i<j && (total+=(w[i]-w[j])^2)
+    end
+    return prior.weight*total
+end
+function prior_value(prior::EdgePrior,w::AbstractVector)
+    total=0.0;delta=prior.delta
+    for i in eachindex(prior.neighbors),j in prior.neighbors[i]
+        if i<j
+            difference=abs(w[i]-w[j])
+            total+=difference<=delta ? 0.5*difference^2 : delta*(difference-0.5*delta)
+        end
+    end
+    return prior.weight*total
+end
+_prior_hessian(prior::EdgePrior,w)=edge_hessian(prior,w)
+_prior_hessian(prior::SmoothnessPrior,w)=edge_hessian(EdgePrior(prior.neighbors,2prior.weight,Inf),w)
+_prior_posterior_hessian(prior::SmoothnessPrior,w)=_prior_hessian(prior,w)
+function _prior_posterior_hessian(prior::EdgePrior,w)
+    # True local Huber curvature, not its larger IRLS majorizer. At a Huber
+    # knot the second derivative is undefined; use the interior-side convention.
+    n=length(w);rows=Int[];columns=Int[];entries=Float64[]
+    for i in eachindex(prior.neighbors),j in prior.neighbors[i]
+        if i<j && prior.delta>0 && abs(w[i]-w[j])<=prior.delta
+            append!(rows,(i,i,j,j));append!(columns,(i,j,i,j))
+            append!(entries,(prior.weight,-prior.weight,-prior.weight,prior.weight))
+        end
+    end
+    sparse(rows,columns,entries,n,n)
+end
+export prior_value
 
 # --------------------------------------------------------------------------
 # Gradient descent on the nonlinear misfit using the AD Jacobian (our method)
@@ -237,27 +299,19 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
                                       optimizer::Symbol = :adam,
                                       relinearize::Bool = true,
                                       weights::Union{Nothing,AbstractVector} = nothing)
-    w = collect(Float64, w0)
+    w = clamp.(collect(Float64,w0),box[1],box[2])
     history = Float64[]
-    W = weights === nothing ? nothing : collect(Float64, weights)
-    prior_grad(wv) = prior === nothing ? nothing :
-        (prior isa EdgePrior ? edge_gradient(prior, wv) : laplacian_gradient(prior, wv))
-    # Adam state
-    m = zeros(Float64, length(w))
-    v = zeros(Float64, length(w))
-    β1 = 0.9; β2 = 0.999; ϵ = 1e-8
-    Jfixed = nothing
+    n_iter<=0 && return w,history
+    W = weights===nothing ? nothing : collect(Float64,weights)
+    prior_grad(wv)=prior===nothing ? nothing :
+        (prior isa EdgePrior ? edge_gradient(prior,wv) : laplacian_gradient(prior,wv))
+    data_cost(residual)=W===nothing ? 0.5*dot(residual,residual) : 0.5*sum(W.*residual.^2)
+    m=zeros(Float64,length(w));v=zeros(Float64,length(w))
+    β1=0.9;β2=0.999;ϵ=1e-8
+    pred,J=model(w)
+    linear_origin=copy(w);pred_fixed=copy(pred);Jfixed=J
+    previous_objective=data_cost(pred.-obs)+prior_value(prior,w)
     for t in 1:n_iter
-        local pred, J
-        if relinearize
-            pred, J = model(w)
-        elseif Jfixed === nothing
-            pred, Jfixed = model(w)
-            J = Jfixed
-        else
-            pred, _ = model(w)
-            J = Jfixed
-        end
         r = pred .- obs
         g = W === nothing ? transpose(J) * r : transpose(J) * (W .* r)
         if prior !== nothing
@@ -267,9 +321,7 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
             # Jacobi (diagonal Gauss-Newton + prior) preconditioner, then the exact
             # step length that minimises the local quadratic model along p = D⁻¹g.
             dgJ = W === nothing ? vec(sum(J .^ 2; dims = 1)) : vec(sum(W .* (J .^ 2); dims = 1))
-            Hr = prior === nothing ? nothing :
-                 (prior isa EdgePrior ? edge_hessian(prior, w) :
-                  edge_hessian(EdgePrior(prior.neighbors, prior.weight, Inf), w))
+            Hr = prior === nothing ? nothing : _prior_hessian(prior,w)
             dvec = collect(Float64, dgJ)
             if Hr !== nothing
                 @inbounds for i in eachindex(dvec); dvec[i] += Hr[i, i]; end
@@ -297,13 +349,16 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
                 w[i] = clamp(w[i] - lr * g[i], box[1], box[2])
             end
         end
-        push!(history, norm(r))
-        # converged (preconditioned mode takes near-optimal steps, so the misfit
-        # plateaus quickly): stop early to avoid wasted relinearisations.
-        if optimizer === :pgd && length(history) > 1 &&
-           abs(history[end - 1] - history[end]) <= 1e-5 * max(history[end - 1], eps())
+        # Carry the evaluated next state into the next iteration; history and
+        # stopping therefore describe the returned field without doubling calls.
+        pred,J=relinearize ? model(w) : (pred_fixed+Jfixed*(w-linear_origin),Jfixed)
+        next_residual=pred.-obs
+        objective=data_cost(next_residual)+prior_value(prior,w)
+        push!(history,norm(next_residual))
+        if optimizer===:pgd && abs(objective-previous_objective)<=1e-5*max(abs(previous_objective),eps())
             break
         end
+        previous_objective=objective
     end
     return w, history
 end
@@ -315,7 +370,8 @@ end
 """
     gauss_newton_reconstruct(model, obs; w0, n_iter=12, box=(0,0.9),
                              prior=nothing, lm_damping=1e-3, lm_factor=3.0,
-                             relinearize=true, weights=nothing) -> (w, history)
+                             relinearize=true, weights=nothing, free=nothing,
+                             predict_only=nothing) -> (w, history)
 
 Box-constrained Gauss-Newton (Levenberg-Marquardt) for the nonlinear data misfit
 `½‖pred(w) − obs‖²_W + R(w)`. `model(w) → (pred, J)` supplies the forward flux and
@@ -323,8 +379,15 @@ its sparse AD Jacobian; each step solves the regularised normal equations
 `(JᵀWJ + H_R + μ·diag(JᵀWJ)) δ = −(JᵀW r + ∇R)` and projects `w+δ` onto `box`,
 adapting the LM damping `μ` on accept/reject. With `relinearize=true` the Jacobian
 is recomputed each iteration (cheap with the fast assembly), so this fits the true
-nonlinear corrected-CSDA operator — the DiffPumas-native solver, and the one meant
-to beat MLEM on full-MC data. `weights` is an optional per-bin `1/σ²`.
+nonlinear operator. `weights` is an optional per-bin `1/σ²`. A Boolean `free`
+mask restricts the solve to active variables; all other coordinates stay fixed
+at their initial values, including their contribution to the regularizer.
+With `relinearize=false`, predictions use the affine tangent at `w0`, retaining
+its nonzero intercept. `predict_only(w)` may supply the same deterministic
+prediction as `model(w)[1]` for line searches, avoiding Jacobian construction
+on rejected candidates; accepted candidates are checked with the full model.
+The returned history records data-residual norms, while acceptance uses the
+complete data-plus-prior objective.
 """
 function gauss_newton_reconstruct(model, obs::AbstractVector;
                                   w0::AbstractVector,
@@ -334,82 +397,92 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                                   lm_damping::Float64 = 1e-3,
                                   lm_factor::Float64 = 3.0,
                                   relinearize::Bool = true,
-                                  weights::Union{Nothing,AbstractVector} = nothing)
-    w = clamp.(collect(Float64, w0), box[1], box[2])
-    history = Float64[]
-    W = weights === nothing ? nothing : collect(Float64, weights)
-
-    prior_grad(wv) = prior === nothing ? nothing :
-        (prior isa EdgePrior ? edge_gradient(prior, wv) : laplacian_gradient(prior, wv))
-    prior_hess(wv) = prior === nothing ? nothing :
-        (prior isa EdgePrior ? edge_hessian(prior, wv) :
-         # quadratic prior: constant weighted Laplacian (weights = 1)
-         edge_hessian(EdgePrior(prior.neighbors, prior.weight, Inf), wv))
-
-    cost(r) = W === nothing ? 0.5 * dot(r, r) : 0.5 * sum(W .* r .^ 2)
-
-    pred, J = model(w)
-    r = pred .- obs
-    f_cur = cost(r)
-    μ = lm_damping
-    push!(history, norm(r))
+                                  weights::Union{Nothing,AbstractVector} = nothing,
+                                  free::Union{Nothing,AbstractVector{Bool}} = nothing,
+                                  predict_only = nothing)
+    w = clamp.(collect(Float64,w0),box[1],box[2])
+    free === nothing || length(free)==length(w) || throw(DimensionMismatch("free mask must match w0"))
+    active=free===nothing ? collect(eachindex(w)) : findall(free)
+    history=Float64[]
+    W=weights===nothing ? nothing : collect(Float64,weights)
+    data_cost(r)=W===nothing ? 0.5*dot(r,r) : 0.5*sum(W.*r.^2)
+    objective(pred,wv)=data_cost(pred.-obs)+prior_value(prior,wv)
+    pred,J=model(w)
+    linear_origin=copy(w);linear_pred=copy(pred);linear_J=J
+    r=pred.-obs;f_cur=objective(pred,w);mu=lm_damping
+    push!(history,norm(r))
+    isempty(active) && return w,history
 
     for _ in 1:n_iter
-        Jt = transpose(J)
-        # Normal-equation matrix and RHS (optionally weighted)
-        if W === nothing
-            JtJ = Matrix(Jt * J)
-            grad = Jt * r
+        Ja=J[:,active]
+        Jt=transpose(Ja)
+        if W===nothing
+            normal=Matrix(Jt*Ja);grad=Jt*r
         else
-            WJ = (W .* J)
-            JtJ = Matrix(Jt * WJ)
-            grad = Jt * (W .* r)
+            normal=Matrix(Jt*(W.*Ja));grad=Jt*(W.*r)
         end
         if prior !== nothing
-            grad = grad .+ prior_grad(w)
-            JtJ = JtJ .+ Matrix(prior_hess(w))
+            pg=prior isa EdgePrior ? edge_gradient(prior,w) : laplacian_gradient(prior,w)
+            grad=grad.+pg[active]
+            normal=normal.+Matrix(_prior_hessian(prior,w)[active,active])
         end
-        d = [JtJ[i, i] for i in axes(JtJ, 1)]
-        dmax = maximum(d); dmax = dmax > 0 ? dmax : 1.0
-
-        # For a strongly nonlinear operator the full Gauss-Newton step overshoots,
-        # so we damp (LM) AND backtrack along the step direction: try the LM step,
-        # then halve it until the true (nonlinear) cost actually decreases. A few
-        # LM levels guard against a poorly-scaled direction.
-        accepted = false
+        d=diag(normal);dmax=maximum(d);dmax=dmax>0 ? dmax : 1.0
+        accepted=false
         for _try in 1:6
-            A = JtJ + Diagonal(μ .* max.(d, 1e-12 * dmax))
-            δ = try
-                -(A \ grad)
+            A=normal+Diagonal(mu.*max.(d,1e-12*dmax))
+            delta=try
+                -(A\grad)
             catch
-                fill(0.0, length(w))
+                fill(0.0,length(active))
             end
-            if !all(isfinite, δ)
-                μ = min(μ * lm_factor, 1e12); continue
+            if !all(isfinite,delta)
+                mu=min(mu*lm_factor,1e12);continue
             end
-            α = 1.0
+            alpha=1.0
+            cached_w=nothing;cached_pred=nothing;cached_J=nothing
             for _ls in 1:14
-                w_new = clamp.(w .+ α .* δ, box[1], box[2])
-                pred_new, J_new = relinearize ? model(w_new) : (J * w_new, J)
-                f_new = cost(pred_new .- obs)
-                if isfinite(f_new) && f_new < f_cur - 1e-10 * abs(f_cur)
-                    w = w_new; r = pred_new .- obs; J = J_new; f_cur = f_new
-                    accepted = true
-                    break
+                w_new=copy(w)
+                w_new[active].=clamp.(w[active].+alpha.*delta,box[1],box[2])
+                # Halving an exactly zero projected step cannot change the candidate.
+                # Other LM levels may still propose a different direction.
+                w_new==w && break
+                if cached_w !== nothing && w_new==cached_w
+                    pred_new=cached_pred;J_new=cached_J
+                elseif relinearize && predict_only !== nothing
+                    pred_new=predict_only(w_new);J_new=nothing
+                    cached_w=w_new;cached_pred=pred_new;cached_J=nothing
+                else
+                    pred_new,J_new=relinearize ? model(w_new) : (linear_pred+linear_J*(w_new-linear_origin),linear_J)
+                    cached_w=w_new;cached_pred=pred_new;cached_J=J_new
                 end
-                α *= 0.5
+                f_new=objective(pred_new,w_new)
+                if isfinite(f_new) && f_new<f_cur-1e-10*abs(f_cur)
+                    # The optional prediction callback must equal model(w)[1].
+                    # Build a fresh derivative only for an accepted candidate.
+                    if relinearize && predict_only !== nothing && J_new === nothing
+                        pred_new,J_new=model(w_new)
+                        f_new=objective(pred_new,w_new)
+                        cached_pred=pred_new;cached_J=J_new
+                    end
+                    # Confirm the true objective after any callback/full-model
+                    # discrepancy; an approximate callback cannot authorize an increase.
+                    if isfinite(f_new) && f_new<f_cur-1e-10*abs(f_cur)
+                        w=w_new;r=pred_new.-obs;J=J_new;pred=pred_new;f_cur=f_new
+                        accepted=true;break
+                    end
+                end
+                alpha*=0.5
             end
             if accepted
-                μ = max(μ / lm_factor, 1e-12)
-                break
+                mu=max(mu/lm_factor,1e-12);break
             else
-                μ = min(μ * lm_factor, 1e12)
+                mu=min(mu*lm_factor,1e12)
             end
         end
-        push!(history, norm(r))
+        push!(history,norm(r))
         accepted || break
     end
-    return w, history
+    return w,history
 end
 
 """
@@ -708,7 +781,8 @@ end
 Gaussian-linear (Laplace) posterior at the MAP field `w`. Rebuilds the AD
 Jacobian `J = ∂pred/∂w` at `w`, forms the posterior precision
 `Λ = JᵀWJ + H_R` (the Gauss–Newton / penalised-fit Hessian, with `H_R` the
-quadratic smoothness-prior Laplacian), and inverts it on the free index set
+prior curvature: the exact quadratic Laplacian or local Huber curvature, not
+its IRLS optimization majorizer), and inverts it on the free index set
 `free` (the cells that may carry signal — e.g. the aquifer cells).
 
 This is the CONDITIONAL posterior given the global normalisation `s`: it
@@ -729,9 +803,7 @@ function laplace_posterior(model, w::AbstractVector;
     W = collect(Float64, weights)
     WJ = W .* J
     JtWJ = Matrix(transpose(J) * WJ)                 # data Fisher information (N×N)
-    HR = prior === nothing ? zeros(size(JtWJ)) :
-         (prior isa EdgePrior ? Matrix(edge_hessian(prior, w)) :
-          Matrix(edge_hessian(EdgePrior(prior.neighbors, prior.weight, Inf), w)))
+    HR = prior === nothing ? zeros(size(JtWJ)) : Matrix(_prior_posterior_hessian(prior,w))
     Λ = JtWJ .+ HR
     n = length(w)
     idx = findall(free)
