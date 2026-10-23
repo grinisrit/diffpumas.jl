@@ -1,0 +1,35 @@
+--- a/examples/lvd_tomography.jl
++++ b/examples/lvd_tomography.jl
+@@ -3200,15 +3200,15 @@
+     flush(stdout)
+     args.papermatch_fit_only && return (water=w_matched,converged=recursion_converged,passes=length(recursion_rows))
+ 
+-    # --- Rigorous inverse-problem statistics: posterior uncertainty map (Laplace),
+-    # null-model comparison, and nuisance-parameter (absolute-level) profiling.
+-    # Statistical weights are the pure Poisson × DEM down-weight on the fit bins
+-    # (no robust/conditioning rescale): an adopted weighting convention because
+-    # published intensities have no known absolute count covariance. The Laplace
+-    # posterior is CONDITIONAL on the normalisation s (the per-cell shape the
+-    # angular data constrain); the absolute level, degenerate with s, is left to
+-    # the inventory profile.
++    # --- Conditional curvature and separate weighted-residual diagnostics.
++    # W_stat below omits both the Cauchy factors and median renormalization used
++    # in the measured-field IRLS solves. Its JtWJ + fixed prior is therefore NOT
++    # the final IRLS-objective Hessian. The evaluated field is not verified to be
++    # a mode/stationary point under these changed weights. Its inverse and the
++    # post-fit empirical multiplier are conditional diagnostics, not calibrated
++    # posterior covariance. Legacy API/CSV/report result names remain unchanged.
+     println("Posterior uncertainty + null-model tests + absolute-level profile...")
++    println("Curvature scope: diagnostic weights omit fitting Cauchy factors and median renormalization; evaluated field is not verified as a mode under these weights. Legacy posterior/sigma labels do not establish calibrated posterior covariance.")
+     obs_stat = meas_v ./ s
+     W_stat = fit_mask .* wdem .* (args.exposure ./ max.(obs_stat, 1e-300))
+     flux_w = w -> flux_only_at(rho_fit, w)
+@@ -3398,6 +3398,8 @@
+         println(io, @sprintf("  water-insufficient (aquifer cells at the w=%.1f ceiling, water-only model under-explains): %d",
+                              MAX_WATER_FRACTION, aq_ceiling))
+         println(io)
++        println(io, "Curvature scope: JtWJ+prior uses weights without fitting Cauchy factors or median renormalization; it is not the final IRLS-objective Hessian.")
++        println(io, "The fitted point is not verified as a mode under those changed weights. Inverse curvature and empirical rescaling are conditional diagnostics, not calibrated posterior covariance; legacy result names below are retained.")
+         println(io, "Posterior uncertainty, null-model comparison, and water-amplitude profile:")
+         println(io, "  Laplace posterior (Gauss-Newton Hessian JtWJ + prior; conditional on the normalization s,")
+         println(io, "  i.e. the per-cell SHAPE the angular data constrain; sigma calibrated to reduced-chi^2=1):")
