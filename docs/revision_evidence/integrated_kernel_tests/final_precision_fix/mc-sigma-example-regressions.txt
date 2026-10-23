@@ -1,0 +1,38 @@
+{"host": "research_vm_roland", "cpus": [0, 1], "address_space_bytes": 8589934592, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "26,27", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "test/test_revision_suite.jl"]}
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+Test Summary:             | Pass  Total  Time
+TetGen Julia connectivity |    9      9  3.2s
+Test Summary:                      | Pass  Total  Time
+Adjoint finite difference controls |    7      7  0.0s
+Test Summary:          | Pass  Total  Time
+Revision option bounds |    3      3  0.9s
+Test Summary:                | Pass  Total  Time
+Measured robustness controls |    6      6  5.4s
+Test Summary:                       | Pass  Total  Time
+Masked forward/Jacobian consistency |    4      4  0.6s
+Test Summary:                    | Pass  Total  Time
+Validation angular configuration |    5      5  0.0s
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Tracing straight-line geometry on the grid volume...
+  [1/8] theta=60.0 deg phi=0.0 deg R=2861.6 m
+  [8/8] theta=75.0 deg phi=270.0 deg R=5151.5 m
+Test Summary:                   | Pass  Total  Time
+High-zenith validation geometry |    4      4  2.6s
+Test Summary:                              | Pass  Total  Time
+Seeded selected/population zenith coverage |    3      3  1.6s
+Test Summary:                                       | Pass  Total  Time
+Fixed-path sensitivity envelope excludes scattering |    5      5  0.1s
+Test Summary:                                     | Pass  Total  Time
+Strict physics loading and content-bound MC cache |   23     23  2.8s
+Test Summary:                                                  | Pass  Total  Time
+Calibration identities bind frozen correction and energy nodes |    3      3  0.2s
+  loaded content-verified MC observations (2 bins) from observations.bin
+Test Summary:                                              | Pass  Total  Time
+Production cache hit reexports verified MC sampling errors |    6      6  0.4s

@@ -1,0 +1,45 @@
+{
+  "core_commit": "6498e86",
+  "example_export_commit": "dfa0ddb",
+  "full_package_tests": {
+    "julia_1.10.12": {
+      "passed": 557,
+      "total": 557,
+      "seconds": 133.1,
+      "method": "Pkg.test(\"DiffPumas\") in preserved isolated1.10 environment",
+      "cpus": [
+        20,
+        21
+      ]
+    },
+    "julia_1.11.7": {
+      "passed": 557,
+      "total": 557,
+      "seconds": 193.4,
+      "method": "Pkg.test()",
+      "cpus": [
+        22,
+        23
+      ]
+    }
+  },
+  "example_regressions": {
+    "passed": 78,
+    "total": 78,
+    "new_coverage": "Cache hit reexports ordered verified MC sampling errors; calibration identity binds initial correction, exact energy samples and pass"
+  },
+  "resource_limits_per_test_process": {
+    "julia_threads": 2,
+    "address_space_gib": 8
+  },
+  "core_source_project_manifest_hashes_unchanged": true,
+  "independent_export_review": "ad_fixes approved schema, cache-hit, calibration identity/metadata and unchanged solver mathematics by inspection plus target result",
+  "scope": "Unit and deterministic example checks. No production-completion or uncertainty-coverage claim; runtime/precision diagnostic and new stochastic evidence are separate.",
+  "evidence_sha256": {
+    "julia-1.10-isolated-pkg-tests.txt": "e584ee000a8f56f3a9b81fa22a24cc6f7b058e3c69671bc3484b014c88e13746",
+    "source-unchanged-check.txt": "5cc9f5572e82b50b2ce9414b21bbf0cc608d71ed73188316982debf5847e34c0",
+    "mc-sigma-example-regressions.txt": "fd2005910f2f0b5826a5b5a2781234092ebd849827cc514d5e07ee94444c9a09",
+    "julia-1.11-pkg-tests.txt": "efd003a8f7f9361cd0c901ae338228dc8a7022140acb38fd6656d58b80f237de",
+    "source-sha256.txt": "c09c50261cb31cbc9ef49144538cebb46f3a8c2fe07c9dce594102e6549b1cd9"
+  }
+}
