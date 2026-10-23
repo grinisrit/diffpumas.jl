@@ -1,0 +1,42 @@
+{
+  "nominal_deep": [
+    {
+      "seed": 17,
+      "thickness_m": 800.0,
+      "zenith_deg": 75.0,
+      "c_flux": 1.7362785159011837e-06,
+      "c_sigma": 6.423426281970115e-08,
+      "julia_flux": 9.036331155710793e-07,
+      "julia_sigma": 1.874378079482768e-08,
+      "difference_percent": -47.95575091810285,
+      "z_independent_mc": -12.443673360869981
+    },
+    {
+      "seed": 42,
+      "thickness_m": 800.0,
+      "zenith_deg": 75.0,
+      "c_flux": 1.716852573616142e-06,
+      "c_sigma": 6.25665435452619e-08,
+      "julia_flux": 9.383467303288739e-07,
+      "julia_sigma": 1.9434684968049193e-08,
+      "difference_percent": -45.344944303955614,
+      "z_independent_mc": -11.88277536267106
+    },
+    {
+      "seed": 2026,
+      "thickness_m": 800.0,
+      "zenith_deg": 75.0,
+      "c_flux": 1.7936107037366964e-06,
+      "c_sigma": 6.31186960498343e-08,
+      "julia_flux": 9.046309521671949e-07,
+      "julia_sigma": 1.8947107064678108e-08,
+      "difference_percent": -49.56369571822116,
+      "z_independent_mc": -13.489592221652577
+    }
+  ],
+  "mean_signed_difference_percent": -47.62146364675988,
+  "spread_signed_difference_percent": 2.1291493274729083,
+  "mean_c_flux": 1.748913931084674e-06,
+  "mean_julia_flux": 9.155369326890493e-07,
+  "interpretation": "Large negative discrepancy persists across independent seed repeats; not explained by nominal MC sampling errors. Julia mixed-mode helper is deterministic CSDA without hard DEL."
+}

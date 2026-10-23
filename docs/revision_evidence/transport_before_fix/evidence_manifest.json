@@ -1,0 +1,21 @@
+{
+  "status": "pre-correction diagnostic; high-energy Julia hard-loss sampling omitted",
+  "files": [
+    {
+      "source": "examples/data/revision_flat_comparison_20261023/full10000/comparison.csv",
+      "sha256": "d4f91aa792d7b55beb438bd1c0913e8c713353abb673aa46e52b1963e30bbd0c"
+    },
+    {
+      "source": "examples/data/revision_flat_comparison_20261023/full10000/summary.json",
+      "sha256": "a82160097aef0ad806dd143fd177dd2f30877cb8b123e30b77776dee00756269"
+    },
+    {
+      "source": "examples/data/revision_flat_comparison_20261023/full10000/metadata.json",
+      "sha256": "0b7ce812c6a9c7ba4e94ddaf6c216c043ca068bcd2ed57b0c50e4b8ec9799258"
+    },
+    {
+      "source": "examples/data/revision_flat_controls_20261023/control_summary.json",
+      "sha256": "ce03e22283016a46ca7d02260d44e474883d73c937acca12a5387e5cb31e1530"
+    }
+  ]
+}
