@@ -1,0 +1,8 @@
+{
+  "file": "src/Physics.jl",
+  "before_sha256": "bc6c8bf370dffa2930c69fda3e7d6f8d80578da8b12499a7dce3de6bc3a928e1",
+  "after_sha256": "2c6307c0f568b1af51497b2e9535692a4fbc75809be999e64b9491f79c0a2b4b",
+  "change": "Reviewed mixture-cache weakidentity/locking/immutablekeys/FIFO fix; Int material flatcomparison paths bypass this cache. This change does not alter imported or derived physics, DCS, mixedkernel or flattransport.",
+  "independent_review": "ad_fixes implemented19/19focused tests; installation reviewedsource/tests; parentauthorizedapplyingaftertestfreeze",
+  "unchanged_source_claim": false
+}

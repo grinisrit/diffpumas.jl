@@ -1,0 +1,642 @@
+[
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "stopping_power_0",
+    "c": 0.00021930000000000002,
+    "julia": 0.00021930000000000002,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "stopping_power_1",
+    "c": 0.00020722839077320443,
+    "julia": 0.00020722830716020052,
+    "relative_percent": -4.034823780640906e-05
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "range_0",
+    "c": 49058.47657187759,
+    "julia": 49060.0,
+    "relative_percent": 0.0031053310841855364
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "range_1",
+    "c": 50863.14605787111,
+    "julia": 50866.18203567847,
+    "relative_percent": 0.005968914710652307
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "transport_path_1",
+    "c": 161132617.74908987,
+    "julia": 161270699.35044548,
+    "relative_percent": 0.08569438223280379
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "proper_time_0",
+    "c": 2593.4622982884553,
+    "julia": 2579.9337114273867,
+    "relative_percent": -0.5216419328708422
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "energy_straggling",
+    "c": 3.642722170176906e-06,
+    "julia": 3.642722170176906e-06,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10.0,
+    "property": "cross_section",
+    "c": 1.0931179143294902e-05,
+    "julia": 1.0931187362486112e-05,
+    "relative_percent": 7.519034408431935e-05
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "stopping_power_0",
+    "c": 0.00027519999999999997,
+    "julia": 0.00027519999999999997,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "stopping_power_1",
+    "c": 0.00024384248879563057,
+    "julia": 0.00024384264448593391,
+    "relative_percent": 6.384871813480686e-05
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "range_0",
+    "c": 407621.49992457347,
+    "julia": 407600.0,
+    "relative_percent": -0.0052744824739270335
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "range_1",
+    "c": 444623.23472698603,
+    "julia": 444647.4812468921,
+    "relative_percent": 0.005453273246258661
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "transport_path_1",
+    "c": 13636963529.717407,
+    "julia": 13882712872.939278,
+    "relative_percent": 1.8020825727541157
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "proper_time_0",
+    "c": 3601.9784978068387,
+    "julia": 3582.189205709095,
+    "relative_percent": -0.5494006171828381
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "energy_straggling",
+    "c": 3.7336396012015846e-05,
+    "julia": 3.7336396012015846e-05,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100.0,
+    "property": "cross_section",
+    "c": 1.9924283129490386e-06,
+    "julia": 1.9924267197802556e-06,
+    "relative_percent": -7.996115958253114e-05
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "stopping_power_0",
+    "c": 0.0006609000000000001,
+    "julia": 0.0006609000000000001,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "stopping_power_1",
+    "c": 0.0004520816192265373,
+    "julia": 0.0004520894296290099,
+    "relative_percent": 0.001727653180405575
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "range_0",
+    "c": 2449766.317511173,
+    "julia": 2450000.0,
+    "relative_percent": 0.00953897060125275
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "range_1",
+    "c": 3092868.5486930874,
+    "julia": 3092531.6854030425,
+    "relative_percent": -0.01089161355360968
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "transport_path_1",
+    "c": 1226495563092.0034,
+    "julia": 1282340582854.9421,
+    "relative_percent": 4.553218245824953
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "proper_time_0",
+    "c": 4251.741401153797,
+    "julia": 4227.445061642449,
+    "relative_percent": -0.5714444322684864
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "energy_straggling",
+    "c": 0.00037429596781983493,
+    "julia": 0.00037429596781983493,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 1000.0,
+    "property": "cross_section",
+    "c": 1.0348523932557627e-06,
+    "julia": 1.0348445407522566e-06,
+    "relative_percent": -0.0007588042079564872
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "stopping_power_0",
+    "c": 0.0046630000000000005,
+    "julia": 0.0046630000000000005,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "stopping_power_1",
+    "c": 0.0024442532332306388,
+    "julia": 0.0024443481288072117,
+    "relative_percent": 0.003882395460608201
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "range_0",
+    "c": 6873994.577217283,
+    "julia": 6874000.0,
+    "relative_percent": 7.888837643132973e-05
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "range_1",
+    "c": 10713305.298620988,
+    "julia": 10704628.679227136,
+    "relative_percent": -0.08098919196271037
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "transport_path_1",
+    "c": 113372733907884.61,
+    "julia": 123554696871668.77,
+    "relative_percent": 8.98096271724118
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "proper_time_0",
+    "c": 4423.846422509415,
+    "julia": 4398.032518263993,
+    "relative_percent": -0.5835171879854606
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "energy_straggling",
+    "c": 0.0037438940174384827,
+    "julia": 0.0037438940174384827,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 10000.0,
+    "property": "cross_section",
+    "c": 1.010634570358127e-06,
+    "julia": 1.0106250368807528e-06,
+    "relative_percent": -0.0009433159772864741
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "stopping_power_0",
+    "c": 0.04633,
+    "julia": 0.04633,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "stopping_power_1",
+    "c": 0.022465480688386403,
+    "julia": 0.022466436823944155,
+    "relative_percent": 0.004256020919446435
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "range_0",
+    "c": 11868130.435931403,
+    "julia": 11870000.0,
+    "relative_percent": 0.015752810256763894
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "range_1",
+    "c": 20698985.843750812,
+    "julia": 20670029.22864716,
+    "relative_percent": -0.13989388331502317
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "transport_path_1",
+    "c": 1.0323424958911574e+16,
+    "julia": 1.2051644302930056e+16,
+    "relative_percent": 16.74075562031976
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "proper_time_0",
+    "c": 4444.4996451781935,
+    "julia": 4418.481475814304,
+    "relative_percent": -0.5854015399037515
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "energy_straggling",
+    "c": 0.03743987474727121,
+    "julia": 0.03743987474727121,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "StandardRock",
+    "energy": 100000.0,
+    "property": "cross_section",
+    "c": 1.063038833376601e-06,
+    "julia": 1.0630292288772199e-06,
+    "relative_percent": -0.0009034946870767335
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "stopping_power_0",
+    "c": 0.0002651,
+    "julia": 0.0002651,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "stopping_power_1",
+    "c": 0.00025324311172542665,
+    "julia": 0.00025324320407173786,
+    "relative_percent": 3.6465478014946484e-05
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "range_0",
+    "c": 42005.82193756653,
+    "julia": 42000.0,
+    "relative_percent": -0.013859834894269785
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "range_1",
+    "c": 43261.93093633075,
+    "julia": 43266.89835048649,
+    "relative_percent": 0.011482183176370064
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "transport_path_1",
+    "c": 227422570.58800453,
+    "julia": 221442186.19494072,
+    "relative_percent": -2.629635386497231
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "proper_time_0",
+    "c": 2332.0315879599316,
+    "julia": 2319.9347567924883,
+    "relative_percent": -0.5187250134131127
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "energy_straggling",
+    "c": 3.636722986266248e-06,
+    "julia": 3.63672662299287e-06,
+    "relative_percent": 0.00010000009997845893
+  },
+  {
+    "material": "Air",
+    "energy": 10.0,
+    "property": "cross_section",
+    "c": 1.0808272120977697e-05,
+    "julia": 1.0808271716540866e-05,
+    "relative_percent": -3.7419193965604336e-06
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "stopping_power_0",
+    "c": 0.00032450000000000003,
+    "julia": 0.00032450000000000003,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "stopping_power_1",
+    "c": 0.00029652756862504775,
+    "julia": 0.0002965265797821435,
+    "relative_percent": -0.00033347418887386127
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "range_0",
+    "c": 340379.5131672201,
+    "julia": 340400.0,
+    "relative_percent": 0.006018820753705967
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "range_1",
+    "c": 363793.3535480312,
+    "julia": 363825.06164094654,
+    "relative_percent": 0.008715962676641986
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "transport_path_1",
+    "c": 18997870066.511185,
+    "julia": 19010639808.42407,
+    "relative_percent": 0.06721670307343608
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "proper_time_0",
+    "c": 3167.1940724277124,
+    "julia": 3149.9602115997336,
+    "relative_percent": -0.5441365585396096
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "energy_straggling",
+    "c": 3.727490685753928e-05,
+    "julia": 3.7274944132483405e-05,
+    "relative_percent": 0.00010000009997845893
+  },
+  {
+    "material": "Air",
+    "energy": 100.0,
+    "property": "cross_section",
+    "c": 1.822657028995018e-06,
+    "julia": 1.8226684801230908e-06,
+    "relative_percent": 0.0006282656523248775
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "stopping_power_0",
+    "c": 0.0006212,
+    "julia": 0.0006212,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "stopping_power_1",
+    "c": 0.00045639006992802305,
+    "julia": 0.0004563956536915749,
+    "relative_percent": 0.001223462980415313
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "range_0",
+    "c": 2301982.0061190883,
+    "julia": 2302000.0,
+    "relative_percent": 0.0007816690514417246
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "range_1",
+    "c": 2769109.9375846894,
+    "julia": 2769021.560843533,
+    "relative_percent": -0.003191521577272649
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "transport_path_1",
+    "c": 1663989456832.179,
+    "julia": 1730156582359.4985,
+    "relative_percent": 3.9764149499652124
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "proper_time_0",
+    "c": 3765.4797692224474,
+    "julia": 3744.2460487189446,
+    "relative_percent": -0.5639047825209076
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "energy_straggling",
+    "c": 0.0003736795413554857,
+    "julia": 0.00037367991503540067,
+    "relative_percent": 0.00010000009997845893
+  },
+  {
+    "material": "Air",
+    "energy": 1000.0,
+    "property": "cross_section",
+    "c": 8.298303899462936e-07,
+    "julia": 8.298254424661328e-07,
+    "relative_percent": -0.0005962037810003373
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "stopping_power_0",
+    "c": 0.003666,
+    "julia": 0.003666,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "stopping_power_1",
+    "c": 0.0019293430379171736,
+    "julia": 0.0019294097872501635,
+    "relative_percent": 0.003459692324181418
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "range_0",
+    "c": 7587139.786078101,
+    "julia": 7587000.0,
+    "relative_percent": -0.0018424081016377158
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "range_1",
+    "c": 11567746.181752238,
+    "julia": 11560678.668544428,
+    "relative_percent": -0.0610967175175281
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "transport_path_1",
+    "c": 149761303682081.5,
+    "julia": 164736802562755.4,
+    "relative_percent": 9.999578337314974
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "proper_time_0",
+    "c": 3964.4578502447757,
+    "julia": 3941.5554583156027,
+    "relative_percent": -0.5776929102111361
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "energy_straggling",
+    "c": 0.0037377282140356022,
+    "julia": 0.003737731951767554,
+    "relative_percent": 0.0001000001000006634
+  },
+  {
+    "material": "Air",
+    "energy": 10000.0,
+    "property": "cross_section",
+    "c": 7.960485611260147e-07,
+    "julia": 7.960424779592953e-07,
+    "relative_percent": -0.0007641703052452264
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "stopping_power_0",
+    "c": 0.0357,
+    "julia": 0.0357,
+    "relative_percent": 0.0
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "stopping_power_1",
+    "c": 0.016716270626629205,
+    "julia": 0.016716943832256744,
+    "relative_percent": 0.004027247719151639
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "range_0",
+    "c": 14039131.020487221,
+    "julia": 14040000.0,
+    "relative_percent": 0.006189695868719092
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "range_1",
+    "c": 24729668.395247098,
+    "julia": 24697613.958925437,
+    "relative_percent": -0.12961935360128463
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "transport_path_1",
+    "c": 1.3235424379098786e+16,
+    "julia": 1.5946979515782786e+16,
+    "relative_percent": 20.48710384357644
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "proper_time_0",
+    "c": 3991.0460067963622,
+    "julia": 3967.8827706641646,
+    "relative_percent": -0.5803800831349237
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "energy_straggling",
+    "c": 0.03737821517409823,
+    "julia": 0.03737825255235077,
+    "relative_percent": 0.00010000009997845893
+  },
+  {
+    "material": "Air",
+    "energy": 100000.0,
+    "property": "cross_section",
+    "c": 8.485583123137594e-07,
+    "julia": 8.485522092485761e-07,
+    "relative_percent": -0.000719227552747892
+  }
+]

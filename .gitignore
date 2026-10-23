@@ -45,6 +45,8 @@ examples/data/revision_quadrature_*/
 examples/data/revision_robustness_*/
 examples/data/revision_flat_comparison_*/
 examples/data/revision_flat_controls_*/
+examples/data/revision_flat_corrected_*/
+examples/data/revision_physics_v2_*/
 examples/data/tetra_geometry_verification_*/
 # Re-include lvd_conf LAST so the input data stays tracked (must follow the globs above).
 !examples/data/lvd_conf/

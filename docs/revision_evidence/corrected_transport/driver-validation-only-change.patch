@@ -1,0 +1,25 @@
+--- recorded/dev/run_flat_comparison.py
++++ current/dev/run_flat_comparison.py
+@@ -2,9 +2,10 @@
+ """Fresh nominal C/Julia reference; run inside run_bounded.py, preserving archives."""
+ import argparse,csv,hashlib,json,os,pathlib,re,subprocess,time,resource
+ p=argparse.ArgumentParser(description=__doc__)
+-p.add_argument('--source-energy-max',type=float,default=1e9);p.add_argument('--reference',type=pathlib.Path,required=True);p.add_argument('--julia-dump',type=pathlib.Path,default=pathlib.Path('examples/data/revision_physics/materials.pumas'))
++p.add_argument('--source-energy-max',type=float,default=1e9);p.add_argument('--reference',type=pathlib.Path,required=True);p.add_argument('--julia-dump',type=pathlib.Path,required=True)
+ p.add_argument('--output',type=pathlib.Path,required=True);p.add_argument('--samples',type=int,default=10000);p.add_argument('--seed',type=int,default=42);p.add_argument('--scope',choices=['smoke','full','control','deep'],default='full');p.add_argument('--mode',choices=['nominal','csda'],default='nominal');a=p.parse_args()
+ if a.samples<=0:p.error('samples must be positive')
++if not 0<a.source_energy_max<=1e9:p.error('source-energy-max must be positive and no larger than1e9GeV')
+ if not 0<=a.seed<2**32:p.error('seed must be an unsigned32bit integer')
+ root=pathlib.Path(__file__).resolve().parents[1];ref=a.reference.resolve();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
+ if (out/'c.csv').exists() or (out/'julia.csv').exists():raise SystemExit('Refusing to replace existing comparison CSVs')
+--- recorded/dev/flat_comparison_julia.jl
++++ current/dev/flat_comparison_julia.jl
+@@ -5,6 +5,8 @@
+ length(ARGS)==6 || error("Usage: flat_comparison_julia.jl DUMP OUTPUT.csv SAMPLES SEED smoke|full|control|deep nominal|csda")
+ dump,output=ARGS[1:2];n=parse(Int,ARGS[3]);seed=parse(Int,ARGS[4]);scope=ARGS[5];mode=ARGS[6];stochastic=mode=="nominal"
+ n>0 || error("Samples must be positive")
++scope in ("smoke","full","control","deep") || error("Unknown scope")
++mode in ("nominal","csda") || error("Unknown transport mode")
+ source_max=parse(Float64,get(ENV,"PUMAS_REFERENCE_SOURCE_MAX","1e9"))
+ physics=load_physics(dump);physics===nothing && error("Unreadable physics dump")
+ rock=get_material_index(physics,"StandardRock");air=get_material_index(physics,"Air")

@@ -71,5 +71,5 @@ JULIA_BIN=/path/to/julia-1.10 bash dev/create_revision_physics.sh NEW_DIRECTORY
 
 The historical dumps and pre-fix comparison CSVs are retained. A regenerated dump
 changes restricted stopping powers, hard rates, and derived moments after the
-radiative-unit correction. Restoring the first imported1MeV row adds one grid
+radiative-unit correction. Restoring the first imported 1 MeV row adds one grid
 node; the remaining imported CSDA records keep their original input values.

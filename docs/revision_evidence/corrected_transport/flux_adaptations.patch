@@ -1,0 +1,20 @@
+--- upstream/examples/pumas/flux.c
++++ flux_configurable.c
+@@ -56,7 +56,7 @@
+  */
+ double flux_gaisser(double cos_theta, double kinetic_energy, double charge)
+ {
+-        const double Emu = kinetic_energy + 0.10566;
++        const double Emu = kinetic_energy + 0.10565839;
+         const double ec = 1.1 * Emu * cos_theta;
+         const double rpi = 1. + ec / 115.;
+         const double rK = 1. + ec / 850.;
+@@ -82,7 +82,7 @@
+  */
+ double flux_gccly(double cos_theta, double kinetic_energy, double charge)
+ {
+-        const double Emu = kinetic_energy + 0.10566;
++        const double Emu = kinetic_energy + 0.10565839;
+         const double cs = cos_theta_star(cos_theta);
+         return pow(1. + 3.64 / (Emu * pow(cs, 1.29)), -2.7) *
+             flux_gaisser(cs, kinetic_energy, charge);

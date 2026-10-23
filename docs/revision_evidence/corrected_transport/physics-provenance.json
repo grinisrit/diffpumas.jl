@@ -1,0 +1,25 @@
+{
+  "generated_julia": "1.10.12",
+  "verified_julia": "1.11.7",
+  "dump_sha256": "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41",
+  "format_version": 2,
+  "radiative_table_version": 2,
+  "stopping_parser": "first data row preserved;193nodes",
+  "materials_commit": "d00fd31e5365b699b2d077232313f0c36343a837",
+  "inputs_sha256": {
+    "examples/data/revision_physics/materials.xml": "ca280fac5e83c74985adb322d39fefbd6b55feb9727956140cd7d60160dd13fb",
+    "examples/data/revision_physics/pumas-materials/dedx/muon/air.txt": "6a4b283e46391f430f8e564761fe372b77ba5322a9afd0ec4353a19081f940d4",
+    "examples/data/revision_physics/pumas-materials/dedx/muon/standard_rock.txt": "544aecf87440092dba8d5b456d046180cf6ce8f4828c9278fd974869dfdcf7eb",
+    "examples/data/revision_physics/pumas-materials/dedx/muon/water.txt": "107b5e77c861d8d6bd406841a4cf5d480aa6b9270c1fd757fe3e18f5c7316293"
+  },
+  "creation_sources_sha256": {
+    "src/Materials.jl": "f646987a55687b1d275de1afe18d813a10d63aca6ecf83c95b50498eeb170510",
+    "src/DEDXLoader.jl": "20b511bc0822ee7ab09cee8c9f24c95aeb9f4dfc598e4b6fe68a2ee8ea9d9593",
+    "src/Physics.jl": "bc6c8bf370dffa2930c69fda3e7d6f8d80578da8b12499a7dce3de6bc3a928e1",
+    "src/PhysicsMetadata.jl": "066ee16596f02afd0f8026340ab93fb706bf88c982ca0dce333198e90f6d2fd4",
+    "src/Loader.jl": "0d4dcd43e171e46213c6073f8e41c342d79bd61a441eec83847a2dbe3db90213"
+  },
+  "reproduction": "JULIA_BIN=/path/to/julia1.10 bash dev/create_revision_physics.sh NEW_DIRECTORY",
+  "legacy_evidence": "Existing revision_physics and intermediate revision_physics_v2_20261023 dumps preserved. Intermediate192node v2 marked superseded, never overwrite historical files.",
+  "scope": "Fresh elemental recipes + corrected derived radiative tables; imported CSDA stopping/range records retained, first1MeV record restored; empirical CSDA also changes because its radiative moments were corrected."
+}

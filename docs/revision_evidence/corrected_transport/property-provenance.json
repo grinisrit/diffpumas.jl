@@ -1,0 +1,6 @@
+{
+  "c_library_sha256": "ffbb3dc0795d25619f2b32a8ca900f95f0134ec081e2c3d53050f9e9d4e8120e",
+  "c_dump_sha256": "27015583929504fee3dda857e1a22ed89d3b523b1e23db3ae55b9d97586a50ee",
+  "c_property_csv_origin": "Fresh corrected reference public-property probe, byte-for-byte numeric rows match prior control probe despite C dump byte changes",
+  "julia_dump_sha256": "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+}

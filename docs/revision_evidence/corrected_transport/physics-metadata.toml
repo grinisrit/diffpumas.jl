@@ -1,0 +1,152 @@
+ctau_m = 658.654
+mass_GeV = 0.10565839
+dump_format_version = 2
+particle = "MUON"
+cutoff = 0.05
+julia_version = "1.11.7"
+elastic_ratio = 0.05
+radiative_table_version = 2
+physics_fingerprint = "5084b390bb48e3c2c01252adc0f1dc33ce7dfdb29918019c01e4bfb7e0b447ba"
+recipe_fingerprint = "8bbd0f4befe820c8cd77c38771088249c1f7ab2179cb1d046a6c6418a39ac5b7"
+
+[[materials]]
+nodes = 193
+name = "StandardRock"
+recipe_ZoA = 0.5
+density_kg_m3 = 2650.0
+energy_min_GeV = 0.001
+energy_max_GeV = 1.0e9
+imported_header_ZoA = 0.5
+
+    [[materials.elements]]
+    Z = 11.0
+    name = "Rk"
+    A = 22.0
+    I = 1.364e-7
+    fraction = 1.0
+[[materials]]
+nodes = 193
+name = "Water"
+recipe_ZoA = 0.5550013465785668
+density_kg_m3 = 1000.0
+energy_min_GeV = 0.001
+energy_max_GeV = 1.0e9
+imported_header_ZoA = 0.55509
+
+    [[materials.elements]]
+    Z = 8.0
+    name = "O"
+    A = 15.9993
+    I = 9.5e-8
+    fraction = 0.888106
+    [[materials.elements]]
+    Z = 1.0
+    name = "H"
+    A = 1.0087
+    I = 1.92e-8
+    fraction = 0.111894
+[[materials]]
+nodes = 193
+name = "Air"
+recipe_ZoA = 0.4991770512677139
+density_kg_m3 = 1.2049999999999998
+energy_min_GeV = 0.001
+energy_max_GeV = 1.0e9
+imported_header_ZoA = 0.49918
+
+    [[materials.elements]]
+    Z = 7.0
+    name = "N"
+    A = 14.0072
+    I = 8.2e-8
+    fraction = 0.7552677552677552
+    [[materials.elements]]
+    Z = 8.0
+    name = "O"
+    A = 15.9993
+    I = 9.5e-8
+    fraction = 0.23178123178123175
+    [[materials.elements]]
+    Z = 18.0
+    name = "Ar"
+    A = 39.9481
+    I = 1.8800000000000002e-7
+    fraction = 0.012827012827012825
+    [[materials.elements]]
+    Z = 6.0
+    name = "C"
+    A = 12.0108
+    I = 7.800000000000001e-8
+    fraction = 0.000124000124000124
+[[materials]]
+nodes = 193
+name = "WetRock"
+recipe_ZoA = 0.5275006732892834
+density_kg_m3 = 1452.0547945205478
+energy_min_GeV = 0.001
+energy_max_GeV = 1.0e9
+imported_header_ZoA = 0.5275006732892834
+
+    [[materials.elements]]
+    Z = 1.0
+    name = "H"
+    A = 1.0087
+    I = 1.92e-8
+    fraction = 0.055947
+    [[materials.elements]]
+    Z = 11.0
+    name = "Rk"
+    A = 22.0
+    I = 1.364e-7
+    fraction = 0.5
+    [[materials.elements]]
+    Z = 8.0
+    name = "O"
+    A = 15.9993
+    I = 9.5e-8
+    fraction = 0.444053
+[[materials]]
+nodes = 193
+name = "PorousWetRock"
+recipe_ZoA = 0.5219182437581982
+density_kg_m3 = 11.965124374343803
+energy_min_GeV = 0.001
+energy_max_GeV = 1.0e9
+imported_header_ZoA = 0.5219182437581982
+
+    [[materials.elements]]
+    Z = 1.0
+    name = "H"
+    A = 1.0087
+    I = 1.92e-8
+    fraction = 0.0447576
+    [[materials.elements]]
+    Z = 18.0
+    name = "Ar"
+    A = 39.9481
+    I = 1.8800000000000002e-7
+    fraction = 0.0012827012827012825
+    [[materials.elements]]
+    Z = 7.0
+    name = "N"
+    A = 14.0072
+    I = 8.2e-8
+    fraction = 0.07552677552677553
+    [[materials.elements]]
+    Z = 6.0
+    name = "C"
+    A = 12.0108
+    I = 7.800000000000001e-8
+    fraction = 1.2400012400012401e-5
+    [[materials.elements]]
+    Z = 11.0
+    name = "Rk"
+    A = 22.0
+    I = 1.364e-7
+    fraction = 0.5
+    [[materials.elements]]
+    Z = 8.0
+    name = "O"
+    A = 15.9993
+    I = 9.5e-8
+    fraction = 0.3784205231781232

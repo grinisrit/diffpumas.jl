@@ -1,0 +1,27 @@
+{
+  "controls": [
+    {
+      "thickness_m": 100.0,
+      "zenith_deg": 45.0,
+      "cap1e9_relative_to_cap1e12_percent": 0.9049318346789237,
+      "difference_over_quadrature_of_reported_standard_errors": 0.2805167203212315
+    },
+    {
+      "thickness_m": 400.0,
+      "zenith_deg": 60.0,
+      "cap1e9_relative_to_cap1e12_percent": 1.6939003803003727,
+      "difference_over_quadrature_of_reported_standard_errors": 0.48184274033607205
+    },
+    {
+      "thickness_m": 800.0,
+      "zenith_deg": 75.0,
+      "cap1e9_relative_to_cap1e12_percent": 5.217981580434694,
+      "difference_over_quadrature_of_reported_standard_errors": 0.9449192632275489
+    }
+  ],
+  "incident_tail_upper_bound_m2_s_sr": 4.350305187884728e-13,
+  "bound_formula": "1400*(1+.054)/1.7 * cap^(-1.7); GCCLY factor and meson denominators <=1; Etotal>=K; charge fractions sum1",
+  "bound_scope": "Incident flux all energies above source cutoff, all zenith angles. For fixed-path energy-only number-conserving transport, transmitted contribution cannot exceed this incident integral. This is a physical-domain bound, not a guarantee for a biased MC implementation.",
+  "mc_control_interpretation": "Changing a transport ceiling changes random-number consumption and later histories even at identical seed. Estimates share prefixes and subsequently diverge; the descriptive quadrature of reported SE is not an independence assumption or calibrated z-test, and these differences do not directly estimate the physical tail.",
+  "relative_bound_at_deep_control": 2.4082233056222314e-07
+}
