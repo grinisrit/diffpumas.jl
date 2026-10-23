@@ -1,0 +1,11 @@
+quartile_edges_cell_height_m = [280.5079500262201, 654.5185500611802, 1028.5291500961403]
+quartile_edges_zenith_deg = [15.0, 30.0, 60.0]
+quartile_edges_slant_m = [1390.5790964652442, 1470.8653817896447, 2297.328362524513]
+selected_joint_strata = 24
+scope = "reconstructed frozen calibrated midpoint Jacobian; excludes zero sensitivities; angular coverage is explicitly recorded, not domain-wide validation"
+exact_seeded_selection_reproduced = true
+population_joint_strata = 81
+quartile_edges_abs_sensitivity = [9.079040530956053e-5, 0.0003344795740642672, 0.0004462963547134655]
+population_nonzero_entries = 1009
+validation_zeniths_deg = [0.0, 15.0, 30.0, 45.0, 60.0, 75.0]
+selected_pairs = 24

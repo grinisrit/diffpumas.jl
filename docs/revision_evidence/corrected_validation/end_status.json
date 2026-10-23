@@ -1,0 +1,21 @@
+{
+  "ended_utc": "2026-10-23T01:55:46.531035+00:00",
+  "returncode": 0,
+  "source_unchanged": true,
+  "source_changes": [],
+  "csv_row_counts": {
+    "fd_steps.csv": 360,
+    "lvd_mc_calibration_c1bfa65ea1bdebe0.csv": 24,
+    "scaling.csv": 42,
+    "mc_jacobian_summary.csv": 72,
+    "mc_jacobian.csv": 576,
+    "internal_adjoint_steps.csv": 144,
+    "acceptance.csv": 3,
+    "validation_coverage.csv": 6,
+    "linearized_robustness.csv": 36,
+    "held_out_closure.csv": 168,
+    "selected_pairs.csv": 24,
+    "selection_population_audit.csv": 1009
+  },
+  "completed": true
+}

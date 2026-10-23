@@ -1,0 +1,47 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7], "address_space_bytes": 12884901888, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "20-27", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "examples/revision_suite.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--output", "/home/roland/devspace/diffpumas.jl/examples/data/revision_20261023_v5", "--rays-step", "15", "--validation-zeniths", "0,15,30,45,60,75", "--samples", "32", "--mc-samples", "1024", "--cases", "24", "--replicates", "8", "--seed", "20261022", "--rock-density", "2710", "--calibrate", "true", "--parallel-mc", "true"]}
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Tracing straight-line geometry on the grid volume...
+  [1/24] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [24/24] theta=30.0 deg phi=330.0 deg R=1530.1 m
+Tracing straight-line geometry on the grid volume...
+  [1/24] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [24/24] theta=30.0 deg phi=330.0 deg R=1530.1 m
+Tracing straight-line geometry on the grid volume...
+  [1/96] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [96/96] theta=45.0 deg phi=345.0 deg R=2297.3 m
+Tracing straight-line geometry on the grid volume...
+  [1/96] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [96/96] theta=45.0 deg phi=345.0 deg R=2297.3 m
+Tracing straight-line geometry on the grid volume...
+  [1/24] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [24/24] theta=30.0 deg phi=330.0 deg R=1530.1 m
+Tracing straight-line geometry on the grid volume...
+  [1/24] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [24/24] theta=30.0 deg phi=330.0 deg R=1530.1 m
+Tracing straight-line geometry on the grid volume...
+  [1/96] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [96/96] theta=45.0 deg phi=345.0 deg R=2297.3 m
+Tracing straight-line geometry on the grid volume...
+  [1/96] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [96/96] theta=45.0 deg phi=345.0 deg R=2297.3 m
+Tracing straight-line geometry on the grid volume...
+  [1/24] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [24/24] theta=30.0 deg phi=330.0 deg R=1530.1 m
+Tracing straight-line geometry on the grid volume...
+  [1/24] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [24/24] theta=30.0 deg phi=330.0 deg R=1530.1 m
+Tracing straight-line geometry on the grid volume...
+  [1/96] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [96/96] theta=45.0 deg phi=345.0 deg R=2297.3 m
+Tracing straight-line geometry on the grid volume...
+  [1/96] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [96/96] theta=45.0 deg phi=345.0 deg R=2297.3 m
+Calibrating CSDA correction to fixed-path energy-loss MC on 24 bins (1024 MC samples/bin, energy-loss straggling; scattering disabled)...
+  fitted α_strag=1.000 (physical ½b(b+1) enhancement) κ_hard=0.000 (+ fitted geometric residual) | CSDA-vs-MC mean rel error 26.1% -> 3.7%
+Tracing straight-line geometry on the grid volume...
+  [1/144] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [144/144] theta=75.0 deg phi=345.0 deg R=4210.7 m
+Revision suite complete: /home/roland/devspace/diffpumas.jl/examples/data/revision_20261023_v5

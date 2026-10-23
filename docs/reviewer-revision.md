@@ -120,3 +120,21 @@ after source hashes, and the stopped pre-fix attempt are preserved in
 terminated before completing a recursion; it is not a nonlinear robustness result.
 Production and robustness remain paused until the stochastic transport correction
 is separately validated.
+
+
+### Corrected validation and recomputation, 2026-10-23
+
+The earlier transport pause described above is historical. After the corrected
+transport passed both full package suites (557 assertions on Julia 1.10 and 1.11),
+the expanded v5 validation completed with exit zero and unchanged input/source
+audits. Its raw evidence and independent selection reconstruction are preserved
+in `revision_evidence/corrected_validation/`. Deterministic derivative consistency
+is strong, but matched stochastic sensitivities and held-out wet fluxes retain
+material surrogate discrepancies: median wet flux bias +27.8% (maximum +37.4%),
+and median paired wetting-response bias 30.4% of the actual MC increment. These
+results limit accuracy claims and were not used to retune the frozen correction.
+
+The user-authorized five-stage production and nonlinear robustness runs began
+at 06:53 UTC in new corrected output directories, with aggregate limits of
+20 CPUs and 48 GiB address space. Their outputs remain pending until execution,
+source audits, and fit convergence have been checked; launch is not completion.
