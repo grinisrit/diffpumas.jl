@@ -422,7 +422,9 @@ Based on PUMAS's EHS sampling.
         return false, zero(T), zero(T)
     end
     
-    r = lb_ehs / lb_ehs_k
+    # Thin the candidate rate 1/lb_ehs to the event rate 1/lb_ehs_k.
+    # PUMAS step_transport uses r=lb_event/lb_reference and accepts 1/r.
+    r = lb_ehs_k / lb_ehs
     
     if r <= zero(T) || rand(rng) > one(T) / r
         return false, zero(T), zero(T)
@@ -1322,7 +1324,8 @@ Uses mixture EHS mean free path.
         return false, zero(T), zero(T)
     end
 
-    r = lb_ehs / lb_ehs_k
+    # Same rate-majorant thinning as the single-material overload.
+    r = lb_ehs_k / lb_ehs
     if r <= zero(T) || rand(rng) > one(T) / r
         return false, zero(T), zero(T)
     end
