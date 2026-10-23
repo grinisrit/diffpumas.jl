@@ -1,0 +1,17 @@
+{"host": "research_vm_roland", "cpus": [0], "address_space_bytes": 2147483648, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "20", "julia", "--startup-file=no", "--project=.", "/mnt/big_data/agent-builds/shallow-mixture-fix-20261023/validate.jl"]}
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+┌ Warning: PUMAS dE/dx file not found for StandardRock at /nonexistent/dedx/muon/standard_rock.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:568
+┌ Warning: PUMAS dE/dx file not found for Water at /nonexistent/dedx/muon/water.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:568
+┌ Warning: PUMAS dE/dx file not found for Air at /nonexistent/dedx/muon/air.txt. Using empirical formulas.
+└ @ DiffPumas.Physics ~/devspace/diffpumas.jl/src/Physics.jl:568
+Test Summary:                                      | Pass  Total  Time
+Shallow candidate endpoint and material properties |   63     63  0.6s
+Test Summary:                                       | Pass  Total  Time
+Constant stopping transport and endpoint derivative |   10     10  0.2s
+Candidate evaluated under separate name; tracked method untouched. Deterministic consistency only, not stochastic validation.
