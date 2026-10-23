@@ -1,0 +1,24 @@
+{
+  "scope": "Warmed single-thread call costs and marginal sampling precision, three azimuth-zero directions in two uniform fields. Not full angular coverage or measured parallel scaling. Calibration/cross-bin uncertainty excluded.",
+  "rows": 72,
+  "timed_seconds": 45.676580338,
+  "histories": 43008,
+  "seconds_per_history": 0.0010620484639601935,
+  "relative_sigma_by_samples": {
+    "256": {
+      "median": 0.1707816731920694,
+      "minimum": 0.14813331340009073,
+      "maximum": 0.2611929763483531
+    },
+    "512": {
+      "median": 0.12473413123791129,
+      "minimum": 0.1043232389986785,
+      "maximum": 0.26761752624875984
+    },
+    "1024": {
+      "median": 0.08671165406319353,
+      "minimum": 0.07395527847934004,
+      "maximum": 0.14830770808450375
+    }
+  }
+}

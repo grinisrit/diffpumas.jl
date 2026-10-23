@@ -1,0 +1,7 @@
+{
+  "scope": "Real fixed-path mixed transport and paired CSDA, four independent seeded replicate rows on one and four Julia threads; no concurrent AD/global-state mutation.",
+  "exact_row_parity": true,
+  "csv_sha256": "41b5f443c3c9f82044b95e5f64bcc77834d29ebf41077dc5896f7f28d3e9c3c7",
+  "suite_sha256": "8b27fe165cac993e0d2572be9e93de062cdb58e28e8b02c7b4f26a6112cc748f",
+  "independent_review": "ad_fixes approved source ordering/locality and independently verified files"
+}

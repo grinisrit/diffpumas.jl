@@ -14,14 +14,16 @@ using Dates
 function revision_options(argv)
     o = Dict("output" => joinpath(@__DIR__, "data", "revision"), "rays-step" => "30",
              "samples" => "32", "mc-samples" => "64", "cases" => "12",
-             "validation-zeniths" => "0,15,30,45,60,75", "replicates" => "3", "seed" => "20261022", "rock-density" => "2710", "calibrate" => "true", "dump" => joinpath(@__DIR__,"data","revision_physics","materials.pumas"))
+             "parallel-mc" => "false", "validation-zeniths" => "0,15,30,45,60,75", "replicates" => "3", "seed" => "20261022", "rock-density" => "2710", "calibrate" => "true", "dump" => joinpath(@__DIR__,"data","revision_physics","materials.pumas"))
     iseven(length(argv)) || error("Options require --name value pairs")
     for k in 1:2:length(argv)
         key = replace(argv[k], r"^--" => "")
         haskey(o,key) || error("Unknown option $(argv[k])")
         o[key] = argv[k+1]
     end
-    o["calibrate"] in ("true","false") || error("calibrate must be true or false")
+    for key in ("calibrate","parallel-mc")
+        o[key] in ("true","false") || error("$key must be true or false")
+    end
     parse(Float64,o["rock-density"]) > 0 || error("rock-density must be positive")
     for key in ("samples", "mc-samples", "cases", "replicates")
         parse(Int,o[key]) > 0 || error("$key must be positive")
@@ -47,6 +49,22 @@ function csv_rows(path, rows)
             println(io, join((x isa AbstractString ? "\"" * replace(x,"\""=>"\"\"") * "\"" : string(x) for x in values(row)), ','))
         end
     end
+end
+
+# Each replicate owns its random streams, materials and result slot. Global
+# correction/adjoint settings are frozen by the serial caller until this joins.
+function revision_replicates(evaluate,n;parallel=false)
+    results=Vector{Any}(undef,n)
+    if parallel && Threads.nthreads()>1
+        Threads.@threads for replicate in 1:n
+            results[replicate]=evaluate(replicate)
+        end
+    else
+        for replicate in 1:n
+            results[replicate]=evaluate(replicate)
+        end
+    end
+    results
 end
 
 function measured_stage(f)
@@ -122,6 +140,7 @@ function revision_main(argv=ARGS)
             "manifest_sha256"=>isfile(joinpath(@__DIR__,"..","Manifest.toml")) ? bytes2hex(sha256(read(joinpath(@__DIR__,"..","Manifest.toml")))) : "absent",
             "threads"=>Threads.nthreads(),"cpu_threads"=>Sys.CPU_THREADS,
             "selection_scope"=>"seeded round-robin joint quartiles with replacement of overrepresented zenith cases to guarantee each valid requested zenith with nonzero sensitivity; invalid/zero-sensitivity directions recorded, not certified",
+            "parallel_mc_scope"=>"independent replicate evaluation only; serial global-setting changes and row append/write after ordered join",
             "seed_policy"=>"independent replicate energy and transport seeds; common low/high seeds within replicate",
             "acceptance_scope"=>"illustrative normalized geometric profiles, not measured LVD acceptance",
             "transport_scope"=>"fixed prescribed-ray stochastic energy-loss MC; scattering disabled, no scattered-boundary retracing or detector-acceptance validation",
@@ -194,7 +213,8 @@ function revision_main(argv=ARGS)
                 fd=(fh-fl)/(hi-lo)
                 push!(fdrows,(case=k,bin=b,cell=c,zenith=paths[b].zenith,azimuth=paths[b].azimuth,slant_m=paths[b].surface_distance,cell_z_m=vol.centroids[3,c],fraction=fraction,step=delta,ad=ad,fd=fd,error=ad-fd,relative_error=(ad-fd)/max(abs(ad),abs(fd),1e-30),boundary_one_sided=fraction==0.0))
             end
-            for rep in 1:nrep
+            replicate_rows=revision_replicates(nrep;parallel=o["parallel-mc"]=="true") do rep
+                local sd,energies,lo,hi,wl,wh,ml,dl,mh,dh,fl,sl,fh,sh,cslo,cshi,cssecant,paired_cslo,paired_cshi,paired_cssecant
                 sd=seed+100000+1000*k+100*rep+round(Int,10fraction)
                 energies=sample_energy_set(nmc,1e-3,1e9,sd)
                 lo,hi=finite_difference_bounds(fraction,0.05); wl=copy(wf); wh=copy(wf); wl[c]=lo; wh[c]=hi
@@ -207,13 +227,14 @@ function revision_main(argv=ARGS)
                 paired_cslo=compute_directional_flux_csda(physics,shallow,mat,site,paths[b],wl,energies)
                 paired_cshi=compute_directional_flux_csda(physics,shallow,mat,site,paths[b],wh,energies)
                 paired_cssecant=(paired_cshi-paired_cslo)/(hi-lo)
-                push!(mcrows,(case=k,bin=b,cell=c,fraction=fraction,replicate=rep,seed=sd,
+                (case=k,bin=b,cell=c,fraction=fraction,replicate=rep,seed=sd,
                     fraction_lo=lo,fraction_hi=hi,interval_width=hi-lo,ad=ad,csda_secant=cssecant,
                     mc_fd=(fh-fl)/(hi-lo),ad_minus_secant=ad-cssecant,mc_minus_csda_secant=(fh-fl)/(hi-lo)-cssecant,
                     csda_secant_paired_energy=paired_cssecant,mc_minus_csda_paired_energy=(fh-fl)/(hi-lo)-paired_cssecant,
-                    flux_low=fl,flux_high=fh,sigma_low=sl,sigma_high=sh))
-                csv_rows(joinpath(out,"mc_jacobian.csv"),mcrows)
+                    flux_low=fl,flux_high=fh,sigma_low=sl,sigma_high=sh)
             end
+            append!(mcrows,replicate_rows)
+            csv_rows(joinpath(out,"mc_jacobian.csv"),mcrows)
         end
         csv_rows(joinpath(out,"fd_steps.csv"),fdrows)
     end
@@ -262,12 +283,14 @@ function revision_main(argv=ARGS)
         pred=o["calibrate"]=="true" ? frozen_paper_pred : per_bin_scalar_pred
         preddry=o["calibrate"]=="true" ? drycs : correction*drycs
         mw,dw=build_cell_properties_for_mc(shallow,wet,mat)
-        for rep in 1:nrep
+        replicate_rows=revision_replicates(nrep;parallel=o["parallel-mc"]=="true") do rep
+            local sd,test,drytruth,drysigma,truth,sigma
             sd=seed+600000+100*b+rep; test=sample_energy_set(nmc,1e-3,1e9,sd)
             drytruth,drysigma=compute_directional_flux_mc(physics,mat,site,paths[b],md,dd,test,sd+1;straggling=true,scattering=false,energy_threshold_low=100.0)
             truth,sigma=compute_directional_flux_mc(physics,mat,site,paths[b],mw,dw,test,sd+1;straggling=true,scattering=false,energy_threshold_low=100.0)
-            push!(closure,(bin=b,zenith=paths[b].zenith,azimuth=paths[b].azimuth,slant_m=paths[b].surface_distance,replicate=rep,seed=sd,predicted_dry=preddry,frozen_global_dry_prediction=drycs,mc_dry=drytruth,sigma_mc_dry=drysigma,dry_relative_residual=(preddry-drytruth)/max(abs(drytruth),1e-30),paired_bias_change=(pred-truth)-(preddry-drytruth),paired_mc_wetting_increment=truth-drytruth,dry_correction=correction,prediction_mode=o["calibrate"]=="true" ? "frozen_global_dry_calibration" : "per_bin_dry_scalar",predicted_wet=pred,frozen_global_prediction=frozen_paper_pred,per_bin_scalar_prediction=per_bin_scalar_pred,mc_wet=truth,sigma_mc=sigma,relative_residual=(pred-truth)/max(abs(truth),1e-30)))
+            (bin=b,zenith=paths[b].zenith,azimuth=paths[b].azimuth,slant_m=paths[b].surface_distance,replicate=rep,seed=sd,predicted_dry=preddry,frozen_global_dry_prediction=drycs,mc_dry=drytruth,sigma_mc_dry=drysigma,dry_relative_residual=(preddry-drytruth)/max(abs(drytruth),1e-30),paired_bias_change=(pred-truth)-(preddry-drytruth),paired_mc_wetting_increment=truth-drytruth,dry_correction=correction,prediction_mode=o["calibrate"]=="true" ? "frozen_global_dry_calibration" : "per_bin_dry_scalar",predicted_wet=pred,frozen_global_prediction=frozen_paper_pred,per_bin_scalar_prediction=per_bin_scalar_pred,mc_wet=truth,sigma_mc=sigma,relative_residual=(pred-truth)/max(abs(truth),1e-30))
         end
+        append!(closure,replicate_rows)
         csv_rows(joinpath(out,"held_out_closure.csv"),closure)
     end
     paths,flux,J=scaling_state
