@@ -1,0 +1,178 @@
+--- a/src/Tomography_inverse.jl
++++ b/src/Tomography_inverse.jl
+@@ -727,7 +727,10 @@
+ `fwhm[ndepth, nazim]` (NaN where empty), the cell `counts`, the depth-bin midpoints
+ `depths`, azimuth-bin midpoints `azimuths`, and the per-depth geometric floor
+ `max(cell_size_m, depth · Δθ)`. Pass all cells (above a minimum depth) to cover
+-all directions and all depths.
++all directions and all depths. Counts include only finite recovered PSFs; invalid
++PSFs are skipped, so zero counts do not imply absence of geometric cells.
++The floor is a reporting reference, not an isotropic physical resolution bound;
++for VoxelVolume the supplied cell-size estimate uses vertical spacing only.
+ """
+ function resolution_map(reconstruct, centroids::AbstractMatrix{<:Real},
+                         baseline::AbstractVector{<:Real},
+@@ -772,7 +775,7 @@
+ #   * the Laplace posterior gives the CONDITIONAL (given the global normalisation
+ #     s) per-cell SHAPE uncertainty — what the angular data constrain;
+ #   * the inventory profile gives the ABSOLUTE-LEVEL uncertainty — the direction
+-#     that is degenerate with s and is therefore left to a 1-D profile likelihood.
++#     that is degenerate with s and is examined separately by a weighted-residual amplitude scan.
+ # ===========================================================================
+ 
+ """
+@@ -850,18 +853,15 @@
+     null_model_tests(flux_only, w_map, w0_uniform, free, meas, fit_mask, wdem,
+                      exposure; p_eff) -> NamedTuple
+ 
+-Likelihood-ratio comparison of the structured reconstruction against two nulls:
+-`N0` dry standard rock (`w≡0`) and `N1` a uniform band water-mix (`w≡w0` on
+-`free`). Reports weighted χ² for each, `Δχ²` against the effective added DOF
+-(`p_eff` for dry→fit, `p_eff−1` for uniform→fit), a Wilson–Hilferty Gaussian
+-significance, and AIC/BIC (with effective parameter counts) so the extra water
+-cells are penalised, not merely rewarded.
+-
+-The published LVD intensities carry no absolute count uncertainty, so `exposure`
+-only sets an arbitrary overall χ² scale. We therefore CALIBRATE to a reduced χ²
+-of unity: the variance scale `φ = χ²_fit/(ndata−p_eff)` is estimated from the
+-fit residuals and the significances use `Δχ²/φ` (an F-test), making them
+-independent of the nominal exposure. `φ` is returned as `var_scale`.
++Exploratory weighted-residual comparison of the structured fit with dry rock
++and a uniform-support mixture. Each candidate refits normalization by a log-ratio
++rule, which also changes its variance proxy. The quadratic residual omits
++likelihood-normalization terms and is not a specified maximized likelihood.
++Legacy `sigma_*`, `aic` and `bic` fields retain heuristic Wilson–Hilferty and
++penalty-based scores for compatibility; they are not calibrated significance,
++an F-test, or likelihood-derived AIC/BIC. `var_scale` is the empirical residual
++factor `Q_fit/max(ndata-p_eff,1)`. Removing nominal exposure dependence does not
++establish statistical coverage or a verified count/acceptance model.
+ """
+ function null_model_tests(flux_only, w_map::AbstractVector, w0_uniform::Float64,
+                           free::AbstractVector{Bool}, meas, fit_mask, wdem, exposure;
+@@ -878,7 +878,7 @@
+     dchi_unif = c_unif - c_fit
+     dp_dry  = max(p_eff, 1e-6)
+     dp_unif = max(p_eff - 1.0, 1e-6)
+-    # AIC/BIC on the calibrated (reduced) deviance so the penalty is on the same scale
++    # Heuristic penalty scores on the rescaled residual; legacy aic/bic names are retained.
+     aic(c, p) = c / var_scale + 2p
+     bic(c, p) = c / var_scale + p * log(max(ndata, 1))
+     return (chi2_dry = c_dry, chi2_unif = c_unif, chi2_fit = c_fit, ndata = ndata,
+@@ -895,21 +895,19 @@
+                       var_scale=1.0, n_grid=21, span=(0.2,3.0), w_max=MAX_WATER_FRACTION)
+         -> NamedTuple
+ 
+-Profile likelihood for the water amplitude: the reconstructed shape `w_map` is
+-rescaled to a grid of overall levels (clamped to the box) and the global
+-normalisation `s` is refit at each, tracing `χ²(T)` for the inventory
+-`T = Σ_free w` (equivalently the mean band fraction `w̄ = T/|free|`).
+-
+-This profiles the AMPLITUDE along the reconstructed shape — it constrains the
+-overall water level given that shape and the priors; it is not a full
+-shape-marginalised profile (the residual shape freedom is carried by the per-cell
+-[`laplace_posterior`](@ref)). `Δχ²` is calibrated by `var_scale` (the reduced-χ²
+-variance scale `φ` from [`null_model_tests`](@ref)) so the confidence thresholds
+-(1 → 68%, 3.84 → 95%) are exposure-independent.
+-
+-Returns `(T, w_mean, chi2, dchi2, dchi2_cal, T_map, T_min, w_mean_min, ci68, ci95,
+-var_scale)`; `dchi2_cal = dchi2/var_scale` and the CIs are `w̄` bounds (NaN where
+-the profile does not cross the threshold within the grid).
++Normalization-adjusted weighted-residual amplitude scan. The fitted field is
++multiplied by a grid of amplitudes and box-clipped, which can change its relative
++spatial pattern. At each point the log-ratio normalization is recomputed; this
++is not minimization of the quadratic residual over normalization. No prior
++penalty or likelihood-normalization terms enter the scan. It is not a profile
++likelihood, posterior, or groundwater-inventory inference.
++
++Legacy output names and numeric values are retained: `T` is the sum of mixture
++parameters (the caller must zero values outside `free`), `w_mean=T/count(free)`,
++`chi2` is the weighted residual Q, and `dchi2_cal=dchi2/var_scale`.
++`ci68` and `ci95` are interpolated reference crossings at 1 and 3.84, respectively,
++NOT calibrated confidence bounds; NaN denotes a crossing absent from the grid.
++The scan minimum is not a maximum-likelihood estimate.
+ """
+ function profile_inventory(flux_only, w_map::AbstractVector, free::AbstractVector{Bool},
+                            meas, fit_mask, wdem, exposure;
+--- a/src/Tomography.jl
++++ b/src/Tomography.jl
+@@ -93,17 +93,15 @@
+ mutable struct CsdaCorrection
+     enabled::Bool
+     # MC-calibrated multiplicative flux correction applied per energy sample, split
+-    # into two PHYSICALLY DISTINCT effects (see `csda_var_correction`):
++    # using two phenomenological soft/hard-loss proxy terms (see `csda_var_correction`):
+     #   exp( +α · ½b(b+1) · V/E²   −   κ_hard · H/E ).
+-    # The first term is the soft-straggling flux ENHANCEMENT: a Gaussian surface-
+-    # energy spread of variance V, folded against a locally-power-law surface flux of
+-    # spectral index b, enhances the transmitted flux by ½b(b+1)·V/E² (the power-law
+-    # convolution moment). b is COMPUTED from the flux model, so the coefficient is
+-    # parameter-free physics and α (`kappa_strag`) is only a near-unity calibration
+-    # multiplier (default 1). The second term is the catastrophic-hard-loss DEFICIT
+-    # (brem/pair/photonuclear removed stochastically by MIXED/MC but continuous in
+-    # CSDA), κ_hard fitted. Splitting enhancement (+, pinned) from deficit (−, fitted)
+-    # removes the κ_strag↔κ_hard degeneracy of the old two-suppression form.
++    # A Gaussian convolution motivates the first term only if V represents
++    # surface-energy variance. Here V instead accumulates local soft-loss moments
++    # without downstream energy-map sensitivities; H accumulates local restricted
++    # versus CSDA mean-loss differences. Neither is a computed stochastic surface-
++    # energy distribution. The spectral-curvature factor uses the flux index b;
++    # alpha defaults to one and kappa_hard is fitted. This is a low-dimensional
++    # MC-calibrated correction, not separate identification of soft/hard physics.
+     kappa_strag::Float64       # α: near-unity multiplier on the computed straggling enhancement
+     kappa_hard::Float64        # weight on H/E   (catastrophic hard-loss deficit)
+     # Smooth geometric residual `exp(a + b·logL + c·logL² + d·cosθ)` (L = rock path
+@@ -516,7 +514,7 @@
+     @inbounds for sample in energy_samples
+         energy = sample.energy
+         weight = one(eltype(wsel)) * 1.0
+-        Vacc = zero(eltype(wsel)) + 0.0   # ∫Ω(E)dX  (surface-energy variance)
++        Vacc = zero(eltype(wsel)) + 0.0   # ∫Ω(E)dX  (local soft-loss variance proxy; no downstream energy-map weights)
+         Hacc = zero(eltype(wsel)) + 0.0   # ∫(dedx_csda−dedx_mixed)dX (hard-loss)
+         ok = true
+         for k in 1:nseg
+--- a/examples/lvd_tomography.jl
++++ b/examples/lvd_tomography.jl
+@@ -3230,16 +3230,16 @@
+     res_med = isempty(aq_idx) ? 0.0 : median(post.resolution[aq_idx])
+     z_resolved = count(i -> z_cal[i] >= 2.0, aq_idx)
+     wbar_map = prof.T_map / n_aq          # mean band fraction at the GN MAP
+-    wbar_min = prof.w_mean_min            # amplitude-profile maximum-likelihood level
++    wbar_min = prof.w_mean_min            # weighted-residual scan minimum
+     println(@sprintf("  posterior (Laplace, conditional on s; σ calibrated to reduced-χ²=1): p_eff=%.1f effective DOF of %d cells; median resolution=%.2f; median σ_w=%.2f; %d cells at w/σ≥2",
+                      post.p_eff, length(aq_idx), res_med, sig_med, z_resolved))
+     println(@sprintf("  nominal objective scores (variance rescaling φ=%.0f): water-vs-dry %.0f; structure-vs-uniform %.0f  [χ² dry=%.3e unif=%.3e fit=%.3e, ndata=%d]",
+                      nulls.var_scale, nulls.sigma_dry, nulls.sigma_unif,
+                      nulls.chi2_dry, nulls.chi2_unif, nulls.chi2_fit, nulls.ndata))
+-    println("  Scores and intervals are conditional on model/weight assumptions; unknown LVD count/acceptance uncertainties prevent validated discovery significance or coverage.")
+-    println(@sprintf("  model selection: AIC dry=%.0f unif=%.0f fit=%.0f | BIC dry=%.0f unif=%.0f fit=%.0f (lower favoured)",
++    println("  Heuristic scores and reference crossings are descriptive; no likelihood significance or confidence coverage is established.")
++    println(@sprintf("  heuristic legacy AIC score: dry=%.0f unif=%.0f fit=%.0f | legacy BIC score: dry=%.0f unif=%.0f fit=%.0f (lower favoured)",
+                      nulls.aic.dry, nulls.aic.unif, nulls.aic.fit, nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
+-    println(@sprintf("  amplitude profile (shape fixed, s profiled out): GN-MAP w̄=%.3f; profile-ML w̄=%.3f; 68%% CI w̄∈[%.3f, %.3f]; 95%% CI w̄∈[%.3f, %.3f]",
++    println(@sprintf("  box-clipped amplitude scan (log-ratio normalization): fitted w̄=%.3f; scan-minimum w̄=%.3f; legacy ci68 reference crossings [%.3f, %.3f]; legacy ci95 reference crossings [%.3f, %.3f]",
+                      wbar_map, wbar_min, prof.ci68[1], prof.ci68[2], prof.ci95[1], prof.ci95[2]))
+     unc_csv = joinpath(args.output_dir, "lvd_water_uncertainty.csv")
+     open(unc_csv, "w") do io
+@@ -3414,15 +3414,15 @@
+                              post.p_eff, nulls.sigma_dry))
+         println(io, @sprintf("    structure vs uniform band: nominal Delta chi2/phi on p_eff-1=%.1f dof -> score %.0f",
+                              max(post.p_eff - 1, 0.0), nulls.sigma_unif))
+-        println(io, @sprintf("    AIC (reduced): dry=%.0f uniform=%.0f fit=%.0f | BIC: dry=%.0f uniform=%.0f fit=%.0f (lower favoured)",
++        println(io, @sprintf("    heuristic legacy AIC score: dry=%.0f uniform=%.0f fit=%.0f | legacy BIC score: dry=%.0f uniform=%.0f fit=%.0f (lower favoured)",
+                              nulls.aic.dry, nulls.aic.unif, nulls.aic.fit,
+                              nulls.bic.dry, nulls.bic.unif, nulls.bic.fit))
+-        println(io, "  These scores/intervals are conditional model diagnostics; unknown count/acceptance errors preclude validated discovery significance or interval coverage.")
+-        println(io, "  Water-amplitude profile: the reconstructed shape is rescaled and s refit, profiling the")
+-        println(io, "  overall level (mean band fraction w_bar) given the shape and priors. This constrains the")
+-        println(io, "  amplitude along the reconstructed shape; the residual shape freedom is in the per-cell posterior above.")
+-        println(io, @sprintf("    GN-MAP w_bar = %.3f ; amplitude-profile maximum-likelihood w_bar = %.3f", wbar_map, wbar_min))
+-        println(io, @sprintf("    68%% CI: w_bar in [%.3f, %.3f] ; 95%% CI: w_bar in [%.3f, %.3f]  (NaN = not bounded within the grid)",
++        println(io, "  These heuristic scores/reference crossings are not likelihood inference or calibrated confidence bounds.")
++        println(io, "  Mixture-amplitude scan: the fitted field is scaled and box-clipped; log-ratio normalization is refit.")
++        println(io, "  The variance weights change with normalization; no prior penalty or likelihood-normalization terms enter.")
++        println(io, "  Clipping can change the relative pattern. The scan is neither a profile likelihood nor inventory inference.")
++        println(io, @sprintf("    fitted w_bar = %.3f ; weighted-residual scan-minimum w_bar = %.3f", wbar_map, wbar_min))
++        println(io, @sprintf("    legacy ci68/ci95 reference crossings: [%.3f, %.3f] / [%.3f, %.3f] (not confidence bounds; NaN = no grid crossing)",
+                              prof.ci68[1], prof.ci68[2], prof.ci95[1], prof.ci95[2]))
+         println(io, "    csv: lvd_water_profile.csv (T, w_mean, chi2, delta_chi2, delta_chi2_calibrated)")
+         println(io)
