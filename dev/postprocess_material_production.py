@@ -86,6 +86,13 @@ def main(lock_fd=None):
         log = root/'stages/main/run.log'
         shutil.copy2(log, bundle/'log_main.txt')
         sources['log_main.txt'] = [dict(path=str(log), sha256=digest(log))]
+        original_log = root/'stages/main/original_failed_run.log'
+        if original_log.exists():
+            end = audit(root/'stages/main')
+            if end['output_sha256'].get('original_failed_run.log') != digest(original_log):
+                raise ValueError('original failed log lacks recovery end binding')
+            shutil.copy2(original_log, bundle/'log_main_original_failed.txt')
+            sources['log_main_original_failed.txt'] = [dict(path=str(original_log), sha256=digest(original_log))]
     auxiliary_controls = {}
     qfolder = root/'controls/column_domain'
     if (qfolder/'end_status.json').is_file():

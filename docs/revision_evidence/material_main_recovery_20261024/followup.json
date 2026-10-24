@@ -1,0 +1,6 @@
+{
+  "permanent_source_fix_pending": true,
+  "scope": "Frozen examples/lvd_tomography.jl still has loop-local robust_model referenced outside loop at stable curvature export. New recovery bypasses completed optimizer and restores exact saved state; it does not permanently fix original source.",
+  "required_followup": "After active frozen science/control jobs finish, bind robust_model in outer run_paper_match scope and add full non-fit-only stable export regression coverage.",
+  "revision_complete": false
+}
