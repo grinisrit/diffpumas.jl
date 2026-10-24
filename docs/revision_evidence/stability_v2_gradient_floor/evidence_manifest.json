@@ -102,5 +102,9 @@
   "failed_flux_audit/failed_helper_source.jl": {
     "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_20261024_failed_helper.jl",
     "sha256": "fe449982c4633f2d6506611db3ddf33423b261c038e185e768f249743c6b5bb9"
+  },
+  "frozen_dry_correction.toml": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml",
+    "sha256": "b6f97deb8182e48e5eff08e7c33d26b08b5d32f1c5337d07c2110ffcb8bb27b9"
   }
 }

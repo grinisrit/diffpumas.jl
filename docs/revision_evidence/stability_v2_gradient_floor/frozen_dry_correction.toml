@@ -1,0 +1,18 @@
+schema_version = 1
+
+[csda]
+enabled = true
+kappa_strag = 1.0
+kappa_hard = 0.0
+resid_a = -1.84449225478151
+resid_b = 0.24209099976953696
+resid_c = 0.0077543116657748405
+resid_d = -0.03071746591694591
+
+[material]
+enabled = false
+linear = 0.0
+quadratic = 0.0
+
+[metadata]
+baseline_calibration_sha256 = "de36694c38955b416dbeaef0deba2b91252a66b01beaa5c8a3b2fabb8082beb7"
