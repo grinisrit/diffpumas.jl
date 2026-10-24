@@ -1,0 +1,9 @@
+# Two pinned-normalization dry controls
+
+Checkpoint: 24 October 2026, 13:43 UTC; five of twelve matched controls complete. These two controls disable the material factor and pin normalization to exactly 0.95 or 1.05 times the profiled dry/start0 scale. They are not the material-corrected primary field.
+
+`independent_audit.json` records independently recomputed raw-field distances, exact normalization/config checks, status/history consistency and common-bin prediction/residual comparisons. Every original end-bound output was hashed in place before archive. This compact archive retains selected raw files, not all original HTML plots or run logs; original `end_status.json` remains unchanged and must not be interpreted as a complete local file inventory. All copied result files match their original end-bound digests. `collector_04.json` also retains all three completed dry-start references.
+
+The baseline is the previously archived `docs/revision_evidence/stability_v2_three_start_dry/start0`; `baseline_reference.json` binds the exact files needed for independent reproduction. The two fields retain the same 147 supported cells, 690 fit bins, dry correction, runtime/core source, robust scale and absolute prior weight. The recalculated automatic dry-prior scale is diagnostic; the explicit absolute prior is fixed in both runs.
+
+The minus-5% endpoint does not meet KKT; plus-5% meets its recorded selected-branch first-order tolerance. Both contain 22 exactly zero supported cells and no ceiling cells; neither is an all-dry solution. The plus-5% history includes an identical final iteration-21 reporting row. These are changed, pinned-normalization objectives: do not rank their objective values as improvements relative to the profiled reference. Endpoint sensitivity is not a physical error bound, uniqueness proof or calibrated uncertainty interval.

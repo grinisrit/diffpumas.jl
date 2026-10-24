@@ -1,0 +1,10 @@
+{
+  "directory": "docs/revision_evidence/stability_v2_three_start_dry/start0",
+  "files_sha256": {
+    "results/lvd_fit_field.csv": "b4c3eaeebbed7a596ea05d3eaf019dc657bd46a074db1a312ade7f2ddb4a1d71",
+    "results/lvd_fit_predictions.csv": "4b226654b8201ae07bf4fe73ddda9b1888f045a7724a43207984736f8918fc51",
+    "results/lvd_solver_configuration.toml": "78e5f67145ca0419df45467857d06102cac53cf24c59287e4b124e4b4c76358d",
+    "end_status.json": "bec4c74b0ea8ddd6740298d261be5ff24be2d0636bcd01d4cbd090ab2ed7742b",
+    "execution.json": "8ac34327879710ba17bd6547a93e2141f713fdb5566d799f481fedc2b3c7a581"
+  }
+}
