@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "approved_for_successor_queue": true,
+  "approval_status": "Approved by coordinating agent after independent Sol6.1 review and independent end/output/input/factory verification",
+  "scope": "Exact flux-only callback parity on recorded trials; no full-history, accuracy, uncertainty or whole-fit speed claim",
+  "implementation_sha256": {
+    "/home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl": "dc4e25dce955c53eddb965f7b97bec2eae78703658e9d5ef530f1f7fddd676c5",
+    "/home/roland/devspace/diffpumas.jl/dev/prototype_stability_guarded_ray_cache.jl": "71e949a83e2a37a08e176d64b4cfdb28ef6b3f1f6b920c134748ce51d9d67fd7",
+    "/home/roland/devspace/diffpumas.jl/dev/run_cached_stability_fit.py": "0db323d6a3b7c460d9dff792b05b9ad66b882bb7f94e713f95e625d2c963faea"
+  },
+  "certified_context_sha256": {
+    "/home/roland/devspace/diffpumas.jl/Project.toml": "79b4a63969e9102cd36451369e56da168caef6f5c09a9570de393add59bd3435",
+    "/home/roland/devspace/diffpumas.jl/Manifest.toml": "693219423d3e98fb70ee928db6c6ded9e1b78000eb8b1c8417c22f688a706c05",
+    "/home/roland/devspace/diffpumas.jl/src/AtomicShellData.jl": "390fa8679753b534ae63d673fc642919f4683f08e159773eefd65d0040bb25c5",
+    "/home/roland/devspace/diffpumas.jl/src/Constants.jl": "176783f8e3156bdbeda3195ae19ed77142fbbea63fd799c54fe1b0d84650b3a8",
+    "/home/roland/devspace/diffpumas.jl/src/Context.jl": "5a9747fd4d5ceb59f5f2c27fb3b296ca72c7066b03b3fd3130e9d4be6c849d0c",
+    "/home/roland/devspace/diffpumas.jl/src/Coulomb.jl": "054cba676972bcd793812fb2aed3263f456ddb15f449703ddd67a2e83a8421b5",
+    "/home/roland/devspace/diffpumas.jl/src/DEDXLoader.jl": "20b511bc0822ee7ab09cee8c9f24c95aeb9f4dfc598e4b6fe68a2ee8ea9d9593",
+    "/home/roland/devspace/diffpumas.jl/src/DiffPumas.jl": "7816918b72488c25b03d8de4ee63102980a53fdc252f2f5a9594da11e90a08e2",
+    "/home/roland/devspace/diffpumas.jl/src/GaisserFlux.jl": "18925f3b5bbe7f32d55441b0bacc3fc2c369ae3f9085ad8fb5e8a52555147338",
+    "/home/roland/devspace/diffpumas.jl/src/Geometry.jl": "172d949ebb1b318ed268ddea0a037028c0424d1dc9a6476ac07e8bd9975400bc",
+    "/home/roland/devspace/diffpumas.jl/src/Loader.jl": "0d4dcd43e171e46213c6073f8e41c342d79bd61a441eec83847a2dbe3db90213",
+    "/home/roland/devspace/diffpumas.jl/src/Materials.jl": "f646987a55687b1d275de1afe18d813a10d63aca6ecf83c95b50498eeb170510",
+    "/home/roland/devspace/diffpumas.jl/src/MixedTransport.jl": "f04d8d3ccefcd274bb369e0b8b7c4552f2c9fb53e2df024922ce74f089dcd5d0",
+    "/home/roland/devspace/diffpumas.jl/src/Physics.jl": "79592a977291b6fc50c35e7ccf2ff8497074425f0474f542bcf7560076d90538",
+    "/home/roland/devspace/diffpumas.jl/src/PhysicsMetadata.jl": "066ee16596f02afd0f8026340ab93fb706bf88c982ca0dce333198e90f6d2fd4",
+    "/home/roland/devspace/diffpumas.jl/src/Plotting.jl": "ca9567a8c5c192fd548739fff4eeffa26bd6ae95a1794c8293931b12b4b8b912",
+    "/home/roland/devspace/diffpumas.jl/src/Pumas.jl": "b4383abd10e53c1359d75192233ec87b545b52ccbd61ef48eb69f247dc024c10",
+    "/home/roland/devspace/diffpumas.jl/src/Straggling.jl": "47c954faaef1f0b13bd12657f5ba4e64c0a5d1c0661015a765d29bd47fa95785",
+    "/home/roland/devspace/diffpumas.jl/src/Tomography.jl": "9221b2cc173563286df117e692f111c24ea1c24a2e0ac7aa7223e8141e0eb843",
+    "/home/roland/devspace/diffpumas.jl/src/Tomography_inverse.jl": "1c708b159294c2eab4e7b3a6359284661883669adcc68c5e28253cafab4865c8",
+    "/home/roland/devspace/diffpumas.jl/src/Tomography_material_calibration.jl": "b6463a72bd420b73712aceee6b80024071efe4a0df11b9180a84c5fb749ccd32",
+    "/home/roland/devspace/diffpumas.jl/src/Tomography_rules.jl": "43cf1ed02dc3f6c3e85f0036efa86c406d649b8154db3ef4bc43292a0cd89720",
+    "/home/roland/devspace/diffpumas.jl/src/Transport.jl": "262e3b28cd147e9ace96364e8bc6fc05a39a36ebab7770ec442d3ad8370fcb3d",
+    "/home/roland/devspace/diffpumas.jl/src/TriangleIntersect.jl": "38df122151c03233ee00a6a7b656f650fdcb7a3c6ac2c4d304121f71cfffc466",
+    "/home/roland/devspace/diffpumas.jl/src/Turtle.jl": "c5c1b1270c053afa90be915754a476497963bb4fadfb06daf44d557008d88f55",
+    "/home/roland/devspace/diffpumas.jl/src/Types.jl": "d465ffc259e9e55d7ec34ea0038c87a4a90ef9f9e4261ed4e9c15ec42b60b505",
+    "/home/roland/devspace/diffpumas.jl/src/Uncertainty.jl": "ee8570398f55a1c4b02364c080a246ea6561728be461514e16a8808909de71b7",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas": "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41",
+    "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml": "b6f97deb8182e48e5eff08e7c33d26b08b5d32f1c5337d07c2110ffcb8bb27b9",
+    "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml": "8667f1a7fc9a4068e074495dcb08cb04deeb6f7ae77365087aa9daabc4c4677d"
+  },
+  "parity_gates": {
+    "dry_serial": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+      "proof_path": "results/dry_serial_proof.json",
+      "proof_sha256": "348041ea3efbd7fbcd18b2a47406b0d6929fe65a77777226307f170093484528",
+      "end_status_sha256": "467fb9cd9c2ea8b29d7bb704089b5b314a961658a12cce4e380e4f4b46c4d581",
+      "passed": true
+    },
+    "corrected_serial": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+      "proof_path": "results/corrected_serial_proof.json",
+      "proof_sha256": "7ae504772fa5f48ac758a011610f125c9a5de860df02ce70e97fb71f29063ff9",
+      "end_status_sha256": "467fb9cd9c2ea8b29d7bb704089b5b314a961658a12cce4e380e4f4b46c4d581",
+      "passed": true
+    },
+    "corrected_threaded": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+      "proof_path": "results/corrected_threaded_proof.json",
+      "proof_sha256": "1986a43e6898cbeb7d48cc9cbc42a4c211e4c34b448e902fefff14cc95bc9e49",
+      "end_status_sha256": "467fb9cd9c2ea8b29d7bb704089b5b314a961658a12cce4e380e4f4b46c4d581",
+      "passed": true
+    },
+    "actual_gn_trial": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+      "proof_path": "results/actual_gn_trial_proof.json",
+      "proof_sha256": "d585024f6f1c0d0b5387ce2d120171d14ca28fa8dfc4c38e6c87b6f48e060a5b",
+      "end_status_sha256": "467fb9cd9c2ea8b29d7bb704089b5b314a961658a12cce4e380e4f4b46c4d581",
+      "passed": true
+    }
+  },
+  "julia_runtime": {
+    "version": "1.11.7",
+    "binary": "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia",
+    "sha256": "0ae4f4b3ab931de6ec3522ce48dc2f161e35064411d24440ccdbbe12adc7d465"
+  },
+  "closure_factory_path": "/home/roland/devspace/diffpumas.jl/dev/generated_stability_cached_flux_factory.jl",
+  "closure_factory_sha256": "be4d8b2c28ea8b83e42493dc2d0319e1310abab09f7dfe060665da31e59f3204",
+  "transformed_source_sha256": "f931c9c428e8c5c8861f77e5100a901667a4a3cc8de112e9036d5edcd682566b",
+  "approval_utc": "2026-10-24T13:55:05.115285+00:00",
+  "approval_scope": "Future stable fit-only controls with exact frozen context, same objective/profile/Jacobian/tolerances/samples/seeds; no active fit mutation. Boundary handoff only. No claim of full-fit speed or restored stationarity.",
+  "pending_candidate_sha256": "e2fc15cc8b01896ac7af21068655fea00abafb07d6ccfa88f20c7b857ea8fbca"
+}

@@ -1,0 +1,2271 @@
+threads = 2
+scope = "all real dry-GN full-vector candidates evaluated in dry/corrected contexts; no corrected optimizer acceptance claim"
+
+[[records]]
+state = 1
+changed_cells = 132
+hits = 251
+exact_equal = true
+cache_seconds = 3.573996772
+raw_seconds = 5.240371355
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 2
+changed_cells = 0
+hits = 251
+exact_equal = true
+cache_seconds = 3.595812718
+raw_seconds = 5.170608858
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 3
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.52828554
+raw_seconds = 5.134233877
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 4
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.675164125
+raw_seconds = 5.142382956
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 5
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.515530295
+raw_seconds = 5.221227405
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 6
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.605179389
+raw_seconds = 5.137119153
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 7
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.726971935
+raw_seconds = 5.19706323
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 8
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.666726039
+raw_seconds = 5.151563277
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 9
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.63585853
+raw_seconds = 5.128230339
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 10
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.625196475
+raw_seconds = 5.1530834
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 11
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.598873442
+raw_seconds = 5.329552471
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 12
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.587000264
+raw_seconds = 5.172651848
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 13
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.473143456
+raw_seconds = 5.24927768
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 14
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.66443067
+raw_seconds = 5.303992933
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 15
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.659486867
+raw_seconds = 5.20483798
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 16
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.598316465
+raw_seconds = 5.247004401
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 17
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.763652635
+raw_seconds = 5.201333429
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 18
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.691655479
+raw_seconds = 5.149645768
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 19
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.520307851
+raw_seconds = 5.118056763
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 20
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.627618292
+raw_seconds = 5.281980008
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 21
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.598552634
+raw_seconds = 5.292769313
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 22
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.666281801
+raw_seconds = 5.102435044
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 23
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.564297682
+raw_seconds = 5.273538832
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 24
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.523502064
+raw_seconds = 5.226273449
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 25
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.602224334
+raw_seconds = 5.184020119
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 26
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.547959898
+raw_seconds = 5.241664088
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 27
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.757868414
+raw_seconds = 5.203428367
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 28
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.717986091
+raw_seconds = 5.296823231
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 29
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.564042823
+raw_seconds = 5.368487209
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 30
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.560292893
+raw_seconds = 5.242184796
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 31
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.736981553
+raw_seconds = 5.499191148
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 32
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.585605181
+raw_seconds = 5.301709596
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 33
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.61841747
+raw_seconds = 5.269753022
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 34
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.625468523
+raw_seconds = 5.346368654
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 35
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.585314863
+raw_seconds = 5.356395361
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 36
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.623519164
+raw_seconds = 5.369304904
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 37
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.627516143
+raw_seconds = 5.203343558
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 38
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.6415703
+raw_seconds = 5.164018753
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 39
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.629487462
+raw_seconds = 5.255249498
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 40
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.606602652
+raw_seconds = 5.141754109
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 41
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.704130434
+raw_seconds = 5.343745497
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 42
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.658207183
+raw_seconds = 5.140284276
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 43
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.713839893
+raw_seconds = 5.405287937
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 44
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.693898808
+raw_seconds = 5.392962302
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 45
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.600066063
+raw_seconds = 5.168485537
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 46
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.613212094
+raw_seconds = 5.142444304
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 47
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.596028594
+raw_seconds = 5.310287665
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 48
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.663016003
+raw_seconds = 5.151097158
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 49
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.629900277
+raw_seconds = 5.18129076
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 50
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.574822865
+raw_seconds = 5.229474808
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 51
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.751911107
+raw_seconds = 5.387849488
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 52
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.729831903
+raw_seconds = 5.413079027
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 53
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.69994202
+raw_seconds = 5.319549946
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 54
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.603874893
+raw_seconds = 5.150549541
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 55
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.69218476
+raw_seconds = 5.37405899
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 56
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.700084928
+raw_seconds = 5.356247263
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 57
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.715203349
+raw_seconds = 5.304318646
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 58
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.61970836
+raw_seconds = 5.272303463
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 59
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.606468549
+raw_seconds = 7.807266075
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 60
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.551931795
+raw_seconds = 5.274134265
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 61
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.627999007
+raw_seconds = 5.250393208
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 62
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.641145308
+raw_seconds = 5.361374267
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 63
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.675162329
+raw_seconds = 5.291629632
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 64
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.932102474
+raw_seconds = 5.344330216
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 65
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 6.069191759
+raw_seconds = 5.284835007
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 66
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.584640354
+raw_seconds = 5.135124882
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 67
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.788396236
+raw_seconds = 5.11834872
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 68
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.977697555
+raw_seconds = 5.557990067
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 69
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.582871723
+raw_seconds = 5.2652944
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 70
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.712842512
+raw_seconds = 5.485420767
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 71
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.644838608
+raw_seconds = 5.155539796
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 72
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.573008134
+raw_seconds = 5.279951294
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 73
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.578360497
+raw_seconds = 5.127586821
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 74
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.749759699
+raw_seconds = 5.34348492
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 75
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.562024153
+raw_seconds = 5.293394333
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 76
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.607012787
+raw_seconds = 5.256317526
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 77
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.724004644
+raw_seconds = 5.226095635
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 78
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.641005618
+raw_seconds = 5.158738309
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 79
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.627189731
+raw_seconds = 6.799777233
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 80
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.628370914
+raw_seconds = 5.378578867
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 81
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.595774995
+raw_seconds = 5.279081248
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 82
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.603584744
+raw_seconds = 5.354578443
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 83
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.904826436
+raw_seconds = 5.283570894
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 84
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.699813731
+raw_seconds = 5.342061939
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 85
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.716144155
+raw_seconds = 5.38572892
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 86
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.71318337
+raw_seconds = 5.303242781
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 87
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.711865677
+raw_seconds = 5.482003585
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 88
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.670304175
+raw_seconds = 5.539881142
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 89
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.879069072
+raw_seconds = 5.565831737
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 90
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.963954776
+raw_seconds = 5.697589186
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 91
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.982011863
+raw_seconds = 5.863902804
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 92
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.775343885
+raw_seconds = 5.546694226
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 93
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.935136597
+raw_seconds = 5.688902781
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 94
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.930032754
+raw_seconds = 5.531560956
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 95
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.050639703
+raw_seconds = 5.548623126
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 96
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.929989894
+raw_seconds = 5.366258921
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 97
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.625714951
+raw_seconds = 5.89719675
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 98
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.452292069
+raw_seconds = 5.52681569
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 99
+changed_cells = 123
+hits = 254
+exact_equal = true
+cache_seconds = 3.837002122
+raw_seconds = 5.426496366
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 100
+changed_cells = 123
+hits = 254
+exact_equal = true
+cache_seconds = 3.85236206
+raw_seconds = 5.385282
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 101
+changed_cells = 117
+hits = 258
+exact_equal = true
+cache_seconds = 3.622911509
+raw_seconds = 5.750850668
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 102
+changed_cells = 107
+hits = 254
+exact_equal = true
+cache_seconds = 3.724085149
+raw_seconds = 5.45228498
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 103
+changed_cells = 105
+hits = 266
+exact_equal = true
+cache_seconds = 3.629852923
+raw_seconds = 5.505382501
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 104
+changed_cells = 104
+hits = 266
+exact_equal = true
+cache_seconds = 3.527946566
+raw_seconds = 5.402033372
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 105
+changed_cells = 100
+hits = 269
+exact_equal = true
+cache_seconds = 3.50415826
+raw_seconds = 5.358694539
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 106
+changed_cells = 97
+hits = 267
+exact_equal = true
+cache_seconds = 3.565375049
+raw_seconds = 5.635322382
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 107
+changed_cells = 93
+hits = 277
+exact_equal = true
+cache_seconds = 3.585344895
+raw_seconds = 5.552560155
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 108
+changed_cells = 86
+hits = 272
+exact_equal = true
+cache_seconds = 3.606852613
+raw_seconds = 5.505965888
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 109
+changed_cells = 81
+hits = 280
+exact_equal = true
+cache_seconds = 3.530003624
+raw_seconds = 5.535014147
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 110
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.480605293
+raw_seconds = 5.415143833
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 111
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.364630459
+raw_seconds = 5.470463985
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 112
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.472551606
+raw_seconds = 5.581285715
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 113
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.503367194
+raw_seconds = 5.909487508
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 114
+changed_cells = 78
+hits = 290
+exact_equal = true
+cache_seconds = 3.980402399
+raw_seconds = 6.473910005
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 115
+changed_cells = 78
+hits = 290
+exact_equal = true
+cache_seconds = 3.38949066
+raw_seconds = 5.959890424
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 116
+changed_cells = 78
+hits = 295
+exact_equal = true
+cache_seconds = 3.381081454
+raw_seconds = 5.80967934
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 117
+changed_cells = 76
+hits = 290
+exact_equal = true
+cache_seconds = 3.492942979
+raw_seconds = 5.609216369
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 118
+changed_cells = 71
+hits = 295
+exact_equal = true
+cache_seconds = 3.770743396
+raw_seconds = 5.544996304
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 119
+changed_cells = 66
+hits = 296
+exact_equal = true
+cache_seconds = 3.617773406
+raw_seconds = 5.645514479
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 120
+changed_cells = 61
+hits = 298
+exact_equal = true
+cache_seconds = 3.435724468
+raw_seconds = 5.533555774
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 121
+changed_cells = 48
+hits = 326
+exact_equal = true
+cache_seconds = 3.201324694
+raw_seconds = 6.389346718
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 122
+changed_cells = 34
+hits = 338
+exact_equal = true
+cache_seconds = 3.008813721
+raw_seconds = 6.143625723
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 123
+changed_cells = 20
+hits = 350
+exact_equal = true
+cache_seconds = 2.869788618
+raw_seconds = 5.804133989
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 124
+changed_cells = 15
+hits = 622
+exact_equal = true
+cache_seconds = 1.614454665
+raw_seconds = 5.604542313
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 125
+changed_cells = 9
+hits = 619
+exact_equal = true
+cache_seconds = 1.671125938
+raw_seconds = 5.510059397
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 126
+changed_cells = 7
+hits = 762
+exact_equal = true
+cache_seconds = 1.125608672
+raw_seconds = 5.809048503
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 1
+changed_cells = 132
+hits = 251
+exact_equal = true
+cache_seconds = 3.970165462
+raw_seconds = 5.485178098
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 2
+changed_cells = 0
+hits = 251
+exact_equal = true
+cache_seconds = 4.037316411
+raw_seconds = 6.067086624
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 3
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.957326479
+raw_seconds = 5.6088171
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 4
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.907255041
+raw_seconds = 5.657042498
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 5
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.904624445
+raw_seconds = 5.401461495
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 6
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.950646235
+raw_seconds = 5.481779115
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 7
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.088366563
+raw_seconds = 5.625305294
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 8
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.205576551
+raw_seconds = 5.609780216
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 9
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.873582767
+raw_seconds = 5.551768129
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 10
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.106956127
+raw_seconds = 5.59754925
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 11
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.667882693
+raw_seconds = 5.396412442
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 12
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.789853466
+raw_seconds = 5.513175441
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 13
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.614821171
+raw_seconds = 6.589209072
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 14
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.513487461
+raw_seconds = 5.156542196
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 15
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.876799071
+raw_seconds = 5.273341556
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 16
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.646597665
+raw_seconds = 5.646889681
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 17
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.695197711
+raw_seconds = 5.319518605
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 18
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.574570992
+raw_seconds = 5.222309992
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 19
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.78714635
+raw_seconds = 5.323326954
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 20
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.71258983
+raw_seconds = 5.183506875
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 21
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.716613858
+raw_seconds = 5.195068135
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 22
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.59976223
+raw_seconds = 5.228780989
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 23
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.62849132
+raw_seconds = 5.275250305
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 24
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.698056916
+raw_seconds = 5.15010283
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 25
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.7260211
+raw_seconds = 5.210405085
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 26
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.739666938
+raw_seconds = 5.298072405
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 27
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.549046095
+raw_seconds = 5.230405827
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 28
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.547531033
+raw_seconds = 5.186468417
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 29
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.690721252
+raw_seconds = 5.343828861
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 30
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.610265074
+raw_seconds = 5.182459918
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 31
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.617393786
+raw_seconds = 5.217698274
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 32
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.776776159
+raw_seconds = 5.27944345
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 33
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.856671009
+raw_seconds = 7.996308963
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 34
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.603705948
+raw_seconds = 5.220458349
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 35
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.725537049
+raw_seconds = 5.459315324
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 36
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.593999099
+raw_seconds = 5.209231018
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 37
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.645504978
+raw_seconds = 5.416758138
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 38
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.713236734
+raw_seconds = 5.333854593
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 39
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.817458256
+raw_seconds = 5.373782104
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 40
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.564863922
+raw_seconds = 5.132300712
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 41
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.0167197
+raw_seconds = 5.348790245
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 42
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.591176144
+raw_seconds = 5.320068086
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 43
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.706934776
+raw_seconds = 5.21828951
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 44
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.571798815
+raw_seconds = 5.254181811
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 45
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.624419189
+raw_seconds = 5.515334971
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 46
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.701023896
+raw_seconds = 5.440439614
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 47
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.55776556
+raw_seconds = 5.190676275
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 48
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.581839173
+raw_seconds = 5.172197442
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 49
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.661738574
+raw_seconds = 5.368000954
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 50
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.664149351
+raw_seconds = 7.69417584
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 51
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.909674611
+raw_seconds = 5.277233401
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 52
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.826519888
+raw_seconds = 5.247820385
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 53
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.636812475
+raw_seconds = 5.330988089
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 54
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.601091452
+raw_seconds = 5.27551436
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 55
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.617971343
+raw_seconds = 5.30213754
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 56
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.636544175
+raw_seconds = 5.265628702
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 57
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.691586447
+raw_seconds = 5.270547606
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 58
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.644525274
+raw_seconds = 5.630961363
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 59
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.941189816
+raw_seconds = 5.21646093
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 60
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.836028149
+raw_seconds = 5.31525208
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 61
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.79942771
+raw_seconds = 5.270786325
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 62
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.648581742
+raw_seconds = 5.248001994
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 63
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.658908658
+raw_seconds = 5.270680096
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 64
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.700204432
+raw_seconds = 5.194509205
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 65
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.620135712
+raw_seconds = 5.548149088
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 66
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.622106361
+raw_seconds = 5.169781285
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 67
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.669728961
+raw_seconds = 5.273998288
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 68
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.794429277
+raw_seconds = 5.328196394
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 69
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.669053745
+raw_seconds = 5.234681854
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 70
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.66050909
+raw_seconds = 5.296718739
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 71
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.688119585
+raw_seconds = 5.226069449
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 72
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.886802652
+raw_seconds = 5.261314844
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 73
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.603834687
+raw_seconds = 5.221353634
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 74
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.552992175
+raw_seconds = 5.259577853
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 75
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.6642098
+raw_seconds = 5.280289435
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 76
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.686089605
+raw_seconds = 5.29454886
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 77
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.581631844
+raw_seconds = 5.331519725
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 78
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.954154708
+raw_seconds = 5.612424801
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 79
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.56341197
+raw_seconds = 5.240328845
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 80
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.607548498
+raw_seconds = 5.329698616
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 81
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.667365353
+raw_seconds = 5.282655563
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 82
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.674172208
+raw_seconds = 5.187501548
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 83
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.618462779
+raw_seconds = 5.290045019
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 84
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.617190166
+raw_seconds = 5.193057833
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 85
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 5.393572101
+raw_seconds = 5.301474989
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 86
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.36936792
+raw_seconds = 5.270625319
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 87
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.74537252
+raw_seconds = 5.219594634
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 88
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.228121903
+raw_seconds = 5.435584563
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 89
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.678922936
+raw_seconds = 5.311274539
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 90
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.657304648
+raw_seconds = 5.391488721
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 91
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.658263712
+raw_seconds = 5.471392757
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 92
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.582909104
+raw_seconds = 7.37709913
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 93
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 7.670826485
+raw_seconds = 10.628819035
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 94
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 8.747177255
+raw_seconds = 9.503638977
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 95
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 4.002034458
+raw_seconds = 5.258347953
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 96
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.651975515
+raw_seconds = 5.417839035
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 97
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.97460306
+raw_seconds = 5.670059116
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 98
+changed_cells = 125
+hits = 254
+exact_equal = true
+cache_seconds = 3.742999452
+raw_seconds = 5.333769361
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 99
+changed_cells = 123
+hits = 254
+exact_equal = true
+cache_seconds = 3.672805247
+raw_seconds = 5.19932919
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 100
+changed_cells = 123
+hits = 254
+exact_equal = true
+cache_seconds = 3.732709786
+raw_seconds = 5.482499929
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 101
+changed_cells = 117
+hits = 258
+exact_equal = true
+cache_seconds = 3.547337928
+raw_seconds = 5.425850803
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 102
+changed_cells = 107
+hits = 254
+exact_equal = true
+cache_seconds = 3.642197796
+raw_seconds = 5.359739716
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 103
+changed_cells = 105
+hits = 266
+exact_equal = true
+cache_seconds = 3.540340694
+raw_seconds = 5.408195224
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 104
+changed_cells = 104
+hits = 266
+exact_equal = true
+cache_seconds = 3.545921216
+raw_seconds = 5.301822758
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 105
+changed_cells = 100
+hits = 269
+exact_equal = true
+cache_seconds = 3.483667319
+raw_seconds = 5.415510528
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 106
+changed_cells = 97
+hits = 267
+exact_equal = true
+cache_seconds = 3.496384213
+raw_seconds = 5.403931517
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 107
+changed_cells = 93
+hits = 277
+exact_equal = true
+cache_seconds = 3.437167341
+raw_seconds = 5.369303117
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 108
+changed_cells = 86
+hits = 272
+exact_equal = true
+cache_seconds = 3.503968553
+raw_seconds = 5.310956851
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 109
+changed_cells = 81
+hits = 280
+exact_equal = true
+cache_seconds = 3.553595646
+raw_seconds = 5.529331076
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 110
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.255923522
+raw_seconds = 5.346360466
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 111
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.189346657
+raw_seconds = 5.447588281
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 112
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.224124337
+raw_seconds = 5.236425847
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 113
+changed_cells = 79
+hits = 290
+exact_equal = true
+cache_seconds = 3.879143046
+raw_seconds = 5.349126811
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 114
+changed_cells = 78
+hits = 290
+exact_equal = true
+cache_seconds = 3.29281069
+raw_seconds = 5.544212229
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 115
+changed_cells = 78
+hits = 290
+exact_equal = true
+cache_seconds = 3.275934278
+raw_seconds = 5.636774178
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 116
+changed_cells = 78
+hits = 295
+exact_equal = true
+cache_seconds = 3.231879617
+raw_seconds = 5.3533211
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 117
+changed_cells = 76
+hits = 290
+exact_equal = true
+cache_seconds = 3.256799827
+raw_seconds = 5.494453607
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 118
+changed_cells = 71
+hits = 295
+exact_equal = true
+cache_seconds = 3.273219953
+raw_seconds = 5.320572359
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 119
+changed_cells = 66
+hits = 296
+exact_equal = true
+cache_seconds = 3.291088129
+raw_seconds = 5.253992236
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 120
+changed_cells = 61
+hits = 298
+exact_equal = true
+cache_seconds = 3.083493268
+raw_seconds = 5.382487429
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 121
+changed_cells = 48
+hits = 326
+exact_equal = true
+cache_seconds = 3.002751706
+raw_seconds = 5.346483895
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 122
+changed_cells = 34
+hits = 338
+exact_equal = true
+cache_seconds = 2.921807207
+raw_seconds = 5.241004713
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 123
+changed_cells = 20
+hits = 350
+exact_equal = true
+cache_seconds = 2.800646446
+raw_seconds = 5.33205674
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 124
+changed_cells = 15
+hits = 622
+exact_equal = true
+cache_seconds = 1.539107667
+raw_seconds = 5.752654766
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 125
+changed_cells = 9
+hits = 619
+exact_equal = true
+cache_seconds = 1.565823488
+raw_seconds = 5.856321188
+threaded_tested = false
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 126
+changed_cells = 7
+hits = 762
+exact_equal = true
+cache_seconds = 1.034577337
+raw_seconds = 5.349754058
+threaded_tested = true
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"

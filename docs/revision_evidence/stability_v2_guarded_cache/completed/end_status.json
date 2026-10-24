@@ -1,0 +1,21 @@
+{
+  "ended_utc": "2026-10-24T13:53:03.792160+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "beb8146e48de98830a5774d5d384c008b07362a361d5e22aee14cffa84baa6f8",
+    "results/actual_gn_trial_measurement.toml": "85435acc5593bdf936fbf7da3ce6e4a9f60ca3c4c797199fa38b1db0bbda3ae7",
+    "results/actual_gn_trial_proof.json": "d585024f6f1c0d0b5387ce2d120171d14ca28fa8dfc4c38e6c87b6f48e060a5b",
+    "results/corrected_serial_measurement.toml": "07d4fcd421c9cd2f90c7fd853f0ccafd87aff7a406f2aaecb31fbfd5072cefa8",
+    "results/corrected_serial_proof.json": "7ae504772fa5f48ac758a011610f125c9a5de860df02ce70e97fb71f29063ff9",
+    "results/corrected_threaded_measurement.toml": "b56cd067f543ca0faec2635bec1e790172aef184c21d25165a0c28b1a27c90db",
+    "results/corrected_threaded_proof.json": "1986a43e6898cbeb7d48cc9cbc42a4c211e4c34b448e902fefff14cc95bc9e49",
+    "results/dry_serial_measurement.toml": "b069f31f4bf29bb53d1070df7dbaf8c954b4bb4e4143f58fbcb9459c752fc3d7",
+    "results/dry_serial_proof.json": "348041ea3efbd7fbcd18b2a47406b0d6929fe65a77777226307f170093484528",
+    "results/guarded_trial_replay.toml": "0a639586ef23f8783bce1ff8512b1b6de93b556110744c59f8264d72f6c74c7f",
+    "run.log": "5cfafc07ec47625776ad660cdf5fc91baad005a70eaf4f0037f5a11415ae4584"
+  }
+}

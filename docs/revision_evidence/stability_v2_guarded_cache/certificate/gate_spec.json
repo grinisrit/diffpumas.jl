@@ -1,0 +1,18 @@
+{
+  "dry_serial": {
+    "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+    "proof_path": "results/dry_serial_proof.json"
+  },
+  "corrected_serial": {
+    "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+    "proof_path": "results/corrected_serial_proof.json"
+  },
+  "corrected_threaded": {
+    "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+    "proof_path": "results/corrected_threaded_proof.json"
+  },
+  "actual_gn_trial": {
+    "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_guarded_factory_gate_retry_20261024",
+    "proof_path": "results/actual_gn_trial_proof.json"
+  }
+}

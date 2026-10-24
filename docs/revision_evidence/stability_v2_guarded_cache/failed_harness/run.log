@@ -1,0 +1,33 @@
+{"host": "research_vm_roland", "cpus": [0], "address_space_bytes": 5368709120, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "20", "bash", "/mnt/big_data/agent-builds/surrogate-stability-20261024/guarded_factory_gate_job.sh"]}
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+Test Summary:           | Pass  Total  Time
+guarded exact ray cache |   13     13  0.8s
+Test Summary:                       | Pass  Total  Time
+accepted-step exact GN cache replay |    4      4  8.9s
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+ERROR: LoadError: MethodError: no method matching (::var"#381#389"{PhysicsTables{Float64}, Vector{Bool}, MaterialConfig, SiteConfig, Vector{DirectionalPath}, Vector{EnergySample}, @NamedTuple{dump_path::String, output_dir::String, geometry::String, mesh_half_km::Float64, surface_step_km::Float64, tet_max_volume::Float64, grid_nz::Int64, zenith_max_deg::Float64, zenith_step_deg::Float64, azimuth_step_deg::Float64, n_samples::Int64, csda_quadrature::String, mc_samples::Int64, energy_min::Float64, energy_max::Float64, energy_threshold_low::Float64, fd_delta::Float64, validation_cases::Int64, seed::Int64, porous_top_thickness::Float64, aquifer_water_fraction::Float64, aquifer_center_x::Float64, aquifer_center_y::Float64, aquifer_center_z::Float64, aquifer_half_x::Float64, aquifer_half_y::Float64, aquifer_half_z::Float64, rich_field::Bool, slab_w::Float64, lens_w::Float64, dip_w::Float64, max_plot_cells::Int64, straggling::Bool, solver::String, reg_weight::Float64, contrast::Float64, reco_iters::Int64, gd_iters::Int64, gd_lr::Float64, min_eval_depth::Float64, threaded::Bool, correction_artifact::String, correction::Bool, calibration_bins::Int64, calibration_mc_samples::Int64, inverse_data::String, inverse_mc_samples::Int64, exposure::Float64, edge_delta::Float64, primary_altitude_km::Float64, rock_density::Float64, papermatch::Bool, papermatch_only::Bool, match_data::String, papermatch_zenith_step::Float64, papermatch_azimuth_step::Float64, papermatch_mc_samples::Int64, papermatch_paper_samples::Int64, papermatch_prior_cutoff::Float64, papermatch_mask_ratio::Float64, papermatch_calibration_water::Float64, solver_mode::String, papermatch_fit_mode::String, papermatch_initial_water::Float64, papermatch_gn_iters::Int64, papermatch_gradient_tol::Float64, papermatch_absolute_prior_weight::Float64, papermatch_log_scale::Float64, papermatch_fit_only::Bool, papermatch_reg::Float64, papermatch_recursions::Int64, papermatch_recur_tol::Float64, papermatch_damp::Float64, papermatch_val_horiz::Int64, papermatch_dem_unc::Float64, papermatch_robust_c::Float64, papermatch_abs_scale::Float64, detectability::Bool, detection_benchmark::Bool, reconstruction_sweep::Bool, detection_contrast_sweep::Bool, sweep_exp_min::Float64, sweep_exp_max::Float64, sweep_n::Int64, sweep_realizations::Int64}, var"#396#420"{MaterialConfig}, GuardedRayCache{var"#377#385"{PhysicsTables{Float64}, Vector{Bool}, MaterialConfig, SiteConfig, Vector{DirectionalPath}, Vector{EnergySample}, var"#cache_scalars#383"}}})(::Vector{Float64})
+The function `#381` exists, but no method is defined for this combination of argument types.
+
+Closest candidates are:
+  (::var"#381#389")(::Any, !Matched::Any)
+   @ Main ~/devspace/diffpumas.jl/dev/generated_stability_cached_flux_factory.jl:21
+
+Stacktrace:
+ [1] main_guarded_trial_replay()
+   @ Main ~/devspace/diffpumas.jl/dev/benchmark_stability_guarded_trial_cache.jl:109
+ [2] top-level scope
+   @ ~/devspace/diffpumas.jl/dev/benchmark_stability_guarded_trial_cache.jl:168
+in expression starting at /home/roland/devspace/diffpumas.jl/dev/benchmark_stability_guarded_trial_cache.jl:167
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Building structured-grid sensitivity volume...

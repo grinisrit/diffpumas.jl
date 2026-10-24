@@ -1,0 +1,29 @@
+{
+  "case_count": 5,
+  "ray_count": 1003,
+  "scope": "exact frozen-entry callback parity on fixed recorded124 GN candidates; not a new cached optimizer solve or full-history convergence claim; fullmodel/J unchanged",
+  "cpu_affinity": [
+    20
+  ],
+  "helper_sha256": "71e949a83e2a37a08e176d64b4cfdb28ef6b3f1f6b920c134748ce51d9d67fd7",
+  "sample_scope": "deterministic CSDA quadrature nodes per ray; no MC",
+  "original_example_sha256": "dc4e25dce955c53eddb965f7b97bec2eae78703658e9d5ef530f1f7fddd676c5",
+  "sample_count": 32,
+  "transformed_source_sha256": "f931c9c428e8c5c8861f77e5100a901667a4a3cc8de112e9036d5edcd682566b",
+  "gate_kind": "corrected_threaded",
+  "threads": 2,
+  "closure_factory_sha256": "be4d8b2c28ea8b83e42493dc2d0319e1310abab09f7dfe060665da31e59f3204",
+  "closure_factory_path": "/home/roland/devspace/diffpumas.jl/dev/generated_stability_cached_flux_factory.jl",
+  "entrypoint_sha256": "0db323d6a3b7c460d9dff792b05b9ad66b882bb7f94e713f95e625d2c963faea",
+  "replacement_closure_sha256": "22fa8f4ced225fa2f52b697a8baaa7468151489157dc3efa62e07eb7fbaead37",
+  "checks": {
+    "context_guard_passed": true,
+    "profile_bitwise": true,
+    "objective_bitwise": true,
+    "threaded_parity": true,
+    "full_prediction_bitwise": true,
+    "residual_bitwise": true
+  },
+  "schema_version": 1,
+  "passed": true
+}
