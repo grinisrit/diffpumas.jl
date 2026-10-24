@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/roland/devspace/diffpumas.jl/dev/watch_final_material_quadrature.py", line 129, in <module>
+    if __name__=='__main__':raise SystemExit(main())
+                                             ^^^^^^
+  File "/home/roland/devspace/diffpumas.jl/dev/watch_final_material_quadrature.py", line 117, in main
+    if code:raise RuntimeError('quadrature wrapper failed: '+str(code))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: quadrature wrapper failed: 2

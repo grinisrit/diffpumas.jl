@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "scope": "Deterministic sampled convergence against512nodes, not physical truth or domain-wide error bound",
+  "review_required": true,
+  "revision_complete": false,
+  "helper_sha256": "e1718ab0204956770c0f9fd98d87ba8950d89cbcbead7178c9e689641e4859b9",
+  "derived_provenance_sha256": "163d530e434b3ec01f268db51b547901a4086546344a463c12d3920090e3be6d",
+  "quadrature_end_sha256": "5e95b413ab5dc0670d31daca4a598e860476ae670a744a05c1187f78f0e928be",
+  "raw_rows": 140,
+  "valid_paths": 7,
+  "selected_derivative_zeniths": [
+    0.0,
+    30.0,
+    45.0,
+    60.0,
+    75.0
+  ],
+  "flux_only_zeniths": [
+    85.0,
+    86.0
+  ],
+  "derivative_selection": "Longest crossed cell within recorded allowed support; central or second-order one-sided finite differences, not AD validation",
+  "maximum_512_half_step_relative_derivative_change": 2.9746975639843853e-05,
+  "groups": [
+    {
+      "corrected": false,
+      "field": "dry",
+      "nodes": 32,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.000827507492221824,
+      "median_absolute_relative_flux_error": 0.0003435871407618807,
+      "maximum_absolute_relative_gradient_error": 0.011977253036628888,
+      "median_absolute_relative_gradient_error": 0.005904761873190223
+    },
+    {
+      "corrected": false,
+      "field": "dry",
+      "nodes": 64,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.00015014001668323118,
+      "median_absolute_relative_flux_error": 8.9016558762256e-05,
+      "maximum_absolute_relative_gradient_error": 0.004710864935811632,
+      "median_absolute_relative_gradient_error": 0.0031247421613331827
+    },
+    {
+      "corrected": false,
+      "field": "dry",
+      "nodes": 128,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.00018996100102408597,
+      "median_absolute_relative_flux_error": 5.6136815021368136e-05,
+      "maximum_absolute_relative_gradient_error": 0.004996006836379241,
+      "median_absolute_relative_gradient_error": 0.0011737783515761713
+    },
+    {
+      "corrected": false,
+      "field": "dry",
+      "nodes": 256,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 1.4279973044040162e-05,
+      "median_absolute_relative_flux_error": 3.672845215074716e-06,
+      "maximum_absolute_relative_gradient_error": 0.0022285343765779952,
+      "median_absolute_relative_gradient_error": 0.0016918739130685756
+    },
+    {
+      "corrected": false,
+      "field": "dry",
+      "nodes": 512,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0,
+      "median_absolute_relative_flux_error": 0.0,
+      "maximum_absolute_relative_gradient_error": 0.0,
+      "median_absolute_relative_gradient_error": 0.0
+    },
+    {
+      "corrected": false,
+      "field": "final_fit",
+      "nodes": 32,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0014332091901906319,
+      "median_absolute_relative_flux_error": 0.00023481640602907028,
+      "maximum_absolute_relative_gradient_error": 0.007427402756741586,
+      "median_absolute_relative_gradient_error": 0.0057148556635499
+    },
+    {
+      "corrected": false,
+      "field": "final_fit",
+      "nodes": 64,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0004877777307750186,
+      "median_absolute_relative_flux_error": 0.0001250264824319558,
+      "maximum_absolute_relative_gradient_error": 0.008378728405515234,
+      "median_absolute_relative_gradient_error": 0.00185213509571458
+    },
+    {
+      "corrected": false,
+      "field": "final_fit",
+      "nodes": 128,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.00018996100102408597,
+      "median_absolute_relative_flux_error": 9.03685730142545e-05,
+      "maximum_absolute_relative_gradient_error": 0.005866701606946467,
+      "median_absolute_relative_gradient_error": 0.0015419373368422695
+    },
+    {
+      "corrected": false,
+      "field": "final_fit",
+      "nodes": 256,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 3.853561512490167e-05,
+      "median_absolute_relative_flux_error": 8.373901723479626e-06,
+      "maximum_absolute_relative_gradient_error": 0.0010138086924837975,
+      "median_absolute_relative_gradient_error": 0.0003558843178212978
+    },
+    {
+      "corrected": false,
+      "field": "final_fit",
+      "nodes": 512,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0,
+      "median_absolute_relative_flux_error": 0.0,
+      "maximum_absolute_relative_gradient_error": 0.0,
+      "median_absolute_relative_gradient_error": 0.0
+    },
+    {
+      "corrected": true,
+      "field": "dry",
+      "nodes": 32,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0008275053458388637,
+      "median_absolute_relative_flux_error": 0.00034359947054329876,
+      "maximum_absolute_relative_gradient_error": 0.012397079757947349,
+      "median_absolute_relative_gradient_error": 0.0063328385329808334
+    },
+    {
+      "corrected": true,
+      "field": "dry",
+      "nodes": 64,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.00015013575090305764,
+      "median_absolute_relative_flux_error": 8.923734311150344e-05,
+      "maximum_absolute_relative_gradient_error": 0.004993829158620122,
+      "median_absolute_relative_gradient_error": 0.003326508261695782
+    },
+    {
+      "corrected": true,
+      "field": "dry",
+      "nodes": 128,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.00018996084442912675,
+      "median_absolute_relative_flux_error": 5.613568387019541e-05,
+      "maximum_absolute_relative_gradient_error": 0.0051659304205249335,
+      "median_absolute_relative_gradient_error": 0.0012503624913016154
+    },
+    {
+      "corrected": true,
+      "field": "dry",
+      "nodes": 256,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 1.4280325084214951e-05,
+      "median_absolute_relative_flux_error": 3.6900643733961402e-06,
+      "maximum_absolute_relative_gradient_error": 0.0023855445077110016,
+      "median_absolute_relative_gradient_error": 0.0017331112218920142
+    },
+    {
+      "corrected": true,
+      "field": "dry",
+      "nodes": 512,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0,
+      "median_absolute_relative_flux_error": 0.0,
+      "maximum_absolute_relative_gradient_error": 0.0,
+      "median_absolute_relative_gradient_error": 0.0
+    },
+    {
+      "corrected": true,
+      "field": "final_fit",
+      "nodes": 32,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0014332937585928018,
+      "median_absolute_relative_flux_error": 0.00023480832158673248,
+      "maximum_absolute_relative_gradient_error": 0.007889342779478614,
+      "median_absolute_relative_gradient_error": 0.006069183717217985
+    },
+    {
+      "corrected": true,
+      "field": "final_fit",
+      "nodes": 64,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.00048770612411008774,
+      "median_absolute_relative_flux_error": 0.0001250267525183535,
+      "maximum_absolute_relative_gradient_error": 0.008577524913863432,
+      "median_absolute_relative_gradient_error": 0.001904771609256617
+    },
+    {
+      "corrected": true,
+      "field": "final_fit",
+      "nodes": 128,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.00018996084442912675,
+      "median_absolute_relative_flux_error": 9.027237825409706e-05,
+      "maximum_absolute_relative_gradient_error": 0.006074509437831943,
+      "median_absolute_relative_gradient_error": 0.0016581150760942576
+    },
+    {
+      "corrected": true,
+      "field": "final_fit",
+      "nodes": 256,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 3.8531710974121225e-05,
+      "median_absolute_relative_flux_error": 8.373941974615384e-06,
+      "maximum_absolute_relative_gradient_error": 0.001076421183890619,
+      "median_absolute_relative_gradient_error": 0.0003699004237995851
+    },
+    {
+      "corrected": true,
+      "field": "final_fit",
+      "nodes": 512,
+      "valid_flux_comparisons": 7,
+      "valid_gradient_comparisons": 5,
+      "maximum_absolute_relative_flux_error": 0.0,
+      "median_absolute_relative_flux_error": 0.0,
+      "maximum_absolute_relative_gradient_error": 0.0,
+      "median_absolute_relative_gradient_error": 0.0
+    }
+  ],
+  "conditional_primary_field": {
+    "main_kkt_converged": false,
+    "primary": "corrected_start0",
+    "conditional_field": true,
+    "field_sha256": "e9b12c6ee8298d8cd7690612775162058a32132385c6fed8148a69e30b82c08d",
+    "absolute_prior_weight": "3.954930197858131"
+  }
+}

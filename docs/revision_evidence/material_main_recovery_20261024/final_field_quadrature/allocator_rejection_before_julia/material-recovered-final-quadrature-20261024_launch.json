@@ -1,0 +1,25 @@
+{
+  "time": "2026-10-24T13:39:54.977256+00:00",
+  "session": "material-recovered-final-quadrature-20261024",
+  "command": [
+    "taskset",
+    "-c",
+    "20",
+    "/home/roland/.venv/bin/python3",
+    "dev/watch_final_material_quadrature.py",
+    "--run-root",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_paper_composition_20261024",
+    "--dump",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas",
+    "--artifact",
+    "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml",
+    "--julia",
+    "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia"
+  ],
+  "log": "/home/roland/devspace/diffpumas.jl/examples/data/material_paper_composition_20261024/material-recovered-final-quadrature-20261024.log",
+  "cpu_pool": [
+    20
+  ],
+  "main_root": "/home/roland/devspace/diffpumas.jl/examples/data/material_paper_composition_20261024",
+  "review_required": true
+}

@@ -1,0 +1,6 @@
+valid_paths = 7
+scope = "Deterministic convergence only;512 nodes not physical truth; no free parameter =>no local fit-gradient claim"
+rows = 140
+source_unchanged = true
+finished_utc = "2026-10-24T13:55:33.133"
+changed_inputs = []

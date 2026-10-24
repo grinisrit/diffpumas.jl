@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "scope": "Final preselected conditional correctedstart0 field sampled quadrature; first allocator rejection before Julia retained separately",
+  "canonical_raw": "/home/roland/devspace/diffpumas.jl/examples/data/material_paper_composition_20261024/controls/final_field_quadrature",
+  "canonical_rejected_allocator": "/home/roland/devspace/diffpumas.jl/examples/data/material_paper_composition_20261024/controls/quadrature_allocator_rejection_20261024",
+  "review_required": true,
+  "revision_complete": false,
+  "archived_sha256": {
+    "allocator_rejection_before_julia/explanation.json": "04ed1ead8e7e58017f6d27d5467549f789bb1347c4120c47651122c5922ef12c",
+    "allocator_rejection_before_julia/final_field_quadrature_launcher.log": "7d26f14fecaad0019e7adce3da7a37878fc1b9b5fe813d993df408798214c000",
+    "allocator_rejection_before_julia/final_field_quadrature_watch.json": "8dcd834401100dd61f2a7a30b54e2b37c79a16949f3c348bb67ea3a6d47be785",
+    "allocator_rejection_before_julia/material-recovered-final-quadrature-20261024.log": "e1d031335203c2b362c73d1362cca13ab9f0e610ebdd3ec9475296a06504d959",
+    "allocator_rejection_before_julia/material-recovered-final-quadrature-20261024_launch.json": "7d82a4ab2fec93dcbc6f26ec5f282e46a73a783b05eb18a4912712f5dc5ab605",
+    "independent_assessment.json": "9b903ae7d4505cb1ac1a3064eb4f32890ec3e6c3e426ecfcd88a5a1f0b1e0bef",
+    "independent_audit.py": "e1718ab0204956770c0f9fd98d87ba8950d89cbcbead7178c9e689641e4859b9",
+    "raw/comparison.csv": "58fd03e32a9e19fe182690e36fb0639e288146c96e525fd865ae6939585461ea",
+    "raw/config.toml": "d37e92750474a4950104d5cd85c24f0db8e4ff163a2bd7b72b02ab50a0016cab",
+    "raw/derived_provenance.json": "163d530e434b3ec01f268db51b547901a4086546344a463c12d3920090e3be6d",
+    "raw/derived_summary.json": "939829207bb6e74874b9e5479b19b785ebf9664d9b80c7233083eca9b5279b42",
+    "raw/end_status.json": "5e95b413ab5dc0670d31daca4a598e860476ae670a744a05c1187f78f0e928be",
+    "raw/execution.json": "69260f4fc4a2b72354a5d221d3be559afc6b73f166fec151dac54378c19c7830",
+    "raw/measurements.csv": "9c90d62be92c7c35e06b808a7e6fccf89baefbb992a78193fcb1c49e81740a0d",
+    "raw/path_coverage.csv": "8790a8051837b3b4e7b22054a0f3f159f65c42588cf6b49c275079cd030c8981",
+    "raw/pid.json": "0829a2c30695f048b9e13d116d2fd91808d4045d7f06b6e956a4c796a929d0f8",
+    "raw/run.log": "cb3bbf7aaf98d82f7b90a0bb849e84f50e8c4305399cd2a28c2aea4e9b56e535",
+    "raw/status.toml": "336b7becbb43872d0553ca4ad90a9442bebbe865a7d1c18239cfc902bf08cceb"
+  }
+}

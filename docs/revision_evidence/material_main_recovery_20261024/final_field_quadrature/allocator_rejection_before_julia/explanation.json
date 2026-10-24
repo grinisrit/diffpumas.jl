@@ -1,0 +1,5 @@
+{
+  "time": "2026-10-24T13:54:47.359012+00:00",
+  "reason": "Parent taskset restricted allocator visibility to one CPU; 30-percent allocator rejected before any numerical job. No scientific outputs existed. Retry parent affinity0-20 preserves overall21-CPU union; numerical child remains CPU20/5GiB.",
+  "numerical_execution_started": false
+}

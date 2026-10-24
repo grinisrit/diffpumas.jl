@@ -1,0 +1,5 @@
+usage: run_revision_job.py [-h] --output OUTPUT --dump DUMP --julia JULIA
+                           --cpus CPUS [--cpu-start CPU_START] --memory-gib
+                           MEMORY_GIB [--input INPUT]
+                           ...
+run_revision_job.py: error: CPU allocation exceeds effective budget or available affinity
