@@ -387,7 +387,12 @@ its nonzero intercept. `predict_only(w)` may supply the same deterministic
 prediction as `model(w)[1]` for line searches, avoiding Jacobian construction
 on rejected candidates; accepted candidates are checked with the full model.
 The returned history records data-residual norms, while acceptance uses the
-complete data-plus-prior objective.
+complete data-plus-prior objective. `solver_mode=:active_set` freezes outward
+bound coordinates and uses projected Armijo acceptance. `diagnostics`, if supplied,
+receives objective and infinity-norm projected-gradient records including the final
+state. Only a projected gradient below `projected_gradient_tol` establishes KKT
+convergence; exhausting iterations or a line-search failure does not. Optional
+`objective_tol>0` stops on objective stagnation without claiming KKT convergence.
 """
 function gauss_newton_reconstruct(model, obs::AbstractVector;
                                   w0::AbstractVector,
@@ -399,7 +404,12 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                                   relinearize::Bool = true,
                                   weights::Union{Nothing,AbstractVector} = nothing,
                                   free::Union{Nothing,AbstractVector{Bool}} = nothing,
-                                  predict_only = nothing)
+                                  predict_only = nothing,
+                                  solver_mode::Symbol = :legacy,
+                                  projected_gradient_tol::Float64 = 1e-6,
+                                  objective_tol::Float64 = 0.0,
+                                  diagnostics = nothing)
+    solver_mode in (:active_set, :legacy) || throw(ArgumentError("unknown solver_mode"))
     w = clamp.(collect(Float64,w0),box[1],box[2])
     free === nothing || length(free)==length(w) || throw(DimensionMismatch("free mask must match w0"))
     active=free===nothing ? collect(eachindex(w)) : findall(free)
@@ -426,12 +436,30 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
             grad=grad.+pg[active]
             normal=normal.+Matrix(_prior_hessian(prior,w)[active,active])
         end
+        # KKT residual excludes outward gradients at active box constraints.
+        pg = w[active] .- clamp.(w[active] .- grad, box[1], box[2])
+        pg_norm = norm(pg, Inf)
+        diagnostics === nothing || push!(diagnostics,
+            (iteration=length(history)-1, objective=f_cur, projected_gradient=pg_norm))
+        solver_mode === :active_set && pg_norm <= projected_gradient_tol && break
+        movable = solver_mode === :legacy ? trues(length(active)) :
+            .!(((w[active] .<= box[1]) .& (grad .> 0)) .|
+               ((w[active] .>= box[2]) .& (grad .< 0)))
         d=diag(normal);dmax=maximum(d);dmax=dmax>0 ? dmax : 1.0
         accepted=false
+        f_before=f_cur
         for _try in 1:6
             A=normal+Diagonal(mu.*max.(d,1e-12*dmax))
             delta=try
-                -(A\grad)
+                step = zeros(length(active))
+                step[movable] .= -(A[movable,movable]\grad[movable])
+                # Projection of a coupled Newton direction need not be descent.
+                # Fall back to a diagonally scaled projected gradient direction.
+                projected = clamp.(w[active] .+ step, box[1], box[2]) .- w[active]
+                if solver_mode === :active_set && dot(grad,projected) >= 0
+                    step .= -grad ./ max.(d,1e-12*dmax)
+                end
+                step
             catch
                 fill(0.0,length(active))
             end
@@ -456,7 +484,8 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                     cached_w=w_new;cached_pred=pred_new;cached_J=J_new
                 end
                 f_new=objective(pred_new,w_new)
-                if isfinite(f_new) && f_new<f_cur-1e-10*abs(f_cur)
+                if isfinite(f_new) && f_new < f_cur + (solver_mode === :legacy ? -1e-10*abs(f_cur) :
+                    1e-4*dot(grad,w_new[active].-w[active]))
                     # The optional prediction callback must equal model(w)[1].
                     # Build a fresh derivative only for an accepted candidate.
                     if relinearize && predict_only !== nothing && J_new === nothing
@@ -466,7 +495,8 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                     end
                     # Confirm the true objective after any callback/full-model
                     # discrepancy; an approximate callback cannot authorize an increase.
-                    if isfinite(f_new) && f_new<f_cur-1e-10*abs(f_cur)
+                    if isfinite(f_new) && f_new < f_cur + (solver_mode === :legacy ? -1e-10*abs(f_cur) :
+                    1e-4*dot(grad,w_new[active].-w[active]))
                         w=w_new;r=pred_new.-obs;J=J_new;pred=pred_new;f_cur=f_new
                         accepted=true;break
                     end
@@ -481,6 +511,16 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
         end
         push!(history,norm(r))
         accepted || break
+        # Objective stagnation is recorded, but never called KKT convergence.
+        solver_mode === :active_set && objective_tol > 0 && abs(f_before-f_cur) <= objective_tol*max(1.0,abs(f_before)) && break
+    end
+    if diagnostics !== nothing
+        final_grad = transpose(J[:,active]) * (W === nothing ? r : W.*r)
+        if prior !== nothing
+            final_grad .+= (prior isa EdgePrior ? edge_gradient(prior,w) : laplacian_gradient(prior,w))[active]
+        end
+        final_pg = w[active] .- clamp.(w[active].-final_grad,box[1],box[2])
+        push!(diagnostics,(iteration=length(history)-1,objective=f_cur,projected_gradient=norm(final_pg,Inf)))
     end
     return w,history
 end
@@ -947,4 +987,56 @@ function profile_inventory(flux_only, w_map::AbstractVector, free::AbstractVecto
     return (T = Ts, w_mean = wbar, chi2 = chis, dchi2 = dchi, dchi2_cal = dchi_cal,
             T_map = T_map, T_min = Ts[kmin], w_mean_min = wbar[kmin],
             ci68 = crossings(1.0), ci95 = crossings(3.84), var_scale = var_scale)
+end
+
+"""
+    profiled_log_observation_operator(model, observed; weights, robust_scale, normalization=0)
+
+Fixed pseudo-Huber objective on log flux ratios. Positive `normalization` pins the
+forward-to-observed scale; zero profiles its logarithm by a convex scalar solve.
+The returned residual operator has exact Jacobian, including the implicit scale
+derivative. Its squared residual norm / 2 is the robust objective. All weights
+and the robust scale stay fixed across field iterations. Returns `(operator, scale)`.
+"""
+function profiled_log_observation_operator(model, observed::AbstractVector;
+        weights=ones(length(observed)), robust_scale::Real=1.0, normalization::Real=0.0)
+    all(>(0),observed) || throw(ArgumentError("log observations must be positive"))
+    c=Float64(robust_scale)
+    c>0 || throw(ArgumentError("robust_scale must be positive"))
+    W=Float64.(weights)
+    all(>=(0),W) && sum(W)>0 || throw(ArgumentError("weights must be nonnegative with positive sum"))
+    logobs=log.(observed)
+    function transform(pred)
+        all(>(0),pred) || throw(ArgumentError("log predictions must be positive"))
+        z=log.(pred).-logobs
+        a=normalization>0 ? log(normalization) : 0.0
+        if normalization<=0
+            lo=-maximum(z); hi=-minimum(z)
+            for _ in 1:80
+                a=(lo+hi)/2
+                score=sum(W.*((z.+a)./sqrt.(1 .+ ((z.+a)./c).^2)))
+                score>0 ? (hi=a) : (lo=a)
+            end
+            a=(lo+hi)/2
+        end
+        t=z.+a
+        h=sqrt.(1 .+ (t./c).^2)
+        # Rationalized pseudo-Huber value avoids cancellation near zero.
+        residual=sqrt.(W).*t.*sqrt.(2 ./ (h.+1))
+        derivative=sqrt.(W)./h.*sqrt.((h.+1)./2)
+        return residual,derivative,t,h,exp(a)
+    end
+    operator = w -> begin
+        pred,J=model(w)
+        residual,derivative,t,h,s=transform(pred)
+        D=Matrix(J)./pred
+        if normalization<=0
+            curvature=W./h.^3
+            da=-vec(transpose(curvature)*D)./sum(curvature)
+            D .+= transpose(da)
+        end
+        residual,derivative.*D
+    end
+    scale = pred -> last(transform(pred))
+    return operator,scale
 end

@@ -80,6 +80,13 @@ Options:
     --papermatch-prior-cutoff FLOAT  Minimum aquifer-cell height in m (default: 500)
     --papermatch-mask-ratio FLOAT   Centered dry model/data ratio threshold (default: 15; Inf disables)
     --papermatch-calibration-water FLOAT  Initial uniform MC calibration fraction (default: 0)
+    --correction-artifact PATH    Load frozen dry/material correction coefficients; bypass recalibration
+    --solver-mode STR             GN active-set `stable` or reproduction `legacy` (default: legacy)
+    --papermatch-fit-mode STR      Fixed pseudo-Huber log objective `stable` or `legacy` (default: legacy)
+    --papermatch-initial-water FLOAT  Initial reconstructed support field, independent of calibration (default: 0)
+    --papermatch-gn-iters INT       Stable-fit iteration cap (default: 100)
+    --papermatch-gradient-tol FLOAT  Stable-fit projected-gradient KKT tolerance (default: 1e-6)
+    --papermatch-log-scale FLOAT    Fixed pseudo-Huber log-residual scale (default: 0.3)
     --papermatch-fit-only          Save nonlinear fit/recursion/coverage diagnostics, skip posterior/plots/final MC
     --papermatch-mc-samples INT   MC samples/bin for the paper-match uncertainty grid (default: 64)
     --papermatch-paper-samples INT  MC samples for the Fig.8 energy spectrum (default: 2000)
@@ -1350,6 +1357,7 @@ function parse_commandline()
         min_eval_depth = 350.0,    # exclude shallower-than-this cells from metrics/resolution
                                    # (near-surface cells are geometrically unresolvable)
         threaded = true,
+        correction_artifact = "",
         correction = true,         # MC-calibrated CSDA fluctuation/hard-loss correction
         calibration_bins = 48,     # bins used to fit the CSDA correction to fixed-path energy-loss MC (more = tighter)
         calibration_mc_samples = 512,  # MC samples/bin for the calibration reference (high = low MC noise)
@@ -1370,6 +1378,12 @@ function parse_commandline()
         papermatch_prior_cutoff = 500.0, # water-bearing cells must lie above this height (m)
         papermatch_mask_ratio = 15.0,    # centered dry log-ratio rejection; Inf disables
         papermatch_calibration_water = 0.0, # uniform initial MC calibration medium
+        solver_mode = "legacy",
+        papermatch_fit_mode = "legacy",
+        papermatch_initial_water = 0.0,
+        papermatch_gn_iters = 100,
+        papermatch_gradient_tol = 1e-6,
+        papermatch_log_scale = 0.3,
         papermatch_fit_only = false,     # save fit diagnostics/field; skip posterior, plots and final MC
         papermatch_reg = 1.0,          # smoothness-prior weight (× data curvature) for the
                                        # water-only match
@@ -1469,6 +1483,10 @@ function parse_commandline()
             args = merge(args, (max_plot_cells = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-straggling"
             args = merge(args, (straggling = false,)); i += 1
+        elseif arg == "--correction-artifact"
+            args = merge(args, (correction_artifact = ARGS[i+1],)); i += 2
+        elseif arg == "--solver-mode"
+            args = merge(args, (solver_mode = ARGS[i+1],)); i += 2
         elseif arg == "--solver"
             args = merge(args, (solver = lowercase(ARGS[i + 1]),)); i += 2
         elseif arg == "--reg-weight"
@@ -1507,6 +1525,16 @@ function parse_commandline()
             args = merge(args, (papermatch_mask_ratio = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--papermatch-calibration-water"
             args = merge(args, (papermatch_calibration_water = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--papermatch-fit-mode"
+            args = merge(args, (papermatch_fit_mode = ARGS[i+1],)); i += 2
+        elseif arg == "--papermatch-initial-water"
+            args = merge(args, (papermatch_initial_water = parse(Float64,ARGS[i+1]),)); i += 2
+        elseif arg == "--papermatch-gn-iters"
+            args = merge(args, (papermatch_gn_iters = parse(Int,ARGS[i+1]),)); i += 2
+        elseif arg == "--papermatch-gradient-tol"
+            args = merge(args, (papermatch_gradient_tol = parse(Float64,ARGS[i+1]),)); i += 2
+        elseif arg == "--papermatch-log-scale"
+            args = merge(args, (papermatch_log_scale = parse(Float64,ARGS[i+1]),)); i += 2
         elseif arg == "--papermatch-fit-only"
             args = merge(args, (papermatch = true, papermatch_only = true, papermatch_fit_only = true)); i += 1
         elseif arg == "--papermatch-reg"
@@ -1561,6 +1589,11 @@ function parse_commandline()
         end
     end
 
+    args.solver_mode in ("stable","legacy") || error("--solver-mode must be stable or legacy")
+    args.papermatch_gn_iters > 0 || error("--papermatch-gn-iters must be positive")
+    args.papermatch_log_scale > 0 || error("--papermatch-log-scale must be positive")
+    args.papermatch_gradient_tol >= 0 || error("--papermatch-gradient-tol must be nonnegative")
+    0 <= args.papermatch_initial_water <= MAX_WATER_FRACTION || error("--papermatch-initial-water must be in [0,0.9]")
     args.csda_quadrature in ("midpoint","random") || error("--csda-quadrature must be midpoint or random")
     args.geometry in ("auto", "tetra", "grid") || error("--geometry must be auto, tetra, or grid")
     args.solver in ("all", "sart", "mlem", "gd", "gn") || error("--solver must be all, sart, mlem, gd, or gn")
@@ -1928,6 +1961,7 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             # nonlinear operator, inverse-variance weighted, edge-preserving prior.
             w_rec, hist = gauss_newton_reconstruct(csda_model, obs;
                 w0 = zeros(n_cells), n_iter = max(8, args.reco_iters ÷ 16),
+                solver_mode = args.solver_mode == "stable" ? :active_set : :legacy,
                 prior = edge_prior, weights = Wobs, relinearize = true,
                 box = (0.0, MAX_WATER_FRACTION), predict_only = csda_predict)
         else
@@ -2731,6 +2765,7 @@ function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig
                             weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION))),
                 "gn"   => first(gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
                             n_iter = max(8, args.reco_iters ÷ 16), prior = edge_prior,
+                            solver_mode = args.solver_mode == "stable" ? :active_set : :legacy,
                             weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION),predict_only=csda_predict)))
             for s in solvers
                 rep = reconstruction_report(recs[s], w_true; mask = eval_mask)
@@ -3010,17 +3045,20 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     # reconstructed field, then re-solve, N times. Iteration 1 uses the calibration done at w=0
     # (dry rock); later iterations re-calibrate through the recovered water field, so the
     # differentiable surrogate matches fixed-path energy-loss MC for the medium it is actually fitting.
-    n_recur = max(1, args.papermatch_recursions)
+    args.papermatch_fit_mode in ("stable","legacy") || error("fit mode must be stable or legacy")
+    stable_fit = args.papermatch_fit_mode == "stable"
+    n_recur = stable_fit ? 1 : max(1, args.papermatch_recursions)
     damp = clamp(args.papermatch_damp, 0.0, 1.0)
     w0_fit = 0.0
     w_prev = zeros(n_cells)        # converged field from the previous pass (warm start + damping)
+    w_prev[aquifer_mask] .= clamp(args.papermatch_initial_water,0.0,MAX_WATER_FRACTION)
     prev_coef = nothing            # previous correction coefficients (convergence check)
     recursion_rows = NamedTuple[]
     recursion_converged = false
     for recur in 1:n_recur
         println("  [recursion $recur/$n_recur] starting material fit")
         flush(stdout)
-        if recur > 1
+        if recur > 1 && isempty(args.correction_artifact)
             println(@sprintf("  [recursion %d/%d] re-calibrating CSDA->MC through the current reconstructed field (geometric residual frozen)...",
                              recur, n_recur))
             # Re-fit only the hard-loss κ_hard through the recovered field (the physical
@@ -3041,6 +3079,43 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         # drives the water reconstruction. Robustness is introduced only once a water
         # field exists and the residual scatter reflects genuine outliers.
         w_solved = copy(w_prev)
+        if stable_fit
+            # A single fixed observation model: convex pseudo-Huber log residuals,
+            # fixed DEM weights and robust scale; scale is profiled at every trial.
+            robust_model, profile_scale = DiffPumas.Tomography.profiled_log_observation_operator(model_aq,meas_v;
+                weights=fit_mask.*wdem, robust_scale=args.papermatch_log_scale,
+                normalization=args.papermatch_abs_scale)
+            opt_logscale = profile_scale
+            _,logJ=robust_model(zeros(n_cells))
+            diagonal=vec(sum(logJ.^2;dims=1))
+            positive=filter(>(0),diagonal[aquifer_mask])
+            stable_prior=SmoothnessPrior(cell_neighbors(volume),
+                args.papermatch_reg*(isempty(positive) ? 1.0 : median(positive)))
+            sm_prior=stable_prior
+            solver_diagnostics=NamedTuple[]
+            w_solved,_=gauss_newton_reconstruct(robust_model,zeros(length(meas_v));
+                w0=w_solved,n_iter=args.papermatch_gn_iters,prior=stable_prior,
+                free=aquifer_mask,solver_mode=:active_set,projected_gradient_tol=args.papermatch_gradient_tol,
+                diagnostics=solver_diagnostics)
+            open(joinpath(args.output_dir,"lvd_solver_history.csv"),"w") do io
+                println(io,"iteration,objective,projected_gradient")
+                for row in solver_diagnostics; println(io,join(values(row),',')); end
+            end
+            open(joinpath(args.output_dir,"lvd_solver_status.txt"),"w") do io
+                lastrow=last(solver_diagnostics)
+                println(io,"objective_model=fixed_pseudo_huber_log_flux")
+                println(io,"robust_log_scale=$(args.papermatch_log_scale)")
+                println(io,"normalization_mode=$(args.papermatch_abs_scale>0 ? "pinned" : "profiled")")
+                println(io,"initial_field_water=$(args.papermatch_initial_water)")
+                println(io,"maximum_iterations=$(args.papermatch_gn_iters)")
+                println(io,"projected_gradient_tolerance=$(args.papermatch_gradient_tol)")
+                println(io,"projected_gradient=$(lastrow.projected_gradient)")
+                println(io,"objective=$(lastrow.objective)")
+                println(io,"kkt_converged=$(lastrow.projected_gradient<=args.papermatch_gradient_tol)")
+                println(io,"support_cells=$(count(aquifer_mask))")
+                println(io,"fit_bins=$(length(fit_idx))")
+            end
+        else
         for outer in 1:3
             println("  [recursion $recur/$n_recur] IRLS outer $outer/3: Gauss-Newton solve")
             flush(stdout)
@@ -3070,9 +3145,10 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
             Wobs .*= ref_wmed / max(wmed_cur, 1e-300)
             w_solved, _ = gauss_newton_reconstruct(model_aq, obs; w0 = w_solved, n_iter = 6,
                 prior = sm_prior, weights = Wobs, relinearize = true, box = (0.0, MAX_WATER_FRACTION),
-                free = aquifer_mask, predict_only = predict_aq)
+                free = aquifer_mask, predict_only = predict_aq, solver_mode = :legacy)
             w_solved[.!aquifer_mask] .= 0.0   # keep water inside the aquifer rock cells only
         end
+        end # fixed objective / legacy IRLS
         # under-relaxation between passes (pass 1 takes the solve as-is; w_prev=0 there)
         w_matched = recur == 1 ? w_solved : (damp .* w_solved .+ (1.0 - damp) .* w_prev)
         w_matched[.!aquifer_mask] .= 0.0
@@ -3210,6 +3286,9 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     args.papermatch_fit_only && return (water=w_matched,converged=recursion_converged,passes=length(recursion_rows))
 
     # --- Conditional curvature and separate weighted-residual diagnostics.
+    if stable_fit
+        println("Stable-fit caveat: the following legacy count-space curvature and scans do not describe the fixed pseudo-Huber log objective; use solver history for objective/KKT diagnostics.")
+    end
     # W_stat below omits both the Cauchy factors and median renormalization used
     # in the measured-field IRLS solves. Its JtWJ + fixed prior is therefore NOT
     # the final IRLS-objective Hessian. The evaluated field is not verified to be
@@ -3407,6 +3486,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  water-insufficient (aquifer cells at the w=%.1f ceiling, water-only model under-explains): %d",
                              MAX_WATER_FRACTION, aq_ceiling))
         println(io)
+        stable_fit && println(io,"Stable-fit caveat: legacy count-space curvature/scans below are proxies, not the fitted pseudo-Huber log objective or its posterior.")
         println(io, "Curvature scope: JtWJ+prior uses weights without fitting Cauchy factors or median renormalization; it is not the final IRLS-objective Hessian.")
         println(io, "The fitted point is not verified as a mode under those changed weights. Inverse curvature and empirical rescaling are conditional diagnostics, not calibrated posterior covariance; legacy result names below are retained.")
         println(io, "Posterior uncertainty, null-model comparison, and water-amplitude profile:")
@@ -3568,8 +3648,14 @@ function main()
     # Freeze calibration independently of any synthetic truth used below.
     # Paper-match starting-medium tests may explicitly select uniform wet rock.
     calibration_field = fill(args.papermatch ? args.papermatch_calibration_water : 0.0,num_cells(volume))
-    calibrate_correction_to_mc(physics, shallow_flags, matcfg, site, paths,
-        calibration_field, energy_samples, args)
+    if isempty(args.correction_artifact)
+        set_csda_material_correction!(enabled=false)
+        calibrate_correction_to_mc(physics, shallow_flags, matcfg, site, paths,
+            calibration_field, energy_samples, args)
+    else
+        load_csda_corrections!(args.correction_artifact)
+        println("Loaded frozen CSDA correction artifact: $(args.correction_artifact)")
+    end
     println()
 
     # (b) Reconstruction accuracy vs exposure (then exit).
