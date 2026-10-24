@@ -74,12 +74,18 @@ def main():
     auxiliary_controls = {}
     qfolder = root/'controls/column_domain'
     if (qfolder/'end_status.json').is_file():
-        audit(qfolder)
-        auxiliary_controls['column_domain'] = dict(end_status_sha256=digest(qfolder/'end_status.json'),
-            outputs_sha256={name:digest(qfolder/name) for name in ('column_domain.csv','column_domain_summary.toml')})
-        (target/'column_domain').mkdir()
-        for name in ('column_domain.csv','column_domain_summary.toml','end_status.json','execution.json'):
-            shutil.copy2(qfolder/name,target/'column_domain'/name)
+        try:
+            audit(qfolder)
+        except (ValueError, KeyError, OSError) as error:
+            # An unsuccessful auxiliary audit must remain unavailable, while
+            # figures from independently audited scientific stages can export.
+            auxiliary_controls['column_domain'] = dict(audit_error=str(error), available=False)
+        else:
+            auxiliary_controls['column_domain'] = dict(available=True, end_status_sha256=digest(qfolder/'end_status.json'),
+                outputs_sha256={name:digest(qfolder/name) for name in ('column_domain.csv','column_domain_summary.toml')})
+            (target/'column_domain').mkdir()
+            for name in ('column_domain.csv','column_domain_summary.toml','end_status.json','execution.json'):
+                shutil.copy2(qfolder/name,target/'column_domain'/name)
     commands = []
     command = [sys.executable, str(stage_parser), '--stage', args.stage,
                '--directory', str(root/'stages'/args.stage), '--output', str(target/'stage_results.json')]
