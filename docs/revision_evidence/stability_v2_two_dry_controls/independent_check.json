@@ -1,0 +1,56 @@
+{
+  "scope": "Two completed dry controls, not primary corrected reconstruction; non-KKT endpoints are not established minima",
+  "collector_sha256": "89a6d0bde705ce2999376a127c861f99aa92240877df7eeb2dff71875a5d0e8f",
+  "verified_all_end_bound_outputs": true,
+  "independent_supported_field_metrics": {
+    "field_rmse": 6.804851579957399e-06,
+    "field_relative_l2": 4.5812839227892185e-05,
+    "field_max_abs": 7.623352180232898e-05
+  },
+  "comparison": {
+    "common_covered": {
+      "n_bins": 1003,
+      "baseline": {
+        "relative_l2": 0.5287727500789643,
+        "log_rmse": 3.583902553092866
+      },
+      "candidate": {
+        "relative_l2": 0.5287708382727376,
+        "log_rmse": 3.583903714525388
+      },
+      "prediction_relative_l2": 6.675529466390975e-06
+    },
+    "common_fit": {
+      "n_bins": 690,
+      "baseline": {
+        "relative_l2": 0.4065322824556173,
+        "log_rmse": 0.7813829491109773
+      },
+      "candidate": {
+        "relative_l2": 0.40653033267376176,
+        "log_rmse": 0.7813845027024108
+      },
+      "prediction_relative_l2": 6.798377077978066e-06
+    },
+    "same_support": true,
+    "same_screen": true,
+    "field_relative_l2": 4.5812839227892185e-05,
+    "field_rmse": 6.804851579957399e-06,
+    "field_max_abs": 7.623352180232898e-05,
+    "objective_difference": -2.195827164541697e-08,
+    "objective_difference_comparable": true,
+    "same_correction_artifact": true,
+    "same_runtime": true,
+    "same_core_sources": true,
+    "shared_audited_inputs_match": true,
+    "audited_inputs_only_in_reference": [
+      "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/corrected_validation/calibration.toml"
+    ],
+    "audited_inputs_only_in_candidate": [
+      "/home/roland/devspace/diffpumas.jl/dev/collect_stability_v2.py",
+      "/home/roland/devspace/diffpumas.jl/dev/queue_stability_v2_controls.py",
+      "/home/roland/devspace/diffpumas.jl/dev/run_stability_v2.py",
+      "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+    ]
+  }
+}
