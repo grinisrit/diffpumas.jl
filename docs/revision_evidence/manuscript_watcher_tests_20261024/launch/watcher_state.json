@@ -1,0 +1,40 @@
+{
+  "attempted_signatures": [],
+  "retained_dependencies": [],
+  "run_root": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024",
+  "controls_root": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024",
+  "started_or_resumed_utc": "2026-10-24T12:06:43.683915+00:00",
+  "watcher_sha256": "169109a4728a442128d6bf838d557c991b5b3c4d3b42bc94db4ea5674ee74cd3",
+  "review_required": true,
+  "revision_complete": false,
+  "cpu_pool": [
+    20
+  ],
+  "address_space_bytes": 2147483648,
+  "python_postprocess_lock": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/cpu20-python-postprocess.lock",
+  "updated_utc": "2026-10-24T12:07:43.919618+00:00",
+  "phase": "waiting_scientific_exports",
+  "evidence": {
+    "stages": {},
+    "auxiliary": {
+      "column_domain": {
+        "path": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/controls/column_domain",
+        "execution_clean": false,
+        "status": "pending"
+      },
+      "final_field_quadrature": {
+        "path": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/controls/final_field_quadrature",
+        "execution_clean": false,
+        "status": "pending"
+      }
+    },
+    "collector": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/collector_00.json",
+      "sha256": "bfb09f13e44d190f68991c639c7b14ce53379beac3820b4dd1435922e513454f",
+      "reported_cases": 1,
+      "reported_clean_executions": 1
+    },
+    "root_execution_sha256": "e6e05237d62a392524c4348a2210394f7e4ee694b757af6e512cb6aad4efcde9",
+    "export_index_sha256": null
+  }
+}

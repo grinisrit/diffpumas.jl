@@ -1,0 +1,24 @@
+{
+  "started_utc": "2026-10-24T12:06:43.588371+00:00",
+  "session": "material-paper-refresh-20261024",
+  "command": [
+    "/home/roland/.venv/bin/python3",
+    "dev/watch_material_manuscript.py",
+    "--run-root",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024",
+    "--controls-root",
+    "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024",
+    "--output",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/candidate_manuscript",
+    "--tectonic",
+    "/mnt/big_data/agent-builds/diffpumas-latex/tectonic"
+  ],
+  "cwd": "/home/roland/devspace/diffpumas.jl",
+  "watcher_sha256": "169109a4728a442128d6bf838d557c991b5b3c4d3b42bc94db4ea5674ee74cd3",
+  "builder_sha256": "a83f8a8fa3aae10347170a747bfb18e16a73a57b5122ede8921d843f952760cd",
+  "cpu_pool": [
+    20
+  ],
+  "address_space_bytes": 2147483648,
+  "review_required": true
+}

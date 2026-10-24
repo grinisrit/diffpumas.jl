@@ -1,0 +1,13 @@
+{
+  "recorded_utc": "2026-10-24T12:08:03.865635+00:00",
+  "copies": {
+    "candidate_manuscript_launch.json": {
+      "source": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/candidate_manuscript_launch.json",
+      "sha256": "398e85b2d73ce514cd665a5bb1f1df3a8d8197a2ad2436eb4c43989a8f644073"
+    },
+    "watcher_state.json": {
+      "source": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/candidate_manuscript/watcher_state.json",
+      "sha256": "639d08243c85a1e71f5c3756c80e5b4af19e9bed2c4c2a470f2ee25316e7b2e4"
+    }
+  }
+}
