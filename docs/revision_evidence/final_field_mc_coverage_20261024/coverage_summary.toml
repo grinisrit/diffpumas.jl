@@ -1,0 +1,949 @@
+[audit]
+jacobian_nonzeros = 5453
+prediction_bitwise_parity = true
+scope = "Absolute derivative sums are unweighted coverage diagnostics, not resolution, Fisher information, solid-angle/acceptance coverage, new stochastic validation, or uncertainty bounds. Dry columns remain explicitly dry-reference; final columns use the recovered field and frozen material correction."
+jacobian_columns = 600
+changed_inputs = []
+jacobian_forward_bitwise_parity = true
+jacobian_rows = 1003
+dry_prediction_bitwise_parity = true
+
+    [audit.input_sha256]
+    "/home/roland/devspace/diffpumas.jl/src/DiffPumas.jl" = "7816918b72488c25b03d8de4ee63102980a53fdc252f2f5a9594da11e90a08e2"
+    "/home/roland/devspace/diffpumas.jl/src/Transport.jl" = "262e3b28cd147e9ace96364e8bc6fc05a39a36ebab7770ec442d3ad8370fcb3d"
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_fit_predictions.csv" = "c047752d11b82d8849d9f46ed3a6fb108fe6202231aa0395fd6157904849af87"
+    "/home/roland/devspace/diffpumas.jl/examples/revision_suite.jl" = "8b27fe165cac993e0d2572be9e93de062cdb58e28e8b02c7b4f26a6112cc748f"
+    "/home/roland/devspace/diffpumas.jl/dev/audit_final_field_mc_coverage.jl" = "a6d7614fa2ff27941d1180dea56cceacb9d9e959a67edd27a756170cc489bb1b"
+    "/home/roland/devspace/diffpumas.jl/src/DEDXLoader.jl" = "20b511bc0822ee7ab09cee8c9f24c95aeb9f4dfc598e4b6fe68a2ee8ea9d9593"
+    "/home/roland/devspace/diffpumas.jl/src/Tomography.jl" = "9221b2cc173563286df117e692f111c24ea1c24a2e0ac7aa7223e8141e0eb843"
+    "/home/roland/devspace/diffpumas.jl/src/Uncertainty.jl" = "ee8570398f55a1c4b02364c080a246ea6561728be461514e16a8808909de71b7"
+    "/home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl" = "9da5d941038255d80c4e7015814233e0e7ddc0d620d5680e099229a7428c0a19"
+    "/home/roland/devspace/diffpumas.jl/src/Loader.jl" = "0d4dcd43e171e46213c6073f8e41c342d79bd61a441eec83847a2dbe3db90213"
+    "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml" = "8667f1a7fc9a4068e074495dcb08cb04deeb6f7ae77365087aa9daabc4c4677d"
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas" = "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+    "/home/roland/devspace/diffpumas.jl/Manifest.toml" = "693219423d3e98fb70ee928db6c6ded9e1b78000eb8b1c8417c22f688a706c05"
+    "/home/roland/devspace/diffpumas.jl/src/Coulomb.jl" = "054cba676972bcd793812fb2aed3263f456ddb15f449703ddd67a2e83a8421b5"
+    "/home/roland/devspace/diffpumas.jl/src/Materials.jl" = "f646987a55687b1d275de1afe18d813a10d63aca6ecf83c95b50498eeb170510"
+    "/home/roland/devspace/diffpumas.jl/src/MixedTransport.jl" = "f04d8d3ccefcd274bb369e0b8b7c4552f2c9fb53e2df024922ce74f089dcd5d0"
+    "/home/roland/devspace/diffpumas.jl/dev/validate_surrogate_v2.jl" = "02e6f8302501571963bbf223d3b46ffdc04cbf96d04746984961aa9f7f37713a"
+    "/home/roland/devspace/diffpumas.jl/src/Plotting.jl" = "ca9567a8c5c192fd548739fff4eeffa26bd6ae95a1794c8293931b12b4b8b912"
+    "/home/roland/devspace/diffpumas.jl/src/PhysicsMetadata.jl" = "066ee16596f02afd0f8026340ab93fb706bf88c982ca0dce333198e90f6d2fd4"
+    "/home/roland/devspace/diffpumas.jl/src/Geometry.jl" = "172d949ebb1b318ed268ddea0a037028c0424d1dc9a6476ac07e8bd9975400bc"
+    "/home/roland/devspace/diffpumas.jl/src/Constants.jl" = "176783f8e3156bdbeda3195ae19ed77142fbbea63fd799c54fe1b0d84650b3a8"
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_mc_coverage.csv" = "faa534983987d47a31cacf0a6f3b7c9e2c5613041bf67a24d0437be30c0d1c90"
+    "/home/roland/devspace/diffpumas.jl/src/Straggling.jl" = "47c954faaef1f0b13bd12657f5ba4e64c0a5d1c0661015a765d29bd47fa95785"
+    "/home/roland/devspace/diffpumas.jl/src/Types.jl" = "d465ffc259e9e55d7ec34ea0038c87a4a90ef9f9e4261ed4e9c15ec42b60b505"
+    "/home/roland/devspace/diffpumas.jl/src/AtomicShellData.jl" = "390fa8679753b534ae63d673fc642919f4683f08e159773eefd65d0040bb25c5"
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_fit_field.csv" = "e9b12c6ee8298d8cd7690612775162058a32132385c6fed8148a69e30b82c08d"
+    "/home/roland/devspace/diffpumas.jl/Project.toml" = "79b4a63969e9102cd36451369e56da168caef6f5c09a9570de393add59bd3435"
+    "/home/roland/devspace/diffpumas.jl/src/Context.jl" = "5a9747fd4d5ceb59f5f2c27fb3b296ca72c7066b03b3fd3130e9d4be6c849d0c"
+    "/home/roland/devspace/diffpumas.jl/src/Tomography_rules.jl" = "43cf1ed02dc3f6c3e85f0036efa86c406d649b8154db3ef4bc43292a0cd89720"
+    "/home/roland/devspace/diffpumas.jl/src/Tomography_inverse.jl" = "1c708b159294c2eab4e7b3a6359284661883669adcc68c5e28253cafab4865c8"
+    "/home/roland/devspace/diffpumas.jl/src/GaisserFlux.jl" = "18925f3b5bbe7f32d55441b0bacc3fc2c369ae3f9085ad8fb5e8a52555147338"
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_solver_configuration.toml" = "98e8e4d10bebe261c85a2cb34906c16057c7332cd76725a09eb992fd6a769b4b"
+    "/home/roland/devspace/diffpumas.jl/src/Physics.jl" = "79592a977291b6fc50c35e7ccf2ff8497074425f0474f542bcf7560076d90538"
+    "/home/roland/devspace/diffpumas.jl/src/Pumas.jl" = "b4383abd10e53c1359d75192233ec87b545b52ccbd61ef48eb69f247dc024c10"
+    "/home/roland/devspace/diffpumas.jl/src/Tomography_material_calibration.jl" = "b6463a72bd420b73712aceee6b80024071efe4a0df11b9180a84c5fb749ccd32"
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_fit_mask.csv" = "2f941e953b97371acb29c6e7903a6c3e1d4bd4cce1784924efb2785477036252"
+    "/home/roland/devspace/diffpumas.jl/src/TriangleIntersect.jl" = "38df122151c03233ee00a6a7b656f650fdcb7a3c6ac2c4d304121f71cfffc466"
+    "/home/roland/devspace/diffpumas.jl/src/Turtle.jl" = "c5c1b1270c053afa90be915754a476497963bb4fadfb06daf44d557008d88f55"
+
+[fitted]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.6267978628726549
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 690
+support_cells_intersected = [205, 215, 225, 226, 235, 236, 243, 244, 245, 246, 247, 248, 252, 253, 254, 255, 256, 257, 258, 262, 263, 264, 265, 266, 267, 268, 273, 274, 275, 276, 277, 285, 286, 287, 295, 315, 325, 326, 333, 334, 335, 336, 342, 343, 344, 345, 346, 347, 348, 351, 352, 353, 354, 355, 356, 357, 362, 363, 364, 365, 366, 373, 374, 375, 376, 377, 384, 385, 386, 387, 425, 426, 434, 435, 436, 444, 445, 446, 452, 453, 454, 455, 456, 464, 465, 466, 474, 475, 476, 484, 485, 525, 565, 575]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 1.0
+fraction_covered_final_all_abs_jacobian = 0.8451613745832723
+fraction_fitted_final_support_abs_logflux_sensitivity = 1.0
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.8861537906600305
+fraction_fitted_final_support_abs_jacobian = 1.0
+
+    [fitted.final_support_abs_logflux_sensitivity]
+    median = 2.896549051414011
+    sum = 2256.430294222716
+    q10 = 1.9033091482112492
+    max = 9.414207275601049
+    min = 1.2836709039114629
+    q90 = 4.949722797609828
+
+    [fitted.dry_support_abs_jacobian]
+    median = 0.00026549014254981457
+    sum = 0.18189025478656234
+    q10 = 7.380533373911025e-6
+    max = 0.0006615948813860244
+    min = 1.4164404083120868e-7
+    q90 = 0.0005398273781729139
+
+    [fitted.final_support_abs_jacobian]
+    median = 0.00032102085562671416
+    sum = 0.20426371415577144
+    q10 = 1.3191187058453555e-5
+    max = 0.0006797113063438678
+    min = 1.9002933781520896e-7
+    q90 = 0.0005525517033754005
+
+    [fitted.slant_m]
+    median = 1573.9325112788538
+    sum = 1.3079942737815129e6
+    q10 = 1271.8635970013493
+    max = 4457.219492776221
+    min = 1188.830319875251
+    q90 = 3030.03196223902
+
+    [fitted.dry_support_abs_logflux_sensitivity]
+    median = 4.833744285169652
+    sum = 3740.975797903064
+    q10 = 3.0503598369210954
+    max = 13.500218408584262
+    min = 2.365665514512515
+    q90 = 8.199214393479926
+
+    [fitted.zenith_deg]
+    median = 42.0
+    sum = 29260.0
+    q10 = 18.0
+    max = 78.0
+    min = 2.0
+    q90 = 66.0
+
+[fit_omitted]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.0787576759859769
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 60
+support_cells_intersected = [205, 215, 225, 226, 235, 236, 243, 244, 247, 248, 252, 253, 254, 255, 257, 258, 262, 263, 264, 265, 266, 267, 268, 274, 275, 276, 277, 285, 286, 315, 325, 326, 335, 343, 344, 347, 351, 352, 353, 354, 362, 363, 364, 365, 366, 374, 375, 376, 377, 384, 385, 386, 425, 453, 464, 474, 475, 476, 484, 485]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.007402603386067597
+fraction_covered_final_all_abs_jacobian = 0.006256394453263677
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.12565083681846873
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.005342917505640232
+fraction_fitted_final_support_abs_jacobian = 0.006029334368316235
+
+    [fit_omitted.final_support_abs_logflux_sensitivity]
+    median = 4.447956188644517
+    sum = 283.52235469162787
+    q10 = 2.5759430285806375
+    max = 9.414207275601049
+    min = 2.4037480493250407
+    q90 = 7.569894651537592
+
+    [fit_omitted.dry_support_abs_jacobian]
+    median = 8.016850319269672e-6
+    sum = 0.0007867736570303916
+    q10 = 1.4265886413406407e-6
+    max = 7.807623234148549e-5
+    min = 1.6712348168442523e-7
+    q90 = 3.2315650407516587e-5
+
+    [fit_omitted.final_support_abs_jacobian]
+    median = 1.3491421538407077e-5
+    sum = 0.0012315742319593162
+    q10 = 1.888410014773885e-6
+    max = 7.807623234148549e-5
+    min = 2.501814391604216e-7
+    q90 = 5.313373798672573e-5
+
+    [fit_omitted.slant_m]
+    median = 3025.510698298858
+    sum = 183304.09408483084
+    q10 = 2456.9901168452707
+    max = 4457.219492776221
+    min = 1959.930866067607
+    q90 = 3648.050163366286
+
+    [fit_omitted.dry_support_abs_logflux_sensitivity]
+    median = 7.837146215116416
+    sum = 463.99166720847927
+    q10 = 4.199363483368009
+    max = 13.500218408584262
+    min = 2.4037480493250407
+    q90 = 10.499798878248782
+
+    [fit_omitted.zenith_deg]
+    median = 66.0
+    sum = 4088.0
+    q10 = 62.0
+    max = 78.0
+    min = 62.0
+    q90 = 74.0
+
+[covered]
+fraction_covered_final_support_abs_logflux_sensitivity = 1.0
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 1003
+support_cells_intersected = [201, 202, 204, 205, 211, 212, 213, 214, 215, 221, 222, 223, 224, 225, 226, 231, 232, 233, 234, 235, 236, 241, 242, 243, 244, 245, 246, 247, 248, 252, 253, 254, 255, 256, 257, 258, 259, 262, 263, 264, 265, 266, 267, 268, 270, 273, 274, 275, 276, 277, 278, 280, 285, 286, 287, 288, 289, 295, 296, 297, 299, 311, 312, 313, 314, 315, 321, 322, 323, 324, 325, 326, 331, 332, 333, 334, 335, 336, 341, 342, 343, 344, 345, 346, 347, 348, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 362, 363, 364, 365, 366, 373, 374, 375, 376, 377, 384, 385, 386, 387, 388, 414, 424, 425, 426, 433, 434, 435, 436, 444, 445, 446, 451, 452, 453, 454, 455, 456, 460, 464, 465, 466, 474, 475, 476, 484, 485, 524, 525, 534, 535, 564, 565, 574, 575, 584, 585]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 1.0
+fraction_covered_final_all_abs_jacobian = 1.0
+fraction_fitted_final_support_abs_logflux_sensitivity = 1.0
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 1.0
+fraction_fitted_final_support_abs_jacobian = 1.0
+
+    [covered.final_support_abs_logflux_sensitivity]
+    median = 2.9834733560677815
+    sum = 3599.9329734172206
+    q10 = 1.773150046101267
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 6.2536921585434655
+
+    [covered.dry_support_abs_jacobian]
+    median = 0.00013060391204793066
+    sum = 0.20647936728270236
+    q10 = 9.825344199045e-7
+    max = 0.0006615948813860244
+    min = 0.0
+    q90 = 0.00049720718949858
+
+    [covered.final_support_abs_jacobian]
+    median = 0.0001874188471613579
+    sum = 0.23050594186775467
+    q10 = 1.777196109273429e-6
+    max = 0.0006797113063438678
+    min = 0.0
+    q90 = 0.0005303779158675275
+
+    [covered.slant_m]
+    median = 1767.3265407991676
+    sum = 2.2852734722991837e6
+    q10 = 1295.8929196731078
+    max = 10195.392245493767
+    min = 1188.830319875251
+    q90 = 3646.1447171127547
+
+    [covered.dry_support_abs_logflux_sensitivity]
+    median = 4.780691019104954
+    sum = 5629.701223704808
+    q10 = 2.4475969645819347
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 10.298682043554154
+
+    [covered.zenith_deg]
+    median = 50.0
+    sum = 49514.0
+    q10 = 22.0
+    max = 86.0
+    min = 2.0
+    q90 = 74.0
+
+[mc_checked]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.5480401868866779
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 630
+support_cells_intersected = [215, 225, 226, 235, 236, 243, 244, 245, 246, 247, 248, 252, 253, 254, 255, 256, 257, 262, 263, 264, 265, 266, 267, 268, 273, 274, 275, 276, 277, 285, 286, 287, 295, 315, 325, 326, 333, 334, 335, 336, 342, 343, 344, 345, 346, 347, 348, 352, 353, 354, 355, 356, 357, 363, 364, 365, 366, 373, 374, 375, 376, 377, 384, 385, 386, 387, 425, 426, 434, 435, 436, 444, 445, 446, 452, 453, 454, 455, 456, 464, 465, 466, 474, 475, 476, 484, 485, 525, 565, 575]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.992597396613933
+fraction_covered_final_all_abs_jacobian = 0.8389049801300091
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.874349163181531
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.8808108731543906
+fraction_fitted_final_support_abs_jacobian = 0.993970665631684
+
+    [mc_checked.final_support_abs_logflux_sensitivity]
+    median = 2.826117653180016
+    sum = 1972.9079395310875
+    q10 = 1.8579152014381188
+    max = 9.375012429955593
+    min = 1.2836709039114629
+    q90 = 4.514861951604009
+
+    [mc_checked.dry_support_abs_jacobian]
+    median = 0.0003101304564992735
+    sum = 0.18110348112953195
+    q10 = 1.6212300165038157e-5
+    max = 0.0006615948813860244
+    min = 1.4164404083120868e-7
+    q90 = 0.0005446806389363666
+
+    [mc_checked.final_support_abs_jacobian]
+    median = 0.0003505623102130881
+    sum = 0.20303213992381217
+    q10 = 3.007801155651293e-5
+    max = 0.0006797113063438678
+    min = 1.9002933781520896e-7
+    q90 = 0.0005570964423172285
+
+    [mc_checked.slant_m]
+    median = 1513.8639775922093
+    sum = 1.1246901796966824e6
+    q10 = 1266.1672088304222
+    max = 4446.554234666783
+    min = 1188.830319875251
+    q90 = 2744.496907199944
+
+    [mc_checked.dry_support_abs_logflux_sensitivity]
+    median = 4.728692898510517
+    sum = 3276.984130694585
+    q10 = 3.0273912296273675
+    max = 13.44399124776639
+    min = 2.365665514512515
+    q90 = 7.7569322648032415
+
+    [mc_checked.zenith_deg]
+    median = 38.0
+    sum = 25172.0
+    q10 = 18.0
+    max = 78.0
+    min = 2.0
+    q90 = 62.0
+
+[excluded_from_fit_below60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.12679497211710838
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 117
+support_cells_intersected = [234, 235, 236, 244, 245, 246, 247, 255, 256, 257, 265, 334, 335, 336, 344, 345, 346, 347, 355, 357, 364, 365, 375, 424, 425, 434, 435, 464, 465, 474, 475, 524, 525, 534, 535, 564, 565, 574, 575]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.0
+fraction_covered_final_all_abs_jacobian = 0.10417923980471878
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.0
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.0920899934420758
+fraction_fitted_final_support_abs_jacobian = 0.0
+
+    [excluded_from_fit_below60.final_support_abs_logflux_sensitivity]
+    median = 3.2826007098629493
+    sum = 456.4534009878955
+    q10 = 2.036997734308661
+    max = 7.658695410088828
+    min = 1.5662767887469093
+    q90 = 6.220987274520542
+
+    [excluded_from_fit_below60.dry_support_abs_jacobian]
+    median = 0.000190261418748307
+    sum = 0.019912630343226396
+    q10 = 9.678997680610907e-6
+    max = 0.0004424946521376938
+    min = 2.1997969502616377e-6
+    q90 = 0.0003810423630423034
+
+    [excluded_from_fit_below60.final_support_abs_jacobian]
+    median = 0.00018836758425799956
+    sum = 0.021227290674961034
+    q10 = 3.018932044707378e-5
+    max = 0.0004424946521376938
+    min = 1.0964786405311444e-5
+    q90 = 0.0003810423630423034
+
+    [excluded_from_fit_below60.slant_m]
+    median = 1621.9428189212158
+    sum = 238294.58281419575
+    q10 = 1354.0672565945097
+    max = 3505.1862321357657
+    min = 1264.0532112127948
+    q90 = 2954.216893950852
+
+    [excluded_from_fit_below60.dry_support_abs_logflux_sensitivity]
+    median = 3.2826007098629493
+    sum = 701.8392702077117
+    q10 = 2.036997734308661
+    max = 14.340270578847575
+    min = 1.5662767887469093
+    q90 = 11.271049689843121
+
+    [excluded_from_fit_below60.zenith_deg]
+    median = 54.0
+    sum = 6182.0
+    q10 = 46.0
+    max = 58.0
+    min = 42.0
+    q90 = 58.0
+
+[fitted_at_or_above60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.18358421211662945
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 140
+support_cells_intersected = [205, 215, 225, 226, 235, 236, 243, 244, 247, 248, 252, 253, 254, 255, 257, 258, 262, 263, 264, 265, 266, 267, 268, 273, 274, 275, 276, 277, 285, 286, 287, 295, 315, 325, 326, 333, 335, 336, 342, 343, 344, 347, 348, 351, 352, 353, 354, 362, 363, 364, 365, 366, 373, 374, 375, 376, 377, 384, 385, 386, 387, 425, 452, 453, 464, 474, 475, 476, 484, 485, 575]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.017708806938060793
+fraction_covered_final_all_abs_jacobian = 0.01496679961400125
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.2928922113346896
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.012589932148865963
+fraction_fitted_final_support_abs_jacobian = 0.01420738959937039
+
+    [fitted_at_or_above60.final_support_abs_logflux_sensitivity]
+    median = 4.330658567610774
+    sum = 660.8908585974756
+    q10 = 2.6266732748049626
+    max = 9.414207275601049
+    min = 2.2877428690563564
+    q90 = 7.556560138879993
+
+    [fitted_at_or_above60.dry_support_abs_jacobian]
+    median = 7.6256302199762655e-6
+    sum = 0.001881207610999105
+    q10 = 1.1903086495468248e-6
+    max = 8.443810909517505e-5
+    min = 1.4164404083120868e-7
+    q90 = 3.249439695025948e-5
+
+    [fitted_at_or_above60.final_support_abs_jacobian]
+    median = 1.3262047705376412e-5
+    sum = 0.002902054168025473
+    q10 = 1.951614881976895e-6
+    max = 8.443810909517505e-5
+    min = 1.9002933781520896e-7
+    q90 = 5.481383392737042e-5
+
+    [fitted_at_or_above60.slant_m]
+    median = 3027.184513203192
+    sum = 427072.11918195203
+    q10 = 2477.2378266887536
+    max = 4457.219492776221
+    min = 1953.1723567911285
+    q90 = 3664.717247241326
+
+    [fitted_at_or_above60.dry_support_abs_logflux_sensitivity]
+    median = 7.661506021755873
+    sum = 1075.4334240830403
+    q10 = 4.203178488767329
+    max = 13.500218408584262
+    min = 2.365665514512515
+    q90 = 10.59942759717449
+
+    [fitted_at_or_above60.zenith_deg]
+    median = 66.0
+    sum = 9540.0
+    q10 = 62.0
+    max = 78.0
+    min = 62.0
+    q90 = 74.0
+
+[excluded_from_fit]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.37320213712734535
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 313
+support_cells_intersected = [201, 202, 204, 205, 211, 212, 213, 214, 215, 221, 222, 223, 224, 225, 226, 231, 232, 233, 234, 235, 236, 241, 242, 243, 244, 245, 246, 247, 248, 252, 253, 254, 255, 256, 257, 258, 259, 264, 265, 266, 267, 268, 270, 277, 278, 280, 287, 288, 289, 296, 297, 299, 311, 312, 313, 314, 315, 321, 322, 323, 324, 325, 331, 332, 333, 334, 335, 336, 341, 342, 343, 344, 345, 346, 347, 348, 351, 352, 353, 355, 357, 358, 359, 360, 364, 365, 374, 375, 388, 414, 424, 425, 433, 434, 435, 451, 460, 464, 465, 474, 475, 484, 524, 525, 534, 535, 564, 565, 574, 575, 584, 585]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.0
+fraction_covered_final_all_abs_jacobian = 0.15483862541672763
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.0
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.1138462093399693
+fraction_fitted_final_support_abs_jacobian = 0.0
+
+    [excluded_from_fit.final_support_abs_logflux_sensitivity]
+    median = 3.861312153321578
+    sum = 1343.5026791945056
+    q10 = 0.30150689375154704
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 7.689061517707739
+
+    [excluded_from_fit.dry_support_abs_jacobian]
+    median = 1.1127561696527132e-5
+    sum = 0.024589112496140025
+    q10 = 2.1679362600432608e-14
+    max = 0.0004424946521376938
+    min = 0.0
+    q90 = 0.00027266542396554795
+
+    [excluded_from_fit.final_support_abs_jacobian]
+    median = 2.991583398526991e-5
+    sum = 0.026242227711983195
+    q10 = 2.301718362754934e-14
+    max = 0.0004424946521376938
+    min = 0.0
+    q90 = 0.00027266542396554795
+
+    [excluded_from_fit.slant_m]
+    median = 2774.8966875580118
+    sum = 977279.1985176711
+    q10 = 1451.513531144159
+    max = 10195.392245493767
+    min = 1264.0532112127948
+    q90 = 5503.504176186401
+
+    [excluded_from_fit.dry_support_abs_logflux_sensitivity]
+    median = 3.909733778236535
+    sum = 1888.7254258017447
+    q10 = 0.30849681370080156
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 12.42542316201085
+
+    [excluded_from_fit.zenith_deg]
+    median = 62.0
+    sum = 20254.0
+    q10 = 50.0
+    max = 86.0
+    min = 42.0
+    q90 = 82.0
+
+[covered_at_or_above60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.42999137712686647
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 336
+support_cells_intersected = [201, 202, 204, 205, 211, 212, 213, 214, 215, 221, 222, 223, 224, 225, 226, 231, 232, 233, 234, 235, 236, 241, 242, 243, 244, 245, 246, 247, 248, 252, 253, 254, 255, 256, 257, 258, 259, 262, 263, 264, 265, 266, 267, 268, 270, 273, 274, 275, 276, 277, 278, 280, 285, 286, 287, 288, 289, 295, 296, 297, 299, 311, 312, 313, 314, 315, 321, 322, 323, 324, 325, 326, 331, 332, 333, 334, 335, 336, 341, 342, 343, 344, 347, 348, 351, 352, 353, 354, 357, 358, 359, 360, 362, 363, 364, 365, 366, 373, 374, 375, 376, 377, 384, 385, 386, 387, 388, 414, 424, 425, 433, 434, 451, 452, 453, 460, 464, 474, 475, 476, 484, 485, 574, 575, 584, 585]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.017708806938060793
+fraction_covered_final_all_abs_jacobian = 0.06562618522601009
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.2928922113346896
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.034346148046759443
+fraction_fitted_final_support_abs_jacobian = 0.01420738959937039
+
+    [covered_at_or_above60.final_support_abs_logflux_sensitivity]
+    median = 4.37036851836509
+    sum = 1547.9401368040858
+    q10 = 0.6461147002483341
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 8.256203599741994
+
+    [covered_at_or_above60.dry_support_abs_jacobian]
+    median = 5.336296005261203e-6
+    sum = 0.006557689763912718
+    q10 = 8.636730879506411e-13
+    max = 0.00012782264463140523
+    min = 0.0
+    q90 = 6.845061982999195e-5
+
+    [covered_at_or_above60.final_support_abs_jacobian]
+    median = 8.88848321733299e-6
+    sum = 0.007916991205047628
+    q10 = 9.093764200363651e-13
+    max = 0.00012782264463140523
+    min = 0.0
+    q90 = 6.845061982999195e-5
+
+    [covered_at_or_above60.slant_m]
+    median = 3117.130789078965
+    sum = 1.1660567348854272e6
+    q10 = 1899.379068747221
+    max = 10195.392245493767
+    min = 1493.7963247577682
+    q90 = 5379.302881989679
+
+    [covered_at_or_above60.dry_support_abs_logflux_sensitivity]
+    median = 7.234851872236296
+    sum = 2262.3195796770738
+    q10 = 0.6941297244406852
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 11.939448413739427
+
+    [covered_at_or_above60.zenith_deg]
+    median = 70.0
+    sum = 23612.0
+    q10 = 62.0
+    max = 86.0
+    min = 62.0
+    q90 = 82.0
+
+[fit_omitted_at_or_above60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.0787576759859769
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 60
+support_cells_intersected = [205, 215, 225, 226, 235, 236, 243, 244, 247, 248, 252, 253, 254, 255, 257, 258, 262, 263, 264, 265, 266, 267, 268, 274, 275, 276, 277, 285, 286, 315, 325, 326, 335, 343, 344, 347, 351, 352, 353, 354, 362, 363, 364, 365, 366, 374, 375, 376, 377, 384, 385, 386, 425, 453, 464, 474, 475, 476, 484, 485]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.007402603386067597
+fraction_covered_final_all_abs_jacobian = 0.006256394453263677
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.12565083681846873
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.005342917505640232
+fraction_fitted_final_support_abs_jacobian = 0.006029334368316235
+
+    [fit_omitted_at_or_above60.final_support_abs_logflux_sensitivity]
+    median = 4.447956188644517
+    sum = 283.52235469162787
+    q10 = 2.5759430285806375
+    max = 9.414207275601049
+    min = 2.4037480493250407
+    q90 = 7.569894651537592
+
+    [fit_omitted_at_or_above60.dry_support_abs_jacobian]
+    median = 8.016850319269672e-6
+    sum = 0.0007867736570303916
+    q10 = 1.4265886413406407e-6
+    max = 7.807623234148549e-5
+    min = 1.6712348168442523e-7
+    q90 = 3.2315650407516587e-5
+
+    [fit_omitted_at_or_above60.final_support_abs_jacobian]
+    median = 1.3491421538407077e-5
+    sum = 0.0012315742319593162
+    q10 = 1.888410014773885e-6
+    max = 7.807623234148549e-5
+    min = 2.501814391604216e-7
+    q90 = 5.313373798672573e-5
+
+    [fit_omitted_at_or_above60.slant_m]
+    median = 3025.510698298858
+    sum = 183304.09408483084
+    q10 = 2456.9901168452707
+    max = 4457.219492776221
+    min = 1959.930866067607
+    q90 = 3648.050163366286
+
+    [fit_omitted_at_or_above60.dry_support_abs_logflux_sensitivity]
+    median = 7.837146215116416
+    sum = 463.99166720847927
+    q10 = 4.199363483368009
+    max = 13.500218408584262
+    min = 2.4037480493250407
+    q90 = 10.499798878248782
+
+    [fit_omitted_at_or_above60.zenith_deg]
+    median = 66.0
+    sum = 4088.0
+    q10 = 62.0
+    max = 78.0
+    min = 62.0
+    q90 = 74.0
+
+[covered_below60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.5700086228731337
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 667
+support_cells_intersected = [234, 235, 236, 244, 245, 246, 247, 254, 255, 256, 257, 264, 265, 266, 325, 326, 334, 335, 336, 344, 345, 346, 347, 354, 355, 356, 357, 364, 365, 366, 375, 376, 424, 425, 426, 434, 435, 436, 444, 445, 446, 453, 454, 455, 456, 464, 465, 466, 474, 475, 476, 524, 525, 534, 535, 564, 565, 574, 575]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.9822911930619395
+fraction_covered_final_all_abs_jacobian = 0.9343738147739903
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.7071077886653104
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.9656538519532403
+fraction_fitted_final_support_abs_jacobian = 0.9857926104006297
+
+    [covered_below60.final_support_abs_logflux_sensitivity]
+    median = 2.7872690972047254
+    sum = 2051.9928366131353
+    q10 = 1.826408109686605
+    max = 8.132333526312017
+    min = 1.2836709039114629
+    q90 = 4.60082677224156
+
+    [covered_below60.dry_support_abs_jacobian]
+    median = 0.0003179761500074964
+    sum = 0.1999216775187896
+    q10 = 4.019041642568168e-5
+    max = 0.0006615948813860244
+    min = 2.1997969502616377e-6
+    q90 = 0.0005428469576788857
+
+    [covered_below60.final_support_abs_jacobian]
+    median = 0.0003495715246184539
+    sum = 0.22258895066270698
+    q10 = 8.21010376630839e-5
+    max = 0.0006797113063438678
+    min = 1.0964786405311444e-5
+    q90 = 0.0005543072464878661
+
+    [covered_below60.slant_m]
+    median = 1484.0362057609127
+    sum = 1.119216737413757e6
+    q10 = 1268.3846373498782
+    max = 3505.1862321357657
+    min = 1188.830319875251
+    q90 = 2385.735237757628
+
+    [covered_below60.dry_support_abs_logflux_sensitivity]
+    median = 4.479497067768688
+    sum = 3367.3816440277355
+    q10 = 2.6782308480165495
+    max = 14.340270578847575
+    min = 1.5662767887469093
+    q90 = 7.949714925151102
+
+    [covered_below60.zenith_deg]
+    median = 42.0
+    sum = 25902.0
+    q10 = 18.0
+    max = 58.0
+    min = 2.0
+    q90 = 58.0
+
+[fitted_below60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.4432136507560255
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 550
+support_cells_intersected = [235, 236, 244, 245, 246, 247, 254, 255, 256, 257, 264, 265, 266, 325, 326, 334, 335, 336, 344, 345, 346, 347, 354, 355, 356, 357, 364, 365, 366, 375, 376, 425, 426, 434, 435, 436, 444, 445, 446, 453, 454, 455, 456, 464, 465, 466, 475, 476, 525, 565]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.9822911930619395
+fraction_covered_final_all_abs_jacobian = 0.8301945749692713
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.7071077886653104
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.8735638585111647
+fraction_fitted_final_support_abs_jacobian = 0.9857926104006297
+
+    [fitted_below60.final_support_abs_logflux_sensitivity]
+    median = 2.7422320154058664
+    sum = 1595.5394356252405
+    q10 = 1.8028039221884726
+    max = 8.132333526312017
+    min = 1.2836709039114629
+    q90 = 4.181931138061036
+
+    [fitted_below60.dry_support_abs_jacobian]
+    median = 0.0003451652438890717
+    sum = 0.18000904717556324
+    q10 = 6.520986062528627e-5
+    max = 0.0006615948813860244
+    min = 8.126255361647328e-6
+    q90 = 0.0005515752481004923
+
+    [fitted_below60.final_support_abs_jacobian]
+    median = 0.0003963724252092403
+    sum = 0.201361659987746
+    q10 = 0.00011796564755255974
+    max = 0.0006797113063438678
+    min = 2.2997101306134068e-5
+    q90 = 0.0005655665195364435
+
+    [fitted_below60.slant_m]
+    median = 1463.4455702685045
+    sum = 880922.1545995611
+    q10 = 1262.1878510706738
+    max = 3030.1081443042312
+    min = 1188.830319875251
+    q90 = 2190.4617880471274
+
+    [fitted_below60.dry_support_abs_logflux_sensitivity]
+    median = 4.562162092941969
+    sum = 2665.5423738200243
+    q10 = 3.01474020971825
+    max = 11.36998940336402
+    min = 2.3845648925993905
+    q90 = 7.1116290201975545
+
+    [fitted_below60.zenith_deg]
+    median = 38.0
+    sum = 19720.0
+    q10 = 17.599999999999994
+    max = 58.0
+    min = 2.0
+    q90 = 54.0
+
+[mc_checked_at_or_above60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.10482653613065258
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 80
+support_cells_intersected = [215, 225, 226, 235, 236, 243, 244, 247, 248, 252, 253, 254, 255, 257, 262, 263, 264, 265, 266, 267, 268, 273, 274, 275, 276, 277, 285, 286, 287, 295, 315, 325, 326, 333, 335, 336, 342, 343, 344, 347, 348, 352, 353, 354, 363, 364, 365, 366, 373, 374, 375, 376, 377, 384, 385, 386, 387, 425, 452, 453, 474, 475, 476, 484, 485, 575]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.01030620355199319
+fraction_covered_final_all_abs_jacobian = 0.008710405160737568
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.16724137451622095
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.007247014643225732
+fraction_fitted_final_support_abs_jacobian = 0.008178055231054155
+
+    [mc_checked_at_or_above60.final_support_abs_logflux_sensitivity]
+    median = 4.206589647185454
+    sum = 377.3685039058479
+    q10 = 2.6398050359746255
+    max = 9.375012429955593
+    min = 2.2877428690563564
+    q90 = 7.5228104745241815
+
+    [mc_checked_at_or_above60.dry_support_abs_jacobian]
+    median = 7.369930018596274e-6
+    sum = 0.0010944339539687134
+    q10 = 1.1543870585279285e-6
+    max = 8.443810909517505e-5
+    min = 1.4164404083120868e-7
+    q90 = 3.249439695025948e-5
+
+    [mc_checked_at_or_above60.final_support_abs_jacobian]
+    median = 1.2330377668220226e-5
+    sum = 0.0016704799360661574
+    q10 = 2.621969674561789e-6
+    max = 8.443810909517505e-5
+    min = 1.9002933781520896e-7
+    q90 = 5.481383392737042e-5
+
+    [mc_checked_at_or_above60.slant_m]
+    median = 3046.892810053705
+    sum = 243768.0250971212
+    q10 = 2478.6370990572213
+    max = 4446.554234666783
+    min = 1953.1723567911285
+    q90 = 3740.9069714488032
+
+    [mc_checked_at_or_above60.dry_support_abs_logflux_sensitivity]
+    median = 7.4928228175196026
+    sum = 611.4417568745608
+    q10 = 4.550521280374544
+    max = 13.44399124776639
+    min = 2.365665514512515
+    q90 = 10.639134433811966
+
+    [mc_checked_at_or_above60.zenith_deg]
+    median = 66.0
+    sum = 5452.0
+    q10 = 62.0
+    max = 78.0
+    min = 62.0
+    q90 = 74.0
+
+[mc_checked_below60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.4432136507560255
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 550
+support_cells_intersected = [235, 236, 244, 245, 246, 247, 254, 255, 256, 257, 264, 265, 266, 325, 326, 334, 335, 336, 344, 345, 346, 347, 354, 355, 356, 357, 364, 365, 366, 375, 376, 425, 426, 434, 435, 436, 444, 445, 446, 453, 454, 455, 456, 464, 465, 466, 475, 476, 525, 565]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.9822911930619395
+fraction_covered_final_all_abs_jacobian = 0.8301945749692713
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.7071077886653104
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.8735638585111647
+fraction_fitted_final_support_abs_jacobian = 0.9857926104006297
+
+    [mc_checked_below60.final_support_abs_logflux_sensitivity]
+    median = 2.7422320154058664
+    sum = 1595.5394356252405
+    q10 = 1.8028039221884726
+    max = 8.132333526312017
+    min = 1.2836709039114629
+    q90 = 4.181931138061036
+
+    [mc_checked_below60.dry_support_abs_jacobian]
+    median = 0.0003451652438890717
+    sum = 0.18000904717556324
+    q10 = 6.520986062528627e-5
+    max = 0.0006615948813860244
+    min = 8.126255361647328e-6
+    q90 = 0.0005515752481004923
+
+    [mc_checked_below60.final_support_abs_jacobian]
+    median = 0.0003963724252092403
+    sum = 0.201361659987746
+    q10 = 0.00011796564755255974
+    max = 0.0006797113063438678
+    min = 2.2997101306134068e-5
+    q90 = 0.0005655665195364435
+
+    [mc_checked_below60.slant_m]
+    median = 1463.4455702685045
+    sum = 880922.1545995611
+    q10 = 1262.1878510706738
+    max = 3030.1081443042312
+    min = 1188.830319875251
+    q90 = 2190.4617880471274
+
+    [mc_checked_below60.dry_support_abs_logflux_sensitivity]
+    median = 4.562162092941969
+    sum = 2665.5423738200243
+    q10 = 3.01474020971825
+    max = 11.36998940336402
+    min = 2.3845648925993905
+    q90 = 7.1116290201975545
+
+    [mc_checked_below60.zenith_deg]
+    median = 38.0
+    sum = 19720.0
+    q10 = 17.599999999999994
+    max = 58.0
+    min = 2.0
+    q90 = 54.0
+
+[fit_omitted_below60]
+information_status = "empty_group"
+count = 0
+
+[excluded_from_fit_at_or_above60]
+fraction_covered_final_support_abs_logflux_sensitivity = 0.246407165010237
+fitted_all_abs_jacobian_denominator_status = "positive_information"
+covered_all_abs_jacobian_denominator_status = "positive_information"
+fitted_support_abs_jacobian_denominator_status = "positive_information"
+count = 196
+support_cells_intersected = [201, 202, 204, 205, 211, 212, 213, 214, 215, 221, 222, 223, 224, 225, 226, 231, 232, 233, 234, 235, 236, 241, 242, 243, 244, 245, 246, 247, 248, 252, 253, 254, 255, 256, 257, 258, 259, 264, 265, 266, 267, 268, 270, 277, 278, 280, 287, 288, 289, 296, 297, 299, 311, 312, 313, 314, 315, 321, 322, 323, 324, 325, 331, 332, 333, 334, 335, 336, 341, 342, 343, 344, 348, 351, 352, 353, 357, 358, 359, 360, 364, 365, 374, 375, 388, 414, 424, 425, 433, 434, 451, 460, 464, 474, 475, 484, 574, 575, 584, 585]
+fitted_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+covered_support_abs_logflux_sensitivity_denominator_status = "positive_information"
+fraction_fitted_final_all_abs_jacobian = 0.0
+fraction_covered_final_all_abs_jacobian = 0.050659385612008855
+fraction_fitted_final_support_abs_logflux_sensitivity = 0.0
+covered_support_abs_jacobian_denominator_status = "positive_information"
+fraction_covered_final_support_abs_jacobian = 0.021756215897893484
+fraction_fitted_final_support_abs_jacobian = 0.0
+
+    [excluded_from_fit_at_or_above60.final_support_abs_logflux_sensitivity]
+    median = 4.436468335872201
+    sum = 887.0492782066102
+    q10 = 0.0
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 9.049254787981411
+
+    [excluded_from_fit_at_or_above60.dry_support_abs_jacobian]
+    median = 1.7517013659233954e-6
+    sum = 0.004676482152913613
+    q10 = 0.0
+    max = 0.00012782264463140523
+    min = 0.0
+    q90 = 0.00010363146945162182
+
+    [excluded_from_fit_at_or_above60.final_support_abs_jacobian]
+    median = 3.597542656924152e-6
+    sum = 0.005014937037022155
+    q10 = 0.0
+    max = 0.00012782264463140523
+    min = 0.0
+    q90 = 0.00010363146945162182
+
+    [excluded_from_fit_at_or_above60.slant_m]
+    median = 3375.7686231538537
+    sum = 738984.6157034754
+    q10 = 1742.058443824335
+    max = 10195.392245493767
+    min = 1493.7963247577682
+    q90 = 6261.788658190253
+
+    [excluded_from_fit_at_or_above60.dry_support_abs_logflux_sensitivity]
+    median = 4.961438898018558
+    sum = 1186.8861555940334
+    q10 = 0.0
+    max = 18.665010438841367
+    min = 0.0
+    q90 = 12.820717703966528
+
+    [excluded_from_fit_at_or_above60.zenith_deg]
+    median = 70.0
+    sum = 14072.0
+    q10 = 62.0
+    max = 86.0
+    min = 62.0
+    q90 = 82.0

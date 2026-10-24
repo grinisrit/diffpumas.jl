@@ -1,0 +1,36 @@
+{
+  "scope": "Independent read-only scientific review; no numerical reruns. Candidate 0025 and final12 control report reviewed before authoritative adoption.",
+  "inputs_sha256": {
+    "examples/data/stability_v2_cached_controls_20261024/collector_06.json": "0788187ac8b513b160fca8a775956f5232851a51424ebfc17cb5ace30a7bf7e2",
+    "examples/data/stability_v2_cached_controls_20261024/reports/06/report.json": "45609741713cbfcc33b268a5a110ef56931e79daf849155f18968e6072ff6e51",
+    "examples/data/material_paper_composition_20261024/candidate_manuscript/revisions/0025_848fd94e5f15/integration_manifest.json": "db0e74bb4d53e43429d20ed7e04558461dedcb24bd89bbf9a18041061f7d1b0d"
+  },
+  "verified_control_output_hashes": 175,
+  "verified_candidate_output_hashes": 44,
+  "hash_mismatches": [],
+  "control_executions_complete": 12,
+  "kkt_converged": 1,
+  "scientific_assessment": "Conditional method demonstration supported. Terminal-iterate agreement does not establish KKT convergence or uniqueness; changed forward model, normalization or screen objectives cannot be ranked by objective values.",
+  "remaining_partial_reviewer_requests": [
+    "Independent terrain comparison or terrain-perturbation refit",
+    "Same prescribed lens detection task under nonuniform acceptance including SART",
+    "Propagation of model/calibration/observation uncertainties through inference and detection",
+    "Sensitivity of omitted stochastic closure directions evaluated at final recovered field"
+  ],
+  "submission_packaging": [
+    "Reconciled point-by-point response with explicit partial responses or rebuttals",
+    "Colored changes requested by editor",
+    "Complete LaTeX/bibliography/figure source bundle"
+  ],
+  "editor_deadline_as_recorded": "2026-11-18",
+  "note": "Old density/support controls are historical evidence for old objectives; not matched controls of fixed-objective material-corrected fit.",
+  "candidate_prose_findings": [
+    "Candidate0025 measured.tex cross-model sentence reverses corrected and dry supported means. Raw collector: corrected/start0=0.09763763848307169; dry/start0=0.09830973922714992. Authoritative main correctly retains these. Fix candidate-derived sentence during narrow adoption."
+  ],
+  "adoption_review": {
+    "authoritative_main_sha256": "5fbae5f27bd23bc64d23b9c9055cac704dd1c92e4a778e6c2c877c30e8de32be",
+    "scientific_numerical_signoff": true,
+    "scope": "Current narrow adoption diff for completed sweep and twelve controls; final compilation, colored revision and source packaging not certified here.",
+    "candidate_transposition_resolved": "Authoritative adopted sentence orders dry then corrected; both means and normalizations match raw histories."
+  }
+}

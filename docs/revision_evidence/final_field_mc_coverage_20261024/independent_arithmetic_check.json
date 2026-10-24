@@ -1,0 +1,20 @@
+{
+  "scope": "Independent arithmetic cross-check from final_field_coverage.csv, no additional transport evaluation",
+  "missed_fitted_support_cell_ids": [
+    205,
+    258,
+    351,
+    362
+  ],
+  "mc_share_fitted_final_support_abs_jacobian": 0.9939706656316839,
+  "mc_share_fitted_final_support_abs_logflux_sensitivity": 0.8743491631815312,
+  "all600_cell_rows": 600,
+  "input_sha256": {
+    "examples/data/final_field_mc_coverage_20261024/data/omitted_component_fd.csv": "5770dd391bad51186de74435f676caa9c45bf01fc011009542e51920c7367490",
+    "examples/data/final_field_mc_coverage_20261024/data/configuration.toml": "e6b589d546fe007f545b0899ac213465cbd8629d35147634519bcbae5e5182c0",
+    "examples/data/final_field_mc_coverage_20261024/data/final_field_coverage.csv": "48d19b92d53bb60b7a05b70a5fc4e44e354de3e3781364ed2d5b5c73773cff83",
+    "examples/data/final_field_mc_coverage_20261024/data/final_field_cell_coverage.csv": "780112d20e19615610f8dfd211f095188fec5f856220fc9785103569480d918a",
+    "examples/data/final_field_mc_coverage_20261024/data/coverage_summary.toml": "fdf22e0044ed20c96033411a6624f437e4848021ef94eb3c2838dc181d48a1f9",
+    "examples/data/final_field_mc_coverage_20261024/data/final_jacobian_sparse.csv": "b3f640553a9e9f87182089145d58c34c5ccb5425de8c32651d64a0359f5523b9"
+  }
+}

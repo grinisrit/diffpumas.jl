@@ -1,0 +1,18 @@
+{
+  "ended_utc": "2026-10-24T21:58:47.808691+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "data/configuration.toml": "e6b589d546fe007f545b0899ac213465cbd8629d35147634519bcbae5e5182c0",
+    "data/coverage_summary.toml": "fdf22e0044ed20c96033411a6624f437e4848021ef94eb3c2838dc181d48a1f9",
+    "data/final_field_cell_coverage.csv": "780112d20e19615610f8dfd211f095188fec5f856220fc9785103569480d918a",
+    "data/final_field_coverage.csv": "48d19b92d53bb60b7a05b70a5fc4e44e354de3e3781364ed2d5b5c73773cff83",
+    "data/final_jacobian_sparse.csv": "b3f640553a9e9f87182089145d58c34c5ccb5425de8c32651d64a0359f5523b9",
+    "data/omitted_component_fd.csv": "5770dd391bad51186de74435f676caa9c45bf01fc011009542e51920c7367490",
+    "execution.json": "743d4eadc5657c7ec3ce206bb777730c1da1d1c708a938768b6719a8dca32fe8",
+    "run.log": "489ab677d9109b6ff3c7a835de5d777f4f173ec4f27c82843a4d8e1fe05597a7"
+  }
+}
