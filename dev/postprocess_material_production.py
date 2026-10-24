@@ -2,6 +2,7 @@
 """Export audited stage evidence and reviewed candidate figures; never edit paper prose."""
 import argparse
 import datetime
+import fcntl
 import hashlib
 import json
 from pathlib import Path
@@ -125,9 +126,22 @@ def main():
         helper_sha256=helper_hashes, helpers_unchanged=True,
         outputs_sha256={str(p.relative_to(target)):digest(p) for p in target.rglob('*') if p.is_file()})
     (target/'export_provenance.json').write_text(json.dumps(report, indent=2)+'\n')
+    if isinstance(figure_status, str) and target.is_relative_to(root/'candidate_exports'):
+        indexpath=root/'candidate_exports/index.json'
+        index=json.loads(indexpath.read_text()) if indexpath.exists() else {}
+        index[args.stage]=dict(path=str(target.relative_to(root/'candidate_exports')),
+            export_provenance_sha256=digest(target/'export_provenance.json'),
+            stage_end_sha256=ends[args.stage],review_required=True)
+        temporary=indexpath.with_suffix('.pending');temporary.write_text(json.dumps(index,indent=2)+'\n');temporary.replace(indexpath)
     print(json.dumps(dict(stage=args.stage, candidate_exports=str(target), figure_status=figure_status)))
     return 0 if isinstance(figure_status, str) else 1
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    # Shared only with Python manuscript refreshes; Julia audits use a separate
+    # lock so a long numerical probe never holds the production stage queue.
+    lockpath=Path('/mnt/big_data/agent-builds/surrogate-stability-20261024/cpu20-python-postprocess.lock')
+    lockpath.parent.mkdir(parents=True,exist_ok=True)
+    with lockpath.open('a+') as lock:
+        fcntl.flock(lock,fcntl.LOCK_EX)
+        raise SystemExit(main())
