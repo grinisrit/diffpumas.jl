@@ -1,0 +1,72 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3], "address_space_bytes": 8589934592, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "16,17,18,19", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "/home/roland/devspace/diffpumas.jl/dev/supplement_final_field_mc_closure.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--rock-density", "2710", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6", "--zenith-max", "60", "--zenith-step", "1", "--azimuth-step", "1", "--primary-altitude-km", "30", "--seed", "42", "--samples", "32", "--csda-quadrature", "midpoint", "--energy-min", "0.001", "--energy-max", "1e9", "--threshold", "100", "--calibration-mc-samples", "8192", "--inverse-mc-samples", "1024", "--mc-samples", "1024", "--papermatch-mc-samples", "8192", "--correction-artifact", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml", "--solver-mode", "stable", "--papermatch-fit-mode", "stable", "--papermatch-initial-water", "0.0", "--papermatch-gn-iters", "100", "--papermatch-gradient-tol", "1e-06", "--papermatch-log-scale", "0.3", "--papermatch-absolute-prior-weight", "3.954930197858131", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/final_field_mc_supplement_20261024_v4/job/data", "--validation-cases", "12", "--papermatch", "--papermatch-recursions", "6", "--papermatch-recur-tol", "0.02", "--baseline-results", "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data"]}
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Building structured-grid sensitivity volume...
+Parity gates PASS; supplementing 60 omitted fitted directions, 8192 histories each
+Supplement complete bin=752 flux=1.2070196378180344e-6 SE=5.0172727328424794e-8
+Supplement complete bin=670 flux=2.268471661449793e-6 SE=9.495872668646562e-8
+Supplement complete bin=831 flux=2.6416013859725197e-6 SE=1.142113405311169e-7
+Supplement complete bin=910 flux=6.534492448859902e-7 SE=2.970715695533225e-8
+Supplement complete bin=754 flux=8.901835338706533e-6 SE=3.2666463387502385e-7
+Supplement complete bin=672 flux=1.0616520088536541e-5 SE=3.8479101105999916e-7
+Supplement complete bin=835 flux=4.3341915421589936e-7 SE=2.049050118203064e-8
+Supplement complete bin=917 flux=3.5576748742914205e-7 SE=1.701142215172236e-8
+Supplement complete bin=760 flux=2.6218946345881486e-5 SE=8.849578488080321e-7
+Supplement complete bin=690 flux=1.657682891799373e-5 SE=5.75605929200511e-7
+Supplement complete bin=837 flux=9.466892174854421e-7 SE=4.2602335867753806e-8
+Supplement complete bin=919 flux=3.400958452653202e-7 SE=1.7567256975716214e-8
+Supplement complete bin=789 flux=6.697997337499184e-6 SE=2.536254668962432e-7
+Supplement complete bin=709 flux=7.54557112108327e-6 SE=2.846086293549988e-7
+Supplement complete bin=843 flux=1.070519707167293e-5 SE=3.7484060587011175e-7
+Supplement complete bin=925 flux=6.827428237712065e-7 SE=3.402314252597147e-8
+Supplement complete bin=791 flux=4.401653120032883e-6 SE=1.692684022217321e-7
+Supplement complete bin=711 flux=3.455203109406051e-6 SE=1.327315545132382e-7
+Supplement complete bin=854 flux=3.174874703626283e-6 SE=1.2809043836003906e-7
+Supplement complete bin=929 flux=3.4512415264685237e-6 SE=1.403314061517155e-7
+Supplement complete bin=793 flux=2.6715453161279878e-6 SE=1.1046149784000203e-7
+Supplement complete bin=724 flux=1.6648618058630822e-5 SE=5.611626682944092e-7
+Supplement complete bin=874 flux=1.6854923935005836e-6 SE=6.668209895645593e-8
+Supplement complete bin=933 flux=3.126753807659037e-6 SE=1.2288533238801157e-7
+Supplement complete bin=808 flux=9.132375000822953e-6 SE=3.302470092554269e-7
+Supplement complete bin=726 flux=1.8991851263866585e-5 SE=6.369505503531965e-7
+Supplement complete bin=877 flux=1.3821123305433555e-6 SE=5.6094604992971536e-8
+Supplement complete bin=960 flux=1.4245496986288827e-6 SE=6.004049499549275e-8
+Supplement complete bin=810 flux=8.137780546730495e-6 SE=2.9705519645146526e-7
+Supplement complete bin=728 flux=1.918891413684218e-5 SE=6.510660127762547e-7
+Supplement complete bin=891 flux=4.288890070459178e-6 SE=1.6587045795724412e-7
+Supplement complete bin=984 flux=1.2853949239657468e-7 SE=6.08540394386886e-9
+Supplement complete bin=812 flux=6.105846832068102e-6 SE=2.3282884455892344e-7
+Supplement complete bin=731 flux=1.1316519899476412e-5 SE=4.0447892471456255e-7
+Supplement complete bin=893 flux=3.7242838368983618e-6 SE=1.4187431460292273e-7
+Supplement complete bin=986 flux=1.0094473514641884e-6 SE=4.473280215437645e-8
+Supplement complete bin=815 flux=6.90497191477293e-6 SE=2.515598865109964e-7
+Supplement complete bin=733 flux=1.3182106823393024e-5 SE=4.6152445267533304e-7
+Supplement complete bin=896 flux=1.6146781593364337e-6 SE=6.651573474996163e-8
+Supplement complete bin=988 flux=1.047334443715742e-6 SE=4.45657795922231e-8
+Supplement complete bin=817 flux=9.185981332817422e-6 SE=3.267365247093212e-7
+Supplement complete bin=735 flux=1.7841427274535642e-5 SE=6.205035918258626e-7
+Supplement complete bin=899 flux=3.3022067513360857e-6 SE=1.2715462607433942e-7
+Supplement complete bin=991 flux=2.782926081597829e-6 SE=1.1163860047477867e-7
+Supplement complete bin=819 flux=1.055943088983334e-5 SE=3.8045218633174907e-7
+Supplement complete bin=738 flux=1.7650538694945807e-5 SE=6.006385866631956e-7
+Supplement complete bin=901 flux=3.492383760076476e-6 SE=1.391705302369799e-7
+Supplement complete bin=1001 flux=1.8365396052678136e-7 SE=9.245031693115294e-9
+Supplement complete bin=822 flux=4.771822741367621e-6 SE=1.798350230465099e-7
+Supplement complete bin=740 flux=5.934871812684255e-6 SE=2.274647003617584e-7
+Supplement complete bin=903 flux=4.385214687363616e-6 SE=1.660309126162061e-7
+Supplement complete bin=1017 flux=5.259020163943882e-7 SE=2.647693039889784e-8
+Supplement complete bin=824 flux=1.7375535679937877e-6 SE=7.597895673188895e-8
+Supplement complete bin=906 flux=3.6606879916513117e-6 SE=1.4251852506322974e-7
+Supplement complete bin=747 flux=3.137725788049444e-6 SE=1.2135247926734692e-7
+Supplement complete bin=1049 flux=7.368232862660677e-8 SE=4.01853023351935e-9
+Supplement complete bin=828 flux=8.89452565346249e-7 SE=3.854799513739377e-8
+Supplement complete bin=750 flux=9.125299056424338e-7 SE=4.0652273087394706e-8
+Supplement complete bin=908 flux=1.1189344292892375e-6 SE=4.882271605574178e-8
+Supplement complete bin=1075 flux=3.516704914363106e-7 SE=1.6653373018167272e-8
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
