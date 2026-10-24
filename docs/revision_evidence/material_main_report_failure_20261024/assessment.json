@@ -1,0 +1,21 @@
+{
+  "verified_utc": "2026-10-24T13:19:04.046598+00:00",
+  "original_main": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/main",
+  "original_end_sha256": "53fff9f5d736807fa86337b1770d28e261e6f8b0bff9b7dbc897de92f61eed0a",
+  "all_end_bound_outputs_verified": true,
+  "execution_completed": false,
+  "failed_component": "Post-fit local-curvature report: robust_model first bound inside recursion loop, unavailable outside loop",
+  "fitted_state_saved": true,
+  "final_field_mc_closure_completed": false,
+  "recovery_required": true,
+  "recovery_policy": "Preserve failed run and exact source. New isolated entry may rebuild deterministic state, verify saved field/predictions/objective/gradient, then execute original remaining report/MC tail; retain original synthetic calculations with explicit source provenance. Do not mark original failed run complete.",
+  "independent_stages": "detection/contrast/sweep return before run_paper_match and may execute unchanged commands in fresh output roots",
+  "files": {
+    "orchestration_end_status.json": "56fe39647fd626033f95bb30bf2299cb27b7bf52a1dd426cd0ba16378efd2e02",
+    "main_end_status.json": "53fff9f5d736807fa86337b1770d28e261e6f8b0bff9b7dbc897de92f61eed0a",
+    "main_execution.json": "040e4b82e7e7c3c5e034e95372b8be5a077c429adcb98d4cb018f119bd3aea86",
+    "saved_solver_status.txt": "1180d4ae40125ec84f3ad86788d714abfc351913aba187c9ab20c61045d5850f",
+    "failure_excerpt.txt": "f70adfe6b9e61310cab66aaacb2025332dcfa948a143d31f5820e92019f56d4f",
+    "saved_solver_configuration.toml": "98e8e4d10bebe261c85a2cb34906c16057c7332cd76725a09eb992fd6a769b4b"
+  }
+}
