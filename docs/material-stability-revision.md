@@ -1,6 +1,6 @@
 # Material calibration and fixed-objective reconstruction
 
-These are opt-in alternatives to the archived October 23 calculation. Existing defaults remain available for reproduction. Numerical adoption requires the held-out validation and matched reconstruction comparisons below; passing software tests alone does not validate stochastic transport derivatives.
+These are opt-in alternatives to the archived October 23 calculation. Existing defaults remain available for reproduction. The material correction passed the prespecified independent transport checks below. Matched reconstruction comparisons are in progress; passing software tests alone does not validate stochastic transport derivatives or recovered material fields.
 
 ## Frozen material correction
 
@@ -24,7 +24,7 @@ The version-1 TOML artifact stores both the original `CsdaCorrection` and the se
 
 The example's `--papermatch-fit-mode stable` uses a fixed pseudo-Huber objective on log-flux residuals, with fixed screen/slant weights and a fixed smoothness prior. Normalization is profiled through a convex scalar solve at each candidate field, or pinned with `--papermatch-abs-scale`. The full field objective is still nonlinear and can have multiple stationary solutions.
 
-The residual Jacobian includes the implicit derivative of profiled normalization. Active-set Gauss–Newton holds outward-pointing bound coordinates fixed. Every accepted projected step must be a descent step and satisfy Armijo decrease in the same objective. `lvd_solver_history.csv` records objective and projected-gradient norm; `lvd_solver_status.txt` distinguishes stationarity from an iteration limit or failed search. Small parameter changes alone do not establish stationarity or uniqueness.
+The residual Jacobian includes the implicit derivative of profiled normalization. Active-set Gauss–Newton holds outward-pointing bound coordinates fixed. Every accepted projected step must be a descent step and satisfy Armijo decrease in the same objective. After exhausted Newton searches, a bounded, diagonally scaled projected-gradient step supplies a separate descent safeguard. Rejected trials use flux-only evaluations; accepted candidates still receive a full-model objective check and a fresh Jacobian. `lvd_solver_progress.csv` records live progress, `lvd_solver_history.csv` the final history, and `lvd_solver_status.txt` whether the stationarity tolerance was met. Small parameter changes alone do not establish stationarity or uniqueness.
 
 Useful options:
 
@@ -39,9 +39,15 @@ Useful options:
 
 An artifact freezes all correction coefficients, bypassing recursive recalibration. Stable mode uses one optimization with a fixed objective. The initial field and the calibration field are different concepts. `--solver-mode stable` separately selects active-set GN for the synthetic benchmark; it does not change the synthetic objective into the measured-data robust objective.
 
+`--papermatch-absolute-prior-weight` fixes the graph penalty coefficient directly. Without that option, the coefficient is scaled from the dry robust Jacobian. The latter changes when normalization or observation weights change, so matched controls must explicitly retain the same absolute coefficient to isolate those changes. Both the actual coefficient and the automatic reference scale are written to the solver status.
+
 Stable full runs omit legacy count-space uncertainty/profile products. `lvd_stable_curvature.csv` instead describes the local robust residual Gauss–Newton curvature. It is not a calibrated posterior covariance or a detection significance.
 
 ## Recorded experiments
+
+The completed [independent production validation](revision_evidence/surrogate_v2/production/README.md) reduced median absolute relative flux bias from 24.983% to 12.937% across 48 held-out ray/field cases. Median finite-contrast derivative bias fell from 25.254% to 21.373%; comparisons exceeding twice their estimated conditional Monte Carlo standard error fell from 16 to 6. Same-surrogate AD/finite-difference agreement reached a maximum relative discrepancy of 1.287e-8. Every tested field type improved on average, including the localized lens.
+
+These are conditional average improvements. The maximum flux bias remains 59.936%, 43/48 flux comparisons still exceed twice their estimated standard error, and the 15-degree derivative subgroup worsens in median relative bias. The uncertainty excludes coefficient fitting and physical-model uncertainty. The selected derivatives emphasize sensitive crossed cells, not the entire Jacobian. Historical replay and independent testing are reported separately.
 
 - `dev/validate_surrogate_v2.jl`: prespecified material training and unseen-field/direction/seed checks. Production uses 8192 histories per training reference and eight independent 1024-history test replicates. Includes a localized field with dry surroundings and boundary-aware derivative differences.
 - `dev/replay_surrogate_v2.jl`: comparisons against the already inspected October 23 MC references. This is a historical comparison, not a blind test.
