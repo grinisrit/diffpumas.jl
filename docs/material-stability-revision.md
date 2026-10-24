@@ -1,0 +1,51 @@
+# Material calibration and fixed-objective reconstruction
+
+These are opt-in alternatives to the archived October 23 calculation. Existing defaults remain available for reproduction. Numerical adoption requires the held-out validation and matched reconstruction comparisons below; passing software tests alone does not validate stochastic transport derivatives.
+
+## Frozen material correction
+
+`DiffPumas.Tomography` exports `CsdaMaterialCorrection`, `get_csda_material_correction`, `set_csda_material_correction!`, `calibrate_csda_material_correction`, `save_csda_corrections`, and `load_csda_corrections!`.
+
+The corrected deterministic flux is multiplied by `exp(linear*q + quadratic*q^2)`, where `q` is the water mass divided by total rock/cell mass along the prescribed ray. The denominator includes the dry remainder outside the voxel volume; air is excluded. Both numerator and denominator are differentiated. The factor is exactly one for dry fields and when disabled. It describes an empirical composition correction, not pore saturation or an identified stochastic energy-loss mechanism.
+
+Fit the two coefficients to paired MC material contrasts with a fixed dry correction. The calibration API accepts explicit training fields, directions, dry references and a field-by-direction MC matrix. No observation from a held-out field, direction or random stream should enter calibration. Inspect design rank, conditioning, training range and independent flux/derivative discrepancies before use. A single column-composition feature does not fully describe the order of materials along a ray.
+
+```julia
+using DiffPumas.Tomography
+set_csda_material_correction!(enabled=false) # historical behavior
+# After fitting and validating a candidate:
+save_csda_corrections("corrections.toml"; metadata=provenance)
+metadata = load_csda_corrections!("corrections.toml")
+```
+
+The version-1 TOML artifact stores both the original `CsdaCorrection` and the separate material coefficients. It preserves the original serialized struct layout. The example checks recorded physics, source altitude, rock density, quadrature nodes and energy bounds when those metadata are provided. A valid file format does not guarantee that a new geometry or composition lies inside its validation domain.
+
+## Fixed robust reconstruction
+
+The example's `--papermatch-fit-mode stable` uses a fixed pseudo-Huber objective on log-flux residuals, with fixed screen/slant weights and a fixed smoothness prior. Normalization is profiled through a convex scalar solve at each candidate field, or pinned with `--papermatch-abs-scale`. The full field objective is still nonlinear and can have multiple stationary solutions.
+
+The residual Jacobian includes the implicit derivative of profiled normalization. Active-set Gauss–Newton holds outward-pointing bound coordinates fixed. Every accepted projected step must be a descent step and satisfy Armijo decrease in the same objective. `lvd_solver_history.csv` records objective and projected-gradient norm; `lvd_solver_status.txt` distinguishes stationarity from an iteration limit or failed search. Small parameter changes alone do not establish stationarity or uniqueness.
+
+Useful options:
+
+```text
+--correction-artifact corrections.toml
+--papermatch-fit-mode stable
+--papermatch-initial-water 0.15
+--papermatch-gn-iters 100
+--papermatch-gradient-tol 1e-6
+--papermatch-log-scale 0.3
+```
+
+An artifact freezes all correction coefficients, bypassing recursive recalibration. Stable mode uses one optimization with a fixed objective. The initial field and the calibration field are different concepts. `--solver-mode stable` separately selects active-set GN for the synthetic benchmark; it does not change the synthetic objective into the measured-data robust objective.
+
+Stable full runs omit legacy count-space uncertainty/profile products. `lvd_stable_curvature.csv` instead describes the local robust residual Gauss–Newton curvature. It is not a calibrated posterior covariance or a detection significance.
+
+## Recorded experiments
+
+- `dev/validate_surrogate_v2.jl`: prespecified material training and unseen-field/direction/seed checks. Production uses 8192 histories per training reference and eight independent 1024-history test replicates. Includes a localized field with dry surroundings and boundary-aware derivative differences.
+- `dev/replay_surrogate_v2.jl`: comparisons against the already inspected October 23 MC references. This is a historical comparison, not a blind test.
+- `dev/run_stability_v2.py`: matched frozen-artifact starts at 0, 0.15 and 0.3, normalization controls and a screen-disabled fit; checks stationarity, common observations and field differences. Default is plan-only; `--execute` starts jobs.
+- `dev/run_revision_job.py`: fresh output directory, bounded CPU affinity/address space, source/runtime identities and completion hashes. Launch inside tmux. Coordinate aggregate allocations across jobs; per-process address-space limits are not aggregate cgroup memory limits.
+
+The source spectrum/altitude convention, uncertain LVD table provenance and acceptance, prescribed straight paths, geological support and observation model remain separate limitations. Improvements to these two numerical components do not resolve those physical ambiguities.
