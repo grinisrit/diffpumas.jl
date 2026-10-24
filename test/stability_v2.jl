@@ -37,3 +37,35 @@ using Test, LinearAlgebra
     @test fit[1]≈0 atol=1e-8
     @test last(diagnostics).projected_gradient<1e-8
 end
+
+@testset "Cheap residual searches, live diagnostics, and safeguarded descent" begin
+    T=DiffPumas.Tomography
+    calls=Ref(0);cheapcalls=Ref(0)
+    model=w->begin
+        calls[]+=1
+        ([exp(w[1]^3)],reshape([3w[1]^2*exp(w[1]^3)],1,1))
+    end
+    prediction=w->begin cheapcalls[]+=1; [exp(w[1]^3)] end
+    operator,scale,predict=T.profiled_log_observation_operator(model,[exp(.125)];normalization=1.,
+        robust_scale=.3,predict_only=prediction,return_predict_only=true)
+    for w in ([.01],[.2],[.5],[.9]); @test predict(w)==first(operator(w)); end
+    calls[]=0
+    plain,_=T.gauss_newton_reconstruct(operator,[0.];w0=[.01],n_iter=20,solver_mode=:active_set)
+    plaincalls=calls[];calls[]=0;cheapcalls[]=0;events=NamedTuple[]
+    fast,_=T.gauss_newton_reconstruct(operator,[0.];w0=[.01],n_iter=20,solver_mode=:active_set,
+        predict_only=predict,diagnostic_callback=row->push!(events,row))
+    @test fast≈plain rtol=1e-12 atol=1e-12
+    @test calls[]<plaincalls
+    @test cheapcalls[]>0
+    @test last(events).projected_gradient<=1e-6
+    # Near-zero derivative makes every limited LM step overshoot the box.
+    # The bounded projected-gradient rescue still finds a decreasing step.
+    cubic=w->([w[1]^3],reshape([3w[1]^2],1,1))
+    diagnostics=NamedTuple[]
+    recovered,_=T.gauss_newton_reconstruct(cubic,[.125];w0=[.0001],n_iter=100,
+        solver_mode=:active_set,projected_gradient_tol=1e-12,diagnostics=diagnostics,
+        predict_only=w->[w[1]^3])
+    @test recovered≈[.5] atol=1e-8
+    @test last(diagnostics).projected_gradient<1e-12
+    @test all(diff([x.objective for x in diagnostics]).<=0)
+end

@@ -390,7 +390,9 @@ The returned history records data-residual norms, while acceptance uses the
 complete data-plus-prior objective. `solver_mode=:active_set` freezes outward
 bound coordinates and uses projected Armijo acceptance. `diagnostics`, if supplied,
 receives objective and infinity-norm projected-gradient records including the final
-state. Only a projected gradient below `projected_gradient_tol` establishes KKT
+state; `diagnostic_callback(row)` receives the same immutable records live.
+After exhausted LM searches, active-set mode tries a bounded diagonally scaled
+projected-gradient direction with up to 40 Armijo halvings. Only a projected gradient below `projected_gradient_tol` establishes KKT
 convergence; exhausting iterations or a line-search failure does not. Optional
 `objective_tol>0` stops on objective stagnation without claiming KKT convergence.
 """
@@ -415,7 +417,12 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                                   solver_mode::Symbol = :legacy,
                                   projected_gradient_tol::Float64 = 1e-6,
                                   objective_tol::Float64 = 0.0,
-                                  diagnostics = nothing)
+                                  diagnostics = nothing,
+                                  diagnostic_callback = nothing)
+    record_diagnostic(row) = begin
+        diagnostics === nothing || push!(diagnostics,row)
+        diagnostic_callback === nothing || diagnostic_callback(row)
+    end
     solver_mode in (:active_set, :legacy) || throw(ArgumentError("unknown solver_mode"))
     w = clamp.(collect(Float64,w0),box[1],box[2])
     free === nothing || length(free)==length(w) || throw(DimensionMismatch("free mask must match w0"))
@@ -446,8 +453,7 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
         # KKT residual excludes outward gradients at active box constraints.
         pg = w[active] .- clamp.(w[active] .- grad, box[1], box[2])
         pg_norm = norm(pg, Inf)
-        diagnostics === nothing || push!(diagnostics,
-            (iteration=length(history)-1, objective=f_cur, projected_gradient=pg_norm))
+        record_diagnostic((iteration=length(history)-1, objective=f_cur, projected_gradient=pg_norm))
         solver_mode === :active_set && pg_norm <= projected_gradient_tol && break
         movable = solver_mode === :legacy ? trues(length(active)) :
             .!(((w[active] .<= box[1]) .& (grad .> 0)) .|
@@ -455,9 +461,12 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
         d=diag(normal);dmax=maximum(d);dmax=dmax>0 ? dmax : 1.0
         accepted=false
         f_before=f_cur
-        for _try in 1:6
+        for _try in 1:(solver_mode === :active_set ? 7 : 6)
             A=normal+Diagonal(mu.*max.(d,1e-12*dmax))
-            delta=try
+            # If LM directions exhaust their searches, a bounded diagonally
+            # scaled projected gradient supplies an independent descent safeguard.
+            rescue = solver_mode === :active_set && _try == 7
+            delta=rescue ? -grad ./ max.(d,maximum(abs.(grad)),1e-30) : try
                 step = zeros(length(active))
                 step[movable] .= -(A[movable,movable]\grad[movable])
                 # Projection of a coupled Newton direction need not be descent.
@@ -475,7 +484,7 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
             end
             alpha=1.0
             cached_w=nothing;cached_pred=nothing;cached_J=nothing
-            for _ls in 1:14
+            for _ls in 1:(rescue ? 40 : 14)
                 w_new=copy(w)
                 w_new[active].=clamp.(w[active].+alpha.*delta,box[1],box[2])
                 # Halving an exactly zero projected step cannot change the candidate.
@@ -519,13 +528,13 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
         # Objective stagnation is recorded, but never called KKT convergence.
         solver_mode === :active_set && objective_tol > 0 && abs(f_before-f_cur) <= objective_tol*max(1.0,abs(f_before)) && break
     end
-    if diagnostics !== nothing
+    if diagnostics !== nothing || diagnostic_callback !== nothing
         final_grad = transpose(J[:,active]) * (W === nothing ? r : W.*r)
         if prior !== nothing
             final_grad .+= (prior isa EdgePrior ? edge_gradient(prior,w) : laplacian_gradient(prior,w))[active]
         end
         final_pg = w[active] .- clamp.(w[active].-final_grad,box[1],box[2])
-        push!(diagnostics,(iteration=length(history)-1,objective=f_cur,projected_gradient=norm(final_pg,Inf)))
+        record_diagnostic((iteration=length(history)-1,objective=f_cur,projected_gradient=norm(final_pg,Inf)))
     end
     return w,history
 end
@@ -1002,9 +1011,13 @@ forward-to-observed scale; zero profiles its logarithm by a convex scalar solve.
 The returned residual operator has exact Jacobian, including the implicit scale
 derivative. Its squared residual norm / 2 is the robust objective. All weights
 and the robust scale stay fixed across field iterations. Returns `(operator, scale)`.
+With `return_predict_only=true`, returns `(operator, scale, residual_only)`; the
+optional `predict_only` forward callback avoids building a Jacobian for residual
+line searches. Both paths reuse exactly the same profile/robust transform.
 """
 function profiled_log_observation_operator(model, observed::AbstractVector;
-        weights=ones(length(observed)), robust_scale::Real=1.0, normalization::Real=0.0)
+        weights=ones(length(observed)), robust_scale::Real=1.0, normalization::Real=0.0,
+        predict_only=nothing, return_predict_only::Bool=false)
     all(x -> isfinite(x) && x>0,observed) || throw(ArgumentError("log observations must be finite and positive"))
     length(weights)==length(observed) || throw(DimensionMismatch("weights must match observations"))
     isfinite(normalization) && normalization>=0 || throw(ArgumentError("normalization must be finite and nonnegative"))
@@ -1046,5 +1059,6 @@ function profiled_log_observation_operator(model, observed::AbstractVector;
         residual,derivative.*D
     end
     scale = pred -> last(transform(pred))
-    return operator,scale
+    residual_only = w -> first(transform(predict_only === nothing ? first(model(w)) : predict_only(w)))
+    return return_predict_only ? (operator,scale,residual_only) : (operator,scale)
 end

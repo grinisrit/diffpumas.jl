@@ -86,6 +86,7 @@ Options:
     --papermatch-initial-water FLOAT  Initial reconstructed support field, independent of calibration (default: 0)
     --papermatch-gn-iters INT       Stable-fit iteration cap (default: 100)
     --papermatch-gradient-tol FLOAT  Stable-fit projected-gradient KKT tolerance (default: 1e-6)
+    --papermatch-absolute-prior-weight FLOAT  Fixed absolute graph penalty coefficient (default: automatic dry scale)
     --papermatch-log-scale FLOAT    Fixed pseudo-Huber log-residual scale (default: 0.3)
     --papermatch-fit-only          Save nonlinear fit/recursion/coverage diagnostics, skip posterior/plots/final MC
     --papermatch-mc-samples INT   MC samples/bin for the paper-match uncertainty grid (default: 64)
@@ -1383,6 +1384,7 @@ function parse_commandline()
         papermatch_initial_water = 0.0,
         papermatch_gn_iters = 100,
         papermatch_gradient_tol = 1e-6,
+        papermatch_absolute_prior_weight = -1.0, # negative selects automatic dry reference
         papermatch_log_scale = 0.3,
         papermatch_fit_only = false,     # save fit diagnostics/field; skip posterior, plots and final MC
         papermatch_reg = 1.0,          # smoothness-prior weight (× data curvature) for the
@@ -1533,6 +1535,8 @@ function parse_commandline()
             args = merge(args, (papermatch_gn_iters = parse(Int,ARGS[i+1]),)); i += 2
         elseif arg == "--papermatch-gradient-tol"
             args = merge(args, (papermatch_gradient_tol = parse(Float64,ARGS[i+1]),)); i += 2
+        elseif arg == "--papermatch-absolute-prior-weight"
+            args = merge(args, (papermatch_absolute_prior_weight = parse(Float64,ARGS[i+1]),)); i += 2
         elseif arg == "--papermatch-log-scale"
             args = merge(args, (papermatch_log_scale = parse(Float64,ARGS[i+1]),)); i += 2
         elseif arg == "--papermatch-fit-only"
@@ -1591,6 +1595,7 @@ function parse_commandline()
 
     args.solver_mode in ("stable","legacy") || error("--solver-mode must be stable or legacy")
     args.papermatch_gn_iters > 0 || error("--papermatch-gn-iters must be positive")
+    isfinite(args.papermatch_absolute_prior_weight) || error("absolute prior weight must be finite")
     args.papermatch_log_scale > 0 || error("--papermatch-log-scale must be positive")
     args.papermatch_gradient_tol >= 0 || error("--papermatch-gradient-tol must be nonnegative")
     0 <= args.papermatch_initial_water <= MAX_WATER_FRACTION || error("--papermatch-initial-water must be in [0,0.9]")
@@ -3070,7 +3075,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                 kh_anchor = get_csda_correction().kappa_hard, kh_anchor_weight = 1.0e-3)
         end
         # (a) diagnostic global water-mix shape fit (reported, not added to the field)
-        w0_fit = golden(logvar_w0, 0.0, MAX_WATER_FRACTION)
+        w0_fit = stable_fit ? NaN : golden(logvar_w0, 0.0, MAX_WATER_FRACTION)
         # (b) per-cell aquifer GN, warm-started from the previous pass (faster + path-stable).
         # IRLS: the FIRST solve (recur==1 & outer==1, the cold start) uses pure
         # inverse-variance weighting — at initialization the dry baseline is wrong
@@ -3082,21 +3087,29 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         if stable_fit
             # A single fixed observation model: convex pseudo-Huber log residuals,
             # fixed DEM weights and robust scale; scale is profiled at every trial.
-            robust_model, profile_scale = DiffPumas.Tomography.profiled_log_observation_operator(model_aq,meas_v;
+            robust_model, profile_scale, robust_predict = DiffPumas.Tomography.profiled_log_observation_operator(model_aq,meas_v;
                 weights=fit_mask.*wdem, robust_scale=args.papermatch_log_scale,
-                normalization=args.papermatch_abs_scale)
+                normalization=args.papermatch_abs_scale, predict_only=predict_aq, return_predict_only=true)
             opt_logscale = profile_scale
             _,logJ=robust_model(zeros(n_cells))
             diagonal=vec(sum(logJ.^2;dims=1))
             positive=filter(>(0),diagonal[aquifer_mask])
+            automatic_prior_scale=isempty(positive) ? 1.0 : median(positive)
             stable_prior=SmoothnessPrior(cell_neighbors(volume),
-                args.papermatch_reg*(isempty(positive) ? 1.0 : median(positive)))
+                args.papermatch_absolute_prior_weight>=0 ? args.papermatch_absolute_prior_weight :
+                args.papermatch_reg*automatic_prior_scale)
             sm_prior=stable_prior
             solver_diagnostics=NamedTuple[]
+            open(joinpath(args.output_dir,"lvd_solver_progress.csv"),"w") do progress_io
+                println(progress_io,"iteration,objective,projected_gradient"); flush(progress_io)
             w_solved,_=gauss_newton_reconstruct(robust_model,zeros(length(meas_v));
                 w0=w_solved,n_iter=args.papermatch_gn_iters,prior=stable_prior,
                 free=aquifer_mask,solver_mode=:active_set,projected_gradient_tol=args.papermatch_gradient_tol,
-                diagnostics=solver_diagnostics)
+                diagnostics=solver_diagnostics, predict_only=robust_predict,
+                diagnostic_callback=row -> begin
+                    println(progress_io,join(values(row),',')); flush(progress_io)
+                end)
+            end
             open(joinpath(args.output_dir,"lvd_solver_history.csv"),"w") do io
                 println(io,"iteration,objective,projected_gradient")
                 for row in solver_diagnostics; println(io,join(values(row),',')); end
@@ -3104,6 +3117,9 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
             open(joinpath(args.output_dir,"lvd_solver_status.txt"),"w") do io
                 lastrow=last(solver_diagnostics)
                 println(io,"objective_model=fixed_pseudo_huber_log_flux")
+                println(io,"uniform_diagnostic_computed=false")
+                println(io,"absolute_prior_weight=$(stable_prior.weight)")
+                println(io,"automatic_dry_prior_scale=$automatic_prior_scale")
                 println(io,"robust_log_scale=$(args.papermatch_log_scale)")
                 println(io,"normalization_mode=$(args.papermatch_abs_scale>0 ? "pinned" : "profiled")")
                 println(io,"initial_field_water=$(args.papermatch_initial_water)")
@@ -3228,8 +3244,11 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                      args.papermatch_abs_scale > 0.0 ? @sprintf(" ; PINNED to %.4e", s) : ""))
     println(@sprintf("  box saturation: %d/%d cells at dry floor (w=0), %d at water ceiling (w=%.1f; %d in aquifer = water-insufficient directions)",
                      floor_pinned, n_cells, ceil_pinned, MAX_WATER_FRACTION, aq_ceiling))
-    println(@sprintf("  rock density pinned at standard rock %.0f kg/m^3; global water-mix fraction w0=%.3f",
-                     rho_fit, w0_fit))
+    if stable_fit
+        println("  Uniform-support diagnostic not computed in fixed-objective mode")
+    else
+        println(@sprintf("  rock density pinned at standard rock %.0f kg/m^3; global water-mix fraction w0=%.3f",rho_fit,w0_fit))
+    end
     n_vert = count(i -> match_zen[i] < 60.0, valid_bins)
     n_horiz = length(valid_bins) - n_vert
     println(@sprintf("  fit bins=%d (excluded %d baseline-ratio outlier bins; theta<60: %d, theta>=60: %d, up to %.0f deg)",
@@ -3477,8 +3496,11 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, "(pinned overburden rock and a non-negative per-cell replacement-mass-fraction field; separate uniform-support w0 diagnostic is NOT added to that field; no signed/denser-rock endpoint)")
         println(io, @sprintf("rock density PINNED at the configured Gran Sasso value = %.0f kg/m^3 (adopted fixed reference; not fitted here and no denser-rock alternative tested)",
                              rho_fit))
-        println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (separate uniform-support shape-fit diagnostic; not an additional background component)",
-                             w0_fit))
+        if stable_fit
+            println(io,"Uniform-support diagnostic not computed in fixed-objective mode.")
+        else
+            println(io, @sprintf("FITTED global water-mix fraction w0 = %.4f (separate uniform-support shape-fit diagnostic; not an additional background component)",w0_fit))
+        end
         println(io, @sprintf("water endpoint density = %.0f kg/m^3 (pure-water material at w=1; configured mixture upper bound w=%.1f)", matcfg.water_density, MAX_WATER_FRACTION))
         println(io, @sprintf("primary/Gaisser altitude = %.0f km", args.primary_altitude_km))
         println(io)
