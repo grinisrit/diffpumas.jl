@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/home/roland/devspace/diffpumas.jl/dev/parallel_resume_terrain_stress.py", line 258, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/roland/devspace/diffpumas.jl/dev/parallel_resume_terrain_stress.py", line 257, in main
+    run(output)
+  File "/home/roland/devspace/diffpumas.jl/dev/parallel_resume_terrain_stress.py", line 214, in run
+    for future in futures:future.result()
+                          ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/roland/devspace/diffpumas.jl/dev/parallel_resume_terrain_stress.py", line 186, in worker
+    if common.verify_parent(parent,queue_root)['state'] not in ('T','t'):raise ValueError('original serial parent is no longer paused')
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: original serial parent is no longer paused

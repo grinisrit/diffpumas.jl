@@ -1,0 +1,18 @@
+{
+  "controller": {
+    "pid": 3080347,
+    "start_ticks": 1540911519,
+    "state": "R",
+    "ppid": 1245260,
+    "command": [
+      "python3",
+      "/home/roland/devspace/diffpumas.jl/dev/parallel_resume_terrain_stress.py",
+      "run",
+      "--output",
+      "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_parallel_resume_20261025_v4"
+    ],
+    "cwd": "/home/roland/devspace/diffpumas.jl"
+  },
+  "transition_plan": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_parallel_resume_20261025_v4/transition_plan.json",
+  "transition_plan_sha256": "ae1c05e573b3485092ca49a74ede73955001b9cf682ffe03b7b6e0d3b6d11adb"
+}

@@ -1,0 +1,19 @@
+{
+  "scope": "Harmless temporary tmux pane; no numerical production touched.",
+  "fixture_pid": 3109955,
+  "results": [
+    {
+      "signal": "SIGSTOP",
+      "state_after_250ms": "S"
+    },
+    {
+      "signal": "SIGTTIN",
+      "state_after_250ms": "S"
+    },
+    {
+      "signal": "SIGTTOU",
+      "state_after_250ms": "S"
+    }
+  ],
+  "cleanup": "Fixture received SIGCONT after each check and SIGTERM after the final check; no persistent fixture process or session intended."
+}

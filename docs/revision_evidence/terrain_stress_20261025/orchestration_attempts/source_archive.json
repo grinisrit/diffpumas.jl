@@ -1,0 +1,66 @@
+{
+  "status": "Archived historical orchestration prototypes; not supported production launchers. Restore original locations only for separately reviewed reproduction, never blindly execute against an existing queue.",
+  "items": [
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/dev/resume_terrain_stress.py",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/source/resume_terrain_stress.py",
+      "sha256": "1beb2aeaab820a89335d0917bd48c95b3ed38742e294d8fbc385b6d0e80f07ee"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/dev/test_resume_terrain_stress.py",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/source/test_resume_terrain_stress.py",
+      "sha256": "78e24c40bb2ffcb34365e95929b5bf494e210854038246c7af794f8a923141ec"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/dev/parallel_resume_terrain_stress.py",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/source/parallel_resume_terrain_stress.py",
+      "sha256": "c4bcd90435b3c7c67cd66b1fbe4194d5a16277113826bfbdb86bef74f8c73f78"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/dev/test_parallel_resume_terrain_stress.py",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/source/test_parallel_resume_terrain_stress.py",
+      "sha256": "710c6dd1b491f3b514bb2ac3bd1de5d9869cbf094cfb725adc912c165ad5c698"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/dev/reserved_terrain_resume.py",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/source/reserved_terrain_resume.py",
+      "sha256": "f4d9b24df7c772843e3b61085711dfe27b87f486bb98c56371865fb72f698990"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/dev/test_reserved_terrain_resume.py",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/source/test_reserved_terrain_resume.py",
+      "sha256": "e32db349b89c61d435656a0cf89720ef9e8945a29a7f2895aef3c602a6c24a76"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_resume_20261025",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/full_preparations/terrain_stress_resume_20261025",
+      "role": "prepared-only except rejected v4"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_resume_20261025_v2",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/full_preparations/terrain_stress_resume_20261025_v2",
+      "role": "prepared-only except rejected v4"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_resume_20261025_v3",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/full_preparations/terrain_stress_resume_20261025_v3",
+      "role": "prepared-only except rejected v4"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_parallel_resume_20261025_v4",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/full_preparations/terrain_stress_parallel_resume_20261025_v4",
+      "role": "prepared-only except rejected v4"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_reserved_resume_20261025_v5",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/full_preparations/terrain_stress_reserved_resume_20261025_v5",
+      "role": "prepared-only except rejected v4"
+    },
+    {
+      "original_path": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_20261025/parallel_resume_owner.json",
+      "archive_path": "docs/revision_evidence/terrain_stress_20261025/orchestration_attempts/retired_owner_marker.json",
+      "sha256": "f574013628fa4aba9b673edf16864de435fdbf95980d778422958cac8aa177f5",
+      "role": "retired failed coordinator marker; no scientific input"
+    }
+  ]
+}

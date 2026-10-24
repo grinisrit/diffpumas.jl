@@ -1,0 +1,34 @@
+{
+  "phase": "candidate_ready",
+  "updated_utc": "2026-10-24T22:49:50.632570+00:00",
+  "candidate": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_parallel_resume_20261025_v4/review_candidates/candidate_001",
+  "source_sha256": {
+    "/home/roland/devspace/diffpumas.jl/dev/watch_terrain_stress.py": "5cade3289614980eea1bec5311d157953428243faab745327fe7065af2a74ee3",
+    "/home/roland/devspace/diffpumas.jl/dev/summarize_terrain_stress.py": "e5a3e47c38d0fc9cba15fc7004e21bfd868334c580153c132304ccd5f63bd2fa",
+    "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_20261025/preregistered_plan.json": "cb77ecdb5b27ba984de03713661889645597503f98fb8db49b84c1fdb1b4ef1f"
+  },
+  "end_record_sha256": {
+    "fixed_zero": "314ecbf161e8ad74ad404a2f9e20ca8efd33743efd60ac491aea08e25e065ed5",
+    "fixed_minus5": "caea750a820debf723dc7fe35d3a0920ff74678dccaaebbee3a39c57d47adb07",
+    "fixed_plus5": "14eb5ab6a6b51426b65749d03c21c9a4751e5b6d764702d55d73c7be15039258",
+    "fixed_minus1": "816d7d8a407e23a3ed2e25e41f2d3c9cd0dce5177d809862288c6b1b450dac41",
+    "fixed_plus1": "6abae1cb201a9e334b2c4e70de0d2978e4effaea5b15375ba0c6b82fda960a8a",
+    "all_zero": "1b58cf04f8ca8185b02f6b805c116a9e48a26df1ed8b0c67ba1a0317f2e1954b"
+  },
+  "queue_complete": false,
+  "failed_cases": [
+    "queue controller exited without completion record"
+  ],
+  "returncode": 0,
+  "cpu_pool": [
+    20
+  ],
+  "address_space_gib": 2,
+  "shared_lock": "/mnt/big_data/agent-builds/surrogate-stability-20261024/cpu20-python-postprocess.lock",
+  "candidate_sha256": {
+    "terrain_stress_candidate.pdf": "a41813f4337a65bb27509a328b9120720815b14ac69db64237cb5f0f8c3aba43",
+    "terrain_stress_candidate.png": "d59e37c5aba3da3c67eb090d946a62677a63319655596e52407e0b9edae6b07a",
+    "terrain_summary.csv": "4794572d23d4ff2613050f03c10d31f79d063ad22465c2413c4cba07de6fdaeb",
+    "terrain_summary.json": "57eb0304e495eaa64efdb99540e332f23ef312b4c4fe7049d2c150ec84494a89"
+  }
+}

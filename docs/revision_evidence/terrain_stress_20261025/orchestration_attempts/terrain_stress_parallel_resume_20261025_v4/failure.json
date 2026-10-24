@@ -1,0 +1,51 @@
+{
+  "execution_completed": false,
+  "utc": "2026-10-24T22:49:23.778474+00:00",
+  "error": "original serial parent is no longer paused",
+  "action": "resume_original_parent",
+  "original_parent_paused": false,
+  "original_parent": {
+    "pid": 1944232,
+    "start_ticks": 1540657383,
+    "state": "S",
+    "ppid": 1245260,
+    "command": [
+      "python3",
+      "/home/roland/devspace/diffpumas.jl/dev/run_terrain_stress.py",
+      "--output",
+      "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_20261025",
+      "--execute"
+    ],
+    "cwd": "/home/roland/devspace/diffpumas.jl"
+  },
+  "controller": {
+    "pid": 3080347,
+    "start_ticks": 1540911519,
+    "state": "R",
+    "ppid": 1245260,
+    "command": [
+      "python3",
+      "/home/roland/devspace/diffpumas.jl/dev/parallel_resume_terrain_stress.py",
+      "run",
+      "--output",
+      "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_parallel_resume_20261025_v4"
+    ],
+    "cwd": "/home/roland/devspace/diffpumas.jl"
+  },
+  "ownership": {
+    "all_minus5": {
+      "phase": "claimed",
+      "cpu_start": 8
+    },
+    "all_plus5": {
+      "phase": "pending"
+    },
+    "all_minus1": {
+      "phase": "pending"
+    },
+    "all_plus1": {
+      "phase": "pending"
+    }
+  },
+  "recovery": "Do not CONT the original serial controller after external launch commitment. Preserve all case directories. Verify clean end records and review a new coordinator that adopts completed/owned cases; never overwrite or blindly rerun an existing case."
+}
