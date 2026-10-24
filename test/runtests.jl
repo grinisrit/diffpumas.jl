@@ -412,6 +412,7 @@ using Random
     include("test_segment_tangents.jl")
     include("test_tomography_material.jl")
     include("stability_v2.jl")
+    include("test_papermatch_postfit_scope.jl")
 end
 
 println("\nAll tests passed! ✓")

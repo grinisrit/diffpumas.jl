@@ -1,0 +1,9 @@
+{
+  "base_commit": "d637173fe9d4c24c5fa45f9de8305b4c9588e482",
+  "source": "examples/lvd_tomography.jl",
+  "before_sha256": "dc4e25dce955c53eddb965f7b97bec2eae78703658e9d5ef530f1f7fddd676c5",
+  "after_sha256": "9da5d941038255d80c4e7015814233e0e7ddc0d620d5680e099229a7428c0a19",
+  "change": "Declare robust_model in the enclosing run_paper_match function before its recursion loop so stable-fit post-loop curvature can access the final operator.",
+  "numerical_production_rerun": false,
+  "historical_bindings": "Existing computed artifacts, source manifests, correction certificates and recovery helper hash remain unchanged; this patch is subsequent to the frozen computations."
+}

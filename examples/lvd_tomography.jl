@@ -3060,6 +3060,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     prev_coef = nothing            # previous correction coefficients (convergence check)
     recursion_rows = NamedTuple[]
     recursion_converged = false
+    # Retain the stable observation operator for the post-loop curvature report.
+    local robust_model
     for recur in 1:n_recur
         println("  [recursion $recur/$n_recur] starting material fit")
         flush(stdout)

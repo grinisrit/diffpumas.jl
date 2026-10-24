@@ -1,0 +1,13 @@
+diff --git a/examples/lvd_tomography.jl b/examples/lvd_tomography.jl
+index 8ed9d09..278901e 100644
+--- a/examples/lvd_tomography.jl
++++ b/examples/lvd_tomography.jl
+@@ -3060,6 +3060,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
+     prev_coef = nothing            # previous correction coefficients (convergence check)
+     recursion_rows = NamedTuple[]
+     recursion_converged = false
++    # Retain the stable observation operator for the post-loop curvature report.
++    local robust_model
+     for recur in 1:n_recur
+         println("  [recursion $recur/$n_recur] starting material fit")
+         flush(stdout)

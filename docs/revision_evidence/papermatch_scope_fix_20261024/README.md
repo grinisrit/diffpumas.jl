@@ -1,0 +1,11 @@
+# Stable paper-match post-fit operator scope correction
+
+After the frozen numerical jobs completed on 2026-10-24, `run_paper_match` gained an enclosing `local robust_model` declaration. Previously, creation of this operator inside the recursion loop did not bind the post-loop reference used for stable residual Gauss–Newton curvature. The optimizer and fit-only output could finish before the full report path failed with `UndefVarError`. The declaration keeps the same operator available for the curvature report; no operator formula, solver update, numerical setting or MC kernel changed.
+
+`test/test_papermatch_postfit_scope.jl` executes the actual source declaration, operator factory assignment and post-loop call in their original function/loop/conditional scope, with a synthetic forward model. Four checks cover one pass, repeated assignment over two passes, the legacy-mode bypass, and a negative control that reproduces the old `UndefVarError` when the enclosing declaration is removed. This is a targeted scope regression, not a complete report/MC production rerun. It is included in the main package test entry point.
+
+Julia 1.11.7 passed the four new checks standalone and **35/35** checks with the existing `stability_v2.jl` tests (20 fixed robust/KKT, 11 cheap residual/descent, 4 scope). The combined command also parsed the complete example. CPU affinity was 0–3 with an 8 GiB per-process address-space limit. Kaleido initialization warned that its renderer was unavailable; no figure export was requested by these tests. The full package suite and full numerical production were not rerun for this scope-only patch.
+
+`source_transition.json` and `scope-fix.patch` preserve the pre/post source identity. Historical computed data, source manifests, correction certificates and `dev/recover_material_main.jl` were not modified. The recovery helper intentionally remains restricted to its original frozen source hash; it is historical recovery evidence, not a launcher for the patched example. The prior exact-state recovery remains the evidence for the completed full report and MC tail.
+
+No further blocker was found for this scope correction. This targeted result does not certify broader paper/submission readiness, which is audited separately.
