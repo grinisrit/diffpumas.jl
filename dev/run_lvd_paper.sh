@@ -43,6 +43,8 @@ Usage: bash dev/run_lvd_paper.sh [options]
   --papermatch-initial-water X  Initial supported-cell fraction
   --papermatch-gn-iters N       Stable measured iteration ceiling
   --papermatch-gradient-tol X   Stable projected-gradient tolerance
+  --papermatch-reg X            Relative graph regularization weight
+  --papermatch-absolute-prior-weight X  Fixed absolute graph regularization weight
   --papermatch-log-scale X      Fixed pseudo-Huber log-residual scale
   --help              Show this help
 Set JULIA_BIN to select a Julia executable. BLAS uses one thread. The bounded
@@ -54,7 +56,7 @@ HELP
 }
 while (($#)); do
     case "$1" in
-        --correction-artifact|--solver-mode|--papermatch-fit-mode|--papermatch-initial-water|--papermatch-gn-iters|--papermatch-gradient-tol|--papermatch-log-scale)
+        --correction-artifact|--solver-mode|--papermatch-fit-mode|--papermatch-initial-water|--papermatch-gn-iters|--papermatch-gradient-tol|--papermatch-log-scale|--papermatch-reg|--papermatch-absolute-prior-weight)
             (($# >= 2)) || { echo "Missing value for $1" >&2; exit 2; }
             EXTRA_OPTIONS+=("$1" "$2")
             shift 2 ;;
