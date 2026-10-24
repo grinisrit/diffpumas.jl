@@ -1,0 +1,128 @@
+{
+  "started_utc": "2026-10-24T10:55:02.216433+00:00",
+  "completed_utc": "2026-10-24T10:55:02.242830+00:00",
+  "reason": "Coordinator authorized moving unchanged 4-CPU/8-GiB pilot after clean validation replay released CPUs16-19, freeing0-15 for primary production.",
+  "authorized_by": "parent coordinator",
+  "original_execution_record_unchanged": true,
+  "scientific_parameters_unchanged": true,
+  "original_cpu_pool": [
+    12,
+    13,
+    14,
+    15
+  ],
+  "new_cpu_pool": [
+    16,
+    17,
+    18,
+    19
+  ],
+  "address_space_bytes": 8589934592,
+  "julia_pid": 1799034,
+  "threads_and_owned_descendants": [
+    {
+      "pid": 1799034,
+      "tid": 1799034,
+      "comm": "julia",
+      "before": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "after": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "pid": 1799034,
+      "tid": 1799043,
+      "comm": "julia",
+      "before": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "after": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "pid": 1799034,
+      "tid": 1799044,
+      "comm": "julia",
+      "before": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "after": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "pid": 1799034,
+      "tid": 1799045,
+      "comm": "julia",
+      "before": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "after": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "pid": 1799034,
+      "tid": 1799046,
+      "comm": "julia",
+      "before": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "after": [
+        16,
+        17,
+        18,
+        19
+      ]
+    },
+    {
+      "pid": 1799034,
+      "tid": 1799047,
+      "comm": "julia",
+      "before": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "after": [
+        16,
+        17,
+        18,
+        19
+      ]
+    }
+  ],
+  "all_active_threads_verified": true,
+  "active_thread_count": 6
+}

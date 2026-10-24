@@ -1,0 +1,14 @@
+objective_model=fixed_pseudo_huber_log_flux
+uniform_diagnostic_computed=false
+absolute_prior_weight=3.954930197858131
+automatic_dry_prior_scale=3.954930197858131
+robust_log_scale=0.3
+normalization_mode=profiled
+initial_field_water=0.3
+maximum_iterations=100
+projected_gradient_tolerance=1.0e-6
+projected_gradient=0.0034596105490880408
+objective=98.53429559792372
+kkt_converged=false
+support_cells=147
+fit_bins=690

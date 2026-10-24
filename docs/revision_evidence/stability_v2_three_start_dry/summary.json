@@ -1,0 +1,302 @@
+{
+  "scope": "Three dry-artifact matched initial-field controls, preliminary3/12; none passes prescribed KKT tolerance; not the corrected primary field.",
+  "runs": {
+    "start0": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_dry_start0_20261024",
+      "initial_water": 0.0,
+      "initial_objective": 167.43044642644878,
+      "objective": 98.53429563400051,
+      "projected_gradient": 0.008991907742836217,
+      "kkt_converged": false,
+      "iterations": 36,
+      "normalization": 3393441.304993125,
+      "support_mean_water": 0.09830973922714992,
+      "end_sha256": "bec4c74b0ea8ddd6740298d261be5ff24be2d0636bcd01d4cbd090ab2ed7742b",
+      "field_sha256": "b4c3eaeebbed7a596ea05d3eaf019dc657bd46a074db1a312ade7f2ddb4a1d71",
+      "configuration": {
+        "fit_bins": 690,
+        "cells": 600,
+        "relative_prior_multiplier": 1.0,
+        "initial_field_water": 0.0,
+        "correction_artifact_sha256": "b6f97deb8182e48e5eff08e7c33d26b08b5d32f1c5337d07c2110ffcb8bb27b9",
+        "screen_sha256": "53652c5c61d708a99baf9f10e7d06ec7eafe7ff81ee7705879e4c88251468fa0",
+        "legacy_adjoint_fd_step_active": false,
+        "normalization_mode": "profiled",
+        "objective_model": "fixed_pseudo_huber_log_flux",
+        "projected_gradient_tolerance": 1e-06,
+        "covered_bins": 1003,
+        "maximum_iterations": 100,
+        "pinned_normalization": 0.0,
+        "adjoint_backend": "forwarddiff",
+        "legacy_adjoint_fd_step": 1e-06,
+        "support_sha256": "036e56d94c980421e72ac33a341981e591bb7af6b57d2997b1ccde30882d5817",
+        "correction_artifact": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml",
+        "baseline_mask_ratio": 15.0,
+        "robust_log_scale": 0.3,
+        "support_cells": 147,
+        "absolute_prior_weight": 3.954930197858131,
+        "automatic_dry_prior_scale": 3.954930197858131,
+        "prior_cutoff_m": 500.0
+      },
+      "outputs_verified": 14,
+      "source_inputs_verified": 61,
+      "objective_monotone": true,
+      "termination_inferred": "failed line search after final unaccepted outer attempt",
+      "accepted_updates_inferred": 35
+    },
+    "start015": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/start015",
+      "initial_water": 0.15,
+      "initial_objective": 160.11085627694942,
+      "objective": 98.53429561204224,
+      "projected_gradient": 0.0036216470218539826,
+      "kkt_converged": false,
+      "iterations": 36,
+      "normalization": 3393424.6053963983,
+      "support_mean_water": 0.09831075831203852,
+      "end_sha256": "43feec3346ca48c017cb45e2b3f3832f8afc4a8c21f7d6ddf484d4a0985c044a",
+      "field_sha256": "f8ba78511fae04778f5fd62a2718840ec7fa9933b0cd6cb11812a0d6489a0a44",
+      "configuration": {
+        "fit_bins": 690,
+        "cells": 600,
+        "relative_prior_multiplier": 1.0,
+        "initial_field_water": 0.15,
+        "correction_artifact_sha256": "b6f97deb8182e48e5eff08e7c33d26b08b5d32f1c5337d07c2110ffcb8bb27b9",
+        "screen_sha256": "53652c5c61d708a99baf9f10e7d06ec7eafe7ff81ee7705879e4c88251468fa0",
+        "legacy_adjoint_fd_step_active": false,
+        "normalization_mode": "profiled",
+        "objective_model": "fixed_pseudo_huber_log_flux",
+        "projected_gradient_tolerance": 1e-06,
+        "covered_bins": 1003,
+        "maximum_iterations": 100,
+        "pinned_normalization": 0.0,
+        "adjoint_backend": "forwarddiff",
+        "legacy_adjoint_fd_step": 1e-06,
+        "support_sha256": "036e56d94c980421e72ac33a341981e591bb7af6b57d2997b1ccde30882d5817",
+        "correction_artifact": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml",
+        "baseline_mask_ratio": 15.0,
+        "robust_log_scale": 0.3,
+        "support_cells": 147,
+        "absolute_prior_weight": 3.954930197858131,
+        "automatic_dry_prior_scale": 3.954930197858131,
+        "prior_cutoff_m": 500.0
+      },
+      "outputs_verified": 13,
+      "source_inputs_verified": 64,
+      "objective_monotone": true,
+      "termination_inferred": "failed line search after final unaccepted outer attempt",
+      "accepted_updates_inferred": 35
+    },
+    "start03": {
+      "path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/start03",
+      "initial_water": 0.3,
+      "initial_objective": 207.36159341524615,
+      "objective": 98.53429559792372,
+      "projected_gradient": 0.0034596105490880408,
+      "kkt_converged": false,
+      "iterations": 29,
+      "normalization": 3393433.642660635,
+      "support_mean_water": 0.09831052394937399,
+      "end_sha256": "c2570b64e29b86c389840f1636a22aeb59be37f25beae6c737eafc870189cad3",
+      "field_sha256": "3231cd00fd52dc2ab5e1db07079d9cc89b1b42e36122f05385d50722cc9f53fa",
+      "configuration": {
+        "fit_bins": 690,
+        "cells": 600,
+        "relative_prior_multiplier": 1.0,
+        "initial_field_water": 0.3,
+        "correction_artifact_sha256": "b6f97deb8182e48e5eff08e7c33d26b08b5d32f1c5337d07c2110ffcb8bb27b9",
+        "screen_sha256": "53652c5c61d708a99baf9f10e7d06ec7eafe7ff81ee7705879e4c88251468fa0",
+        "legacy_adjoint_fd_step_active": false,
+        "normalization_mode": "profiled",
+        "objective_model": "fixed_pseudo_huber_log_flux",
+        "projected_gradient_tolerance": 1e-06,
+        "covered_bins": 1003,
+        "maximum_iterations": 100,
+        "pinned_normalization": 0.0,
+        "adjoint_backend": "forwarddiff",
+        "legacy_adjoint_fd_step": 1e-06,
+        "support_sha256": "036e56d94c980421e72ac33a341981e591bb7af6b57d2997b1ccde30882d5817",
+        "correction_artifact": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml",
+        "baseline_mask_ratio": 15.0,
+        "robust_log_scale": 0.3,
+        "support_cells": 147,
+        "absolute_prior_weight": 3.954930197858131,
+        "automatic_dry_prior_scale": 3.954930197858131,
+        "prior_cutoff_m": 500.0
+      },
+      "outputs_verified": 13,
+      "source_inputs_verified": 64,
+      "objective_monotone": true,
+      "termination_inferred": "failed line search after final unaccepted outer attempt",
+      "accepted_updates_inferred": 28
+    }
+  },
+  "pairwise": {
+    "start0_vs_start015": {
+      "support_l2": 8.250444072116095e-05,
+      "support_rmse": 6.804851579957399e-06,
+      "support_max_abs": 7.623352180232898e-05,
+      "relative_l2_to_first": 4.5812839227892185e-05,
+      "all_covered_prediction_relative_l2_to_first": 6.675529466390975e-06,
+      "common_fit_prediction_relative_l2_to_first": 6.798377077978066e-06
+    },
+    "start0_vs_start03": {
+      "support_l2": 4.608777603429749e-05,
+      "support_rmse": 3.8012556999646916e-06,
+      "support_max_abs": 4.238508386657236e-05,
+      "relative_l2_to_first": 2.5591493686579626e-05,
+      "all_covered_prediction_relative_l2_to_first": 2.301831573211776e-06,
+      "common_fit_prediction_relative_l2_to_first": 2.2985470411049833e-06
+    },
+    "start015_vs_start03": {
+      "support_l2": 3.7727105906632944e-05,
+      "support_rmse": 3.111679250134293e-06,
+      "support_max_abs": 3.384843793575662e-05,
+      "relative_l2_to_first": 2.094898235863809e-05,
+      "all_covered_prediction_relative_l2_to_first": 7.443276126733391e-06,
+      "common_fit_prediction_relative_l2_to_first": 7.684231952365521e-06
+    }
+  },
+  "matched_checks": {
+    "same_core_sources": true,
+    "same_runtime": true,
+    "same_support_and_screen": true,
+    "same_frozen_artifact": true,
+    "same_fixed_lambda_objective_tolerances_budget": true,
+    "seed_difference": "reference20261022 vs later42; deterministic midpoint nodes and frozen-artifact fit contain no stochastic field solve"
+  },
+  "collector_sha256": "1e2d466c8b579d2f66232729671a5fff8124d4b9d7d882e8060c75ab29154890",
+  "common_bin_statistics": {
+    "dry/start0": {
+      "common_covered": {
+        "n_bins": 1003,
+        "baseline": {
+          "relative_l2": 0.5287727500789643,
+          "log_rmse": 3.583902553092866
+        },
+        "candidate": {
+          "relative_l2": 0.5287727500789643,
+          "log_rmse": 3.583902553092866
+        },
+        "prediction_relative_l2": 0.0
+      },
+      "common_fit": {
+        "n_bins": 690,
+        "baseline": {
+          "relative_l2": 0.4065322824556173,
+          "log_rmse": 0.7813829491109773
+        },
+        "candidate": {
+          "relative_l2": 0.4065322824556173,
+          "log_rmse": 0.7813829491109773
+        },
+        "prediction_relative_l2": 0.0
+      },
+      "same_support": true,
+      "same_screen": true,
+      "field_relative_l2": 0.0,
+      "field_rmse": 0.0,
+      "field_max_abs": 0.0,
+      "objective_difference": 0.0,
+      "objective_difference_comparable": true,
+      "same_correction_artifact": true,
+      "same_runtime": true,
+      "same_core_sources": true,
+      "shared_audited_inputs_match": true,
+      "audited_inputs_only_in_reference": [],
+      "audited_inputs_only_in_candidate": []
+    },
+    "dry/start015": {
+      "common_covered": {
+        "n_bins": 1003,
+        "baseline": {
+          "relative_l2": 0.5287727500789643,
+          "log_rmse": 3.583902553092866
+        },
+        "candidate": {
+          "relative_l2": 0.5287708382727376,
+          "log_rmse": 3.583903714525388
+        },
+        "prediction_relative_l2": 6.675529466390975e-06
+      },
+      "common_fit": {
+        "n_bins": 690,
+        "baseline": {
+          "relative_l2": 0.4065322824556173,
+          "log_rmse": 0.7813829491109773
+        },
+        "candidate": {
+          "relative_l2": 0.40653033267376176,
+          "log_rmse": 0.7813845027024108
+        },
+        "prediction_relative_l2": 6.798377077978066e-06
+      },
+      "same_support": true,
+      "same_screen": true,
+      "field_relative_l2": 4.5812839227892185e-05,
+      "field_rmse": 6.804851579957399e-06,
+      "field_max_abs": 7.623352180232898e-05,
+      "objective_difference": -2.195827164541697e-08,
+      "objective_difference_comparable": true,
+      "same_correction_artifact": true,
+      "same_runtime": true,
+      "same_core_sources": true,
+      "shared_audited_inputs_match": true,
+      "audited_inputs_only_in_reference": [
+        "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/corrected_validation/calibration.toml"
+      ],
+      "audited_inputs_only_in_candidate": [
+        "/home/roland/devspace/diffpumas.jl/dev/collect_stability_v2.py",
+        "/home/roland/devspace/diffpumas.jl/dev/queue_stability_v2_controls.py",
+        "/home/roland/devspace/diffpumas.jl/dev/run_stability_v2.py",
+        "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+      ]
+    },
+    "dry/start03": {
+      "common_covered": {
+        "n_bins": 1003,
+        "baseline": {
+          "relative_l2": 0.5287727500789643,
+          "log_rmse": 3.583902553092866
+        },
+        "candidate": {
+          "relative_l2": 0.5287723459749462,
+          "log_rmse": 3.583902639742815
+        },
+        "prediction_relative_l2": 2.301831573211776e-06
+      },
+      "common_fit": {
+        "n_bins": 690,
+        "baseline": {
+          "relative_l2": 0.4065322824556173,
+          "log_rmse": 0.7813829491109773
+        },
+        "candidate": {
+          "relative_l2": 0.4065321231707384,
+          "log_rmse": 0.7813828165073051
+        },
+        "prediction_relative_l2": 2.2985470411049833e-06
+      },
+      "same_support": true,
+      "same_screen": true,
+      "field_relative_l2": 2.5591493686579626e-05,
+      "field_rmse": 3.8012556999646916e-06,
+      "field_max_abs": 4.238508386657236e-05,
+      "objective_difference": -3.607679843753431e-08,
+      "objective_difference_comparable": true,
+      "same_correction_artifact": true,
+      "same_runtime": true,
+      "same_core_sources": true,
+      "shared_audited_inputs_match": true,
+      "audited_inputs_only_in_reference": [
+        "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/corrected_validation/calibration.toml"
+      ],
+      "audited_inputs_only_in_candidate": [
+        "/home/roland/devspace/diffpumas.jl/dev/collect_stability_v2.py",
+        "/home/roland/devspace/diffpumas.jl/dev/queue_stability_v2_controls.py",
+        "/home/roland/devspace/diffpumas.jl/dev/run_stability_v2.py",
+        "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+      ]
+    }
+  }
+}
