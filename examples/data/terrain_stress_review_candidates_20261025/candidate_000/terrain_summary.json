@@ -1,0 +1,108 @@
+{
+  "scope": "Hypothetical localized terrain stress; not measured DEM errors, calibrated uncertainty, or residual cause identification.",
+  "plan_sha256": "cb77ecdb5b27ba984de03713661889645597503f98fb8db49b84c1fdb1b4ef1f",
+  "complete": false,
+  "interpretation": "Pairs use matching-screen zero continuations from the same nonstationary old baseline. If projected-gradient tolerance fails, field differences are finite-budget solver outcomes, not converged terrain sensitivity or uncertainty bounds.",
+  "cases": [
+    {
+      "case": "fixed_zero",
+      "screen": "fixed",
+      "amplitude": 0.0,
+      "forward_only": false,
+      "objective": 100.59269073659428,
+      "projected_gradient_inf": 0.003311897033113187,
+      "stationary": false,
+      "max_abs_slant_change_m": 0.0,
+      "max_abs_map_height_change_m": 0.0,
+      "off_sector_changed_paths": 0,
+      "changed_supported_cell_intersections": 0,
+      "case_provenance": {
+        "end_status_sha256": "314ecbf161e8ad74ad404a2f9e20ca8efd33743efd60ac491aea08e25e065ed5",
+        "adopted_output_sha256": {
+          "data/report.toml": "9b6f330ae390c515528da7d88192db50ff1a2e8d1c178f382c51ac04d2192550",
+          "data/predictions.csv": "36031870ac436f32adae0862509361552c2076ced3e15201efb772e8f14a69d1",
+          "data/fit_field.csv": "c6ef0e2bc94688d33681ef442ad32afe7b0d7b4b4f04db52a7f5a764ccd9e17b"
+        }
+      },
+      "matching_zero_provenance": {
+        "end_status_sha256": "314ecbf161e8ad74ad404a2f9e20ca8efd33743efd60ac491aea08e25e065ed5",
+        "adopted_output_sha256": {
+          "data/report.toml": "9b6f330ae390c515528da7d88192db50ff1a2e8d1c178f382c51ac04d2192550",
+          "data/predictions.csv": "36031870ac436f32adae0862509361552c2076ced3e15201efb772e8f14a69d1",
+          "data/fit_field.csv": "c6ef0e2bc94688d33681ef442ad32afe7b0d7b4b4f04db52a7f5a764ccd9e17b"
+        }
+      },
+      "field_relative_to_matching_zero": 0.0,
+      "fixed_field_flux_max_relative_to_zero": 0.0,
+      "objective_difference_from_matching_zero": 0.0,
+      "all_fixed_field": {
+        "count": 1003,
+        "mean_log_residual": -0.5085781109970607,
+        "rms_log_residual": 3.5852507061296772,
+        "matching_zero_rms_log_residual": 3.5852507061296772,
+        "rms_change_from_matching_zero": 0.0
+      },
+      "all_refit": {
+        "count": 1003,
+        "mean_log_residual": -0.5085781109970607,
+        "rms_log_residual": 3.5852507061296772,
+        "matching_zero_rms_log_residual": 3.5852507061296772,
+        "rms_change_from_matching_zero": 0.0
+      },
+      "sector_fixed_field": {
+        "count": 34,
+        "mean_log_residual": 2.9536771651612916,
+        "rms_log_residual": 3.392043065164767,
+        "matching_zero_rms_log_residual": 3.392043065164767,
+        "rms_change_from_matching_zero": 0.0
+      },
+      "sector_refit": {
+        "count": 34,
+        "mean_log_residual": 2.9536771651612916,
+        "rms_log_residual": 3.392043065164767,
+        "matching_zero_rms_log_residual": 3.392043065164767,
+        "rms_change_from_matching_zero": 0.0
+      },
+      "outside_sector_fixed_field": {
+        "count": 969,
+        "mean_log_residual": -0.6300607522657748,
+        "rms_log_residual": 3.591841199676506,
+        "matching_zero_rms_log_residual": 3.591841199676506,
+        "rms_change_from_matching_zero": 0.0
+      },
+      "outside_sector_refit": {
+        "count": 969,
+        "mean_log_residual": -0.6300607522657748,
+        "rms_log_residual": 3.591841199676506,
+        "matching_zero_rms_log_residual": 3.591841199676506,
+        "rms_change_from_matching_zero": 0.0
+      },
+      "fit_fixed_field": {
+        "count": 690,
+        "mean_log_residual": 0.03883727584730965,
+        "rms_log_residual": 0.795501765950129,
+        "matching_zero_rms_log_residual": 0.795501765950129,
+        "rms_change_from_matching_zero": 0.0
+      },
+      "fit_refit": {
+        "count": 690,
+        "mean_log_residual": 0.03883727584730965,
+        "rms_log_residual": 0.795501765950129,
+        "matching_zero_rms_log_residual": 0.795501765950129,
+        "rms_change_from_matching_zero": 0.0
+      }
+    }
+  ],
+  "pending": [
+    "fixed_minus5",
+    "fixed_plus5",
+    "fixed_minus1",
+    "fixed_plus1",
+    "all_zero",
+    "all_minus5",
+    "all_plus5",
+    "all_minus1",
+    "all_plus1"
+  ],
+  "failed": []
+}

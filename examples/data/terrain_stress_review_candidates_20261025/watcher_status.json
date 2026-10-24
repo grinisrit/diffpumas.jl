@@ -1,0 +1,36 @@
+{
+  "phase": "candidate_ready",
+  "updated_utc": "2026-10-24T23:10:46.929122+00:00",
+  "candidate": "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_review_candidates_20261025/candidate_009",
+  "source_sha256": {
+    "/home/roland/devspace/diffpumas.jl/dev/watch_terrain_stress.py": "5cade3289614980eea1bec5311d157953428243faab745327fe7065af2a74ee3",
+    "/home/roland/devspace/diffpumas.jl/dev/summarize_terrain_stress.py": "e5a3e47c38d0fc9cba15fc7004e21bfd868334c580153c132304ccd5f63bd2fa",
+    "/home/roland/devspace/diffpumas.jl/examples/data/terrain_stress_20261025/preregistered_plan.json": "cb77ecdb5b27ba984de03713661889645597503f98fb8db49b84c1fdb1b4ef1f"
+  },
+  "end_record_sha256": {
+    "fixed_zero": "314ecbf161e8ad74ad404a2f9e20ca8efd33743efd60ac491aea08e25e065ed5",
+    "fixed_minus5": "caea750a820debf723dc7fe35d3a0920ff74678dccaaebbee3a39c57d47adb07",
+    "fixed_plus5": "14eb5ab6a6b51426b65749d03c21c9a4751e5b6d764702d55d73c7be15039258",
+    "fixed_minus1": "816d7d8a407e23a3ed2e25e41f2d3c9cd0dce5177d809862288c6b1b450dac41",
+    "fixed_plus1": "6abae1cb201a9e334b2c4e70de0d2978e4effaea5b15375ba0c6b82fda960a8a",
+    "all_zero": "1b58cf04f8ca8185b02f6b805c116a9e48a26df1ed8b0c67ba1a0317f2e1954b",
+    "all_minus5": "cdf253b5aab4341d7f8b071c3641cf978a9e31982d8b9a252237392760d92aa2",
+    "all_plus5": "5e6d6a18a4e0d33e73739e980a82749d3a3942a4777b9d2c947c58e12d16e3c5",
+    "all_minus1": "d21bc18279460cfff803d66ad0efbc1c748335efa3b63eb96e04da41811ca119",
+    "all_plus1": "8f00b744b13bc3452876231f89c519e20791964f9dd6f8c2336b4764898ad8cc"
+  },
+  "queue_complete": true,
+  "failed_cases": [],
+  "returncode": 0,
+  "cpu_pool": [
+    20
+  ],
+  "address_space_gib": 2,
+  "shared_lock": "/mnt/big_data/agent-builds/surrogate-stability-20261024/cpu20-python-postprocess.lock",
+  "candidate_sha256": {
+    "terrain_stress_candidate.pdf": "fed30d5b345674726924ce87a6904a99b7d53dcb13c1e0bd4b5afd5597a61728",
+    "terrain_stress_candidate.png": "6b3fcf3c744e8e8f74d81c57bc08c4804baaa63e245430eb5ab8a573d8a43cea",
+    "terrain_summary.csv": "0f26369f0f044d51dc79e1f3f2fe0bc407c4e8ba55e4dcc93bec49e24e307949",
+    "terrain_summary.json": "a8dedef7c7bf53796a366719db9b249a1e438a8014315edf8f5fbc81655e5101"
+  }
+}

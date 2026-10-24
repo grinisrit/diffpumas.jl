@@ -1,0 +1,18 @@
+{
+  "ended_utc": "2026-10-24T22:01:02.998497+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "data/fit_field.csv": "c6ef0e2bc94688d33681ef442ad32afe7b0d7b4b4f04db52a7f5a764ccd9e17b",
+    "data/path_changes.csv": "5d0244564654beb4bca945b250d95dc2c79f6297df39c75ef3e3a5744a82646e",
+    "data/predictions.csv": "36031870ac436f32adae0862509361552c2076ced3e15201efb772e8f14a69d1",
+    "data/report.toml": "f75b73fafae053fd4a765fc65de871057296f3cf917a91b8b17a113d5ae81df8",
+    "data/solver_progress.csv": "2f39eac1a8428ddf1ebacfbd042e8cbeedf1b579bf5a0e34677764bfd2460659",
+    "data/zero_initial_gate.toml": "1a6e20a679032a5675495384f4603ddbcea542ddfbdcf1778d2d55099d038bf1",
+    "execution.json": "4a780942388f782599b64d60f50a65ec530d291ad0e350cbb9d531c7b5bb209a",
+    "run.log": "1121b51f892db9879f1b61ba86589969eec98e1ac5fcc4f94ec185aaa5aedfdc"
+  }
+}

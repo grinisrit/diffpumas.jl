@@ -1,0 +1,2 @@
+case,screen,amplitude,forward_only,objective,objective_difference_from_matching_zero,projected_gradient_inf,stationary,field_relative_to_matching_zero,max_abs_slant_change_m,max_abs_map_height_change_m,off_sector_changed_paths
+fixed_zero,fixed,0.0,False,100.59269073659428,0.0,0.003311897033113187,False,0.0,0.0,0.0,0

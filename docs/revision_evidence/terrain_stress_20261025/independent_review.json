@@ -1,0 +1,62 @@
+{
+  "scope": "Independent read-only source/result/visual review. No new simulation or refit.",
+  "original_cases_complete": 10,
+  "per_case_output_hashes_independently_verified": 71,
+  "all_original_inner_argv_exact": true,
+  "all_original_cpu_pools": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "all_address_space_gib": 16,
+  "parallel_numerical_runs_or_output_relocations_used": false,
+  "paired_six_refits_independently_recomputed": [
+    {
+      "case": "fixed_zero",
+      "field_relative_to_matching_zero": 0.0,
+      "sector_refit_rms_log_residual": 3.3920430651647675,
+      "kkt_met": false
+    },
+    {
+      "case": "fixed_minus5",
+      "field_relative_to_matching_zero": 0.00019154733611845571,
+      "sector_refit_rms_log_residual": 3.4249370246737447,
+      "kkt_met": false
+    },
+    {
+      "case": "fixed_plus5",
+      "field_relative_to_matching_zero": 0.00018656359323433164,
+      "sector_refit_rms_log_residual": 3.3583406954325836,
+      "kkt_met": false
+    },
+    {
+      "case": "all_zero",
+      "field_relative_to_matching_zero": 0.0,
+      "sector_refit_rms_log_residual": 3.2615547459785135,
+      "kkt_met": false
+    },
+    {
+      "case": "all_minus5",
+      "field_relative_to_matching_zero": 0.000181003072221101,
+      "sector_refit_rms_log_residual": 3.2940892037437317,
+      "kkt_met": false
+    },
+    {
+      "case": "all_plus5",
+      "field_relative_to_matching_zero": 0.00017157966579860268,
+      "sector_refit_rms_log_residual": 3.2282803663090496,
+      "kkt_met": false
+    }
+  ],
+  "source_context_and_runtime_clean_all_cases": true,
+  "interpretation": "Hypothetical local height stress at fixed grid/support/artifact. All six fits miss recorded projected-gradient tolerance. Tiny conditional field changes do not establish general terrain insensitivity or identify residual cause. Only11/34sectorbins retained under original screen; all34 under all-directions. Four\u00b11%diagnostics are forward-only, not refits.",
+  "visual_review": "Four-panel candidate legible, fit-only panels omit forward-only cases. Caption should distinguish no test for\u00b11% from failed KKT in six refits; derivative or terrain stress is not confidence coverage.",
+  "canonical_provenance_sha256": "d7e7e47cc6797d54c6af7e2acdd5904f4d34a5699f031910038286337f17d049",
+  "all_ten_runtime_identities_match_original_plan": true,
+  "current_frozen_context_hashes_match_original_plan": true
+}

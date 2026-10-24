@@ -1,3 +1,5 @@
+> Completed: the ten-case original sequential calculation and canonical source/output audit are in [`final/`](final/README.md). All six refits remain nonstationary; the numerical outcomes are conditional stress tests.
+
 # Predeclared localized terrain stress
 
 This test uses the existing terrain model and observations. It cannot establish a measured terrain error, independent DEM agreement, or the actual cause of a residual sector. The ±1% and ±5% amplitudes are **assumed scenario scales**, not estimated errors or confidence bounds.

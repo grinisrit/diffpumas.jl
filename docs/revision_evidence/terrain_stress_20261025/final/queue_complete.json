@@ -1,0 +1,15 @@
+{
+  "execution_completed": true,
+  "cases": [
+    "fixed_zero",
+    "fixed_minus5",
+    "fixed_plus5",
+    "fixed_minus1",
+    "fixed_plus1",
+    "all_zero",
+    "all_minus5",
+    "all_plus5",
+    "all_minus1",
+    "all_plus1"
+  ]
+}
