@@ -1,0 +1,7 @@
+{
+  "scope": "Exact restored completed-fit parity probe only; original failed main and fresh recovery explicitly separate",
+  "canonical_probe_root": "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_parity_20261024",
+  "full_recovery_root": "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024",
+  "review_required": true,
+  "revision_complete": false
+}
