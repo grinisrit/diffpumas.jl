@@ -1,0 +1,10 @@
+passed = true
+prediction_bitwise = true
+cells = 600
+field_restored_without_optimization = true
+objective_bitwise = true
+objective = 100.59269073659428
+covered_bins = 1003
+normalization = 3.54271929102373e6
+projected_gradient_bitwise = true
+projected_gradient = 0.003311897033113187

@@ -1,0 +1,45 @@
+training_q_min = 0.19999999999999998
+scope = "Final recovered-field column composition versus empirical training range; extrapolation description only, no MC accuracy, water-recovery accuracy or uncertainty claim"
+training_q_max = 0.6000000000000001
+changed_inputs = []
+
+[source_inputs_sha256]
+"/home/roland/devspace/diffpumas.jl/dev/audit_material_column_domain.jl" = "9b36b5a2cd58f001730218847ea52735360295fecf25eb3a175d1e9f8cb16404"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml" = "8667f1a7fc9a4068e074495dcb08cb04deeb6f7ae77365087aa9daabc4c4677d"
+"/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas" = "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+"/home/roland/devspace/diffpumas.jl/dev/validate_surrogate_v2.jl" = "02e6f8302501571963bbf223d3b46ffdc04cbf96d04746984961aa9f7f37713a"
+"/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_fit_field.csv" = "e9b12c6ee8298d8cd7690612775162058a32132385c6fed8148a69e30b82c08d"
+"/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_fit_mask.csv" = "2f941e953b97371acb29c6e7903a6c3e1d4bd4cce1784924efb2785477036252"
+
+[fitted]
+minimum = 0.0
+median = 0.08074439658730884
+q10 = 0.0
+above_training_count = 0
+count = 690
+q90 = 0.1599170420401616
+dry_column_count = 108
+maximum = 0.17380527992196404
+below_training_count = 690
+
+[covered]
+minimum = 0.0
+median = 0.03676152031480676
+q10 = 0.0
+above_training_count = 0
+count = 1003
+q90 = 0.15311513113919287
+dry_column_count = 254
+maximum = 0.17380527992196404
+below_training_count = 1003
+
+[all_valid]
+minimum = 0.0
+median = 0.005640743021842638
+q10 = 0.0
+above_training_count = 0
+count = 1359
+q90 = 0.14541033095961436
+dry_column_count = 545
+maximum = 0.17380527992196404
+below_training_count = 1359

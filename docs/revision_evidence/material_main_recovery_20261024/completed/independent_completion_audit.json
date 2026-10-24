@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "scope": "Independent raw digest and arithmetic audit; not water-recovery accuracy or statistical coverage",
+  "review_required": true,
+  "revision_complete": false,
+  "helper_sha256": "205e7eb9bb9ca460816d70bb047b503924218cf13454899aece8ddc2b3563312",
+  "main_end_sha256": "b38ef12e4b0d4c111de9802e567cbd79deafd28a6b0c67653bc90a39b4b1268a",
+  "column_end_sha256": "7494572c267fe5992e1ecc7c8276e8487bb2cf1ca85d4b428ce39db0269b631d",
+  "original_failed_end_sha256": "53fff9f5d736807fa86337b1770d28e261e6f8b0bff9b7dbc897de92f61eed0a",
+  "all_original_data_unchanged": true,
+  "actual_mc_bins": 630,
+  "mc_below60": 550,
+  "mc_atleast60": 80,
+  "mc_histories_per_bin": 8192,
+  "seed": 42,
+  "energy_seed": 819,
+  "transport_seed": "900042+k, covered-position k starts1",
+  "mc_standard_error_unscaled_min": 2.838702501298208e-09,
+  "mc_standard_error_unscaled_max": 1.0892517483192917e-05,
+  "curvature_rows": 600,
+  "curvature_min": 23.729581187148785,
+  "curvature_max": 409.04184977753755,
+  "curvature_scope": "Local residual-GN diagonal, not calibrated posterior covariance",
+  "residuals": [
+    {
+      "model": "dry_csda_initial_calibration",
+      "common_scale_relative_residual": 0.6253295754564767,
+      "profiled_subset_relative_residual": 0.7332988979377243,
+      "scale": 7209017.33567855
+    },
+    {
+      "model": "wet_csda_final_calibration",
+      "common_scale_relative_residual": 0.4104960528132261,
+      "profiled_subset_relative_residual": 0.40621332405694865,
+      "scale": 3369512.5554315895
+    },
+    {
+      "model": "wet_mc",
+      "common_scale_relative_residual": 0.40854164768192247,
+      "profiled_subset_relative_residual": 0.4072679490650095,
+      "scale": 3667672.061507197
+    }
+  ],
+  "column_domain": {
+    "training_q_min": 0.19999999999999998,
+    "training_q_max": 0.6000000000000001,
+    "covered": {
+      "minimum": 0.0,
+      "median": 0.03676152031480676,
+      "q10": 0.0,
+      "above_training_count": 0,
+      "count": 1003,
+      "q90": 0.15311513113919287,
+      "dry_column_count": 254,
+      "maximum": 0.17380527992196404,
+      "below_training_count": 1003
+    },
+    "fitted": {
+      "minimum": 0.0,
+      "median": 0.08074439658730884,
+      "q10": 0.0,
+      "above_training_count": 0,
+      "count": 690,
+      "q90": 0.1599170420401616,
+      "dry_column_count": 108,
+      "maximum": 0.17380527992196404,
+      "below_training_count": 690
+    }
+  },
+  "input_sha256": {
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_mc_common_subset.csv": "ada7419defcea0a0c4650ec027b469d90da750b88005179750cd8f01dee8c741",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_mc_common_subset_summary.csv": "249d3022297ad1e09d73bed2aaead89270820a2e2221660017d0daf9a0e8b0d1",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_stable_curvature.csv": "33892e52466cbcad1c6d26a1afaf399413e791a63e6950c761cf69cde969425d",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_aux_20261024/column_domain/column_domain.csv": "66007d58d849284e4e99f79d1d713602f494ec8565bb544d491ebf0d0d2b24a1",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_aux_20261024/column_domain/column_domain_summary.toml": "e1fda8fa113ba648f819fcdf5a3b383841b96c1b765f03410281e15d4c0f2079"
+  },
+  "permanent_source_scope_fix_pending": true
+}

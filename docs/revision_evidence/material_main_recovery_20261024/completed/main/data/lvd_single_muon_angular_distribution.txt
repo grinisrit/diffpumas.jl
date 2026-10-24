@@ -1,0 +1,43 @@
+Water-content reconstruction from the measured 2D LVD single-muon angular surface
+(pinned overburden rock and a non-negative per-cell replacement-mass-fraction field; separate uniform-support w0 diagnostic is NOT added to that field; no signed/denser-rock endpoint)
+rock density PINNED at the configured Gran Sasso value = 2710 kg/m^3 (adopted fixed reference; not fitted here and no denser-rock alternative tested)
+Uniform-support diagnostic not computed in fixed-objective mode.
+water endpoint density = 1000 kg/m^3 (pure-water material at w=1; configured mixture upper bound w=0.9)
+primary/Gaisser altitude = 30 km
+
+Water-field GN fit with rho_rock pinned, against retained bins of the measured 2D azimuth/zenith surface:
+  match data: /home/roland/devspace/diffpumas.jl/examples/data/lvd_conf/lvd_single_muon_flux_2d.csv
+  covered bins: 1003 (theta<60: 667, theta>=60: 336, max theta 86 deg)
+  baseline-ratio outliers excluded from the fit: 313 (threshold 15.00x relative to median ratio)
+  forward->measured normalization: 3.5427e+06 (free log-fit)
+  reliable-bin scale: 3.2358e+06 ± 2.7% (from 319 near-vertical in-fit bins; fitted-model scale diagnostic, not independent absolute calibration)
+  relative data residual (fit bins): baseline 0.7602 -> matched 0.4107
+  log model/measured std (scale-invariant shape misfit): 1.3053 -> 0.7946
+  matched water fraction: mean=0.024 max=0.491 nonzero(>1e-3)=124/600
+  water increased (w>0.02) in 105 / 600 cells
+  box-pinned cells (w=0 or w=0.9): 476 / 600 (dry floor 476, water ceiling 0)
+  water-insufficient (aquifer cells at the w=0.9 ceiling, water-only model under-explains): 0
+
+Fixed pseudo-Huber log-flux objective with profiled normalization; see lvd_solver_history.csv and lvd_solver_status.txt for objective/KKT.
+Local robust-residual Gauss-Newton curvature in lvd_stable_curvature.csv is a sensitivity diagnostic, not calibrated posterior uncertainty.
+Legacy count-space posterior, null scores and amplitude scans are omitted for this objective.
+2D measured-vs-model map (CSDA surrogate used for the fit):
+  bins used: 1003
+  relative residual RMS: 50.2657
+  relative residual bias: 9.9537
+  csv: lvd_single_muon_2d_match.csv (per-bin measured/model/residual)
+
+Fixed-path stochastic energy-loss check of the reconstructed field (scattering disabled):
+  MC samples/bin: 8192
+  validated bins: 630 (theta<60: 550, stratified theta>=60: 80)
+  relative data residual (fit bins): reconstructed 0.4073  (CSDA fit 0.4107)
+  by depth: theta<60 0.4068 ; theta>=60 0.7016
+  log model/measured std: 0.7602  (CSDA 0.7946)
+  identical subset of 630 bins at fixed fitted scale 3.54271929e+06: dry-CSDA 0.62533; wet-CSDA 0.41050; wet-MC 0.40854
+  same subset with separately profiled scales: dry-CSDA 0.73330; wet-CSDA 0.40621; wet-MC 0.40727
+  subset scales: dry 7.20901734e+06; wet-CSDA 3.36951256e+06; wet-MC 3.66767206e+06
+  csv: lvd_mc_common_subset.csv and lvd_mc_common_subset_summary.csv preserve unscaled/common-scale comparisons
+  2D map residual RMS under MC: 1.3241
+  csv: lvd_single_muon_2d_mc_validation.csv (measured / fixed-path energy-loss MC model / residual)
+Caveat: the global forward->measured normalization absorbs the absolute flux scale;
+  this check compares energy-loss models on prescribed rays; it does not validate scattering, geometry, acceptance or uncertainty coverage.

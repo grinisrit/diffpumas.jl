@@ -1,0 +1,202 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "address_space_bytes": 38654705664, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "/home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--rock-density", "2710", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6", "--zenith-max", "60", "--zenith-step", "1", "--azimuth-step", "1", "--primary-altitude-km", "30", "--seed", "42", "--samples", "32", "--csda-quadrature", "midpoint", "--energy-min", "0.001", "--energy-max", "1e9", "--threshold", "100", "--calibration-mc-samples", "8192", "--inverse-mc-samples", "1024", "--mc-samples", "1024", "--papermatch-mc-samples", "8192", "--correction-artifact", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml", "--solver-mode", "stable", "--papermatch-fit-mode", "stable", "--papermatch-initial-water", "0.0", "--papermatch-gn-iters", "100", "--papermatch-gradient-tol", "1e-06", "--papermatch-log-scale", "0.3", "--papermatch-absolute-prior-weight", "3.954930197858131", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/main/data", "--validation-cases", "12", "--papermatch", "--papermatch-recursions", "6", "--papermatch-recur-tol", "0.02"]}
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 1.0 deg, phi by 1.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   1024
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  12
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/main/data
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 42 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/21600] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/21600] theta=1.0 deg phi=139.0 deg R=1382.8 m
+  [1000/21600] theta=2.0 deg phi=279.0 deg R=1393.3 m
+  [1500/21600] theta=4.0 deg phi=59.0 deg R=1366.7 m
+  [2000/21600] theta=5.0 deg phi=199.0 deg R=1349.1 m
+  [2500/21600] theta=6.0 deg phi=339.0 deg R=1388.5 m
+  [3000/21600] theta=8.0 deg phi=119.0 deg R=1369.5 m
+  [3500/21600] theta=9.0 deg phi=259.0 deg R=1404.5 m
+  [4000/21600] theta=11.0 deg phi=39.0 deg R=1288.2 m
+  [4500/21600] theta=12.0 deg phi=179.0 deg R=1299.1 m
+  [5000/21600] theta=13.0 deg phi=319.0 deg R=1518.7 m
+  [5500/21600] theta=15.0 deg phi=99.0 deg R=1404.7 m
+  [6000/21600] theta=16.0 deg phi=239.0 deg R=1490.9 m
+  [6500/21600] theta=18.0 deg phi=19.0 deg R=1216.0 m
+  [7000/21600] theta=19.0 deg phi=159.0 deg R=1280.5 m
+  [7500/21600] theta=20.0 deg phi=299.0 deg R=1468.3 m
+  [8000/21600] theta=22.0 deg phi=79.0 deg R=1366.6 m
+  [8500/21600] theta=23.0 deg phi=219.0 deg R=1490.8 m
+  [9000/21600] theta=24.0 deg phi=359.0 deg R=1225.4 m
+  [9500/21600] theta=26.0 deg phi=139.0 deg R=1323.8 m
+  [10000/21600] theta=27.0 deg phi=279.0 deg R=1421.8 m
+  [10500/21600] theta=29.0 deg phi=59.0 deg R=1265.2 m
+  [11000/21600] theta=30.0 deg phi=199.0 deg R=1395.8 m
+  [11500/21600] theta=31.0 deg phi=339.0 deg R=1461.4 m
+  [12000/21600] theta=33.0 deg phi=119.0 deg R=1339.5 m
+  [12500/21600] theta=34.0 deg phi=259.0 deg R=1587.3 m
+  [13000/21600] theta=36.0 deg phi=39.0 deg R=1219.2 m
+  [13500/21600] theta=37.0 deg phi=179.0 deg R=1300.4 m
+  [14000/21600] theta=38.0 deg phi=319.0 deg R=1893.8 m
+  [14500/21600] theta=40.0 deg phi=99.0 deg R=1467.6 m
+  [15000/21600] theta=41.0 deg phi=239.0 deg R=1880.5 m
+  [15500/21600] theta=43.0 deg phi=19.0 deg R=1316.4 m
+  [16000/21600] theta=44.0 deg phi=159.0 deg R=1251.0 m
+  [16500/21600] theta=45.0 deg phi=299.0 deg R=1859.1 m
+  [17000/21600] theta=47.0 deg phi=79.0 deg R=1550.0 m
+  [17500/21600] theta=48.0 deg phi=219.0 deg R=2303.5 m
+  [18000/21600] theta=49.0 deg phi=359.0 deg R=1784.0 m
+  [18500/21600] theta=51.0 deg phi=139.0 deg R=1403.1 m
+  [19000/21600] theta=52.0 deg phi=279.0 deg R=2190.0 m
+  [19500/21600] theta=54.0 deg phi=59.0 deg R=1497.0 m
+  [20000/21600] theta=55.0 deg phi=199.0 deg R=2894.0 m
+  [20500/21600] theta=56.0 deg phi=339.0 deg R=3372.3 m
+  [21000/21600] theta=58.0 deg phi=119.0 deg R=1503.3 m
+  [21500/21600] theta=59.0 deg phi=259.0 deg R=2390.4 m
+  [21600/21600] theta=59.0 deg phi=359.0 deg R=2813.6 m
+
+Loaded frozen CSDA correction artifact: /home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+Computing direct CSDA flux and sparse Zygote sensitivities (threaded=true, nthreads=16)...
+  21600/21600 bins valid, Jacobian nnz=102965 (density=7.94e-03)
+  Jacobian assembled in 82.10 s
+
+Running MC finite-difference validation cases (CSDA+AD vs MC+FD)...
+  Case 1/12: theta=25.0 deg phi=359.0 deg cell=55 | grad_csda=2.5284e-03 grad_fd=1.9953e-03
+  Case 2/12: theta=29.0 deg phi=211.0 deg cell=45 | grad_csda=1.3600e-03 grad_fd=1.0630e-03
+  Case 3/12: theta=30.0 deg phi=23.0 deg cell=56 | grad_csda=2.1730e-03 grad_fd=2.0907e-03
+  Case 4/12: theta=53.0 deg phi=158.0 deg cell=46 | grad_csda=1.9120e-03 grad_fd=2.1471e-03
+  Case 5/12: theta=25.0 deg phi=24.0 deg cell=156 | grad_csda=1.0261e-03 grad_fd=2.7749e-04
+  Case 6/12: theta=43.0 deg phi=161.0 deg cell=146 | grad_csda=9.5974e-04 grad_fd=9.2910e-04
+  Case 7/12: theta=27.0 deg phi=359.0 deg cell=255 | grad_csda=8.2631e-04 grad_fd=6.3864e-04
+  Case 8/12: theta=26.0 deg phi=359.0 deg cell=155 | grad_csda=7.8445e-04 grad_fd=1.2864e-03
+  Case 9/12: theta=28.0 deg phi=181.0 deg cell=245 | grad_csda=7.8198e-04 grad_fd=2.0581e-04
+  Case 10/12: theta=28.0 deg phi=181.0 deg cell=145 | grad_csda=7.4249e-04 grad_fd=8.1424e-04
+  Case 11/12: theta=25.0 deg phi=24.0 deg cell=256 | grad_csda=7.1803e-04 grad_fd=9.3733e-04
+  Case 12/12: theta=39.0 deg phi=165.0 deg cell=246 | grad_csda=6.4997e-04 grad_fd=3.1842e-04
+
+Solving the inverse problem (solver=all)...
+Starting nonlinear/synthetic inverse demonstration...
+  generating fixed-path energy-loss MC observations for 21600 bins (energy-loss straggling; scattering disabled, 1024 samples)...
+  [SART] mse=2.310e-02 rmse=1.520e-01 psnr=15.4 dB ssim=0.299 snr=-0.7 dB  (0.4s, 200 iters)
+  [MLEM] mse=9.999e-03 rmse=1.000e-01 psnr=19.1 dB ssim=0.709 snr=2.9 dB  (0.3s, 200 iters)
+  [GD  ] mse=9.625e-03 rmse=9.811e-02 psnr=19.3 dB ssim=0.615 snr=3.1 dB  (2295.2s, 40 iters)
+  [GN  ] mse=1.491e-02 rmse=1.221e-01 psnr=17.4 dB ssim=0.385 snr=1.2 dB  (1250.1s, 13 iters)
+  Exported synthetic truth + reconstruction fields to lvd_synthetic_*.csv
+Reconstruction RMSE by depth band (lower = better):
+  depth[m]        SART      MLEM      GD        GN        
+  350-702         0.1055    0.1126    0.1224    0.1486    
+  702-1054        0.1110    0.0831    0.0891    0.1004    
+  1054-1406       0.1662    0.0601    0.0539    0.0982    
+  1406-1758       0.1795    0.1157    0.1056    0.1279    
+Resolution vs depth (linearised PSF FWHM):
+  depth=559 m -> FWHM=2374 m (geometric floor 320 m, 12 cells)
+  depth=799 m -> FWHM=1119 m (geometric floor 320 m, 14 cells)
+  depth=1119 m -> FWHM=320 m (geometric floor 320 m, 20 cells)
+  depth=1438 m -> FWHM=320 m (geometric floor 320 m, 19 cells)
+  depth=1678 m -> FWHM=320 m (geometric floor 320 m, 8 cells)
+
+================================================================
+ Single muon angular distribution — water-content reconstruction from the measured 2D LVD surface
+================================================================
+ base rock density = 2710 kg/m^3 (Gran Sasso rock, Kudryavtsev 2009); water-only field w in [0, 0.9]
+GN water-content match to the full measured 2D surface (rock=2710 kg/m^3, altitude=30.0 km)...
+Tracing geometry for 1359 measured-surface bins (0 <= theta <= 90.0 deg)...
+  aquifer prior: water restricted to 147 / 600 rock cells above 500.0 m (below surface)
+  [recursion 1/1] starting material fit
+  Fixed objective configured: absolute prior weight=3.954930197858131, adjoint=forwarddiff
+  [recursion 1/1] w0=NaN  s=3.543e+06  w mean=0.0239  rel resid=0.411  log-std=0.795  | dfield=1.00e+00 dcoef=-1.00e+00
+  global scale s=3.5427e+06 (free log-fit) ; reliable-bin s=3.2358e+06 (±2.7% from 319 vertical in-fit bins)
+  box saturation: 476/600 cells at dry floor (w=0), 0 at water ceiling (w=0.9; 0 in aquifer = water-insufficient directions)
+  Uniform-support diagnostic not computed in fixed-objective mode
+  fit bins=690 (excluded 313 baseline-ratio outlier bins; theta<60: 667, theta>=60: 336, up to 86 deg)
+  norm=3.543e+06  rel resid (fit bins) 0.760 -> 0.411  log-std 1.305 -> 0.795
+  matched w: mean=0.024 std=0.070 min=0.000 max=0.491  box-pinned cells=476/600
+ERROR: LoadError: UndefVarError: `robust_model` not defined in `Main`
+Suggestion: check for spelling errors or missing imports.
+Stacktrace:
+ [1] run_paper_match(physics::PhysicsTables{Float64}, shallow_flags::Vector{Bool}, matcfg::MaterialConfig, volume::VoxelVolume, emap::ElevationMap, paths::Vector{DirectionalPath}, energy_samples::Vector{EnergySample}, rock_idx::Int64, air_idx::Int64, args::@NamedTuple{dump_path::String, output_dir::String, geometry::String, mesh_half_km::Float64, surface_step_km::Float64, tet_max_volume::Float64, grid_nz::Int64, zenith_max_deg::Float64, zenith_step_deg::Float64, azimuth_step_deg::Float64, n_samples::Int64, csda_quadrature::String, mc_samples::Int64, energy_min::Float64, energy_max::Float64, energy_threshold_low::Float64, fd_delta::Float64, validation_cases::Int64, seed::Int64, porous_top_thickness::Float64, aquifer_water_fraction::Float64, aquifer_center_x::Float64, aquifer_center_y::Float64, aquifer_center_z::Float64, aquifer_half_x::Float64, aquifer_half_y::Float64, aquifer_half_z::Float64, rich_field::Bool, slab_w::Float64, lens_w::Float64, dip_w::Float64, max_plot_cells::Int64, straggling::Bool, solver::String, reg_weight::Float64, contrast::Float64, reco_iters::Int64, gd_iters::Int64, gd_lr::Float64, min_eval_depth::Float64, threaded::Bool, correction_artifact::String, correction::Bool, calibration_bins::Int64, calibration_mc_samples::Int64, inverse_data::String, inverse_mc_samples::Int64, exposure::Float64, edge_delta::Float64, primary_altitude_km::Float64, rock_density::Float64, papermatch::Bool, papermatch_only::Bool, match_data::String, papermatch_zenith_step::Float64, papermatch_azimuth_step::Float64, papermatch_mc_samples::Int64, papermatch_paper_samples::Int64, papermatch_prior_cutoff::Float64, papermatch_mask_ratio::Float64, papermatch_calibration_water::Float64, solver_mode::String, papermatch_fit_mode::String, papermatch_initial_water::Float64, papermatch_gn_iters::Int64, papermatch_gradient_tol::Float64, papermatch_absolute_prior_weight::Float64, papermatch_log_scale::Float64, papermatch_fit_only::Bool, papermatch_reg::Float64, papermatch_recursions::Int64, papermatch_recur_tol::Float64, papermatch_damp::Float64, papermatch_val_horiz::Int64, papermatch_dem_unc::Float64, papermatch_robust_c::Float64, papermatch_abs_scale::Float64, detectability::Bool, detection_benchmark::Bool, reconstruction_sweep::Bool, detection_contrast_sweep::Bool, sweep_exp_min::Float64, sweep_exp_max::Float64, sweep_n::Int64, sweep_realizations::Int64})
+   @ Main ~/devspace/diffpumas.jl/examples/lvd_tomography.jl:3338
+ [2] main()
+   @ Main ~/devspace/diffpumas.jl/examples/lvd_tomography.jl:3826
+ [3] top-level scope
+   @ ~/devspace/diffpumas.jl/examples/lvd_tomography.jl:3841
+in expression starting at /home/roland/devspace/diffpumas.jl/examples/lvd_tomography.jl:3840

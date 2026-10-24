@@ -1,0 +1,14 @@
+{
+  "ended_utc": "2026-10-24T13:47:57.488418+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "column_domain.csv": "66007d58d849284e4e99f79d1d713602f494ec8565bb544d491ebf0d0d2b24a1",
+    "column_domain_summary.toml": "e1fda8fa113ba648f819fcdf5a3b383841b96c1b765f03410281e15d4c0f2079",
+    "execution.json": "321f0909d3428428f3d46511c5521ee5284d424f691d542c42d7c4e3e038b20f",
+    "run.log": "45c8bd726583e5aadc8bca705c5e869a457701ab2e6cc305b73b94f61b6b36f1"
+  }
+}

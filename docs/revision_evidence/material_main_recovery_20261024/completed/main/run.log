@@ -1,0 +1,43 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3], "address_space_bytes": 8589934592, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "0,1,2,3", "python3", "/home/roland/devspace/diffpumas.jl/dev/run_material_main_recovery.py", "--failed-stage", "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/main", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data", "--julia", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia"]}
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Building structured-grid sensitivity volume...
+================================================================
+ Single muon angular distribution — water-content reconstruction from the measured 2D LVD surface
+================================================================
+ base rock density = 2710 kg/m^3 (Gran Sasso rock, Kudryavtsev 2009); water-only field w in [0, 0.9]
+GN water-content match to the full measured 2D surface (rock=2710 kg/m^3, altitude=30.0 km)...
+Tracing geometry for 1359 measured-surface bins (0 <= theta <= 90.0 deg)...
+  aquifer prior: water restricted to 147 / 600 rock cells above 500.0 m (below surface)
+Recovery parity PASS: saved field, masks, predictions, objective and projected gradient exact; no optimizer replay.
+  global scale s=3.5427e+06 (free log-fit) ; reliable-bin s=3.2358e+06 (±2.7% from 319 vertical in-fit bins)
+  box saturation: 476/600 cells at dry floor (w=0), 0 at water ceiling (w=0.9; 0 in aquifer = water-insufficient directions)
+  Uniform-support diagnostic not computed in fixed-objective mode
+  fit bins=690 (excluded 313 baseline-ratio outlier bins; theta<60: 667, theta>=60: 336, up to 86 deg)
+  norm=3.543e+06  rel resid (fit bins) 0.760 -> 0.411  log-std 1.305 -> 0.795
+  matched w: mean=0.024 std=0.070 min=0.000 max=0.491  box-pinned cells=476/600
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+Stable objective: legacy count-space posterior/null/profile diagnostics skipped; local robust-residual GN curvature saved without uncertainty claims.
+Writing the measured-vs-model 2D single-muon map (per-bin measured/model/residual)...
+  reconstructed-field outputs: /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_single_muon_angular_distribution_field.html , /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_water_increase_vs_rock.html , /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_matched_mixture_field.csv
+Fixed-path energy-loss MC check over 630 bins (550 theta<60 + 80 stratified theta>=60; 8192 MC samples/bin, energy-loss straggling; scattering disabled)...
+  identical 630-bin subset, fixed fitted scale 3.5427e+06: dry CSDA 0.6253, wet CSDA 0.4105, wet MC 0.4085
+  same subset, independently profiled scales: dry CSDA 0.7333, wet CSDA 0.4062, wet MC 0.4073
+  fixed-path energy-loss MC residual (630 bins): reconstructed 0.407   (CSDA fit was 0.760 -> 0.411)
+    by depth: theta<60 (550 bins) 0.407 ; theta>=60 (80 bins) 0.702
+  fixed-path energy-loss MC log model/measured std: 0.760  (CSDA 0.795)
+  fixed-path energy-loss MC flux band: /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_mc_flux_band.csv
+  paper-match outputs: /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_single_muon_angular_distribution.txt
+  /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_single_muon_2d_match.html
+  /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_single_muon_2d_match.csv
+  /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_single_muon_2d_mc_validation.csv
+  /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_single_muon_2d_mc_validation.html
+  /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_single_muon_angular_distribution_field.html
+  /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_water_increase_vs_rock.html
+  /home/roland/devspace/diffpumas.jl/examples/data/material_main_recovery_20261024/data/lvd_matched_mixture_field.csv
