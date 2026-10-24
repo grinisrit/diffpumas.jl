@@ -4,6 +4,8 @@ using Test, LinearAlgebra
     model=w->(exp.(A*w),exp.(A*w).*A)
     observed=exp.(A*[0.3,0.6]).*2.5
     robust,scale=DiffPumas.Tomography.profiled_log_observation_operator(model,observed;robust_scale=0.3)
+    @test_throws ArgumentError DiffPumas.Tomography.profiled_log_observation_operator(model,observed;normalization=-1)
+    @test_throws ArgumentError DiffPumas.Tomography.profiled_log_observation_operator(model,observed;robust_scale=Inf)
     w=[0.1,0.4];r,J=robust(w)
     h=1e-6
     fd=hcat([(first(robust(w+h*I(2)[:,k]))-first(robust(w-h*I(2)[:,k])))/(2h) for k=1:2]...)

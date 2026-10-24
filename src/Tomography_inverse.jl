@@ -461,7 +461,7 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                 end
                 step
             catch
-                fill(0.0,length(active))
+                solver_mode === :active_set ? -grad ./ max.(d,1e-12*dmax) : fill(0.0,length(active))
             end
             if !all(isfinite,delta)
                 mu=min(mu*lm_factor,1e12);continue
@@ -1000,14 +1000,17 @@ and the robust scale stay fixed across field iterations. Returns `(operator, sca
 """
 function profiled_log_observation_operator(model, observed::AbstractVector;
         weights=ones(length(observed)), robust_scale::Real=1.0, normalization::Real=0.0)
-    all(>(0),observed) || throw(ArgumentError("log observations must be positive"))
+    all(x -> isfinite(x) && x>0,observed) || throw(ArgumentError("log observations must be finite and positive"))
+    length(weights)==length(observed) || throw(DimensionMismatch("weights must match observations"))
+    isfinite(normalization) && normalization>=0 || throw(ArgumentError("normalization must be finite and nonnegative"))
     c=Float64(robust_scale)
-    c>0 || throw(ArgumentError("robust_scale must be positive"))
+    isfinite(c) && c>0 || throw(ArgumentError("robust_scale must be positive"))
     W=Float64.(weights)
-    all(>=(0),W) && sum(W)>0 || throw(ArgumentError("weights must be nonnegative with positive sum"))
+    all(x -> isfinite(x) && x>=0,W) && sum(W)>0 || throw(ArgumentError("weights must be nonnegative with positive sum"))
     logobs=log.(observed)
     function transform(pred)
-        all(>(0),pred) || throw(ArgumentError("log predictions must be positive"))
+        length(pred)==length(observed) || throw(DimensionMismatch("prediction must match observations"))
+        all(x -> isfinite(x) && x>0,pred) || throw(ArgumentError("log predictions must be finite and positive"))
         z=log.(pred).-logobs
         a=normalization>0 ? log(normalization) : 0.0
         if normalization<=0
