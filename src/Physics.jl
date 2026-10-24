@@ -14,6 +14,7 @@ using ..Materials
 using ..Materials: compute_dcs_integral
 using ..DEDXLoader
 using ..Coulomb: compute_coulomb_tables!
+import ForwardDiff
 using LinearAlgebra
 using ChainRulesCore
 using Random
@@ -685,6 +686,27 @@ PERFORMANCE: ~5x faster than interpolate_table for hot paths.
     end
 end
 
+# The dual overload retains the Float64 primal and its table-bound conventions.
+# Compare primal values only: dual partials must never break interpolation ties.
+@inline function interpolate_table_fast(x::ForwardDiff.Dual, log_x::ForwardDiff.Dual,
+        xs::Vector{T}, log_xs::Vector{T}, ys::Vector{T}) where {T<:AbstractFloat}
+    n = length(xs)
+    xv = ForwardDiff.value(x)
+    xv <= xs[1] && return zero(x) + ys[1]
+    xv >= xs[n] && return zero(x) + ys[n]
+    lo, hi = 1, n
+    @inbounds while lo < hi - 1
+        mid = (lo + hi) >> 1
+        if ForwardDiff.value(log_x) < log_xs[mid]
+            hi = mid
+        else
+            lo = mid
+        end
+    end
+    @inbounds t = (log_x - log_xs[lo]) / (log_xs[lo+1] - log_xs[lo])
+    @inbounds return ys[lo] + t * (ys[lo+1] - ys[lo])
+end
+
 # Make interpolate_table_fast differentiable (hot path: avoids tracing the
 # binary search, collapsing the per-call tape to a single analytic node). The
 # forward result depends on `log_x` only (the linear interpolant in log-energy);
@@ -777,6 +799,14 @@ Get stopping power for given energy.
     dedx_table = mode == ENERGY_LOSS_MIXED ? table.mixed_stopping_power : table.csda_stopping_power
     log_energy = log(energy)
     return interpolate_table_fast(energy, log_energy, table.energies, table.log_energies, dedx_table)
+end
+
+# Narrow dual-energy dispatch; ordinary table lookups keep their original method.
+@inline function property_stopping_power(physics::PhysicsTables{T}, mode::EnergyLossMode,
+        material::Int, energy::ForwardDiff.Dual) where {T<:AbstractFloat}
+    @inbounds table = physics.tables[material]
+    dedx_table = mode == ENERGY_LOSS_MIXED ? table.mixed_stopping_power : table.csda_stopping_power
+    return interpolate_table_fast(energy, log(energy), table.energies, table.log_energies, dedx_table)
 end
 
 """

@@ -1,116 +1,106 @@
-# ===========================================================================
-# Custom reverse-mode rules for the CSDA segment propagators.
-#
-# Each `propagate_csda_*_segment` advances (energy, weight) through an adaptive
-# stepping loop with data-dependent control flow. Letting Zygote trace those
-# loops node-by-node builds a huge per-bin tape (~100 MB/bin) whose allocation
-# serialises the threads through GC. These `rrule`s collapse each segment to a
-# single tape node: the pullback runs a few extra *primal* (no-tape) walks to
-# finite-difference the smooth scalar map, and treats the weight exactly (the
-# segment multiplies the incoming weight by an energy-only factor `G`, so
-# `∂weight_out/∂weight_in = G` and `∂energy_out/∂weight_in = 0`).
-#
-# This keeps reverse-mode AD (Zygote) and the full physics — we only hand the
-# differentiator an numerical finite-difference adjoint for the inner loop instead of
-# making it trace every step. Parity with the traced path is covered in
-# test/test_tomography.jl (sparse adjoint vs full Zygote vs finite difference).
-# ===========================================================================
-
+# Segment pullbacks collapse adaptive transport to one reverse-mode node. The
+# default computes exact local forward-mode tangents through the executed
+# piecewise-smooth walk, without a large Zygote tape or a finite-difference step.
+# This differentiates the discretised deterministic model, not stochastic MC.
+# At interpolation/adaptive knots a classical derivative need not exist; branch
+# choices use primal values only and deterministic ties (see _csda_min/max).
 import ChainRulesCore
 using ChainRulesCore: NoTangent, ZeroTangent, AbstractZero
 
 @inline _as_real(x) = x isa AbstractZero ? 0.0 : Float64(x)
-
-# Relative finite-difference step for the internal scalar derivatives. These
-# maps are piecewise smooth: interpolation knots and adaptive stepping branches
-# can limit central-difference accuracy. Validate stability with step sweeps;
-# no fixed accuracy is guaranteed. At water-fraction endpoints the local central
-# difference uses the algebraic mixture extension outside the physical box.
 const _RRULE_FD_REL = Ref(1.0e-6)
+const _ADJOINT_DERIVATIVE_MODE = Ref(:forwarddiff)
 
-"""Internal scalar adjoint central-difference step (dimensionless relative energy step).
-Set only between derivative evaluations; changing it concurrently is unsupported.
-"""
+"""Local segment adjoint mode: `:forwarddiff` (default) or legacy `:finite_difference`."""
+get_adjoint_derivative_mode() = _ADJOINT_DERIVATIVE_MODE[]
+"""Select local segment adjoints. Set only between evaluations, never concurrently."""
+function set_adjoint_derivative_mode!(mode::Symbol)
+    mode in (:forwarddiff, :finite_difference) || throw(ArgumentError("unknown adjoint derivative mode"))
+    _ADJOINT_DERIVATIVE_MODE[] = mode
+end
+"""Legacy central-difference relative step; unused in the default forward-mode adjoint."""
 get_adjoint_fd_step() = _RRULE_FD_REL[]
+"""Set the legacy FD step without changing the adjoint mode. Not safe during evaluations."""
 function set_adjoint_fd_step!(step::Real)
     isfinite(step) && 0 < step < 0.1 || throw(ArgumentError("adjoint FD step must be finite and in (0, 0.1)"))
     _RRULE_FD_REL[] = Float64(step)
 end
 export get_adjoint_fd_step, set_adjoint_fd_step!
+export get_adjoint_derivative_mode, set_adjoint_derivative_mode!
 
-# --- rock/water cell segment: differentiable in (w, energy, weight) ---------
+# Unit incoming weight isolates G, so d(weight_out)/d(weight_in)=G even when
+# the actual incoming weight is zero. Both input partials share one dual walk.
+function _cell_segment_partials(physics, w, shallow, matcfg, distance, energy)
+    if get_adjoint_derivative_mode() === :forwarddiff
+        wd = ForwardDiff.Dual(w, 1.0, 0.0)
+        ed = ForwardDiff.Dual(energy, 0.0, 1.0)
+        eo, g, _ = propagate_csda_cell_segment(physics, wd, shallow, matcfg, distance, ed, one(ed))
+        return ForwardDiff.value(g), ForwardDiff.partials(eo)[1], ForwardDiff.partials(eo)[2],
+               ForwardDiff.partials(g)[1], ForwardDiff.partials(g)[2]
+    end
+    hw = _RRULE_FD_REL[]; he = hw * max(abs(energy), 1.0)
+    _, g, _ = propagate_csda_cell_segment(physics, w, shallow, matcfg, distance, energy, 1.0)
+    epw, gpw, _ = propagate_csda_cell_segment(physics, w+hw, shallow, matcfg, distance, energy, 1.0)
+    emw, gmw, _ = propagate_csda_cell_segment(physics, w-hw, shallow, matcfg, distance, energy, 1.0)
+    epe, gpe, _ = propagate_csda_cell_segment(physics, w, shallow, matcfg, distance, energy+he, 1.0)
+    eme, gme, _ = propagate_csda_cell_segment(physics, w, shallow, matcfg, distance, energy-he, 1.0)
+    return g, (epw-emw)/(2hw), (epe-eme)/(2he), (gpw-gmw)/(2hw), (gpe-gme)/(2he)
+end
+function _energy_segment_partials(propagate, energy)
+    if get_adjoint_derivative_mode() === :forwarddiff
+        eo, g, _ = propagate(ForwardDiff.Dual(energy, 1.0))
+        return ForwardDiff.value(g), ForwardDiff.partials(eo)[1], ForwardDiff.partials(g)[1]
+    end
+    he = _RRULE_FD_REL[] * max(abs(energy), 1.0)
+    _, g, _ = propagate(energy)
+    ep, gp, _ = propagate(energy+he)
+    em, gm, _ = propagate(energy-he)
+    return g, (ep-em)/(2he), (gp-gm)/(2he)
+end
+
+# Invalid transport retains the existing stopped-path convention: every input
+# cotangent is zero. A valid zero-weight input is NOT an invalid transport.
 function ChainRulesCore.rrule(::typeof(propagate_csda_cell_segment),
-                              physics, w, shallow::Bool, matcfg::MaterialConfig,
-                              distance::Float64, energy, weight)
-    e_out, w_out, ok = propagate_csda_cell_segment(physics, w, shallow, matcfg, distance, energy, weight)
-    wf = Float64(w); ef = Float64(energy); wt = Float64(weight)
-    function cell_segment_pullback(Δ)
-        Δe = _as_real(Δ[1]); Δw = _as_real(Δ[2])   # cotangents on (energy_out, weight_out); ok carries none
-        if !ok || wt == 0.0 || !(isfinite(Δe) && isfinite(Δw))
-            return (NoTangent(), NoTangent(), ZeroTangent(), NoTangent(), NoTangent(), NoTangent(), ZeroTangent(), ZeroTangent())
+        physics, w, shallow::Bool, matcfg::MaterialConfig,
+        distance::Float64, energy, weight)
+    out = propagate_csda_cell_segment(physics, w, shallow, matcfg, distance, energy, weight)
+    wf, ef, wt = Float64(w), Float64(energy), Float64(weight)
+    function cell_segment_pullback(delta)
+        de, dg = _as_real(delta[1]), _as_real(delta[2])
+        if !out[3] || !(isfinite(de) && isfinite(dg))
+            return (NoTangent(),NoTangent(),ZeroTangent(),NoTangent(),NoTangent(),NoTangent(),ZeroTangent(),ZeroTangent())
         end
-        hw = _RRULE_FD_REL[]
-        he = _RRULE_FD_REL[] * max(abs(ef), 1.0)
-        # Re-run the primal with weight = 1 to isolate the energy-only weight
-        # factor G and the energy map; partials by central finite difference.
-        ePw, GPw, _ = propagate_csda_cell_segment(physics, wf + hw, shallow, matcfg, distance, ef, 1.0)
-        eMw, GMw, _ = propagate_csda_cell_segment(physics, wf - hw, shallow, matcfg, distance, ef, 1.0)
-        ePe, GPe, _ = propagate_csda_cell_segment(physics, wf, shallow, matcfg, distance, ef + he, 1.0)
-        eMe, GMe, _ = propagate_csda_cell_segment(physics, wf, shallow, matcfg, distance, ef - he, 1.0)
-        deout_dw = (ePw - eMw) / (2hw); dG_dw = (GPw - GMw) / (2hw)
-        deout_de = (ePe - eMe) / (2he); dG_de = (GPe - GMe) / (2he)
-        G = w_out / wt
-        w̄ = Δe * deout_dw + Δw * wt * dG_dw
-        ē = Δe * deout_de + Δw * wt * dG_de
-        w̄eight = Δw * G
-        return (NoTangent(), NoTangent(), w̄, NoTangent(), NoTangent(), NoTangent(), ē, w̄eight)
+        g, ew, ee, gw, ge = _cell_segment_partials(physics,wf,shallow,matcfg,distance,ef)
+        return (NoTangent(),NoTangent(),de*ew+dg*wt*gw,NoTangent(),NoTangent(),NoTangent(),de*ee+dg*wt*ge,dg*g)
     end
-    return (e_out, w_out, ok), cell_segment_pullback
+    return out, cell_segment_pullback
 end
-
-# --- fixed-material segment (rock remainder): diff in (energy, weight) -------
 function ChainRulesCore.rrule(::typeof(propagate_csda_uniform_segment),
-                              physics, material::Int, density::Float64,
-                              distance::Float64, energy, weight)
-    e_out, w_out, ok = propagate_csda_uniform_segment(physics, material, density, distance, energy, weight)
-    ef = Float64(energy); wt = Float64(weight)
-    function uniform_segment_pullback(Δ)
-        Δe = _as_real(Δ[1]); Δw = _as_real(Δ[2])
-        if !ok || wt == 0.0 || !(isfinite(Δe) && isfinite(Δw))
-            return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), ZeroTangent(), ZeroTangent())
+        physics, material::Int, density::Float64, distance::Float64, energy, weight)
+    out = propagate_csda_uniform_segment(physics,material,density,distance,energy,weight)
+    ef, wt = Float64(energy), Float64(weight)
+    function uniform_segment_pullback(delta)
+        de, dg = _as_real(delta[1]), _as_real(delta[2])
+        if !out[3] || !(isfinite(de) && isfinite(dg))
+            return (NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),ZeroTangent(),ZeroTangent())
         end
-        he = _RRULE_FD_REL[] * max(abs(ef), 1.0)
-        ePe, GPe, _ = propagate_csda_uniform_segment(physics, material, density, distance, ef + he, 1.0)
-        eMe, GMe, _ = propagate_csda_uniform_segment(physics, material, density, distance, ef - he, 1.0)
-        deout_de = (ePe - eMe) / (2he); dG_de = (GPe - GMe) / (2he)
-        G = w_out / wt
-        ē = Δe * deout_de + Δw * wt * dG_de
-        w̄eight = Δw * G
-        return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), ē, w̄eight)
+        g, ee, ge = _energy_segment_partials(e->propagate_csda_uniform_segment(physics,material,density,distance,e,one(e)),ef)
+        return (NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),de*ee+dg*wt*ge,dg*g)
     end
-    return (e_out, w_out, ok), uniform_segment_pullback
+    return out, uniform_segment_pullback
 end
-
-# --- atmosphere segment: diff in (energy, weight) ---------------------------
 function ChainRulesCore.rrule(::typeof(propagate_csda_air_segment),
-                              physics, air_material::Int, site::SiteConfig,
-                              start_z::Float64, cos_theta::Float64,
-                              distance::Float64, energy, weight)
-    e_out, w_out, ok = propagate_csda_air_segment(physics, air_material, site, start_z, cos_theta, distance, energy, weight)
-    ef = Float64(energy); wt = Float64(weight)
-    function air_segment_pullback(Δ)
-        Δe = _as_real(Δ[1]); Δw = _as_real(Δ[2])
-        if !ok || wt == 0.0 || !(isfinite(Δe) && isfinite(Δw))
-            return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), ZeroTangent(), ZeroTangent())
+        physics, air_material::Int, site::SiteConfig, start_z::Float64,
+        cos_theta::Float64, distance::Float64, energy, weight)
+    out = propagate_csda_air_segment(physics,air_material,site,start_z,cos_theta,distance,energy,weight)
+    ef, wt = Float64(energy), Float64(weight)
+    function air_segment_pullback(delta)
+        de, dg = _as_real(delta[1]), _as_real(delta[2])
+        if !out[3] || !(isfinite(de) && isfinite(dg))
+            return (NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),ZeroTangent(),ZeroTangent())
         end
-        he = _RRULE_FD_REL[] * max(abs(ef), 1.0)
-        ePe, GPe, _ = propagate_csda_air_segment(physics, air_material, site, start_z, cos_theta, distance, ef + he, 1.0)
-        eMe, GMe, _ = propagate_csda_air_segment(physics, air_material, site, start_z, cos_theta, distance, ef - he, 1.0)
-        deout_de = (ePe - eMe) / (2he); dG_de = (GPe - GMe) / (2he)
-        G = w_out / wt
-        ē = Δe * deout_de + Δw * wt * dG_de
-        w̄eight = Δw * G
-        return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), NoTangent(), ē, w̄eight)
+        g, ee, ge = _energy_segment_partials(e->propagate_csda_air_segment(physics,air_material,site,start_z,cos_theta,distance,e,one(e)),ef)
+        return (NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),NoTangent(),de*ee+dg*wt*ge,dg*g)
     end
-    return (e_out, w_out, ok), air_segment_pullback
+    return out, air_segment_pullback
 end

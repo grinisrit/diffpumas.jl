@@ -302,3 +302,30 @@ If AD and finite difference disagree, first confirm they use the same model. A
 direct CSDA AD gradient should be compared to a direct CSDA finite difference,
 not to a straggled/scattered MC finite difference unless the difference itself is
 the physics being studied.
+
+### Local tomography segment adjoints
+
+Tomography's adaptive CSDA segments use ForwardDiff tangents inside their
+ChainRules pullbacks by default. A unit-weight walk computes the segment energy
+map and multiplicative weight factor together; the cell walk seeds water
+fraction and incoming energy simultaneously. This avoids a large reverse-mode
+tape and finite-difference steps that can straddle interpolation or adaptive-step
+branches. Valid zero incoming weight retains both the energy derivative and the
+derivative of output weight with respect to input weight.
+
+These are derivatives of the executed, discretised deterministic model. At
+interpolation knots and adaptive-step ties a classical derivative need not exist.
+Control flow compares primal values, with deterministic left selection for
+min/max ties; the table endpoints keep the original clamped, zero-derivative
+branch. Invalid stopped paths retain the existing zero-cotangent convention.
+Neither exact differentiation of a smooth branch nor finite-difference agreement
+establishes accuracy of stochastic material sensitivities.
+
+`get_adjoint_derivative_mode()` returns `:forwarddiff`. For reproducing historical
+numerical adjoints, explicitly call
+`set_adjoint_derivative_mode!(:finite_difference)` and set the legacy relative
+step with `set_adjoint_fd_step!(1e-6)`. The step setter does not select FD mode,
+and its value is unused in forward mode. Restore `:forwarddiff` afterwards.
+These process-global selectors must only change between derivative evaluations,
+never while threaded transport is running. Record the active backend with run
+provenance; an archived FD step alone does not describe the new default adjoint.

@@ -45,6 +45,7 @@ using ..Geometry: compute_decay_weight_from_path, locals_air_at_altitude,
 using ..GaisserFlux: flux_gccly
 using ..Pumas: sample_energy_loguniform
 
+import ForwardDiff
 using TOML
 using Random
 using Statistics
@@ -399,6 +400,24 @@ end
 # CSDA segment propagation
 # ===========================================================================
 
+# ForwardDiff comparisons include partials at equal primal values. Segment
+# control flow instead follows the physical primal, with a deterministic left
+# branch at min/max ties. Float inputs call Base unchanged (including signed zero).
+@inline _csda_value(x) = x
+@inline _csda_value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+@inline function _csda_min(a, b)
+    (a isa ForwardDiff.Dual || b isa ForwardDiff.Dual) || return min(a,b)
+    return _csda_value(a) <= _csda_value(b) ? a : b
+end
+@inline function _csda_max(a, b)
+    (a isa ForwardDiff.Dual || b isa ForwardDiff.Dual) || return max(a,b)
+    return _csda_value(a) >= _csda_value(b) ? a : b
+end
+@inline function _csda_min(a, b, c)
+    (a isa ForwardDiff.Dual || b isa ForwardDiff.Dual || c isa ForwardDiff.Dual) || return min(a,b,c)
+    return _csda_min(_csda_min(a,b),c)
+end
+
 """
     propagate_csda_cell_segment(physics, w, shallow, matcfg, distance, energy, weight)
 
@@ -411,14 +430,14 @@ function propagate_csda_cell_segment(physics, w, shallow::Bool, matcfg::Material
                                      distance::Float64, energy, weight)
     density = cell_density(w, shallow, matcfg)
     remaining = distance
-    while remaining > 1e-8
+    while _csda_value(remaining) > 1e-8
         dedx0 = cell_stopping_power(physics, w, shallow, matcfg, energy)
-        (!isfinite(dedx0) || dedx0 <= 0.0) && return (energy, zero(weight), false)
+        (!isfinite(dedx0) || _csda_value(dedx0) <= 0.0) && return (energy, zero(weight), false)
 
-        grammage_rel = CSDA_MAX_RELATIVE_GAIN * max(energy, 1e-6) / dedx0
-        grammage_step = min(remaining * density, max(grammage_rel, 1e-6), CSDA_MAX_STEP_M * density)
-        ds = min(remaining, grammage_step / max(density, 1e-12))
-        ds <= 0.0 && return (energy, zero(weight), false)
+        grammage_rel = CSDA_MAX_RELATIVE_GAIN * _csda_max(energy, 1e-6) / dedx0
+        grammage_step = _csda_min(remaining * density, _csda_max(grammage_rel, 1e-6), CSDA_MAX_STEP_M * density)
+        ds = _csda_min(remaining, grammage_step / _csda_max(density, 1e-12))
+        _csda_value(ds) <= 0.0 && return (energy, zero(weight), false)
 
         grammage = ds * density
         energy_predict = energy + dedx0 * grammage
@@ -426,10 +445,10 @@ function propagate_csda_cell_segment(physics, w, shallow::Bool, matcfg::Material
         dE = 0.5 * (dedx0 + dedx1) * grammage
         energy_next = energy + dE
 
-        (!isfinite(energy_next) || energy_next >= 1e12) && return (energy_next, zero(weight), false)
+        (!isfinite(energy_next) || _csda_value(energy_next) >= 1e12) && return (energy_next, zero(weight), false)
 
         dedx_next = cell_stopping_power(physics, w, shallow, matcfg, energy_next)
-        weight = weight * (dedx_next / max(dedx0, 1e-30))
+        weight = weight * (dedx_next / _csda_max(dedx0, 1e-30))
         weight = weight * compute_decay_weight_from_path(physics, ds, 0.5 * (energy + energy_next))
 
         energy = energy_next
@@ -447,14 +466,14 @@ segment). Type-stable on `material::Int`.
 function propagate_csda_uniform_segment(physics, material::Int, density::Float64,
                                         distance::Float64, energy, weight)
     remaining = distance
-    while remaining > 1e-8
+    while _csda_value(remaining) > 1e-8
         dedx0 = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, energy)
-        (!isfinite(dedx0) || dedx0 <= 0.0) && return (energy, zero(weight), false)
+        (!isfinite(dedx0) || _csda_value(dedx0) <= 0.0) && return (energy, zero(weight), false)
 
-        grammage_rel = CSDA_MAX_RELATIVE_GAIN * max(energy, 1e-6) / dedx0
-        grammage_step = min(remaining * density, max(grammage_rel, 1e-6), CSDA_MAX_STEP_M * density)
-        ds = min(remaining, grammage_step / max(density, 1e-12))
-        ds <= 0.0 && return (energy, zero(weight), false)
+        grammage_rel = CSDA_MAX_RELATIVE_GAIN * _csda_max(energy, 1e-6) / dedx0
+        grammage_step = _csda_min(remaining * density, _csda_max(grammage_rel, 1e-6), CSDA_MAX_STEP_M * density)
+        ds = _csda_min(remaining, grammage_step / _csda_max(density, 1e-12))
+        _csda_value(ds) <= 0.0 && return (energy, zero(weight), false)
 
         grammage = ds * density
         energy_predict = energy + dedx0 * grammage
@@ -462,10 +481,10 @@ function propagate_csda_uniform_segment(physics, material::Int, density::Float64
         dE = 0.5 * (dedx0 + dedx1) * grammage
         energy_next = energy + dE
 
-        (!isfinite(energy_next) || energy_next >= 1e12) && return (energy_next, zero(weight), false)
+        (!isfinite(energy_next) || _csda_value(energy_next) >= 1e12) && return (energy_next, zero(weight), false)
 
         dedx_next = property_stopping_power(physics, ENERGY_LOSS_CSDA, material, energy_next)
-        weight = weight * (dedx_next / max(dedx0, 1e-30))
+        weight = weight * (dedx_next / _csda_max(dedx0, 1e-30))
         weight = weight * compute_decay_weight_from_path(physics, ds, 0.5 * (energy + energy_next))
 
         energy = energy_next
@@ -484,16 +503,16 @@ function propagate_csda_air_segment(physics, air_material::Int, site::SiteConfig
                                     distance::Float64, energy, weight)
     remaining = distance
     traversed = 0.0
-    while remaining > 1e-8
+    while _csda_value(remaining) > 1e-8
         altitude_mid = site.detector_elevation + start_z +
-                       cos_theta * (traversed + 0.5 * min(remaining, CSDA_MAX_STEP_M))
+                       cos_theta * (traversed + 0.5 * _csda_min(remaining, CSDA_MAX_STEP_M))
         density = locals_air_at_altitude(altitude_mid).density
         dedx0 = property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy)
-        (!isfinite(dedx0) || dedx0 <= 0.0) && return (energy, zero(weight), false)
+        (!isfinite(dedx0) || _csda_value(dedx0) <= 0.0) && return (energy, zero(weight), false)
 
-        grammage_rel = CSDA_MAX_RELATIVE_GAIN * max(energy, 1e-6) / dedx0
-        ds = min(remaining, CSDA_MAX_STEP_M, grammage_rel / max(density, 1e-12))
-        ds = max(ds, 1e-3)
+        grammage_rel = CSDA_MAX_RELATIVE_GAIN * _csda_max(energy, 1e-6) / dedx0
+        ds = _csda_min(remaining, CSDA_MAX_STEP_M, grammage_rel / _csda_max(density, 1e-12))
+        ds = _csda_max(ds, 1e-3)
 
         altitude_mid = site.detector_elevation + start_z + cos_theta * (traversed + 0.5 * ds)
         density = locals_air_at_altitude(altitude_mid).density
@@ -503,10 +522,10 @@ function propagate_csda_air_segment(physics, air_material::Int, site::SiteConfig
         dE = 0.5 * (dedx0 + dedx1) * grammage
         energy_next = energy + dE
 
-        (!isfinite(energy_next) || energy_next >= 1e12) && return (energy_next, zero(weight), false)
+        (!isfinite(energy_next) || _csda_value(energy_next) >= 1e12) && return (energy_next, zero(weight), false)
 
         dedx_next = property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy_next)
-        weight = weight * (dedx_next / max(dedx0, 1e-30))
+        weight = weight * (dedx_next / _csda_max(dedx0, 1e-30))
         weight = weight * compute_decay_weight_from_path(physics, ds, 0.5 * (energy + energy_next))
 
         energy = energy_next

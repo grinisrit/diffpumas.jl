@@ -18,6 +18,7 @@ using ..Context
 using ..GaisserFlux: flux_gccly  # Use flux model from GaisserFlux module
 using ..Straggling
 using ..MixedTransport
+import ForwardDiff
 using LinearAlgebra
 using Zygote
 using ChainRulesCore
@@ -1090,6 +1091,20 @@ function compute_decay_weight_from_path(physics::PhysicsTables{T},
     decay_length = beta_avg * gamma_avg * physics.ctau
     return exp(-path_length / decay_length)
 end
+
+# Dual-only extension for local CSDA tangent walks. At the beta floor the
+# same primal branch is selected independently of the seeded tangent direction.
+function compute_decay_weight_from_path(physics::PhysicsTables{T}, path_length::Real,
+        E_avg::ForwardDiff.Dual) where {T<:AbstractFloat}
+    gamma_avg = one(E_avg) + E_avg / physics.mass
+    beta2 = one(E_avg) - one(E_avg) / gamma_avg^2
+    beta_avg = sqrt(ForwardDiff.value(beta2) >= T(1e-12) ? beta2 : T(1e-12))
+    decay_length = beta_avg * gamma_avg * physics.ctau
+    return exp(-path_length / decay_length)
+end
+compute_decay_weight_from_path(physics::PhysicsTables{T}, path_length::ForwardDiff.Dual,
+        E_avg::T) where {T<:AbstractFloat} =
+    compute_decay_weight_from_path(physics, path_length, E_avg + zero(path_length))
 
 """
     compute_flux_csda_direct(physics, rock_material, air_material, rock_density, 
