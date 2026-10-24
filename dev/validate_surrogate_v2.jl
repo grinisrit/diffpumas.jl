@@ -36,7 +36,7 @@ function validation_v2(argv=ARGS)
     # cannot be used for retuning coefficients before claiming this split final.
     plan=Dict("seed"=>seedbase,"training_zeniths"=>[0.,15.,30.,45.],"training_azimuths"=>[7.5,127.5,247.5],
       "test_zeniths"=>[15.,45.,60.,75.],"test_azimuths"=>[37.5,157.5,277.5],"training_uniform_fields"=>[0.2,0.6],
-      "test_fields"=>["uniform_0.35","spatial_sine","spatial_cosine"],"ridge"=>1e-6,"mc_samples"=>nmc,"training_mc_samples"=>ntrain,"replicates"=>nrep,
+      "test_fields"=>["uniform_0.35","spatial_sine","spatial_cosine","localized_lens_0.6"],"ridge"=>1e-6,"mc_samples"=>nmc,"training_mc_samples"=>ntrain,"replicates"=>nrep,
       "primary_altitude_m"=>30000.,"rock_density"=>2710.,"csda_nodes"=>32,"energy_min"=>1e-3,"energy_max"=>1e9,
       "dry_calibration"=>"unchanged corrected_validation/calibration.toml","scope"=>"fixed straight path, scattering disabled; 30km source boundary held fixed and unresolved",
       "flux_acceptance"=>"median absolute relative residual improves >=30%; maximum absolute residual does not increase",
@@ -71,7 +71,8 @@ function validation_v2(argv=ARGS)
     coeff=get_csda_material_correction(); linear,quadratic=coeff.linear,coeff.quadratic
     open(io->TOML.print(io,Dict("linear"=>linear,"quadratic"=>quadratic,"ridge"=>1e-6,"fit"=>string(fit))),joinpath(out,"material_calibration.toml"),"w")
     testfields=[fill(.35,nc),[.15+.4*sin(vol.centroids[1,c]/900+vol.centroids[3,c]/600)^2 for c in 1:nc],
-      [.15+.4*cos(vol.centroids[1,c]/900+vol.centroids[3,c]/600)^2 for c in 1:nc]]
+      [.15+.4*cos(vol.centroids[1,c]/900+vol.centroids[3,c]/600)^2 for c in 1:nc],
+      [vol.centroids[3,c]>500 && hypot(vol.centroids[1,c],vol.centroids[2,c])<1500 ? .6 : 0. for c in 1:nc]]
     rows=NamedTuple[]; derivatives=NamedTuple[]
     for (b,p) in enumerate(test), (k,w) in enumerate(testfields)
         set_csda_material_correction!(enabled=false)
@@ -81,9 +82,19 @@ function validation_v2(argv=ARGS)
         q=DiffPumas.Tomography._column_water_fraction(mat,p.remaining_rock_distance,[s.distance for s in p.segments],[s.cell_idx for s in p.segments],[shallow[s.cell_idx] for s in p.segments],w)
         _,J=assemble_forward_and_jacobian(ph,shallow,mat,site,[p],w,es;n_cells=nc,threaded=false)
         _,cells,vals=findnz(J); isempty(cells) && error("test path lacks sensitivities")
-        c=cells[argmax(abs.(vals))]; delta=.05; wl=copy(w);wh=copy(w);wl[c]-=delta;wh[c]+=delta
-        epsfd=1e-6; wa=copy(w);wb=copy(w);wa[c]-=epsfd;wb[c]+=epsfd
-        fd=(compute_directional_flux_csda(ph,shallow,mat,site,p,wb,es)-compute_directional_flux_csda(ph,shallow,mat,site,p,wa,es))/(2epsfd)
+        interior=findall(i->.05<w[cells[i]]<.85,eachindex(cells))
+        eligible=isempty(interior) ? collect(eachindex(cells)) : interior
+        c=cells[eligible[argmax(abs.(vals[eligible]))]]
+        lo,hi=w[c]==0 ? (0.,.1) : (w[c]-.05,w[c]+.05)
+        wl=copy(w);wh=copy(w);wl[c]=lo;wh[c]=hi; width=hi-lo
+        epsfd=1e-6; wa=copy(w);wb=copy(w)
+        if w[c]==0
+            wa[c]=epsfd;wb[c]=2epsfd
+            fd=(-3new+4compute_directional_flux_csda(ph,shallow,mat,site,p,wa,es)-compute_directional_flux_csda(ph,shallow,mat,site,p,wb,es))/(2epsfd)
+        else
+            wa[c]-=epsfd;wb[c]+=epsfd
+            fd=(compute_directional_flux_csda(ph,shallow,mat,site,p,wb,es)-compute_directional_flux_csda(ph,shallow,mat,site,p,wa,es))/(2epsfd)
+        end
         mcvalues=revision_replicates(nrep;parallel=true) do rep
             sd=seedbase+1000000+10000b+100rep
             (mc(p,w,sd),mc(p,wl,sd),mc(p,wh,sd))
@@ -96,10 +107,10 @@ function validation_v2(argv=ARGS)
             en=sample_energy_set(nmc,1e-3,1e9,sd)
             ml=mcvalues[rep][2];mh=mcvalues[rep][3]
             set_csda_material_correction!(enabled=false)
-            csold=(compute_directional_flux_csda(ph,shallow,mat,site,p,wh,en)-compute_directional_flux_csda(ph,shallow,mat,site,p,wl,en))/(2delta)
+            csold=(compute_directional_flux_csda(ph,shallow,mat,site,p,wh,en)-compute_directional_flux_csda(ph,shallow,mat,site,p,wl,en))/width
             set_csda_material_correction!(linear=linear,quadratic=quadratic)
-            csnew=(compute_directional_flux_csda(ph,shallow,mat,site,p,wh,en)-compute_directional_flux_csda(ph,shallow,mat,site,p,wl,en))/(2delta)
-            push!(derivatives,(bin=b,zenith=p.zenith,azimuth=p.azimuth,field=k,cell=c,replicate=rep,seed=sd,ad=J[1,c],fd=fd,interval=2delta,mc_secant=(mh-ml)/(2delta),before=csold,after=csnew))
+            csnew=(compute_directional_flux_csda(ph,shallow,mat,site,p,wh,en)-compute_directional_flux_csda(ph,shallow,mat,site,p,wl,en))/width
+            push!(derivatives,(bin=b,zenith=p.zenith,azimuth=p.azimuth,field=k,cell=c,replicate=rep,seed=sd,ad=J[1,c],fd=fd,fraction_lo=lo,fraction_hi=hi,interval=width,mc_secant=(mh-ml)/width,before=csold,after=csnew))
             csv_rows(joinpath(out,"heldout_flux.csv"),rows);csv_rows(joinpath(out,"heldout_derivatives.csv"),derivatives)
         end
     end

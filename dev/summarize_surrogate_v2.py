@@ -39,6 +39,8 @@ def summarize(root):
             row["paired_absolute_error_gain_se"] = st.stdev(gains) / math.sqrt(len(gains))
             if "ad" in reps[0]:
                 row["ad_fd_relative_error"] = max(abs(r["ad"]-r["fd"]) / max(abs(r["ad"]), abs(r["fd"]), 1e-30) for r in reps)
+            if "column_water_fraction" in reps[0]:
+                row["column_water_fraction"] = reps[0]["column_water_fraction"]
             rows.append(row)
         metrics = {"groups": len(rows), "rows": rows}
         for mode in ("before", "after"):
@@ -53,6 +55,21 @@ def summarize(root):
             metrics["derivative_median_and_count_nonworsening"] = metrics["after_median_absolute_relative_bias"] <= metrics["before_median_absolute_relative_bias"] and metrics["after_count_over_2se"] <= metrics["before_count_over_2se"]
             if "ad" in next(iter(groups.values()))[0]:
                 metrics["max_ad_fd_relative_error"] = max(r["ad_fd_relative_error"] for r in rows)
+        fields = sorted(set(r["key"][1] for r in rows) - {""})
+        metrics["by_field"] = {}
+        for field in fields:
+            subset = [r for r in rows if r["key"][1] == field]
+            before = st.median(abs(r["before_relative_bias"]) for r in subset)
+            after = st.median(abs(r["after_relative_bias"]) for r in subset)
+            entry = dict(groups=len(subset), before_median_absolute_relative_bias=before,
+                         after_median_absolute_relative_bias=after,
+                         improvement_fraction=1-after/max(before, 1e-30),
+                         before_count_over_2se=sum(r["before_over_2se"] for r in subset),
+                         after_count_over_2se=sum(r["after_over_2se"] for r in subset))
+            if "column_water_fraction" in subset[0]:
+                entry.update(q_min=min(r["column_water_fraction"] for r in subset),
+                             q_max=max(r["column_water_fraction"] for r in subset))
+            metrics["by_field"][field] = entry
         result[stem] = metrics
     (root / "paired_assessment.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({k: {a: b for a, b in v.items() if a != "rows"} if isinstance(v, dict) else v for k, v in result.items()}, indent=2))
