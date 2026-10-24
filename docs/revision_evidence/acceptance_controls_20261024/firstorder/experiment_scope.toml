@@ -1,0 +1,6 @@
+intervals = "Exact 95% Clopper-Pearson Monte Carlo intervals conditional on the realized calibration threshold; calibration-threshold uncertainty is not propagated. 3000 null draws give about four expected 3sigma-tail events; no certified 3sigma FPR or finite-contrast transport power."
+acceptance = "Four predeclared assumed profiles, not measured or calibrated LVD acceptance. Solid angle enters the three geometric profiles before normalization."
+poisson = "Fresh independent calibration-null, test-null and signal count populations at each predeclared exposure. All three statistics evaluated on identical counts. Strict statistic>calibration threshold."
+exposure = "E=sum tau_m; tau_m=E*p_m; sum p_m=1. Equal-bin legacy conversion E=N*tau_old. Fixed total integrated exposure, not fixed expected event count."
+hypotheses = "All detectors and Poisson pilot use the same dry-Jacobian first-order lens signal. Finite nonlinear lens flux is an exported validity audit only, not the pilot signal."
+gaussian = "Matched/ROI local baseline-variance planning formulas; SART fixed-reference mean-only sqrt(exposure) extrapolation. Shared Gaussian standard-normal streams across profiles are paired common random numbers."

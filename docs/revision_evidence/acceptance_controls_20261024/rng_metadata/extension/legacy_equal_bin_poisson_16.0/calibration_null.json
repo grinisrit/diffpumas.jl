@@ -1,0 +1,10 @@
+{
+  "numpy": "2.2.4",
+  "scipy": "1.15.2",
+  "seed": 21322024,
+  "draws": 3000,
+  "bins": 2700,
+  "exposure": 1759640.9553949255,
+  "generator": "numpy.default_rng PCG64; Poisson variates, no Gaussian substitution",
+  "format": "little-endian signed int64, draw-major"
+}
