@@ -1,0 +1,23 @@
+{
+  "ended_utc": "2026-10-24T14:08:04.453944+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "f4bec4b7c3536ee322e12e835a7da76c5476d241087483a677e3d6cf70e067bd",
+    "results/lvd_fit_field.csv": "8a73a57ed8fddb4f23970929bdfb1c9dec45eab861f0b8625b0e527c780ae511",
+    "results/lvd_fit_mask.csv": "b771397545161d790550045e4d5dcd2a868d370143448204bb4c3151291792bb",
+    "results/lvd_fit_predictions.csv": "2df89c142d215c40f37f6a08cc5a316b0c5e72d7d8ac26e2e4f45edadb600bd1",
+    "results/lvd_mc_coverage.csv": "9381a0e34df5cb50c00a470dae435925fbd81034765c81e23e238b45e4d51120",
+    "results/lvd_mc_coverage_summary.csv": "dcc4cf576ad0da2ad4af03149cac0a7383c9afc0333700ddf46c526a39f12046",
+    "results/lvd_recursion_history.csv": "8ca9b8dcd3cf882e8dd2b4a6ef11c7f1084e0305dd6f021464430bdaec4ea414",
+    "results/lvd_recursion_status.txt": "0158f4a93a453c6138e3fe546808888d2f8a44e8ae7510e74fba17e9b781df65",
+    "results/lvd_solver_configuration.toml": "7acf9a6d8fda8187731a60d1ecb6e15a456648aa7986b1eeeaf26b0ffbacfa42",
+    "results/lvd_solver_history.csv": "fb6caf84051774edcff88cb5d32fe03e51c022bedef87c98e93f1c3ceabe15a5",
+    "results/lvd_solver_progress.csv": "fb6caf84051774edcff88cb5d32fe03e51c022bedef87c98e93f1c3ceabe15a5",
+    "results/lvd_solver_status.txt": "84125b9c224808d620c5c907cbc89b062b01d5df5d0028894c9bf674dc7333fc",
+    "run.log": "f6906e96b06388aa401ce3c35e2d385bf8a0a58673f617d385ac9f111f394cfb"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "scope": "Independent current fixed-objective dry-correction mask-disabled control and matched reference. Numerical case clean; later old controller fork guard EAGAIN retirement is operational and does not invalidate this completed case.",
+  "reference": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_dry_start0_20261024",
+  "mask_case": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/maskInf",
+  "collector": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/collector_05.json",
+  "legacy_IRLS_zero_field_not_current_result": true,
+  "review_required": true,
+  "revision_complete": false
+}

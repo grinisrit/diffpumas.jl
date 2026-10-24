@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "scope": "Current fixed pseudo-Huber dry-correction screen control; not legacy IRLS and not physical water accuracy",
+  "review_required": true,
+  "collector_sha256": "890c8380a8fd8c5e87a605be00f4f2afec1cb6d907ebcd688bbcf7e2657bd226",
+  "helper_sha256": "3f86dfbf7883aea70db218b5bff157ddcccb72d1890db0e4eb12c40422628fa9",
+  "case_end_sha256": {
+    "dry/start0": "bec4c74b0ea8ddd6740298d261be5ff24be2d0636bcd01d4cbd090ab2ed7742b",
+    "dry/maskInf": "f4fbde711fc101a04a496c6ed6fe224731563ee0d3a9bf5a4d6809f8e4e1c497"
+  },
+  "support_means": {
+    "dry/start0": 0.09830973922714992,
+    "dry/maskInf": 0.18412717330994657
+  },
+  "mask_fit_bins": 1003,
+  "reference_fit_bins": 690,
+  "support_cells": 147,
+  "comparison": {
+    "common_covered": {
+      "n_bins": 1003,
+      "baseline": {
+        "relative_l2": 0.5287727500789643,
+        "log_rmse": 3.583902553092866
+      },
+      "candidate": {
+        "relative_l2": 0.4944257470244772,
+        "log_rmse": 3.4084473802464106
+      },
+      "prediction_relative_l2": 0.07212254004914175
+    },
+    "common_fit": {
+      "n_bins": 690,
+      "baseline": {
+        "relative_l2": 0.4065322824556173,
+        "log_rmse": 0.7813829491109773
+      },
+      "candidate": {
+        "relative_l2": 0.3915404296838228,
+        "log_rmse": 0.7037372681363911
+      },
+      "prediction_relative_l2": 0.06063685964232983
+    },
+    "same_support": true,
+    "same_screen": false,
+    "field_relative_l2": 0.7818247381960438,
+    "field_rmse": 0.11612904580085567,
+    "field_max_abs": 0.3513235300912548,
+    "objective_difference": 282.1886799479472,
+    "objective_difference_comparable": false,
+    "same_correction_artifact": true,
+    "same_runtime": true,
+    "same_core_sources": true,
+    "shared_audited_inputs_match": true,
+    "audited_inputs_only_in_reference": [
+      "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/corrected_validation/calibration.toml"
+    ],
+    "audited_inputs_only_in_candidate": [
+      "/home/roland/devspace/diffpumas.jl/dev/collect_stability_v2.py",
+      "/home/roland/devspace/diffpumas.jl/dev/queue_stability_v2_controls.py",
+      "/home/roland/devspace/diffpumas.jl/dev/run_stability_v2.py",
+      "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+    ]
+  },
+  "projected_gradient": 7.721101316982004e-05,
+  "tolerance": 1e-06,
+  "kkt_converged": false,
+  "nonzero_screen_disabled_field": true,
+  "conditional_normalization": "Each fit retains its own profiled scale; common-bin residual comparisons do not hold normalization fixed",
+  "objective_comparison": "Screen changes the configured objective; total objective values cannot be ranked as same-objective minima",
+  "revision_complete": false
+}
