@@ -1,0 +1,55 @@
+{
+  "verified_utc": "2026-10-24T12:05:38.081277+00:00",
+  "scope": "Operational verification only: explicitly synthetic unit fixtures and a real minimal one-page TeX compile, not production numerical evidence",
+  "cpu_pool": [
+    20
+  ],
+  "address_space_bytes": 2147483648,
+  "shared_lock": "/mnt/big_data/agent-builds/surrogate-stability-20261024/cpu20-python-postprocess.lock",
+  "watcher_tests": {
+    "count": 6,
+    "returncode": 0,
+    "checks": [
+      "retry index and auxiliary readiness",
+      "flat-index migration",
+      "candidate tamper rejection",
+      "one attempt per signature and helper-change recovery",
+      "early rejection log preservation",
+      "explicit interrupted-attempt recovery",
+      "actual child CPU20/2GiB inheritance",
+      "real minimal Tectonic PDF and separate compile provenance"
+    ]
+  },
+  "paper_template_tests": {
+    "returncode": 0,
+    "checks": [
+      "macro values and nonstationarity wording",
+      "reviewed figure namespaces and portable paths",
+      "floor convention and censored detection ratios",
+      "four actual sweep realizations",
+      "retry-only export selection and strict hash binding",
+      "failed versus pending auxiliaries",
+      "removal of old field-dependent quadrature and stale reproducibility text",
+      "conditional control distances and objective comparability"
+    ]
+  },
+  "stage_parser_tests": {
+    "returncode": 0,
+    "checks": [
+      "completeness and duplicate/malformed rejection",
+      "end-bound hash tamper rejection",
+      "same-field closure recomputation and KKT status",
+      "floor tokens, endpoint censoring and inconclusive Inf",
+      "configuration and count consistency"
+    ]
+  },
+  "source_sha256": {
+    "dev/watch_material_manuscript.py": "169109a4728a442128d6bf838d557c991b5b3c4d3b42bc94db4ea5674ee74cd3",
+    "dev/test_material_manuscript_watch.py": "7e20a3bebf96e97e88590b87b61692409cfe7614b03e98cf98336d09b061f0d3",
+    "dev/postprocess_material_production.py": "ba363289e20c1604f48c91fb1086cc917459e66b33a4cb42873abe7a760e1da7",
+    "diffmuontomoLVD/revision/build_stage_manuscript.py": "a83f8a8fa3aae10347170a747bfb18e16a73a57b5122ede8921d843f952760cd",
+    "diffmuontomoLVD/revision/stage_result_parsers.py": "806605373a8d55d56c742b07a6a0bcaaeefaffda6ede47b70052a2ae01641d93",
+    "diffmuontomoLVD/revision/test_stage_manuscript.py": "28da24f24853b65ae792978c88974f0fd1a80f3aaf3f0dc5e13e7a94880a81ec",
+    "diffmuontomoLVD/revision/test_stage_result_parsers.py": "e8de72ef36d1e5e9b999bcec49e518181e17894f0dac0a1a65b2c362607ff628"
+  }
+}

@@ -36,13 +36,27 @@ def audit(folder):
     return end
 
 
-def main():
+def publish_index(root, target, stage, end_digest):
+    indexpath=root/'candidate_exports/index.json'
+    index=json.loads(indexpath.read_text()) if indexpath.exists() else {'schema_version':1,'stages':{}}
+    if 'schema_version' not in index:
+        index={'schema_version':1,'stages':index}
+    if index.get('schema_version')!=1 or not isinstance(index.get('stages'),dict):
+        raise ValueError('unsupported export index schema')
+    index['stages'][stage]=dict(path=str(target.relative_to(root/'candidate_exports')),
+        export_provenance_sha256=digest(target/'export_provenance.json'),
+        stage_end_sha256=end_digest,review_required=True)
+    temporary=indexpath.with_suffix('.pending');temporary.write_text(json.dumps(index,indent=2)+'\n');temporary.replace(indexpath)
+
+
+def main(lock_fd=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--root', type=Path, required=True)
     ap.add_argument('--stage', choices=BUILDERS, required=True)
     ap.add_argument('--output', type=Path, help='fresh isolated retry export destination')
     ap.add_argument('--figure-helper', type=Path, required=True)
     args = ap.parse_args()
+    inherited_locks=() if lock_fd is None else (lock_fd,)
     root = args.root.resolve()
     reconcile = ROOT/'dev/reconcile_manuscript_outputs.py'
     stage_parser = ROOT/'diffmuontomoLVD/revision/stage_result_parsers.py'
@@ -90,14 +104,14 @@ def main():
     commands = []
     command = [sys.executable, str(stage_parser), '--stage', args.stage,
                '--directory', str(root/'stages'/args.stage), '--output', str(target/'stage_results.json')]
-    subprocess.run(command, cwd=ROOT, check=True)
+    subprocess.run(command, cwd=ROOT, check=True, pass_fds=inherited_locks)
     commands.append(command)
     # Reconciliation preserves exact printed lines/precision; it invents no claims.
     command = [sys.executable, str(reconcile)]
     for stage in completed:
         command += ['--run', f'{stage}={root/"stages"/stage/"data"}']
     command += ['--output', str(target/'reconciliation')]
-    subprocess.run(command, cwd=ROOT, check=True)
+    subprocess.run(command, cwd=ROOT, check=True, pass_fds=inherited_locks)
     commands.append(command)
     figures = target/'figures'
     selected = BUILDERS[args.stage]
@@ -106,7 +120,7 @@ def main():
         command = [sys.executable, str(args.figure_helper.resolve()), '--data-dir', str(bundle),
                    '--output-dir', str(figures), '--only', ','.join(selected)]
         with (target/'figure_export.log').open('w') as stream:
-            result = subprocess.run(command, cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT)
+            result = subprocess.run(command, cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT, pass_fds=inherited_locks)
         commands.append(command)
         expected_images = [name+'.png' for name in selected]
         if 'fig_detector_water_field_3d' in selected:
@@ -127,12 +141,7 @@ def main():
         outputs_sha256={str(p.relative_to(target)):digest(p) for p in target.rglob('*') if p.is_file()})
     (target/'export_provenance.json').write_text(json.dumps(report, indent=2)+'\n')
     if isinstance(figure_status, str) and target.is_relative_to(root/'candidate_exports'):
-        indexpath=root/'candidate_exports/index.json'
-        index=json.loads(indexpath.read_text()) if indexpath.exists() else {}
-        index[args.stage]=dict(path=str(target.relative_to(root/'candidate_exports')),
-            export_provenance_sha256=digest(target/'export_provenance.json'),
-            stage_end_sha256=ends[args.stage],review_required=True)
-        temporary=indexpath.with_suffix('.pending');temporary.write_text(json.dumps(index,indent=2)+'\n');temporary.replace(indexpath)
+        publish_index(root,target,args.stage,ends[args.stage])
     print(json.dumps(dict(stage=args.stage, candidate_exports=str(target), figure_status=figure_status)))
     return 0 if isinstance(figure_status, str) else 1
 
@@ -144,4 +153,4 @@ if __name__ == '__main__':
     lockpath.parent.mkdir(parents=True,exist_ok=True)
     with lockpath.open('a+') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX)
-        raise SystemExit(main())
+        raise SystemExit(main(lock.fileno()))
