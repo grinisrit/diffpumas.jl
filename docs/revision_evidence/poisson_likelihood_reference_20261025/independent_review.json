@@ -1,0 +1,22 @@
+{
+  "scope": "Independent review of source, statistical interpretation and actual saved-count outputs; no fresh draws or reconstruction.",
+  "llr_rows": 48,
+  "raw_llr_score_checks": 432,
+  "raw_score_check_design": "Three predeclared sampled indices (first, middle, last) in calibration-null/test-null/signal for every profile/factor/hypothesis; independent math.fsum dot product and offset.",
+  "max_absolute_score_discrepancy": 1.1368683772161603e-13,
+  "all48_thresholds_exceedances_CP_endpoints_match": true,
+  "llr_heldout_null_exceedance_range": [
+    1,
+    14
+  ],
+  "paired_all_statistic_rows": 144,
+  "paired_all_statistic_CP_endpoints_match": true,
+  "paired_heldout_null_exceedance_range": [
+    1,
+    16
+  ],
+  "source_provenance_sha256": "f24dcf9b7a7e93b96ad8f56b00d08beea52c0b28a034a6882faa8c1c2609d484",
+  "interpretation": "Known-simple-hypothesis LLR does not establish physical optimality or calibrated nominal tail. Empirical thresholds differ in realized FPR; power comparisons are conditional rather than equal-true-FPR certified. Finite-CSDA alternative is biased surrogate, not stochastic truth; threshold uncertainty and simultaneous coverage omitted.",
+  "paired_all144_source_statistics_thresholds_and_counts_match": true,
+  "paired_population_mapping": "For factors .5/1/2 reuse original calibration/test/linear populations and extension finite populations; factors4/8/16 use extension populations. Three methods map to exact saved statistic columns."
+}

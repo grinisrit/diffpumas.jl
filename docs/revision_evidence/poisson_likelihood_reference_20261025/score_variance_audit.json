@@ -1,0 +1,39 @@
+{
+  "scope": "Frozen first-order template variance audit only; no new draws or power interpolation. Gaussian null-standardized planning omits changed alternative variances. Power shortfall cannot be attributed solely to Poisson skewness.",
+  "definition": "sqrt(sum((s/f)^2*p*(f+s))/sum((s/f)^2*p*f))",
+  "rows": [
+    {
+      "profile": "legacy_equal_bin",
+      "null_score_variance_per_E": 0.0001961857042151654,
+      "first_order_alt_variance_per_E": 0.0005548611952925861,
+      "alt_to_null_sd_ratio": 1.6817386203915998,
+      "expected_signal_to_null_count_ratio": 2.265637694685814
+    },
+    {
+      "profile": "uniform_directional_area",
+      "null_score_variance_per_E": 0.00011823469644667762,
+      "first_order_alt_variance_per_E": 0.00032873608013000706,
+      "alt_to_null_sd_ratio": 1.667443840475226,
+      "expected_signal_to_null_count_ratio": 1.912228621599678
+    },
+    {
+      "profile": "cosine",
+      "null_score_variance_per_E": 0.00014130399021150327,
+      "first_order_alt_variance_per_E": 0.00039350796910187045,
+      "alt_to_null_sd_ratio": 1.6687817938169895,
+      "expected_signal_to_null_count_ratio": 2.016074614145937
+    },
+    {
+      "profile": "azimuth_modulated",
+      "null_score_variance_per_E": 0.00013757650190815876,
+      "first_order_alt_variance_per_E": 0.000377691349219027,
+      "alt_to_null_sd_ratio": 1.656900341759154,
+      "expected_signal_to_null_count_ratio": 1.9659054468315709
+    }
+  ],
+  "input_sha256": {
+    "/home/roland/devspace/diffpumas.jl/dev/audit_poisson_score_variance.py": "a494b5c012be49150585ad8f8aa21dd337446aa77c4488d2e02e358d9c957f14",
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/directional_templates.csv": "fc56b88a23ce862a00019dbba8971c7df13742fb21248ec46ad718d4f9481ee0",
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/exposure_shares.csv": "82ca800605895e3085c67066a1f1c9fd94aad49e13c7cfd0ab16e98a5725eb80"
+  }
+}
