@@ -4,7 +4,7 @@
   "scope": "Current fixed pseudo-Huber dry-correction screen control; not legacy IRLS and not physical water accuracy",
   "review_required": true,
   "collector_sha256": "890c8380a8fd8c5e87a605be00f4f2afec1cb6d907ebcd688bbcf7e2657bd226",
-  "helper_sha256": "3f86dfbf7883aea70db218b5bff157ddcccb72d1890db0e4eb12c40422628fa9",
+  "helper_sha256": "d6c951d9b11ce9e35f28cf2d6e7674195adad52e9ec59201b4515f31db6732e3",
   "case_end_sha256": {
     "dry/start0": "bec4c74b0ea8ddd6740298d261be5ff24be2d0636bcd01d4cbd090ab2ed7742b",
     "dry/maskInf": "f4fbde711fc101a04a496c6ed6fe224731563ee0d3a9bf5a4d6809f8e4e1c497"
@@ -12,6 +12,10 @@
   "support_means": {
     "dry/start0": 0.09830973922714992,
     "dry/maskInf": 0.18412717330994657
+  },
+  "profiled_normalizations": {
+    "dry/start0": 3393441.304993125,
+    "dry/maskInf": 2883668.7319564587
   },
   "mask_fit_bins": 1003,
   "reference_fit_bins": 690,

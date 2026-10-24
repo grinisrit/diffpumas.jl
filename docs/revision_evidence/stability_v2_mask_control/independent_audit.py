@@ -43,7 +43,7 @@ status=dict(x.split('=',1) for x in (runs['dry/maskInf']/'results/lvd_solver_sta
 assert status['kkt_converged']=='false' and float(status['projected_gradient'])>float(status['projected_gradient_tolerance'])
 result=dict(schema_version=1,passed=True,scope='Current fixed pseudo-Huber dry-correction screen control; not legacy IRLS and not physical water accuracy',review_required=True,
  collector_sha256=sha(collector),helper_sha256=sha(Path(__file__)),case_end_sha256={k:sha(p/'end_status.json') for k,p in runs.items()},
- support_means=means,mask_fit_bins=1003,reference_fit_bins=690,support_cells=147,comparison=comparison,
+ support_means=means,profiled_normalizations={k:float(next(iter(v.values()))['normalization']) for k,v in predictions.items()},mask_fit_bins=1003,reference_fit_bins=690,support_cells=147,comparison=comparison,
  projected_gradient=float(status['projected_gradient']),tolerance=float(status['projected_gradient_tolerance']),kkt_converged=False,
  nonzero_screen_disabled_field=True,conditional_normalization='Each fit retains its own profiled scale; common-bin residual comparisons do not hold normalization fixed',
  objective_comparison='Screen changes the configured objective; total objective values cannot be ranked as same-objective minima',revision_complete=False)
