@@ -1,0 +1,21 @@
+{
+  "ended_utc": "2026-10-24T10:19:24.241972+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "e8a0c06c657be91404acf238b1099748874947d62546d8080f017e8ea0a5ba38",
+    "results/lvd_fit_field.csv": "e3b7b4ef2cffd09aaf29ba728ad34905ebc531a37f0997871b5f1800edb55d9c",
+    "results/lvd_fit_mask.csv": "2f941e953b97371acb29c6e7903a6c3e1d4bd4cce1784924efb2785477036252",
+    "results/lvd_fit_predictions.csv": "04e0948ff27f8067e274053ad4e72bfef4a2544a37cb10abcd13dcccf38a7b90",
+    "results/lvd_mc_coverage.csv": "ff4ee814fe8be4d0ee647877e4ec739f569414f130776c43332d149e3148d1c0",
+    "results/lvd_mc_coverage_summary.csv": "5b274f83ee20834b0bea90fddd623217ff1fcbf88e19a34786b2354e14b5704d",
+    "results/lvd_recursion_history.csv": "fa6d381d508b1f5f716838525545093e8f1ac8e5ecd561eca5e972b6af22a784",
+    "results/lvd_recursion_status.txt": "8c44b72233b5c1ce425c9085496688252d3dd5ec34b6afec8a02ddf57a1f575c",
+    "results/lvd_solver_history.csv": "0cdb4052eee3a4c3779944bb050d49ff3c6ba88b5dcfbb94e6e4ca3ac125590a",
+    "results/lvd_solver_status.txt": "f021dac8310f0e845e9238bd6b69887663a47e39ff14163325597a8e72a88a1a",
+    "run.log": "8f660eccb2417b48a9747113dc3793d57fe0c2aee84c645b524de86f0152e6ad"
+  }
+}

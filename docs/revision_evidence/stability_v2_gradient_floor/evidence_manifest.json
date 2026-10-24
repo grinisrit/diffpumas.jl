@@ -1,0 +1,106 @@
+{
+  "completed_start015/execution.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/execution.json",
+    "sha256": "e8a0c06c657be91404acf238b1099748874947d62546d8080f017e8ea0a5ba38"
+  },
+  "completed_start015/end_status.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/end_status.json",
+    "sha256": "0425a70de694c2fc14b22bbc559d54cd327c2dc93e3e809264f0efeec78f7bdd"
+  },
+  "completed_start015/run.log": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/run.log",
+    "sha256": "8f660eccb2417b48a9747113dc3793d57fe0c2aee84c645b524de86f0152e6ad"
+  },
+  "completed_start015/results/lvd_solver_history.csv": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/results/lvd_solver_history.csv",
+    "sha256": "0cdb4052eee3a4c3779944bb050d49ff3c6ba88b5dcfbb94e6e4ca3ac125590a"
+  },
+  "completed_start015/results/lvd_solver_status.txt": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/results/lvd_solver_status.txt",
+    "sha256": "f021dac8310f0e845e9238bd6b69887663a47e39ff14163325597a8e72a88a1a"
+  },
+  "completed_start015/results/lvd_fit_field.csv": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/results/lvd_fit_field.csv",
+    "sha256": "e3b7b4ef2cffd09aaf29ba728ad34905ebc531a37f0997871b5f1800edb55d9c"
+  },
+  "completed_start015/results/lvd_fit_predictions.csv": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/results/lvd_fit_predictions.csv",
+    "sha256": "04e0948ff27f8067e274053ad4e72bfef4a2544a37cb10abcd13dcccf38a7b90"
+  },
+  "completed_start015/results/lvd_fit_mask.csv": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/results/lvd_fit_mask.csv",
+    "sha256": "2f941e953b97371acb29c6e7903a6c3e1d4bd4cce1784924efb2785477036252"
+  },
+  "completed_start015/results/lvd_mc_coverage.csv": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/results/lvd_mc_coverage.csv",
+    "sha256": "ff4ee814fe8be4d0ee647877e4ec739f569414f130776c43332d149e3148d1c0"
+  },
+  "stopped_fast_start0/execution.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_fast_dry_start0_20261024/execution.json",
+    "sha256": "5153017236f0accc26edd73177ff9c05ea17d01d02d036528a024062f5a12f48"
+  },
+  "stopped_fast_start0/end_status.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_fast_dry_start0_20261024/end_status.json",
+    "sha256": "f7a4b1c3cf62ac194705ec04f7822e93194b8f367551422ff373134d277ed08c"
+  },
+  "stopped_fast_start0/run.log": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_fast_dry_start0_20261024/run.log",
+    "sha256": "d1f04409c5d62a8540618a6b110783a80e27e5f278ccfe900e237032fff70e66"
+  },
+  "stopped_fast_start0/cancellation_reason.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_fast_dry_start0_20261024/cancellation_reason.json",
+    "sha256": "7861d081d1373bd646e0bd28b43602f07270e8eb1689883aacd65263c05a6a70"
+  },
+  "stopped_fast_start0/results/lvd_solver_progress.csv": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_fast_dry_start0_20261024/results/lvd_solver_progress.csv",
+    "sha256": "f968de841eec7e40d2c8dd9b395a5d224e897cf5f8d531541498cb35b87a928a"
+  },
+  "stationarity_audit/execution.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_stationarity_audit_20261024/execution.json",
+    "sha256": "b6086d69848e506af02cad222252d25878ccb3c80223a5c37143ca0215ef0759"
+  },
+  "stationarity_audit/end_status.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_stationarity_audit_20261024/end_status.json",
+    "sha256": "fab657e5194c610b66b5673de62c56266fd8988cc4e4cbdbace8804b461acf29"
+  },
+  "stationarity_audit/run.log": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_stationarity_audit_20261024/run.log",
+    "sha256": "cd1b0118c2963b41c00f58dbc14fdc0e0d40cf4c5c9209c47d41b1f474ad47b0"
+  },
+  "stationarity_audit/results/stationarity_audit.toml": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_stationarity_audit_20261024/results/stationarity_audit.toml",
+    "sha256": "685af1a5cbba91ad1f49dd62d3deb15b40ae2a09206d871e97e5656a31b01289"
+  },
+  "flux_gradient_audit/execution.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_retry_20261024/execution.json",
+    "sha256": "bdb553a0e630c2349376ad01f869c37f515bc18e1a8dedff801593d76840a189"
+  },
+  "flux_gradient_audit/end_status.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_retry_20261024/end_status.json",
+    "sha256": "821911c578e38cb14c2cc9b221fbba685d0050303244da70db3c4d95534a4bdc"
+  },
+  "flux_gradient_audit/run.log": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_retry_20261024/run.log",
+    "sha256": "f113ed848fddc3193180639d44da4195a9282629526a86b2d90fd3d33c907b10"
+  },
+  "flux_gradient_audit/results/flux_gradient_audit.toml": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_retry_20261024/results/flux_gradient_audit.toml",
+    "sha256": "18f759986684a1bb54e44ade368fec830c3dd1638f203e9de00670308fb29a35"
+  },
+  "failed_flux_audit/execution.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_20261024/execution.json",
+    "sha256": "3baf63b0eb3273ce2c76d03e1f610b58349540efe3a2ebda2f05c7d24036e1b5"
+  },
+  "failed_flux_audit/end_status.json": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_20261024/end_status.json",
+    "sha256": "963df1bd7239831a662c1c3ce8a29922aa16db89d96e6020b33749de40355d0e"
+  },
+  "failed_flux_audit/run.log": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_20261024/run.log",
+    "sha256": "43be981c71de29e8548b7e6ff857ae220fff586899fc830c52eea4ead921f1c1"
+  },
+  "failed_flux_audit/failed_helper_source.jl": {
+    "source": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_20261024_failed_helper.jl",
+    "sha256": "fe449982c4633f2d6506611db3ddf33423b261c038e185e768f249743c6b5bb9"
+  }
+}

@@ -1,0 +1,11 @@
+objective_model=fixed_pseudo_huber_log_flux
+robust_log_scale=0.3
+normalization_mode=profiled
+initial_field_water=0.15
+maximum_iterations=100
+projected_gradient_tolerance=1.0e-6
+projected_gradient=0.0017875991078801362
+objective=98.5342956278035
+kkt_converged=false
+support_cells=147
+fit_bins=690

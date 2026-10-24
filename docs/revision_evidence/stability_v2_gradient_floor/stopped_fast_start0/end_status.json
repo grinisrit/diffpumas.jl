@@ -1,0 +1,15 @@
+{
+  "ended_utc": "2026-10-24T10:37:46.668228+00:00",
+  "returncode": -15,
+  "execution_completed": false,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "cancellation_reason.json": "7861d081d1373bd646e0bd28b43602f07270e8eb1689883aacd65263c05a6a70",
+    "execution.json": "5153017236f0accc26edd73177ff9c05ea17d01d02d036528a024062f5a12f48",
+    "results/lvd_fit_mask.csv": "2f941e953b97371acb29c6e7903a6c3e1d4bd4cce1784924efb2785477036252",
+    "results/lvd_solver_progress.csv": "f968de841eec7e40d2c8dd9b395a5d224e897cf5f8d531541498cb35b87a928a",
+    "run.log": "d1f04409c5d62a8540618a6b110783a80e27e5f278ccfe900e237032fff70e66"
+  }
+}

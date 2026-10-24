@@ -1,0 +1,13 @@
+{
+  "ended_utc": "2026-10-24T10:34:54.546301+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "bdb553a0e630c2349376ad01f869c37f515bc18e1a8dedff801593d76840a189",
+    "results/flux_gradient_audit.toml": "18f759986684a1bb54e44ade368fec830c3dd1638f203e9de00670308fb29a35",
+    "run.log": "f113ed848fddc3193180639d44da4195a9282629526a86b2d90fd3d33c907b10"
+  }
+}

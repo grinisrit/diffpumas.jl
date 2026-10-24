@@ -1,0 +1,925 @@
+prior_gradient = -0.03836322294865117
+max_sparse_fullvector_derivative_relative_error = 0.0
+max_sparse_full_flux_relative_error = 0.0
+water_fraction = 0.11471926542607168
+affected_bins = 9
+default_data_gradient = 0.040150822056532406
+cell = 275
+default_ad_gradient = 0.0017875991078801431
+
+[[summaries]]
+kind = "internal_adjoint_step"
+step = 0.0001
+data_gradient = 0.04077466364823859
+total_gradient = 0.0024114406995874235
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "internal_adjoint_step"
+step = 1.0e-5
+data_gradient = 0.040785719930616506
+total_gradient = 0.0024224969819653386
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "internal_adjoint_step"
+step = 1.0e-6
+data_gradient = 0.040150822056532406
+total_gradient = 0.0017875991078812395
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "internal_adjoint_step"
+step = 1.0e-7
+data_gradient = 0.034736655128949155
+total_gradient = -0.003626567819702012
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "internal_adjoint_step"
+step = 1.0e-8
+data_gradient = 0.034736665887984165
+total_gradient = -0.0036265570606670017
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "flux_finite_difference"
+step = 0.0001
+data_gradient = 0.04080679475799653
+total_gradient = 0.00244357180934536
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "flux_finite_difference"
+step = 1.0e-5
+data_gradient = 0.04079327670788422
+total_gradient = 0.002430053759233053
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "flux_finite_difference"
+step = 1.0e-6
+data_gradient = 0.04022987311123626
+total_gradient = 0.0018666501625850956
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "flux_finite_difference"
+step = 1.0e-7
+data_gradient = 0.034736657500398484
+total_gradient = -0.0036265654482526832
+prior_gradient = -0.03836322294865117
+[[summaries]]
+kind = "flux_finite_difference"
+step = 1.0e-8
+data_gradient = 0.034736690542709454
+total_gradient = -0.0036265324059417126
+prior_gradient = -0.03836322294865117
+
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 827
+flux_full = 6.541723361119344e-7
+default_fullvector_derivative = 1.0164370502654705e-7
+derivative = 1.016435654951746e-7
+default_sparse_derivative = 1.0164370502654705e-7
+flux_sparse = 6.541723361119344e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 828
+flux_full = 8.033057955527596e-7
+default_fullvector_derivative = 3.1297063544966576e-7
+derivative = 3.129712383310732e-7
+default_sparse_derivative = 3.1297063544966576e-7
+flux_sparse = 8.033057955527596e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 829
+flux_full = 1.0306124644638173e-6
+default_fullvector_derivative = 5.870509587002379e-7
+derivative = 5.870883242149387e-7
+default_sparse_derivative = 5.870509587002379e-7
+flux_sparse = 1.0306124644638173e-6
+objective_coefficient = -242808.73483557848
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 830
+flux_full = 1.654627310692027e-6
+default_fullvector_derivative = 1.1406884817128673e-6
+derivative = 1.1404342496655478e-6
+default_sparse_derivative = 1.1406884817128673e-6
+flux_sparse = 1.654627310692027e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 831
+flux_full = 2.599177137583247e-6
+default_fullvector_derivative = 1.9373035833371513e-6
+derivative = 1.93728855883616e-6
+default_sparse_derivative = 1.9373035833371513e-6
+flux_sparse = 2.599177137583247e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 911
+flux_full = 3.686973023808593e-7
+default_fullvector_derivative = 6.089994116588198e-7
+derivative = 6.088904950505732e-7
+default_sparse_derivative = 6.089994116588198e-7
+flux_sparse = 3.686973023808593e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 916
+flux_full = 1.0586688152690005e-6
+default_fullvector_derivative = 3.1801601296528428e-6
+derivative = 3.1831622180079615e-6
+default_sparse_derivative = 3.1801601296528428e-6
+flux_sparse = 1.0586688152690005e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 1001
+flux_full = 1.340364733998199e-7
+default_fullvector_derivative = 5.094758654508749e-7
+derivative = 5.094759801667485e-7
+default_sparse_derivative = 5.094758654508749e-7
+flux_sparse = 1.340364733998199e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+internal_step = 0.0001
+kind = "internal_adjoint_step"
+bin = 1089
+flux_full = 2.7640504034191666e-8
+default_fullvector_derivative = 5.279918252064714e-9
+derivative = 5.279832045870645e-9
+default_sparse_derivative = 5.279918252064714e-9
+flux_sparse = 2.7640504034191666e-8
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 827
+flux_full = 6.541723361119344e-7
+default_fullvector_derivative = 1.0164370502654705e-7
+derivative = 1.016437051393426e-7
+default_sparse_derivative = 1.0164370502654705e-7
+flux_sparse = 6.541723361119344e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 828
+flux_full = 8.033057955527596e-7
+default_fullvector_derivative = 3.1297063544966576e-7
+derivative = 3.129706115510296e-7
+default_sparse_derivative = 3.1297063544966576e-7
+flux_sparse = 8.033057955527596e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 829
+flux_full = 1.0306124644638173e-6
+default_fullvector_derivative = 5.870509587002379e-7
+derivative = 5.870509590986614e-7
+default_sparse_derivative = 5.870509587002379e-7
+flux_sparse = 1.0306124644638173e-6
+objective_coefficient = -242808.73483557848
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 830
+flux_full = 1.654627310692027e-6
+default_fullvector_derivative = 1.1406884817128673e-6
+derivative = 1.1406884816324244e-6
+default_sparse_derivative = 1.1406884817128673e-6
+flux_sparse = 1.654627310692027e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 831
+flux_full = 2.599177137583247e-6
+default_fullvector_derivative = 1.9373035833371513e-6
+derivative = 1.937303583882527e-6
+default_sparse_derivative = 1.9373035833371513e-6
+flux_sparse = 2.599177137583247e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 911
+flux_full = 3.686973023808593e-7
+default_fullvector_derivative = 6.089994116588198e-7
+derivative = 6.089994002753003e-7
+default_sparse_derivative = 6.089994116588198e-7
+flux_sparse = 3.686973023808593e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 916
+flux_full = 1.0586688152690005e-6
+default_fullvector_derivative = 3.1801601296528428e-6
+derivative = 3.182885530839879e-6
+default_sparse_derivative = 3.1801601296528428e-6
+flux_sparse = 1.0586688152690005e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 1001
+flux_full = 1.340364733998199e-7
+default_fullvector_derivative = 5.094758654508749e-7
+derivative = 5.094759061226633e-7
+default_sparse_derivative = 5.094758654508749e-7
+flux_sparse = 1.340364733998199e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+internal_step = 1.0e-5
+kind = "internal_adjoint_step"
+bin = 1089
+flux_full = 2.7640504034191666e-8
+default_fullvector_derivative = 5.279918252064714e-9
+derivative = 5.27986616957032e-9
+default_sparse_derivative = 5.279918252064714e-9
+flux_sparse = 2.7640504034191666e-8
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 827
+flux_full = 6.541723361119344e-7
+default_fullvector_derivative = 1.0164370502654705e-7
+derivative = 1.0164370502654705e-7
+default_sparse_derivative = 1.0164370502654705e-7
+flux_sparse = 6.541723361119344e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 828
+flux_full = 8.033057955527596e-7
+default_fullvector_derivative = 3.1297063544966576e-7
+derivative = 3.1297063544966576e-7
+default_sparse_derivative = 3.1297063544966576e-7
+flux_sparse = 8.033057955527596e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 829
+flux_full = 1.0306124644638173e-6
+default_fullvector_derivative = 5.870509587002379e-7
+derivative = 5.870509587002379e-7
+default_sparse_derivative = 5.870509587002379e-7
+flux_sparse = 1.0306124644638173e-6
+objective_coefficient = -242808.73483557848
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 830
+flux_full = 1.654627310692027e-6
+default_fullvector_derivative = 1.1406884817128673e-6
+derivative = 1.1406884817128673e-6
+default_sparse_derivative = 1.1406884817128673e-6
+flux_sparse = 1.654627310692027e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 831
+flux_full = 2.599177137583247e-6
+default_fullvector_derivative = 1.9373035833371513e-6
+derivative = 1.9373035833371513e-6
+default_sparse_derivative = 1.9373035833371513e-6
+flux_sparse = 2.599177137583247e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 911
+flux_full = 3.686973023808593e-7
+default_fullvector_derivative = 6.089994116588198e-7
+derivative = 6.089994116588198e-7
+default_sparse_derivative = 6.089994116588198e-7
+flux_sparse = 3.686973023808593e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 916
+flux_full = 1.0586688152690005e-6
+default_fullvector_derivative = 3.1801601296528428e-6
+derivative = 3.1801601296528428e-6
+default_sparse_derivative = 3.1801601296528428e-6
+flux_sparse = 1.0586688152690005e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 1001
+flux_full = 1.340364733998199e-7
+default_fullvector_derivative = 5.094758654508749e-7
+derivative = 5.094758654508749e-7
+default_sparse_derivative = 5.094758654508749e-7
+flux_sparse = 1.340364733998199e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+internal_step = 1.0e-6
+kind = "internal_adjoint_step"
+bin = 1089
+flux_full = 2.7640504034191666e-8
+default_fullvector_derivative = 5.279918252064714e-9
+derivative = 5.279918252064714e-9
+default_sparse_derivative = 5.279918252064714e-9
+flux_sparse = 2.7640504034191666e-8
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 827
+flux_full = 6.541723361119344e-7
+default_fullvector_derivative = 1.0164370502654705e-7
+derivative = 1.016437056130577e-7
+default_sparse_derivative = 1.0164370502654705e-7
+flux_sparse = 6.541723361119344e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 828
+flux_full = 8.033057955527596e-7
+default_fullvector_derivative = 3.1297063544966576e-7
+derivative = 3.129706359612625e-7
+default_sparse_derivative = 3.1297063544966576e-7
+flux_sparse = 8.033057955527596e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 829
+flux_full = 1.0306124644638173e-6
+default_fullvector_derivative = 5.870509587002379e-7
+derivative = 5.8705096299262e-7
+default_sparse_derivative = 5.870509587002379e-7
+flux_sparse = 1.0306124644638173e-6
+objective_coefficient = -242808.73483557848
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 830
+flux_full = 1.654627310692027e-6
+default_fullvector_derivative = 1.1406884817128673e-6
+derivative = 1.1406884893857238e-6
+default_sparse_derivative = 1.1406884817128673e-6
+flux_sparse = 1.654627310692027e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 831
+flux_full = 2.599177137583247e-6
+default_fullvector_derivative = 1.9373035833371513e-6
+derivative = 1.937303576849704e-6
+default_sparse_derivative = 1.9373035833371513e-6
+flux_sparse = 2.599177137583247e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 911
+flux_full = 3.686973023808593e-7
+default_fullvector_derivative = 6.089994116588198e-7
+derivative = 6.089994187322896e-7
+default_sparse_derivative = 6.089994116588198e-7
+flux_sparse = 3.686973023808593e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 916
+flux_full = 1.0586688152690005e-6
+default_fullvector_derivative = 3.1801601296528428e-6
+derivative = 3.15690607404031e-6
+default_sparse_derivative = 3.1801601296528428e-6
+flux_sparse = 1.0586688152690005e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 1001
+flux_full = 1.340364733998199e-7
+default_fullvector_derivative = 5.094758654508749e-7
+derivative = 5.09475866177135e-7
+default_sparse_derivative = 5.094758654508749e-7
+flux_sparse = 1.340364733998199e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+internal_step = 1.0e-7
+kind = "internal_adjoint_step"
+bin = 1089
+flux_full = 2.7640504034191666e-8
+default_fullvector_derivative = 5.279918252064714e-9
+derivative = 5.279918331341318e-9
+default_sparse_derivative = 5.279918252064714e-9
+flux_sparse = 2.7640504034191666e-8
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 827
+flux_full = 6.541723361119344e-7
+default_fullvector_derivative = 1.0164370502654705e-7
+derivative = 1.0164369593843585e-7
+default_sparse_derivative = 1.0164370502654705e-7
+flux_sparse = 6.541723361119344e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 828
+flux_full = 8.033057955527596e-7
+default_fullvector_derivative = 3.1297063544966576e-7
+derivative = 3.129706394350631e-7
+default_sparse_derivative = 3.1297063544966576e-7
+flux_sparse = 8.033057955527596e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 829
+flux_full = 1.0306124644638173e-6
+default_fullvector_derivative = 5.870509587002379e-7
+derivative = 5.870509711339467e-7
+default_sparse_derivative = 5.870509587002379e-7
+flux_sparse = 1.0306124644638173e-6
+objective_coefficient = -242808.73483557848
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 830
+flux_full = 1.654627310692027e-6
+default_fullvector_derivative = 1.1406884817128673e-6
+derivative = 1.1406883728123488e-6
+default_sparse_derivative = 1.1406884817128673e-6
+flux_sparse = 1.654627310692027e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 831
+flux_full = 2.599177137583247e-6
+default_fullvector_derivative = 1.9373035833371513e-6
+derivative = 1.9373033071873564e-6
+default_sparse_derivative = 1.9373035833371513e-6
+flux_sparse = 2.599177137583247e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 911
+flux_full = 3.686973023808593e-7
+default_fullvector_derivative = 6.089994116588198e-7
+derivative = 6.089993770781521e-7
+default_sparse_derivative = 6.089994116588198e-7
+flux_sparse = 3.686973023808593e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 916
+flux_full = 1.0586688152690005e-6
+default_fullvector_derivative = 3.1801601296528428e-6
+derivative = 3.1569061305409637e-6
+default_sparse_derivative = 3.1801601296528428e-6
+flux_sparse = 1.0586688152690005e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 1001
+flux_full = 1.340364733998199e-7
+default_fullvector_derivative = 5.094758654508749e-7
+derivative = 5.094758377219845e-7
+default_sparse_derivative = 5.094758654508749e-7
+flux_sparse = 1.340364733998199e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+internal_step = 1.0e-8
+kind = "internal_adjoint_step"
+bin = 1089
+flux_full = 2.7640504034191666e-8
+default_fullvector_derivative = 5.279918252064714e-9
+derivative = 5.279918369328363e-9
+default_sparse_derivative = 5.279918252064714e-9
+flux_sparse = 2.7640504034191666e-8
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 6.541621703977886e-7
+bin = 827
+outer_step = 0.0001
+flux_hi = 6.541824991391612e-7
+derivative = 1.0164370686311175e-7
+default_sparse_derivative = 1.0164370502654705e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 8.032744948238111e-7
+bin = 828
+outer_step = 0.0001
+flux_hi = 8.033370889485098e-7
+derivative = 3.1297062349327516e-7
+default_sparse_derivative = 3.1297063544966576e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0305537531511208e-6
+bin = 829
+outer_step = 0.0001
+flux_hi = 1.0306711633441864e-6
+derivative = 5.870509653277254e-7
+default_sparse_derivative = 5.870509587002379e-7
+objective_coefficient = -242808.73483557848
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.6545132303906329e-6
+bin = 830
+outer_step = 0.0001
+flux_hi = 1.6547413383939203e-6
+derivative = 1.1405400164372463e-6
+default_sparse_derivative = 1.1406884817128673e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.5989833879586202e-6
+bin = 831
+outer_step = 0.0001
+flux_hi = 2.5993708486787827e-6
+derivative = 1.937303600812524e-6
+default_sparse_derivative = 1.9373035833371513e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 3.6863640011648526e-7
+bin = 911
+outer_step = 0.0001
+flux_hi = 3.687581840905071e-7
+derivative = 6.089198701092833e-7
+default_sparse_derivative = 6.089994116588198e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0583531296116379e-6
+bin = 916
+outer_step = 0.0001
+flux_hi = 1.0589897635940742e-6
+derivative = 3.183169912181403e-6
+default_sparse_derivative = 3.1801601296528428e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.3398553010682412e-7
+bin = 1001
+outer_step = 0.0001
+flux_hi = 1.340874252975354e-7
+derivative = 5.094759535563228e-7
+default_sparse_derivative = 5.094758654508749e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.7639975973944698e-8
+bin = 1089
+outer_step = 0.0001
+flux_hi = 2.7641031948100577e-8
+derivative = 5.279870779395319e-9
+default_sparse_derivative = 5.279918252064714e-9
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 6.541713196614411e-7
+bin = 827
+outer_step = 1.0e-5
+flux_hi = 6.541733525355463e-7
+derivative = 1.0164370526226179e-7
+default_sparse_derivative = 1.0164370502654705e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 8.033026658098397e-7
+bin = 828
+outer_step = 1.0e-5
+flux_hi = 8.0330892522256e-7
+derivative = 3.1297063601731696e-7
+default_sparse_derivative = 3.1297063544966576e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0306065938920638e-6
+bin = 829
+outer_step = 1.0e-5
+flux_hi = 1.0306183349112443e-6
+derivative = 5.870509590281623e-7
+default_sparse_derivative = 5.870509587002379e-7
+objective_coefficient = -242808.73483557848
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.6546159036926934e-6
+bin = 830
+outer_step = 1.0e-5
+flux_hi = 1.6546387174623084e-6
+derivative = 1.1406884807527087e-6
+default_sparse_derivative = 1.1406884817128673e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.5991577643547735e-6
+bin = 831
+outer_step = 1.0e-5
+flux_hi = 2.599196510426425e-6
+derivative = 1.937303582576711e-6
+default_sparse_derivative = 1.9373035833371513e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 3.686912123640512e-7
+bin = 911
+outer_step = 1.0e-5
+flux_hi = 3.6870339235190506e-7
+derivative = 6.089993926924119e-7
+default_sparse_derivative = 6.089994116588198e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0586372462577196e-6
+bin = 916
+outer_step = 1.0e-5
+flux_hi = 1.0587009046565996e-6
+derivative = 3.182919944000614e-6
+default_sparse_derivative = 3.1801601296528428e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.3403137868314895e-7
+bin = 1001
+outer_step = 1.0e-5
+flux_hi = 1.340415682015072e-7
+derivative = 5.094759179131239e-7
+default_sparse_derivative = 5.094758654508749e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.7640451234324895e-8
+bin = 1089
+outer_step = 1.0e-5
+flux_hi = 2.7640556832689903e-8
+derivative = 5.279918250432604e-9
+default_sparse_derivative = 5.279918252064714e-9
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 6.541722344680873e-7
+bin = 827
+outer_step = 1.0e-6
+flux_hi = 6.541724377555026e-7
+derivative = 1.016437076073432e-7
+default_sparse_derivative = 1.0164370502654705e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 8.033054825817612e-7
+bin = 828
+outer_step = 1.0e-6
+flux_hi = 8.033061085230304e-7
+derivative = 3.1297063460869037e-7
+default_sparse_derivative = 3.1297063544966576e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0306118774122343e-6
+bin = 829
+outer_step = 1.0e-6
+flux_hi = 1.030613051514154e-6
+derivative = 5.870509598426168e-7
+default_sparse_derivative = 5.870509587002379e-7
+objective_coefficient = -242808.73483557848
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.6546261700023965e-6
+bin = 830
+outer_step = 1.0e-6
+flux_hi = 1.6546284513793526e-6
+derivative = 1.1406884780194446e-6
+default_sparse_derivative = 1.1406884817128673e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.599175200277744e-6
+bin = 831
+outer_step = 1.0e-6
+flux_hi = 2.5991790748849035e-6
+derivative = 1.9373035797152863e-6
+default_sparse_derivative = 1.9373035833371513e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 3.68696693381219e-7
+bin = 911
+outer_step = 1.0e-6
+flux_hi = 3.686979113800416e-7
+derivative = 6.089994112971748e-7
+default_sparse_derivative = 6.089994116588198e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.058665658363444e-6
+bin = 916
+outer_step = 1.0e-6
+flux_hi = 1.0586720193627719e-6
+derivative = 3.180499663985857e-6
+default_sparse_derivative = 3.1801601296528428e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.3403596392439196e-7
+bin = 1001
+outer_step = 1.0e-6
+flux_hi = 1.3403698287612248e-7
+derivative = 5.094758652600547e-7
+default_sparse_derivative = 5.094758654508749e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.764049875426639e-8
+bin = 1089
+outer_step = 1.0e-6
+flux_hi = 2.7640509314102916e-8
+derivative = 5.279918263329294e-9
+default_sparse_derivative = 5.279918252064714e-9
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 6.541723259475605e-7
+bin = 827
+outer_step = 1.0e-7
+flux_hi = 6.541723462762995e-7
+derivative = 1.016436947931487e-7
+default_sparse_derivative = 1.0164370502654705e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 8.033057642556949e-7
+bin = 828
+outer_step = 1.0e-7
+flux_hi = 8.033058268498196e-7
+derivative = 3.1297062348269624e-7
+default_sparse_derivative = 3.1297063544966576e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0306124057587123e-6
+bin = 829
+outer_step = 1.0e-7
+flux_hi = 1.030612523168906e-6
+derivative = 5.870509679790149e-7
+default_sparse_derivative = 5.870509587002379e-7
+objective_coefficient = -242808.73483557848
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.6546271966231585e-6
+bin = 830
+outer_step = 1.0e-7
+flux_hi = 1.654627424760872e-6
+derivative = 1.1406885677732764e-6
+default_sparse_derivative = 1.1406884817128673e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.5991769438528706e-6
+bin = 831
+outer_step = 1.0e-7
+flux_hi = 2.5991773313135856e-6
+derivative = 1.937303575002834e-6
+default_sparse_derivative = 1.9373035833371513e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 3.686972414809153e-7
+bin = 911
+outer_step = 1.0e-7
+flux_hi = 3.686973632807964e-7
+derivative = 6.08999405351041e-7
+default_sparse_derivative = 6.089994116588198e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0586684995783993e-6
+bin = 916
+outer_step = 1.0e-7
+flux_hi = 1.058669130959612e-6
+derivative = 3.156906063654786e-6
+default_sparse_derivative = 3.1801601296528428e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.3403642245223787e-7
+bin = 1001
+outer_step = 1.0e-7
+flux_hi = 1.340365243474111e-7
+derivative = 5.094758661855911e-7
+default_sparse_derivative = 5.094758654508749e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.764050350619956e-8
+bin = 1089
+outer_step = 1.0e-7
+flux_hi = 2.7640504562183258e-8
+derivative = 5.27991848321279e-9
+default_sparse_derivative = 5.279918252064714e-9
+objective_coefficient = -8.116796705531272e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 6.541723350954918e-7
+bin = 827
+outer_step = 1.0e-8
+flux_hi = 6.541723371283667e-7
+derivative = 1.0164374725973593e-7
+default_sparse_derivative = 1.0164370502654705e-7
+objective_coefficient = -423436.8064449025
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 8.033057924230537e-7
+bin = 828
+outer_step = 1.0e-8
+flux_hi = 8.033057986824649e-7
+derivative = 3.12970558540772e-7
+default_sparse_derivative = 3.1297063544966576e-7
+objective_coefficient = -319464.79739322356
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.03061245859331e-6
+bin = 829
+outer_step = 1.0e-8
+flux_hi = 1.0306124703343259e-6
+derivative = 5.870507957219306e-7
+default_sparse_derivative = 5.870509587002379e-7
+objective_coefficient = -242808.73483557848
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.6546272992851317e-6
+bin = 830
+outer_step = 1.0e-8
+flux_hi = 1.6546273220989112e-6
+derivative = 1.1406889792174654e-6
+default_sparse_derivative = 1.1406884817128673e-6
+objective_coefficient = 62390.87915431679
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.5991771182102165e-6
+bin = 831
+outer_step = 1.0e-8
+flux_hi = 2.5991771569562834e-6
+derivative = 1.93730334949694e-6
+default_sparse_derivative = 1.9373035833371513e-6
+objective_coefficient = 106118.91167997928
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 3.686972962908648e-7
+bin = 911
+outer_step = 1.0e-8
+flux_hi = 3.686973084708528e-7
+derivative = 6.089993993363565e-7
+default_sparse_derivative = 6.089994116588198e-7
+objective_coefficient = 449468.89320702065
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.0586687836999392e-6
+bin = 916
+outer_step = 1.0e-8
+flux_hi = 1.0586688468380588e-6
+derivative = 3.1569059838802997e-6
+default_sparse_derivative = 3.1801601296528428e-6
+objective_coefficient = 232826.76256976908
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 1.3403646830506087e-7
+bin = 1001
+outer_step = 1.0e-8
+flux_hi = 1.340364784945781e-7
+derivative = 5.094758615714977e-7
+default_sparse_derivative = 5.094758654508749e-7
+objective_coefficient = -1.8103606360764927e6
+[[rays]]
+kind = "flux_finite_difference"
+flux_lo = 2.764050398139225e-8
+bin = 1089
+outer_step = 1.0e-8
+flux_hi = 2.764050408699061e-8
+derivative = 5.279918006378978e-9
+default_sparse_derivative = 5.279918252064714e-9
+objective_coefficient = -8.116796705531272e6

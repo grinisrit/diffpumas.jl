@@ -1,0 +1,7 @@
+{
+  "cancelled_utc": "2026-10-24T10:37:44.799422+00:00",
+  "julia_pid": 1696159,
+  "signal": "SIGTERM",
+  "reason": "Coordinator cancelled after >25 monotone iterations reached derivative-floor plateau: projected gradient oscillates about 0.002-0.004 while objective changes about 1e-9. Independent per-ray audit identifies approximate internal finite-difference adjoint crossing a branch at bin916; strict KKT is unsupported. Preserve live progress; replace derivative implementation only after prototype review.",
+  "authorized_by": "parent coordinator"
+}
