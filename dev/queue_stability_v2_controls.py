@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import os
+import resource
 from pathlib import Path
 import subprocess
 import sys
@@ -74,6 +75,12 @@ def main():
     dump=Path(base[base.index('--dump')+1]).resolve(strict=True)
     if tomllib.loads(dry.read_text())['csda']!=tomllib.loads(corrected.read_text())['csda']:
         p.error('dry and corrected artifacts must share exactly the dry correction')
+    full_affinity=set(os.sched_getaffinity(0))
+    control_affinity=set(range(a.cpu_start,a.cpu_start+a.cpus))
+    if not control_affinity <= full_affinity:p.error('control pool unavailable')
+    os.sched_setaffinity(0,control_affinity)
+    resource.setrlimit(resource.RLIMIT_AS,(int(a.memory_gib*1024**3),int(a.memory_gib*1024**3)))
+    for key in ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS'):os.environ[key]='1'
     output.mkdir(parents=True)
     inputs={str(path):sha(path) for path in (dry,corrected,Path(__file__).resolve(),
         ROOT/'dev/collect_stability_v2.py',ROOT/'dev/run_stability_v2.py')}
@@ -133,7 +140,10 @@ def main():
             for path in inputs:wrapper+=['--input',path]
             wrapper+=['--',*command]
             event(kind='launch',case=name,command=command,wrapped_command=wrapper)
-            child=subprocess.Popen(wrapper,cwd=ROOT)
+            # The audited wrapper computes its 30% host budget before applying
+            # the explicit scientific pool. Only that launcher sees full affinity;
+            # this queue and all report processes stay on the control pool.
+            child=subprocess.Popen(wrapper,cwd=ROOT,preexec_fn=lambda:os.sched_setaffinity(0,full_affinity))
             state(phase='running',case=name,wrapper_pid=child.pid,completed_cases=list(cases))
             returncode=child.wait();event(kind='child_ended',case=name,returncode=returncode)
             if returncode!=0:raise RuntimeError(f'Control execution/provenance failure: {name}')
