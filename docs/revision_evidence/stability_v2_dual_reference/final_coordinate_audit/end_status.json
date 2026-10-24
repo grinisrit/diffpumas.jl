@@ -1,0 +1,13 @@
+{
+  "ended_utc": "2026-10-24T11:43:00.103150+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "d835ce5810bc87a6560e3434bd12d8f3509c4811f18fe35fd473cb0eddd0190e",
+    "results/stationarity_audit.toml": "d61ed648725a4888188d18f0a2585dbf6778ca62c0092f1515778b9112727c83",
+    "run.log": "0641a1a75df6a9afb1fc70ba7e455056be72c04ea531b509dafaaca3484784f2"
+  }
+}

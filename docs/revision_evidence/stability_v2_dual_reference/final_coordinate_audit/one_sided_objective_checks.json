@@ -1,0 +1,55 @@
+{
+  "cell": 275,
+  "reference_backend": "forwarddiff",
+  "checks": [
+    {
+      "step": 0.001,
+      "coordinate": 0.11472369885711042,
+      "ad_gradient": 0.008991907742836217,
+      "central_or_box_secant": 0.0013792917101795852,
+      "left_one_sided": -0.030989795178015783,
+      "right_one_sided": 0.033748378598374956
+    },
+    {
+      "step": 0.0001,
+      "coordinate": 0.11472369885711042,
+      "ad_gradient": 0.008991907742836217,
+      "central_or_box_secant": 0.0028301675314423035,
+      "left_one_sided": -0.00574492887039907,
+      "right_one_sided": 0.011405263933283678
+    },
+    {
+      "step": 1e-05,
+      "coordinate": 0.11472369885711042,
+      "ad_gradient": 0.008991907742836217,
+      "central_or_box_secant": 0.002873456850239768,
+      "left_one_sided": -0.0034959114714197223,
+      "right_one_sided": 0.009242825171899258
+    },
+    {
+      "step": 1e-06,
+      "coordinate": 0.11472369885711042,
+      "ad_gradient": 0.008991907742836217,
+      "central_or_box_secant": 0.0028729445489232975,
+      "left_one_sided": -0.003271054538341926,
+      "right_one_sided": 0.009016943636188521
+    },
+    {
+      "step": 1e-07,
+      "coordinate": 0.11472369885711042,
+      "ad_gradient": 0.008991907742836217,
+      "central_or_box_secant": 0.0028729374434162,
+      "left_one_sided": -0.0032487434963489104,
+      "right_one_sided": 0.00899461838318131
+    },
+    {
+      "step": 1e-08,
+      "coordinate": 0.11472369885711042,
+      "ad_gradient": 0.008991907742836217,
+      "central_or_box_secant": 0.002873434824926294,
+      "left_one_sided": -0.00324718030413283,
+      "right_one_sided": 0.008994049953985419
+    }
+  ],
+  "interpretation": "Finite-step checks in one selected coordinate; no global stationarity, nondifferentiability, local-minimum or uniqueness certification."
+}

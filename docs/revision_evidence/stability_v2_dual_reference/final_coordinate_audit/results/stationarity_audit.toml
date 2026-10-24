@@ -1,0 +1,67 @@
+prior_inferred_from_saved_objective = 3.9549301978581313
+water_fraction = 0.11472369885711042
+objective = 98.53429563400051
+projected_gradient_inf = 0.008991907742836217
+helper_sha256 = "78db1b1bcb4f82bf5fd4765990bf01d8568304d1cb56790187d3ccbfce680415"
+correction_artifact_sha256 = "b6f97deb8182e48e5eff08e7c33d26b08b5d32f1c5337d07c2110ffcb8bb27b9"
+affected_bins = 9
+absolute_prior_weight = 3.954930197858131
+saved_objective = 98.53429563400051
+physics_dump_sha256 = "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+saved_projected_gradient = 0.008991907742836217
+cell = 275
+
+[[directional_checks]]
+lo = 0.11372369885711042
+step = 0.001
+objective_lo = 98.53432662379569
+ad_gradient = 0.008991907742836217
+hi = 0.11572369885711042
+objective_hi = 98.53432938237911
+finite_difference = 0.0013792917101795852
+relative_error = 0.8466074442013203
+[[directional_checks]]
+lo = 0.11462369885711042
+step = 0.0001
+objective_lo = 98.5342962084934
+ad_gradient = 0.008991907742836217
+hi = 0.11482369885711043
+objective_hi = 98.53429677452691
+finite_difference = 0.0028301675314423035
+relative_error = 0.6852539402779042
+[[directional_checks]]
+lo = 0.11471369885711043
+step = 1.0e-5
+objective_lo = 98.53429566895963
+ad_gradient = 0.008991907742836217
+hi = 0.11473369885711042
+objective_hi = 98.53429572642877
+finite_difference = 0.002873456850239768
+relative_error = 0.6804396872811526
+[[directional_checks]]
+lo = 0.11472269885711042
+step = 1.0e-6
+objective_lo = 98.53429563727157
+ad_gradient = 0.008991907742836217
+hi = 0.11472469885711042
+objective_hi = 98.53429564301746
+finite_difference = 0.0028729445489232975
+relative_error = 0.68049666087687
+[[directional_checks]]
+lo = 0.11472359885711042
+step = 1.0e-7
+objective_lo = 98.53429563432539
+ad_gradient = 0.008991907742836217
+hi = 0.11472379885711043
+objective_hi = 98.53429563489998
+finite_difference = 0.0028729374434162
+relative_error = 0.680497451088169
+[[directional_checks]]
+lo = 0.11472368885711043
+step = 1.0e-8
+objective_lo = 98.53429563403299
+ad_gradient = 0.008991907742836217
+hi = 0.11472370885711042
+objective_hi = 98.53429563409045
+finite_difference = 0.002873434824926294
+relative_error = 0.6804421367406113
