@@ -98,7 +98,8 @@ report['historical_manifest_sha256']=sha(hr/'SHA256SUMS')
     end
     changes=[p for (p,d) in hashes if bytes2hex(sha256(read(p)))!=d]
     gate=filter(r->r.step==1e-6,adrows)
-    status=Dict("source_inputs_sha256"=>hashes,"changed_inputs"=>changes,"flux_checks"=>length(primal),"paired_secant_checks"=>length(paired),
+    backend=isdefined(DiffPumas.Tomography,:get_adjoint_derivative_mode) ? string(DiffPumas.Tomography.get_adjoint_derivative_mode()) : "finite_difference"
+    status=Dict("adjoint_backend"=>backend,"internal_fd_step_active"=>backend=="finite_difference","source_inputs_sha256"=>hashes,"changed_inputs"=>changes,"flux_checks"=>length(primal),"paired_secant_checks"=>length(paired),
         "all_stored_primal_values_bitwise_equal"=>all(r->r.bitwise_equal,vcat(primal,paired)),
         "ad_fd_cases"=>length(gate),"max_relative_ad_fd_error_at_original_step"=>maximum(r.relative_error for r in gate),
         "ad_fd_threshold"=>1e-4,"internal_adjoint_step"=>get_adjoint_fd_step(),
