@@ -1,0 +1,220 @@
+covered_rays = 1003
+gradient_context_unchanged = true
+invariant_support_rays = 31
+
+[[records]]
+state = 1
+hits = 1003
+calls = 0
+bitwise_equal = true
+repeat = 1
+cache_seconds = 4.081e-5
+raw_seconds = 5.580471059
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 2
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 1
+cache_seconds = 3.762366844
+raw_seconds = 5.241949776
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 3
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 1
+cache_seconds = 3.678209845
+raw_seconds = 5.19241005
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 4
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 1
+cache_seconds = 0.059276086
+raw_seconds = 5.316131215
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 5
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 1
+cache_seconds = 0.060921807
+raw_seconds = 5.189310976
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 6
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 1
+cache_seconds = 0.066549079
+raw_seconds = 5.41459855
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 1
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.059515234
+raw_seconds = 5.189329036
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 2
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 2
+cache_seconds = 3.653050415
+raw_seconds = 5.308780572
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 3
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 2
+cache_seconds = 3.613885755
+raw_seconds = 5.112221881
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 4
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.059248936
+raw_seconds = 5.190573939
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 5
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.059321495
+raw_seconds = 5.056860515
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 6
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.058792758
+raw_seconds = 5.189570565
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+[[records]]
+state = 1
+hits = 1003
+calls = 0
+bitwise_equal = true
+repeat = 1
+cache_seconds = 3.7309e-5
+raw_seconds = 5.262392331
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 2
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 1
+cache_seconds = 3.593725879
+raw_seconds = 5.552709171
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 3
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 1
+cache_seconds = 3.592673284
+raw_seconds = 5.183874653
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 4
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 1
+cache_seconds = 0.059365875
+raw_seconds = 5.223740478
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 5
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 1
+cache_seconds = 0.058340701
+raw_seconds = 5.319273789
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 6
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 1
+cache_seconds = 0.059923872
+raw_seconds = 5.215947628
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 1
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.060786949
+raw_seconds = 5.332972348
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 2
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 2
+cache_seconds = 3.609348589
+raw_seconds = 5.172228043
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 3
+hits = 251
+calls = 752
+bitwise_equal = true
+repeat = 2
+cache_seconds = 3.733627052
+raw_seconds = 5.468231074
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 4
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.060001172
+raw_seconds = 5.380343975
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 5
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.060045872
+raw_seconds = 5.24881851
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+[[records]]
+state = 6
+hits = 994
+calls = 9
+bitwise_equal = true
+repeat = 2
+cache_seconds = 0.060837038
+raw_seconds = 5.130868995
+artifact = "/home/roland/devspace/diffpumas.jl/dev/../docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"

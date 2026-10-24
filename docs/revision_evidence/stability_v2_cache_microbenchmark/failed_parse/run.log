@@ -1,0 +1,15 @@
+{"host": "research_vm_roland", "cpus": [0], "address_space_bytes": 5368709120, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "20", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "/home/roland/devspace/diffpumas.jl/dev/benchmark_stability_ray_cache.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_cache_benchmark_20261024/results", "--papermatch-fit-only", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6", "--zenith-step", "10", "--azimuth-step", "15", "--samples", "32", "--csda-quadrature", "midpoint", "--rock-density", "2710", "--seed", "20261022", "--correction-artifact", "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml", "--papermatch-fit-mode", "stable", "--papermatch-gn-iters", "100", "--papermatch-gradient-tol", "1e-6", "--papermatch-log-scale", "0.3", "--papermatch-initial-water", "0"]}
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+ERROR: LoadError: ParseError:
+# Error @ /home/roland/devspace/diffpumas.jl/dev/benchmark_stability_ray_cache.jl:86:34
+end
+abspath(PROGRAM_FILE)==@__FILE__ && main_cache_benchmark()
+#                                └┘ ── invalid identifier
+Stacktrace:
+ [1] top-level scope
+   @ ~/devspace/diffpumas.jl/dev/benchmark_stability_ray_cache.jl:86
+in expression starting at /home/roland/devspace/diffpumas.jl/dev/benchmark_stability_ray_cache.jl:86
