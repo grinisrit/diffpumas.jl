@@ -99,6 +99,15 @@ def main():
         child=Path(handoff['last_child_path']).resolve(strict=True);audit(child)
         if sha(child/'end_status.json')!=handoff['last_child_end_sha256']:p.error('handoff child audit mismatch')
         if child not in reused.values():p.error('last child must be an explicitly reused case')
+        old_root=Path(handoff['old_queue_root']).resolve(strict=True)
+        # Retiring a controller must not leave an orphan numerical/report child.
+        for proc in Path('/proc').iterdir():
+            if not proc.name.isdigit() or int(proc.name)==os.getpid():continue
+            try:
+                command=(proc/'cmdline').read_bytes().replace(b'\0',b' ').decode(errors='replace')
+            except (FileNotFoundError,PermissionError,ProcessLookupError):continue
+            if str(old_root) in command and ('julia' in command or 'queue_stability_v2_controls.py' in command or 'build_surrogate_stability_report.py' in command):
+                p.error(f'old queue still owns an active numerical/report process: {proc.name}')
     dry=Path(base[base.index('--correction-artifact')+1]).resolve(strict=True)
     dump=Path(base[base.index('--dump')+1]).resolve(strict=True)
     if tomllib.loads(dry.read_text())['csda']!=tomllib.loads(corrected.read_text())['csda']:

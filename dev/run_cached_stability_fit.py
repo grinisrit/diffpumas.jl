@@ -36,6 +36,12 @@ def audit(folder):
     return end
 
 
+def recorded_digest(recorded, path):
+    path = Path(path)
+    relative = str(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else None
+    return recorded.get(str(path), recorded.get(relative))
+
+
 def verify_certificate(path):
     cert = json.loads(Path(path).read_text())
     if cert.get('schema_version') != 1 or cert.get('approved_for_successor_queue') is not True:
@@ -64,8 +70,13 @@ def verify_certificate(path):
         end = audit(folder)
         execution = json.loads((folder/'execution.json').read_text())
         recorded = execution.get('source_sha256', {})
+        if execution.get('julia_runtime') != cert.get('julia_runtime'):
+            raise ValueError(f'gate Julia runtime differs: {name}')
+        for context_path, digest in context.items():
+            if recorded_digest(recorded, context_path) != digest:
+                raise ValueError(f'gate lacks certified context input: {name}: {context_path}')
         for p in (EXAMPLE, HELPER, Path(__file__).resolve()):
-            if recorded.get(str(p), recorded.get(str(p.relative_to(ROOT)))) != sha(p):
+            if recorded_digest(recorded, p) != sha(p):
                 raise ValueError(f'gate used a different implementation: {name}: {p}')
         proof_rel = gate.get('proof_path')
         if not proof_rel or Path(proof_rel).is_absolute() or '..' in Path(proof_rel).parts:
@@ -74,13 +85,36 @@ def verify_certificate(path):
             raise ValueError(f'proof is not end bound: {name}')
         proof = json.loads((folder/proof_rel).read_text())
         checks = proof.get('checks', {})
-        required_checks = ['full_prediction_bitwise', 'profile_bitwise', 'objective_bitwise']
+        required_checks = ['full_prediction_bitwise', 'residual_bitwise', 'profile_bitwise',
+                           'objective_bitwise', 'context_guard_passed']
+        if proof.get('schema_version') != 1 or proof.get('gate_kind') != name:
+            raise ValueError(f'wrong semantic proof identity: {name}')
+        for key in ('closure_factory_path', 'closure_factory_sha256', 'transformed_source_sha256'):
+            if proof.get(key) != cert.get(key):
+                raise ValueError(f'proof factory/transformation mismatch: {name}: {key}')
+        factory = Path(cert['closure_factory_path'])
+        if not factory.is_absolute() or sha(factory) != cert['closure_factory_sha256']:
+            raise ValueError('closure factory changed')
+        if recorded_digest(recorded, factory) != sha(factory):
+            raise ValueError(f'factory is not a recorded gate input: {name}')
         if name == 'actual_gn_trial': required_checks += ['trial_stream_complete']
         if proof.get('passed') is not True or any(checks.get(k) is not True for k in required_checks):
             raise ValueError(f'incomplete semantic parity proof: {name}')
         for key in ('scope','sample_count','case_count','threads','cpu_affinity'):
             if not proof.get(key): raise ValueError(f'proof lacks {key}: {name}')
-        if name.endswith('threaded') and int(proof['threads']) < 2:
+        if proof.get('sample_count') != 32 or proof.get('ray_count') != 1003:
+            raise ValueError(f'unexpected quadrature or ray count: {name}')
+        if name == 'actual_gn_trial':
+            if proof.get('expected_trial_count') != 124 or proof.get('observed_trial_count') != 124:
+                raise ValueError('actual GN proof must cover the complete 124-trial stream')
+            for prefix in ('recorded_stream', 'reference_end'):
+                source = Path(proof[prefix+'_path'])
+                digest = proof[prefix+'_sha256']
+                if not source.is_absolute() or sha(source) != digest:
+                    raise ValueError(f'changed GN reference: {source}')
+                if recorded_digest(recorded, source) != digest:
+                    raise ValueError(f'GN reference not recorded as gate input: {source}')
+        if name.endswith('threaded') and (checks.get('threaded_parity') is not True or int(proof['threads']) < 2):
             raise ValueError('threaded gate must actually use multiple threads')
         if sha(folder/'end_status.json') != gate.get('end_status_sha256'):
             raise ValueError(f'gate end digest mismatch: {name}')
@@ -103,6 +137,7 @@ def transformed_source():
     isempty(args.correction_artifact) && error("cache variant requires frozen artifact")
     cache_scalars(x) = ntuple(i -> getfield(x, i), fieldcount(typeof(x)))
     cache_guard = () -> (
+        physics_identity=objectid(physics),
         base=cache_scalars(get_csda_correction()),
         material=cache_scalars(get_csda_material_correction()),
         config=cache_scalars(matcfg), site=cache_scalars(match_site),
@@ -175,7 +210,12 @@ def main():
         physics_mutation_contract='Physics tables must not mutate during this fit; bound dump/source/runtime and callback lifetime')
     manifest.write_text(json.dumps(record, indent=2)+'\n')
     if a.prepare_only: return 0
-    return subprocess.run([a.julia,'--startup-file=no','--project='+str(ROOT),str(launcher),*args],cwd=ROOT).returncode
+    status = subprocess.run([a.julia,'--startup-file=no','--project='+str(ROOT),str(launcher),*args],cwd=ROOT).returncode
+    if sha(source_path) != record['transformed_source_sha256'] or sha(launcher) != record['launcher_sha256']:
+        raise ValueError('generated Julia source or launcher changed during execution')
+    if sha(HELPER) != record['helper_sha256'] or sha(EXAMPLE) != record['original_example_sha256']:
+        raise ValueError('implementation changed during execution')
+    return status
 
 
 if __name__ == '__main__':
