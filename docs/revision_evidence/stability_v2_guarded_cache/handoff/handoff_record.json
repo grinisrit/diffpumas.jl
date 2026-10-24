@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-24T14:10:24.576123+00:00",
+  "old_controller_retired": true,
+  "old_controller_pid": 1851440,
+  "old_controller_start_ticks": 1536682322,
+  "boot_id": "cc5e5d14-f9f1-4aa2-9295-5876909f06fd",
+  "old_queue_root": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024",
+  "last_child_path": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/maskInf",
+  "last_child_end_sha256": "f4fbde711fc101a04a496c6ed6fe224731563ee0d3a9bf5a4d6809f8e4e1c497",
+  "certificate_path": "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/stability_v2_guarded_cache/certificate/certificate_approved.json",
+  "certificate_sha256": "2a9437ec556c15799abd66a6d6e24c70246f5b4eb5c93b44a675f6d9e05f8d71",
+  "reused_cases": {
+    "dry/start0": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_dry_start0_20261024",
+    "dry/start015": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/start015",
+    "dry/start03": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/start03",
+    "dry/scale_minus5pct": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/scale_minus5pct",
+    "dry/scale_plus5pct": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/scale_plus5pct",
+    "dry/maskInf": "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dual_controls_20261024/dry/maskInf"
+  },
+  "audits": {
+    "dry/start0": {
+      "end_sha256": "bec4c74b0ea8ddd6740298d261be5ff24be2d0636bcd01d4cbd090ab2ed7742b",
+      "outputs_verified": 14,
+      "inputs_verified": 61
+    },
+    "dry/start015": {
+      "end_sha256": "43feec3346ca48c017cb45e2b3f3832f8afc4a8c21f7d6ddf484d4a0985c044a",
+      "outputs_verified": 13,
+      "inputs_verified": 64
+    },
+    "dry/start03": {
+      "end_sha256": "c2570b64e29b86c389840f1636a22aeb59be37f25beae6c737eafc870189cad3",
+      "outputs_verified": 13,
+      "inputs_verified": 64
+    },
+    "dry/scale_minus5pct": {
+      "end_sha256": "b17b12e218da7f6a63850989cdbd6597b2a88a8499eb2dec4da5c473cab5a01c",
+      "outputs_verified": 13,
+      "inputs_verified": 64
+    },
+    "dry/scale_plus5pct": {
+      "end_sha256": "8873341dbf77e99cefb0a3df6b2c098fd6b1111ea3cfe4c5c244c556e7389364",
+      "outputs_verified": 13,
+      "inputs_verified": 64
+    },
+    "dry/maskInf": {
+      "end_sha256": "f4fbde711fc101a04a496c6ed6fe224731563ee0d3a9bf5a4d6809f8e4e1c497",
+      "outputs_verified": 13,
+      "inputs_verified": 64
+    }
+  },
+  "retirement_method": "natural exit after current clean child and intentional controller-only softNPROC0 caused report-spawnEAGAIN; numerical case not interrupted",
+  "old_queue_final_state": {
+    "updated_utc": "2026-10-24T14:08:04.538597+00:00",
+    "phase": "failed",
+    "error": "[Errno 11] Resource temporarily unavailable",
+    "completed_cases": [
+      "dry/start0",
+      "dry/start015",
+      "dry/start03",
+      "dry/scale_minus5pct",
+      "dry/scale_plus5pct",
+      "dry/maskInf"
+    ]
+  },
+  "no_active_old_root_numerical_or_report_children": true
+}

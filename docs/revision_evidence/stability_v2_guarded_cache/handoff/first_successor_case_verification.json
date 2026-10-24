@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-24T14:12:36.280389+00:00",
+  "event": "first_certified_case_running_verified",
+  "case": "corrected/start0",
+  "wrapper_pid": 461493,
+  "scientific_pid": 461527,
+  "all_six_julia_thread_affinities": "16-19",
+  "julia_address_space_bytes": 8589934592,
+  "execution_sha256": "b5c034c7c5ff7e485512b3b960a32fb51acc101c742058c1f78d8090bc5b5650",
+  "implementation_variant_sha256": "30a1f7f88decaa86b69c0bd63ad6957de14efafe3badd0a6f585a1f142050540",
+  "transformed_source_sha256": "f931c9c428e8c5c8861f77e5100a901667a4a3cc8de112e9036d5edcd682566b"
+}

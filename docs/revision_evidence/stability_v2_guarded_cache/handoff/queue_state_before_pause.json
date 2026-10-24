@@ -1,0 +1,13 @@
+{
+  "updated_utc": "2026-10-24T13:43:21.592889+00:00",
+  "phase": "running",
+  "case": "dry/maskInf",
+  "wrapper_pid": 3635824,
+  "completed_cases": [
+    "dry/start0",
+    "dry/start015",
+    "dry/start03",
+    "dry/scale_minus5pct",
+    "dry/scale_plus5pct"
+  ]
+}
