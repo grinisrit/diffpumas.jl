@@ -155,6 +155,19 @@ def main():
                 solver = dict(line.split('=',1) for line in (folder/'data/lvd_solver_status.txt').read_text().splitlines() if '=' in line)
                 state['main_solver_status'] = solver
                 state['main_kkt_converged'] = solver.get('kkt_converged') == 'true'
+                # Read-only final-field extrapolation audit uses the now idle main
+                # pool, leaving the 2-GiB postprocessing slot to Python renderers.
+                qfolder = a.output/'controls/column_domain'
+                qcommand = [sys.executable, str(ROOT/'dev/run_revision_job.py'), '--output', str(qfolder),
+                    '--dump', str(a.dump), '--julia', a.julia, '--cpus', '1', '--cpu-start', '0', '--memory-gib', '4',
+                    '--input', str(ROOT/'dev/validate_surrogate_v2.jl'), '--input', str(ROOT/'examples/revision_suite.jl'),
+                    '--input', str(a.artifact), '--', a.julia, '--startup-file=no', '--project=.',
+                    str(ROOT/'dev/audit_material_column_domain.jl'), '--fieldcsv', str(folder/'data/lvd_fit_field.csv'),
+                    '--raycsv', str(folder/'data/lvd_fit_mask.csv'), '--artifact', str(a.artifact),
+                    '--dump', str(a.dump), '--output-dir', str(qfolder)]
+                with (a.output/'column_domain_launcher.log').open('wb') as stream:
+                    qcode = subprocess.run(qcommand, cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT).returncode
+                state['column_domain'] = dict(returncode=qcode, output=str(qfolder), completed_utc=utc())
             write(a.output/'status.json', state)
             post = [sys.executable, str(ROOT/'dev/run_bounded.py'), '--cpus', '1', '--memory-gib', '2',
                 '--', 'taskset', '-c', '20', sys.executable, str(ROOT/'dev/postprocess_material_production.py'),
@@ -172,7 +185,7 @@ def main():
         state.update(ended_utc=utc(), failure=failure, source_unchanged=not changes,
             source_changes=changes, runtime_unchanged=runtime_same,
             execution_completed=state['execution_completed'] and not changes and runtime_same,
-            candidate_exports_complete=len(state['postprocessing'])==5 and all(v['returncode']==0 for v in state['postprocessing'].values()))
+            candidate_exports_complete=len(state['postprocessing'])==5 and all(v['returncode']==0 for v in state['postprocessing'].values()) and state.get('column_domain',{}).get('returncode')==0)
         write(a.output/'status.json', state)
         write(a.output/'end_status.json', state)
     print(json.dumps(state), flush=True)

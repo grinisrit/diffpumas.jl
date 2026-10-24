@@ -71,6 +71,15 @@ def main():
         log = root/'stages/main/run.log'
         shutil.copy2(log, bundle/'log_main.txt')
         sources['log_main.txt'] = [dict(path=str(log), sha256=digest(log))]
+    auxiliary_controls = {}
+    qfolder = root/'controls/column_domain'
+    if (qfolder/'end_status.json').is_file():
+        audit(qfolder)
+        auxiliary_controls['column_domain'] = dict(end_status_sha256=digest(qfolder/'end_status.json'),
+            outputs_sha256={name:digest(qfolder/name) for name in ('column_domain.csv','column_domain_summary.toml')})
+        (target/'column_domain').mkdir()
+        for name in ('column_domain.csv','column_domain_summary.toml','end_status.json','execution.json'):
+            shutil.copy2(qfolder/name,target/'column_domain'/name)
     commands = []
     command = [sys.executable, str(stage_parser), '--stage', args.stage,
                '--directory', str(root/'stages'/args.stage), '--output', str(target/'stage_results.json')]
@@ -106,7 +115,7 @@ def main():
     report = dict(created_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
         scope='Audited generated candidates only; execution is separate from scientific acceptance; no paper prose changed',
         stage=args.stage, completed_stages=completed, stage_end_sha256=ends,
-        artifact_sources=sources, commands=commands, figure_status=figure_status,
+        artifact_sources=sources, auxiliary_controls=auxiliary_controls, commands=commands, figure_status=figure_status,
         helper_sha256=helper_hashes, helpers_unchanged=True,
         outputs_sha256={str(p.relative_to(target)):digest(p) for p in target.rglob('*') if p.is_file()})
     (target/'export_provenance.json').write_text(json.dumps(report, indent=2)+'\n')
