@@ -23,6 +23,7 @@ Extensive documentation is available in [`docs/`](docs/):
 - [`docs/mixed-transport.md`](docs/mixed-transport.md) — versioned recipes, adjoint hard events, source cutoff, and fixed-path MC limits
 - [`docs/physics-and-transport.md`](docs/physics-and-transport.md) — materials, physics tables, transport modes, flux, and uncertainties
 - [`docs/differentiable-flux.md`](docs/differentiable-flux.md) — Zygote workflows, density gradients, water-fraction sensitivities, and AD checks
+- [`docs/material-stability-revision.md`](docs/material-stability-revision.md) — opt-in material calibration, frozen correction artifacts, and fixed-objective reconstruction checks
 - [`docs/muography-and-tomography.md`](docs/muography-and-tomography.md) — flat muography, LVD topography, tomography forward models, and inverse solvers
 - [`docs/examples.md`](docs/examples.md) — runnable example commands from smoke tests to LVD workflows
 - [`docs/api-reference.md`](docs/api-reference.md) — exported API grouped by workflow
