@@ -1,0 +1,24 @@
+{
+  "evidence_kind": "interactive focused test transcript and unapplied prototype, not formal production wrapper status",
+  "production_candidate_commit": "c5d2c59",
+  "current_commit": "c5d2c59a02a1ada3a7c2973c9a295162b1061f67",
+  "source_and_inputs_sha256": {
+    "Project.toml": "79b4a63969e9102cd36451369e56da168caef6f5c09a9570de393add59bd3435",
+    "src/Physics.jl": "79592a977291b6fc50c35e7ccf2ff8497074425f0474f542bcf7560076d90538",
+    "src/Geometry.jl": "172d949ebb1b318ed268ddea0a037028c0424d1dc9a6476ac07e8bd9975400bc",
+    "src/Tomography.jl": "9221b2cc173563286df117e692f111c24ea1c24a2e0ac7aa7223e8141e0eb843",
+    "src/Tomography_rules.jl": "43cf1ed02dc3f6c3e85f0036efa86c406d649b8154db3ef4bc43292a0cd89720",
+    "test/test_segment_tangents.jl": "9f923286ecf48831c06a5ce73691c700b3f60e94f1fafd4e05606ddbd0961171",
+    "examples/data/stability_v2_dry_start015_20261024/results/lvd_fit_field.csv": "e3b7b4ef2cffd09aaf29ba728ad34905ebc531a37f0997871b5f1800edb55d9c",
+    "examples/data/revision_physics_v2_final_20261023/materials.pumas": "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+  },
+  "archive_sha256": {
+    "README.md": "0d64685c1606c497360959ad0202d510344bf9aa9e561cc374667d5ab8dfb17c",
+    "focused_tool_transcript.txt": "a182d0606af78baa529fcf46cff4f201ccfab90d2e545a3ff5ba0436056e0895",
+    "prototype/adversarial.jl": "8e57ce81c241427a7e6bcb8cdb69899a11b55d5268ff517b401bd8ac40d88853",
+    "prototype/adversarial_result.toml": "ac8f8dc14b4fa5528f3a2dda4fb1e7cffb0a37b8853f7dcc6a06b8e26e9b65fa",
+    "prototype/prototype.jl": "ae46684abe2ac9cae8a987e5fbd283b5e3b21ddb2d9f7a3b44721e3937fa25ac",
+    "prototype/rules.jl": "81a559da9b1895b73f3abd21eea3518e0b81c6ff726624195623319b248d84df",
+    "prototype/saved_args.jl": "76db362ecee52b53871ec4d3d147f718912960d849ec8510c17b45affb627004"
+  }
+}

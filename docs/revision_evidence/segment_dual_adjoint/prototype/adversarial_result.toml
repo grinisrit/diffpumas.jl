@@ -1,0 +1,18 @@
+water_fraction = 0.11471926542607168
+rules_sha256 = "81a559da9b1895b73f3abd21eea3518e0b81c6ff726624195623319b248d84df"
+default_adjoint = 3.1801601296528428e-6
+scope = "unapplied process-local dual segment prototype"
+flux_before = 1.0586688152690005e-6
+dual_adjoint = 3.1569060697022277e-6
+field_sha256 = "e3b7b4ef2cffd09aaf29ba728ad34905ebc531a37f0997871b5f1800edb55d9c"
+physics_sha256 = "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+flux_after = 1.0586688152690005e-6
+prototype_sha256 = "ae46684abe2ac9cae8a987e5fbd283b5e3b21ddb2d9f7a3b44721e3937fa25ac"
+bin = 916
+cell = 275
+
+[whole_flux_fd]
+"1.0e-7" = 3.156906063745565e-6
+"1.0e-5" = 3.1829199439993795e-6
+"1.0e-6" = 3.1804996639890376e-6
+"1.0e-8" = 3.156905982218644e-6
