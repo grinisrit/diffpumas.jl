@@ -1,0 +1,12 @@
+{
+  "ended_utc": "2026-10-24T22:21:37.063940+00:00",
+  "returncode": 1,
+  "execution_completed": false,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "f2c46c0ee204834663bff597a6c20dd2e290ae89a5ba8c3784b66041d5edb9f3",
+    "run.log": "d42f79d0820d5fb0a12151cdebac3fc22c79686dcd1ac587c27172406f0d5557"
+  }
+}

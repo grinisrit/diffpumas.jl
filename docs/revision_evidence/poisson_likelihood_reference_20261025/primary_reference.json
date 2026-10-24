@@ -1,0 +1,16 @@
+{
+  "authors": [
+    "Eran O. Ofek",
+    "Barak Zackay"
+  ],
+  "year": 2018,
+  "title": "Optimal Matched Filter in the Low-number Count Poisson Noise Regime and Implications for X-Ray Source Detection",
+  "journal": "Astronomical Journal",
+  "volume": 155,
+  "issue": 4,
+  "article": 169,
+  "doi": "10.3847/1538-3881/aab265",
+  "primary_record": "https://weizmann.elsevierpure.com/en/publications/optimal-matched-filter-in-the-low-number-count-poisson-noise-regi/",
+  "verified_utc_date": "2026-10-24",
+  "scope": "University author record confirms 2018 journal metadata; this reference motivates known-template Poisson inference, without certifying the present physical model."
+}

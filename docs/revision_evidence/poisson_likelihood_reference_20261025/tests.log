@@ -1,0 +1,6 @@
+{"host": "research_vm_roland", "cpus": [0], "address_space_bytes": 2147483648, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "20", "python3", "dev/test_poisson_likelihood_reference.py"]}
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.003s
+
+OK

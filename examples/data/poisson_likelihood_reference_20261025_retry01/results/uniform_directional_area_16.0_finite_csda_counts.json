@@ -1,0 +1,14 @@
+{
+  "calibration_null": {
+    "path": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/calibration_null.bin",
+    "seed": 22322024
+  },
+  "test_null": {
+    "path": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/test_null.bin",
+    "seed": 22323024
+  },
+  "signal": {
+    "path": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/finite_signal.bin",
+    "seed": 22325024
+  }
+}

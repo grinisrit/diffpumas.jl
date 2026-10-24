@@ -1,0 +1,12 @@
+{"host": "research_vm_roland", "cpus": [0], "address_space_bytes": 2147483648, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "20", "python3", "/home/roland/devspace/diffpumas.jl/dev/poisson_likelihood_reference.py", "--firstorder", "/mnt/big_data/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full", "--extension", "/mnt/big_data/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job", "--output", "/home/roland/devspace/diffpumas.jl/examples/data/poisson_likelihood_reference_20261025/results"]}
+Traceback (most recent call last):
+  File "/home/roland/devspace/diffpumas.jl/dev/poisson_likelihood_reference.py", line 206, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/roland/devspace/diffpumas.jl/dev/poisson_likelihood_reference.py", line 204, in main
+    result=benchmark(args.firstorder,args.extension,args.output)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/roland/devspace/diffpumas.jl/dev/poisson_likelihood_reference.py", line 125, in benchmark
+    if len(templates)!=2700 or len(shares)!=2700 or [int(row['bin']) for row in templates]!=list(range(1,2701)) or [int(row['bin']) for row in shares]!=list(range(1,2701)):
+                                                                                                                    ^^^^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: '1.0'

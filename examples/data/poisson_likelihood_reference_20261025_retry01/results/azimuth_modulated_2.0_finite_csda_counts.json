@@ -1,0 +1,14 @@
+{
+  "calibration_null": {
+    "path": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/calibration_null.bin",
+    "seed": 24292024
+  },
+  "test_null": {
+    "path": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/test_null.bin",
+    "seed": 24293024
+  },
+  "signal": {
+    "path": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_2.0/finite_signal.bin",
+    "seed": 24295024
+  }
+}

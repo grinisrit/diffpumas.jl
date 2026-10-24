@@ -1,0 +1,1760 @@
+{
+  "scope": "Known-simple-hypothesis Poisson reference detector on saved counts, not physical optimality or uncertainty calibration.",
+  "statistic": "L=sum n_m*log(rate_alt_m/rate_null_m)-E*sum(rate_alt_m-rate_null_m)",
+  "units": "Rates are directional acceptance share p_m times directional flux. Mean counts are E*rate_m; E=sum directional integrated exposures. E is not expected count.",
+  "hypotheses": "First order: p*(dry_flux+linear_signal). Finite CSDA: p*finite_lens_flux, a conditional biased-surrogate alternative, not stochastic transport truth.",
+  "threshold": "Separate known-alternative empirical calibration-null quantile at 1-alpha; numpy type-7 linear quantile, strict L>threshold. Calibration null counts are reused exactly, not redrawn.",
+  "interval_scope": "Clopper-Pearson 95% intervals for held-out exceedances conditional on the realized fixed calibration threshold. These are marginal intervals, not simultaneous over 48 outcomes. Threshold uncertainty is not propagated; 3000 held-out nulls cannot certify a true 3-sigma tail.",
+  "grid_scope": "Six predeclared exposure factors; no interpolated/certified 95%-power crossing.",
+  "alpha": 0.0013498980316301,
+  "chunk_draws": 128,
+  "python": "3.12.3",
+  "python_executable": "/usr/bin/python3.12",
+  "numpy": "2.2.4",
+  "scipy": "1.15.2",
+  "references": [
+    {
+      "citation": "Ofek and Zackay (2018), AJ 155(4),169",
+      "doi": "10.3847/1538-3881/aab265",
+      "scope": "Background for low-count Poisson matched filtering; this implementation uses the explicit simple-hypothesis likelihood ratio above."
+    }
+  ],
+  "input_sha256": {
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/end_status.json": {
+      "sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052",
+      "role": "clean end record"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/execution.json": {
+      "sha256": "c4e7103a327af0381d3e384cbaef0f45b3ac0ec891acce01fd507805d7ec2e90",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "execution.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/end_status.json": {
+      "sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864",
+      "role": "clean end record"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/execution.json": {
+      "sha256": "1efa6bf721e208509aeab8ce66143da46b9f76e53916171cd1d4ae828cf53555",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "execution.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/directional_templates.csv": {
+      "sha256": "fc56b88a23ce862a00019dbba8971c7df13742fb21248ec46ad718d4f9481ee0",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/directional_templates.csv",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/exposure_shares.csv": {
+      "sha256": "82ca800605895e3085c67066a1f1c9fd94aad49e13c7cfd0ab16e98a5725eb80",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/exposure_shares.csv",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/planning.csv": {
+      "sha256": "574e820f200ec3182964a0e36d1ad6801218944a29e039ffdfd50c5087decebf",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/planning.csv",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/config.toml": {
+      "sha256": "a86c89fbce806832d9d2d9908546fdea56d986f3f5cc6497a819143f98bbe5d9",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/config.toml",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/home/roland/devspace/diffpumas.jl/dev/poisson_likelihood_reference.py": {
+      "sha256": "bc13f18a494d57e544c445157d64491851c38f9c8ad27d5527fcb59863fa30c5",
+      "role": "LLR postprocess implementation"
+    },
+    "/usr/bin/python3.12": {
+      "sha256": "6bcd758cce71c048f2a5f69cf36a6af6f3038211807f2d5509bad71abaa5dbfe",
+      "role": "Python executable"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/null_rates.txt": {
+      "sha256": "078ef34b2e4510cb357331481dd80e3a71cb7ff518006b4baecbb3e131f85080",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/signal_rates.txt": {
+      "sha256": "d21341af409c1fa75d69c22e568cd07b421a7701485e3a65c3319f6b1c801b3c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/calibration_null.bin": {
+      "sha256": "ae118412c4eab2cf102a3bdfd0a8d6167de6d9ec0d70d74614e6146707acdd94",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/calibration_null.json": {
+      "sha256": "3170f80eda9d5bb6009613c4de39cac84a8088481f54eed8ac35cdc7f7069a8f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/test_null.bin": {
+      "sha256": "1830bf1abc9aeb498c2541d56d398d1319df94922e5d8b1f37c607b79fd605cf",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/test_null.json": {
+      "sha256": "8eecc5fa597d6768ae0e40bffaf3a3e7a3b7bc67d19b377f8292ce5942719d05",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/signal.bin": {
+      "sha256": "49da165dc8aaa779c38ccfc21bd9768498683843121537c3eb123d223bdf3cde",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_0.5/signal.json": {
+      "sha256": "e5d5543e6b58d5478071740db158b3fbbf3766c5b5442dd65584107a19bca7f2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_0.5/finite_signal_rates.txt": {
+      "sha256": "672a9caab4c89d0159804a054e67caa995e05f82093459b5b26a0289a5a24031",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_0.5/finite_signal.bin": {
+      "sha256": "b5f63e16633095fea8e3ee1950c0560257e5514e226e3393490cfdc985449910",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_0.5/finite_signal.json": {
+      "sha256": "2beb9b0b75d1b252979b19dcdf40e9e0468af66ca9959dfa4691e3ce44cc353c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_0.5/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/null_rates.txt": {
+      "sha256": "078ef34b2e4510cb357331481dd80e3a71cb7ff518006b4baecbb3e131f85080",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/signal_rates.txt": {
+      "sha256": "d21341af409c1fa75d69c22e568cd07b421a7701485e3a65c3319f6b1c801b3c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/calibration_null.bin": {
+      "sha256": "1529cc57d7fb11a358b1802475e81cbaf4cfac1eecbb2032043d123b5e7ed33f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/calibration_null.json": {
+      "sha256": "4bf41bd8745cb846bb1c97d222662af651931f290fbffa917ca859d68a675df4",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/test_null.bin": {
+      "sha256": "864897042b16971ef38ad3cb0590199b0f9eeed19f61d84d7c42cc3a9bf9a94a",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/test_null.json": {
+      "sha256": "c22c5e868901562903db79d1918668a6154b4c5de68ad07294b624c38c755658",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/signal.bin": {
+      "sha256": "fb2be128f49eb71f7ccc4302bfe265cea5c946a5ed447b228ad7b4bd89e27b51",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_1.0/signal.json": {
+      "sha256": "a9626bf061146f3a795aaab32c316bd4ef1b76bd0ef54ce42b2d17fef2bd0a0a",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_1.0/finite_signal_rates.txt": {
+      "sha256": "672a9caab4c89d0159804a054e67caa995e05f82093459b5b26a0289a5a24031",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_1.0/finite_signal.bin": {
+      "sha256": "ab3583c345b3fc7f06aa73f4f95f02c252f014231faffb12c157d820ae02d914",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_1.0/finite_signal.json": {
+      "sha256": "e260bf3b7431a5e53a984711f657dabf702a55ad46e3796a2b9ea527a3bbae75",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_1.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/null_rates.txt": {
+      "sha256": "078ef34b2e4510cb357331481dd80e3a71cb7ff518006b4baecbb3e131f85080",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/signal_rates.txt": {
+      "sha256": "d21341af409c1fa75d69c22e568cd07b421a7701485e3a65c3319f6b1c801b3c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/calibration_null.bin": {
+      "sha256": "e11f63743b14d54c7401c39d5a15a0d7f006950944c95f60f8e2062ec2f21eee",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/calibration_null.json": {
+      "sha256": "593ccee378a18129dbe027c38a634af3d96fdbf52b66dc72d104899623c027b1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/test_null.bin": {
+      "sha256": "88582c82dd37b3f956a5787a0d2a2ed4be2a503e0336b29e11b243b3174ebcd0",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/test_null.json": {
+      "sha256": "05931325fafec29419095a01beae5049c75226953fe68b4fb01baaf9cfb0973d",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/signal.bin": {
+      "sha256": "03bf0255d5a9a1c32313715e68101b9beb290c37e710871299ce9026ed418d88",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/legacy_equal_bin_poisson_2.0/signal.json": {
+      "sha256": "996e363c0704698197ff0a1151567a6912c2c0849fe57edcdfb770a8fa539bd2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_2.0/finite_signal_rates.txt": {
+      "sha256": "672a9caab4c89d0159804a054e67caa995e05f82093459b5b26a0289a5a24031",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_2.0/finite_signal.bin": {
+      "sha256": "dd01441b5dfe37acfd5562b6fb7ca26116c9397e2433f196749a3eba7aab9cb1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_2.0/finite_signal.json": {
+      "sha256": "3704d8d5b7fd30e1b01917b7d3204ad6a4114c4147854b8020290ff3da7885c2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_2.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/calibration_null_rates.txt": {
+      "sha256": "078ef34b2e4510cb357331481dd80e3a71cb7ff518006b4baecbb3e131f85080",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/linear_signal_rates.txt": {
+      "sha256": "d21341af409c1fa75d69c22e568cd07b421a7701485e3a65c3319f6b1c801b3c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/calibration_null.bin": {
+      "sha256": "b4ccc12c22aba2a3a80aac7521214a5954eb524da3ade58cabce92b48a6159a4",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/calibration_null.json": {
+      "sha256": "a603f88308664ff46bfdda8f182e60b7e36a124dc9a4b4aeb3d3ada20667e336",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/test_null.bin": {
+      "sha256": "b774abfed0d700fad986929ffa4f6e9ca1fe6e79ab177715850e722cca8c4509",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/test_null.json": {
+      "sha256": "b5b17b5dfc42758ff1ea97bd45af5c6e1933e88f5e5d9b9675aecfee3c270498",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/linear_signal.bin": {
+      "sha256": "2904c8a7ca3745908fb247b597a347873c1650b07eed04733fc334da5e5ea2fb",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/linear_signal.json": {
+      "sha256": "5db78547947e0cf9f82dadce285c84a4d502f3b1ff56c6aff7682c15a0df0aab",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/finite_signal_rates.txt": {
+      "sha256": "672a9caab4c89d0159804a054e67caa995e05f82093459b5b26a0289a5a24031",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/finite_signal.bin": {
+      "sha256": "cbf4c57c13b3a468d2d95ee04ff7d1350922c6dc49fbc93c691ae20975ef2ab4",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_4.0/finite_signal.json": {
+      "sha256": "6cf249f67e92e2a3682bb16b1fc6cddc61b215a187924431ce502e3376a40aab",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_4.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/calibration_null_rates.txt": {
+      "sha256": "078ef34b2e4510cb357331481dd80e3a71cb7ff518006b4baecbb3e131f85080",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/linear_signal_rates.txt": {
+      "sha256": "d21341af409c1fa75d69c22e568cd07b421a7701485e3a65c3319f6b1c801b3c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/calibration_null.bin": {
+      "sha256": "1488addae1d056760eadc20aa47d0fc4bba32307a216efb19c0d7ec30a325b70",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/calibration_null.json": {
+      "sha256": "3db77a71cf85f1ad15cf1c17ed0bcc2d6503838c703e0d5a286221378f0467a4",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/test_null.bin": {
+      "sha256": "4f98b2ec6baa7dab0d98b64684e7258b0841373f86a6e3c15c6afe61efca68e4",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/test_null.json": {
+      "sha256": "aae804ab20c57c36522df9bb5bea5f3809b40d7d656498c079309d70f9a31a0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/linear_signal.bin": {
+      "sha256": "cab4de18d1f7e876410ee85efb165b8bc3d271d0ac6e023948ea7a2f0d0b727b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/linear_signal.json": {
+      "sha256": "ef1ffc3c5352513a42993b8dae8048fa4d85d08e86a2e4c96bae77ae4742e60e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/finite_signal_rates.txt": {
+      "sha256": "672a9caab4c89d0159804a054e67caa995e05f82093459b5b26a0289a5a24031",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/finite_signal.bin": {
+      "sha256": "3cac7001e3410a9d37696073f0fa5c0da7e910b7d5062e498901c923d1f236d1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_8.0/finite_signal.json": {
+      "sha256": "3bdde6bfbc89524fa5a1a886d889e6cb00af1bba40709ca1942c5f404647318e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_8.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/calibration_null_rates.txt": {
+      "sha256": "078ef34b2e4510cb357331481dd80e3a71cb7ff518006b4baecbb3e131f85080",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/linear_signal_rates.txt": {
+      "sha256": "d21341af409c1fa75d69c22e568cd07b421a7701485e3a65c3319f6b1c801b3c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/calibration_null.bin": {
+      "sha256": "6d72687b44978a9b0b73fdeb5e97f693162b896451236d67e4898f26b42bd565",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/calibration_null.json": {
+      "sha256": "273e69c780de58e6f80dbed1b9dadfae497d095a26f31838bc70eee64ac0b0ad",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/test_null.bin": {
+      "sha256": "fc3433606bd82bf75231bab8b0aed7c1fae2b921eef0d35191f3adc5da1c8894",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/test_null.json": {
+      "sha256": "4f52b8c2f36cb6746714557879252bc5eef61ed01014814ca87ddae3badad7cd",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/linear_signal.bin": {
+      "sha256": "080e1037deb7f20ecfc9ae5a67bd37498d8e9592e58695e6ffb641512937b38c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/linear_signal.json": {
+      "sha256": "c2cd1d51ebe96dcbc2430ce279fb7157d17e424a0b6be9810e59db9255ae3ae1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/finite_signal_rates.txt": {
+      "sha256": "672a9caab4c89d0159804a054e67caa995e05f82093459b5b26a0289a5a24031",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/finite_signal.bin": {
+      "sha256": "5d858a80cbcc939abefe72b30811b01f8c776cbbf144c08969938cfb2db3d18b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/legacy_equal_bin_poisson_16.0/finite_signal.json": {
+      "sha256": "6a8f4e3a24f1dffb7911121598e52ea824976003457f7f797760e98053205793",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/legacy_equal_bin_poisson_16.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/null_rates.txt": {
+      "sha256": "25d82ff032aeefe982e4de04d495a07b3a53c2fdd7ce9bd2a590c5185e4dc6f3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/signal_rates.txt": {
+      "sha256": "c1c0caf7346c3634eacccc25ddf6819aba3d594fc2854d8325bd15b148ce7921",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/calibration_null.bin": {
+      "sha256": "2175de73e3c8e269239bc43f50373b97b484aa5608f686ba5e1e1ae78ac75e02",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/calibration_null.json": {
+      "sha256": "29fb4ae0e5750bc71a13df9193bb74ef1eaf6499da0aa80c0ee84c430f98a536",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/test_null.bin": {
+      "sha256": "2b0b5e4da85163012605628179fe1e03e4b44780f154d27487c78a2cfd0ffe86",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/test_null.json": {
+      "sha256": "734505d8f299bffbabd094d0e1e398177b981b325fdbc885698d59089065364f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/signal.bin": {
+      "sha256": "9faa3a2de409c165c2271bd3660f6f6a74bb2e1ca1b0846abf74628463f6c274",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_0.5/signal.json": {
+      "sha256": "364a1e464c17d3357a3b9eb6e95bddc1c6001e744487e5622117451230b4a90d",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_0.5/finite_signal_rates.txt": {
+      "sha256": "1116ecbd49c7d0bdcd294984f47316fc211943a62bdb76f4cd4cedb5276da480",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_0.5/finite_signal.bin": {
+      "sha256": "28ae47e239c8c46409af1231ba39b8cf96afd0fe12b1b134e63f582eb57dbc0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_0.5/finite_signal.json": {
+      "sha256": "368f21a67c99b95e7267ae5fc317f2df1275897a521f653ed1ab1b8d30979cba",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_0.5/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/null_rates.txt": {
+      "sha256": "25d82ff032aeefe982e4de04d495a07b3a53c2fdd7ce9bd2a590c5185e4dc6f3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/signal_rates.txt": {
+      "sha256": "c1c0caf7346c3634eacccc25ddf6819aba3d594fc2854d8325bd15b148ce7921",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/calibration_null.bin": {
+      "sha256": "7aeb12ad270261ec204c5392a51c1701abb592116bd90e9cbcd965f6b9dbc862",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/calibration_null.json": {
+      "sha256": "9d924dcf0a3a274e1943f8fd18931de8a7e1f8a31361334ac1545a1d0d64be27",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/test_null.bin": {
+      "sha256": "e2aabad5041e3007a7ac216cb341c00f4dc9a9b801f2831d31216f2ed0473773",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/test_null.json": {
+      "sha256": "fe7a04ab335afd99635f5848b8b93832dbb39d4360656522011a4750a870cedb",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/signal.bin": {
+      "sha256": "baa87f3da2a205468339bbcf4ef156e063f6583c66a606e9851d1561092e414c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_1.0/signal.json": {
+      "sha256": "96d5975a601e66e2b45490c452f9885635436c926f60a4bc7776b5fe095b75e9",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_1.0/finite_signal_rates.txt": {
+      "sha256": "1116ecbd49c7d0bdcd294984f47316fc211943a62bdb76f4cd4cedb5276da480",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_1.0/finite_signal.bin": {
+      "sha256": "8d3594a8188e54ccb91366d975c8d32761cecbe5791a5ca8e7aedec88c235e49",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_1.0/finite_signal.json": {
+      "sha256": "cfb32107653a1a4bc270d6f2eb82eff5c8c5fc9a87661dfc18a58be7ca2394a8",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_1.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/null_rates.txt": {
+      "sha256": "25d82ff032aeefe982e4de04d495a07b3a53c2fdd7ce9bd2a590c5185e4dc6f3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/signal_rates.txt": {
+      "sha256": "c1c0caf7346c3634eacccc25ddf6819aba3d594fc2854d8325bd15b148ce7921",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/calibration_null.bin": {
+      "sha256": "faf9fb2a2e977db79ba543d6da06783a7d511705b28dc76a0d92302ec2d6c0f2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/calibration_null.json": {
+      "sha256": "9e26fb09b39b3c03aec8cd5d65b2855b0ea488b61a47e241cd486080b32fdb29",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/test_null.bin": {
+      "sha256": "79176ed7b4c246ca2fe6a875471e604f3b333b0e6ab4fab48a19f4284da0e3f3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/test_null.json": {
+      "sha256": "6b83f6f62e574020974f26b9d81634cfd99ae112c28ca213c103ff82a7d70844",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/signal.bin": {
+      "sha256": "89da7e047128032f415a4eba3e6644a0f17096874a1fa7391388aeddd73aebcc",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/uniform_directional_area_poisson_2.0/signal.json": {
+      "sha256": "85a1dd50c199571f81ee7a064743727717b5cb0d9ce46b9c9e0c89cc67f21d5e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_2.0/finite_signal_rates.txt": {
+      "sha256": "1116ecbd49c7d0bdcd294984f47316fc211943a62bdb76f4cd4cedb5276da480",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_2.0/finite_signal.bin": {
+      "sha256": "755358caf0b3e6912c9ccaf622298e8e2ec7ed9c1a23f65476168cfd05b791ac",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_2.0/finite_signal.json": {
+      "sha256": "f88c8f1c9802c64f46f33fe3c8c08d74771b131a8d198d124057a2521cfac59b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_2.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/calibration_null_rates.txt": {
+      "sha256": "25d82ff032aeefe982e4de04d495a07b3a53c2fdd7ce9bd2a590c5185e4dc6f3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/linear_signal_rates.txt": {
+      "sha256": "c1c0caf7346c3634eacccc25ddf6819aba3d594fc2854d8325bd15b148ce7921",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/calibration_null.bin": {
+      "sha256": "f8dde766a43b5e8639d04dd1ae247a0a58b82a05e67febfa2208961be9901212",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/calibration_null.json": {
+      "sha256": "ef1c24f30e1430a5f5a7e9ebc9b0670c530b789d47739f9f8ef117996cc1e2f0",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/test_null.bin": {
+      "sha256": "86564b318f831afd4c2078b8b71ef9a1982b93b76c25eaccf563b448be945f27",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/test_null.json": {
+      "sha256": "1f8bf977a15a2d2059c53e417e00ff18548a505adeb6a5a960f7f6d2e0b16092",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/linear_signal.bin": {
+      "sha256": "ce0889f40068aa66d1dbae67a657a3bc5640fd400f97eb4c688b07cf9c20a4d3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/linear_signal.json": {
+      "sha256": "78f0d07d1c3f04c2b4ca5a22805e3dc0f690a9ffa25758e477e1116b377d77a3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/finite_signal_rates.txt": {
+      "sha256": "1116ecbd49c7d0bdcd294984f47316fc211943a62bdb76f4cd4cedb5276da480",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/finite_signal.bin": {
+      "sha256": "b4865c868d07eab26251dacdee64c8bad033ec9b9980ece9353c44442005e231",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_4.0/finite_signal.json": {
+      "sha256": "c14c286d32fb69b3dcbef2f4b1657f27b94a3eadc268ccfa21bf588ab534b522",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_4.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/calibration_null_rates.txt": {
+      "sha256": "25d82ff032aeefe982e4de04d495a07b3a53c2fdd7ce9bd2a590c5185e4dc6f3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/linear_signal_rates.txt": {
+      "sha256": "c1c0caf7346c3634eacccc25ddf6819aba3d594fc2854d8325bd15b148ce7921",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/calibration_null.bin": {
+      "sha256": "9c0741e9902ed310c50ed7e85bf27605b92eb1fb4c1bde4a8c2182d9f0a554db",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/calibration_null.json": {
+      "sha256": "227f369551d01a51719262ced0dcd5a73737496d331b4b52a69d1b9bae0a81c1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/test_null.bin": {
+      "sha256": "eab99ce3a39ba9d6b64a2477ce93e27717cd88fd940fee33f61bff72b9987cde",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/test_null.json": {
+      "sha256": "b460f87f7573ad7309707e2b1a8c4ccdd5f82f215ea4b79f5e3b61f7ba1facca",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/linear_signal.bin": {
+      "sha256": "d90e30f6fa0f4943c2584a6154551d5b5f89c581aa5c03d42fa23ac7f581e492",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/linear_signal.json": {
+      "sha256": "3ce2c585d89046299fdff1d9754698f6cb2277a6566f6a2bc98265cd3da91e3d",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/finite_signal_rates.txt": {
+      "sha256": "1116ecbd49c7d0bdcd294984f47316fc211943a62bdb76f4cd4cedb5276da480",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/finite_signal.bin": {
+      "sha256": "b9f4b7f2b22eb3afb90f3a597319da455806788cc6d56ee265d6a7dd39789c68",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_8.0/finite_signal.json": {
+      "sha256": "c0735c5d44db760359e7dff6085b758fc51172b97d9b2d4181a1a7e49e578f59",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_8.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/calibration_null_rates.txt": {
+      "sha256": "25d82ff032aeefe982e4de04d495a07b3a53c2fdd7ce9bd2a590c5185e4dc6f3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/linear_signal_rates.txt": {
+      "sha256": "c1c0caf7346c3634eacccc25ddf6819aba3d594fc2854d8325bd15b148ce7921",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/calibration_null.bin": {
+      "sha256": "7b136fad3ddce9efbf87f69a92831f3b4cb55f72b0f36e132adff5b492ee3167",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/calibration_null.json": {
+      "sha256": "9f59c1cf701d4660e6a46cb4fc3aa782d1eee6fc8234cd0fbe55f6f12e1c9a48",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/test_null.bin": {
+      "sha256": "b6529ab5ae5c7dce4c7671add15bed0598af99eba197f8b4ed7ecc2842f98400",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/test_null.json": {
+      "sha256": "0c9f7f628398d6e04e558a3a60b9a3a6291a4c80c50e979256df479ffca7ad89",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/linear_signal.bin": {
+      "sha256": "734ff4d578232a20390d876bc55065eb6eff9dbdd42263227860c208cbe933f9",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/linear_signal.json": {
+      "sha256": "79f30870db6c6f9b7405cf2daa194de1f23105f000e1b5c4fca909811143f7fc",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/finite_signal_rates.txt": {
+      "sha256": "1116ecbd49c7d0bdcd294984f47316fc211943a62bdb76f4cd4cedb5276da480",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/finite_signal.bin": {
+      "sha256": "7986259511f13fe519e5f5638fae165b8684369ee2b98f05802ed0c092b220c7",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/uniform_directional_area_poisson_16.0/finite_signal.json": {
+      "sha256": "988bdfe21b1148c33bb14a122323feb57c2448ec0a2aabbc1a9d7caac4205d50",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/uniform_directional_area_poisson_16.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/null_rates.txt": {
+      "sha256": "5e4f8e949a6bc46d3d1b30b5798b46bb21439aa54468f43123e43afa39055baa",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/signal_rates.txt": {
+      "sha256": "a029339e20e93dfb0823374fca77ab967a9965df526fab8ec8345b187895f84f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/calibration_null.bin": {
+      "sha256": "0b6ab849ef77b780f8c44fb0a1b4a361db3674345e5fb7fdae872e05331e4e4f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/calibration_null.json": {
+      "sha256": "94a3b6a54f345f85c8f29f5ab40419ff272a708e603c07f6ba9ccdbcfd084d36",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/test_null.bin": {
+      "sha256": "8451bfdf22f9329d7975466fcbaf57d3389480e53ff0bb2a166c6ec683fcd011",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/test_null.json": {
+      "sha256": "8e5dd4aad61ecaaa1cc6b0c4a9728526f198cc8413defb9f7f3425c6150330e8",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/signal.bin": {
+      "sha256": "644bc74d62d1c780f50953d54c1a0025589525b8c8baea16a87b5e7d12c8aedf",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_0.5/signal.json": {
+      "sha256": "d6991115b7c3476d4329040b78fb8b00b5632da57f0b55e0d02844e2ea516f18",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_0.5/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_0.5/finite_signal_rates.txt": {
+      "sha256": "02a2c3d2e206436bc02104a32d18d06153104d400c1c6f1e1ec7c6690007cb0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_0.5/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_0.5/finite_signal.bin": {
+      "sha256": "cb17a4e52803e0acf9ca1b7c82e18a3c78ad0005b5e91ee36401b7b0ad029bf6",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_0.5/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_0.5/finite_signal.json": {
+      "sha256": "c92c3cb9553e65f4341c96d2d6dcdb80f3cfe538b16221aaec3d2ad4790b6253",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_0.5/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/null_rates.txt": {
+      "sha256": "5e4f8e949a6bc46d3d1b30b5798b46bb21439aa54468f43123e43afa39055baa",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/signal_rates.txt": {
+      "sha256": "a029339e20e93dfb0823374fca77ab967a9965df526fab8ec8345b187895f84f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/calibration_null.bin": {
+      "sha256": "a74f02d399e7647bca5e0dc96726ae8a274f88f48a385e493e04bffe7c468e30",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/calibration_null.json": {
+      "sha256": "dcda90ed3091f208ae0b2cd1c4ec5d4d7ff16d760a75f197896f44166629e158",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/test_null.bin": {
+      "sha256": "c71103a86fed30295a3aba1dc0f272b6f24b285e6a5dd06f7aee9da9f1dc3a13",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/test_null.json": {
+      "sha256": "08477943d76ddf90220258ede6fd438eff6b8bfcd0d8e22ca7a209a292cdec9f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/signal.bin": {
+      "sha256": "a0db95f5ff762dbfccb6af95c70017891e9e189835f6f0248476d7702423584e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_1.0/signal.json": {
+      "sha256": "fe5a8a90563c3477ad6b69404c09645f2578064fa36467c85e2e2ca9e2de8f60",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_1.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_1.0/finite_signal_rates.txt": {
+      "sha256": "02a2c3d2e206436bc02104a32d18d06153104d400c1c6f1e1ec7c6690007cb0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_1.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_1.0/finite_signal.bin": {
+      "sha256": "61d0101684839e1f55292146ad4fa8b266dd260d968429c34cc9c24833007200",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_1.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_1.0/finite_signal.json": {
+      "sha256": "db5b80425921be0ad20afac368dfbdf08d406bd2cd8baadbce9f16921547550c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_1.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/null_rates.txt": {
+      "sha256": "5e4f8e949a6bc46d3d1b30b5798b46bb21439aa54468f43123e43afa39055baa",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/signal_rates.txt": {
+      "sha256": "a029339e20e93dfb0823374fca77ab967a9965df526fab8ec8345b187895f84f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/calibration_null.bin": {
+      "sha256": "4e5471f77cc64567388c7bd24047077d1fea6ddbd137c25791b1beebc4708f58",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/calibration_null.json": {
+      "sha256": "3561f5dc51a5aa162afca6620239a3cf0035c8e62b8a36b915cb157017f408e3",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/test_null.bin": {
+      "sha256": "2b54a75b71166c06f5a8792df306fd45e6f0be7763d5e367014281105b16fa67",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/test_null.json": {
+      "sha256": "0f3372a45cb28dba344cd8283179035a20b9fd408860faa4d0df8fb3ac5fcc22",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/signal.bin": {
+      "sha256": "c2dde1a71f2fc54e352dcdf1c01f260f50dbe2c01fd1da814445d6335631036f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/cosine_poisson_2.0/signal.json": {
+      "sha256": "b35c22fcfd53fba32e0d650873010ee3e747531a1f68f80c0777b86a43541937",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/cosine_poisson_2.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_2.0/finite_signal_rates.txt": {
+      "sha256": "02a2c3d2e206436bc02104a32d18d06153104d400c1c6f1e1ec7c6690007cb0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_2.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_2.0/finite_signal.bin": {
+      "sha256": "2c13e0382506c76625e053f7a50d4953a8f66a2ca23d276f83c2be741111f080",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_2.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_2.0/finite_signal.json": {
+      "sha256": "237ef5fe48cb082473b69dd5478907dabaa46f0e158bd0c286c5e9d0dbc6d75e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_2.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/calibration_null_rates.txt": {
+      "sha256": "5e4f8e949a6bc46d3d1b30b5798b46bb21439aa54468f43123e43afa39055baa",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/linear_signal_rates.txt": {
+      "sha256": "a029339e20e93dfb0823374fca77ab967a9965df526fab8ec8345b187895f84f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/calibration_null.bin": {
+      "sha256": "05318d6819dba2a6836bf5fdd1a1ba2cd9da07da6d12a7db5b075c8babe81f53",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/calibration_null.json": {
+      "sha256": "0eceaa1f9e82bc1a093539c016e2bf400994444ca418a60930268ccd418cfec1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/test_null.bin": {
+      "sha256": "1e52463a58f710e1a9fe107c2f8b4ef20a61f78737938012e93e36b18a37363e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/test_null.json": {
+      "sha256": "1272e1f239a018df67e843de0254a4922d03ab748fc10e0699bd69f14a0bbd71",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/linear_signal.bin": {
+      "sha256": "5b8246d41a7711eab2a447057b3664e55363aec8d1a74d711c54538859fdc641",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/linear_signal.json": {
+      "sha256": "b3e83d5b391aa77f402961cd38c7c9fa50dc0fba586f64aaf3884765c25d96b7",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/finite_signal_rates.txt": {
+      "sha256": "02a2c3d2e206436bc02104a32d18d06153104d400c1c6f1e1ec7c6690007cb0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/finite_signal.bin": {
+      "sha256": "15748956dc0911d7223efa4557be9ae1ec15f557bf41a93707f8e1c29a91add5",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_4.0/finite_signal.json": {
+      "sha256": "65ece48b9b7cf5f31471ef6d1491c5074e1ce57af2f7235f96bbe9e1feb254dc",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_4.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/calibration_null_rates.txt": {
+      "sha256": "5e4f8e949a6bc46d3d1b30b5798b46bb21439aa54468f43123e43afa39055baa",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/linear_signal_rates.txt": {
+      "sha256": "a029339e20e93dfb0823374fca77ab967a9965df526fab8ec8345b187895f84f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/calibration_null.bin": {
+      "sha256": "4128b4a509b9d38160081acbbdb0c4c4ff7a17ecabf3d6a2209eaba8b9d8be04",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/calibration_null.json": {
+      "sha256": "25174f1184536bcc36577161a14c9d792f3ebce33882105d3d86e6e1a2a9e426",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/test_null.bin": {
+      "sha256": "23d399cf93dac80ff1ab53ca49b39d96a08d8013c54b09d69d568f714fe08d8f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/test_null.json": {
+      "sha256": "b3a22c42c3a4e414d49df190cef3d885441b3216494c2376f1ae5489a92df9f0",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/linear_signal.bin": {
+      "sha256": "5076e2744e83e707d4962bf943fd67d01187b351624e5d4dbea405e71053acf7",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/linear_signal.json": {
+      "sha256": "99ec82b00cb8e719ea5932d030cc88aa739fd4751545208102697292c478ab5f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/finite_signal_rates.txt": {
+      "sha256": "02a2c3d2e206436bc02104a32d18d06153104d400c1c6f1e1ec7c6690007cb0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/finite_signal.bin": {
+      "sha256": "cd76e912c16b7bf1146b6b7c3741516a8e4947526d7b01b9332c0969e54e9bc4",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_8.0/finite_signal.json": {
+      "sha256": "917b60be82b69191a1190454208c97ea9c6ef2e32702efe9c33be9514d0c1af1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_8.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/calibration_null_rates.txt": {
+      "sha256": "5e4f8e949a6bc46d3d1b30b5798b46bb21439aa54468f43123e43afa39055baa",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/linear_signal_rates.txt": {
+      "sha256": "a029339e20e93dfb0823374fca77ab967a9965df526fab8ec8345b187895f84f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/calibration_null.bin": {
+      "sha256": "9041e14fe3d739128029aafd1697bc64b9c117a0eaf7c6444eef6bbc65812ee7",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/calibration_null.json": {
+      "sha256": "e26e8bf6c1ef7795d46f1a08d970e4061541fc09447671f4c8b51984c7102cab",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/test_null.bin": {
+      "sha256": "5fff3d65ca775bf11940de51ff72591e481c58c149aa76c0acb6f20c2f41edce",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/test_null.json": {
+      "sha256": "5c6ed5fb4bb0d8c304c71a9fa1634e7e2b6999ecca66e95a7ac46bd718b93fb1",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/linear_signal.bin": {
+      "sha256": "5c3c98687d461286205261377b4b91854a2322d93c16255084fc800ec6f85c3a",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/linear_signal.json": {
+      "sha256": "f98225a132c5d90042f1614d37229487d6d23a6b5240b16edcebb8d55f4f48ba",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/finite_signal_rates.txt": {
+      "sha256": "02a2c3d2e206436bc02104a32d18d06153104d400c1c6f1e1ec7c6690007cb0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/finite_signal.bin": {
+      "sha256": "d11939be6adbe9be879cfed3d0c4ed82cf9cbca1ee139349ce12da59783b7a7e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/cosine_poisson_16.0/finite_signal.json": {
+      "sha256": "2bef190596e6aac50e94ebcb42e1001be520a69bf3f262cdf184346997857adc",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/cosine_poisson_16.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/null_rates.txt": {
+      "sha256": "171e283db99bc4d9c73adf692c8cbaef0ba08aeab1964545a495d2ab2845d986",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/signal_rates.txt": {
+      "sha256": "57c8962bb26366cb08fef6e25cc0cb9eeb2e6d06c037d8766282ae5c3c735735",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/calibration_null.bin": {
+      "sha256": "f08164e1a4040ac18e511238bd4397ee07e8397bb2d3b7ef7b8cff26a2c6601e",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/calibration_null.json": {
+      "sha256": "319cf8b71d69a4d32f24737fd4ec8f34047e4aec10672e3dcf819f75e9f4e857",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/test_null.bin": {
+      "sha256": "f6b4dd11c9cf880079518620dc25afd8288f392733647d3280eed813c8bc648b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/test_null.json": {
+      "sha256": "b1bcab1565e1992c7cd2be74920fde613d3045ae328db497ad95e28b21d54a18",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/signal.bin": {
+      "sha256": "19345a7cd550c5d0887b2cc15f12b5f46b72bdde82c6e857dd840d449b09f61d",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_0.5/signal.json": {
+      "sha256": "1d2c615660eae1c2d31964c6f284c1b5a317627357a785d314b41541638b0517",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_0.5/finite_signal_rates.txt": {
+      "sha256": "e83d57db8ad108b0f17970a3f15f235211af075198d6c70993e838c191acf5b2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_0.5/finite_signal.bin": {
+      "sha256": "be923ae45b859bd6bd415821bf5efc59db8c9693e3d356f745ed56310bc7f258",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_0.5/finite_signal.json": {
+      "sha256": "3b5217b6eb258943632516d3f74ec67b80260046e39d628530a2d881f2815b76",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_0.5/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/null_rates.txt": {
+      "sha256": "171e283db99bc4d9c73adf692c8cbaef0ba08aeab1964545a495d2ab2845d986",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/signal_rates.txt": {
+      "sha256": "57c8962bb26366cb08fef6e25cc0cb9eeb2e6d06c037d8766282ae5c3c735735",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/calibration_null.bin": {
+      "sha256": "4131b3ccc3a4077df4a6bde5e441f5a4b6560c99916df2c3a4101352ba4f7224",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/calibration_null.json": {
+      "sha256": "0ab42bed9b110524ef00efe3128aa6ab110e5dc571b89a911e46d4fc205ec2f0",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/test_null.bin": {
+      "sha256": "8a792d40cff8fbdbfb0f4f3c3b9fca0c4af9b1c9538ecfb18f247571503efb28",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/test_null.json": {
+      "sha256": "4eb4e216d977bec6b255def6a9cf6540ee03b209d29d9da7d290cb70d962682c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/signal.bin": {
+      "sha256": "95a0861416c8a2acff81c44db1ebc12f2140db4846c7088ad11090774bf4d11c",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_1.0/signal.json": {
+      "sha256": "a8fde9c92bb29774e89b249fe9b0649b62d4ef685a0eda71440e34561eca4ce9",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_1.0/finite_signal_rates.txt": {
+      "sha256": "e83d57db8ad108b0f17970a3f15f235211af075198d6c70993e838c191acf5b2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_1.0/finite_signal.bin": {
+      "sha256": "bc1f1f204a01fafec39eac4ae78d78b1960bbc989a0594985254acbfb9ef54dc",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_1.0/finite_signal.json": {
+      "sha256": "ab78e36d775e5e42437aa3fee9d6a42f5415220d66b57691f09644e6bac421bc",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_1.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/null_rates.txt": {
+      "sha256": "171e283db99bc4d9c73adf692c8cbaef0ba08aeab1964545a495d2ab2845d986",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/null_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/signal_rates.txt": {
+      "sha256": "57c8962bb26366cb08fef6e25cc0cb9eeb2e6d06c037d8766282ae5c3c735735",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/signal_rates.txt",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/calibration_null.bin": {
+      "sha256": "5078b208104e592c17ae74fa757b1f31ce1fab5258e545a5a8dd3daa236aea0b",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/calibration_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/calibration_null.json": {
+      "sha256": "b064218fa7f9f30a03aed659889b4a2f0b4520bbc7d6f6151baf8312f0c17610",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/calibration_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/test_null.bin": {
+      "sha256": "afe1f5f656475b199b4ee4b2b66eb41f9b4fc5c6045006686794fc7ebe1b18ac",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/test_null.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/test_null.json": {
+      "sha256": "5b3dd332acef7d8722dd24b5574eb28de5214db7de8755edb131c6ac9772725d",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/test_null.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/signal.bin": {
+      "sha256": "0b7034c3fd9d54a137a6e3c6a59c8947ad543ab4c0a8b8087a1044bffe2e7b04",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/signal.bin",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full/results/azimuth_modulated_poisson_2.0/signal.json": {
+      "sha256": "b399d391168ce9c3d25bc5bd72de2d93a1952a8bb41ddb06913fe0d31f80ecc0",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_controls_plan_03/full",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/signal.json",
+      "end_status_sha256": "438ee3d4b9cdaafc8c4a30d84d35bbefc57e9f0cf38318a7cbf9de8361452052"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_2.0/finite_signal_rates.txt": {
+      "sha256": "e83d57db8ad108b0f17970a3f15f235211af075198d6c70993e838c191acf5b2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_2.0/finite_signal.bin": {
+      "sha256": "d258116860d183be318fc5c40ee4209fa241fca89f5074f2a8e9cadfe840aa25",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_2.0/finite_signal.json": {
+      "sha256": "150140dcced1f361b63725c87955373f7a76efe321c527c47b92397582228857",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_2.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/calibration_null_rates.txt": {
+      "sha256": "171e283db99bc4d9c73adf692c8cbaef0ba08aeab1964545a495d2ab2845d986",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/linear_signal_rates.txt": {
+      "sha256": "57c8962bb26366cb08fef6e25cc0cb9eeb2e6d06c037d8766282ae5c3c735735",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/calibration_null.bin": {
+      "sha256": "cf41a5f4fbad610a31caab4d9edbd600cd9ffe38ddce20fbb58ba525db8869c9",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/calibration_null.json": {
+      "sha256": "76d01a1adda26d5d56935e4e04770c50d53b4ff1d5a21f4cceb764fbe2c1336a",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/test_null.bin": {
+      "sha256": "71cc3bf92469e7afee0d5eb1446e8e18f3bde127181cd775101c08e808335478",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/test_null.json": {
+      "sha256": "ddbc442de31bfd4858c059e19e813b2ab104fad0fa39c34070ed8099a161f407",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/linear_signal.bin": {
+      "sha256": "c6a7e04c84307799ac173f306b92a593603cb5819da05a3654cfdfd477625f55",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/linear_signal.json": {
+      "sha256": "a64a9ec4fcf29ef689721720d8a2538c6253219efffa02a3e4ca04e0fe74decd",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/finite_signal_rates.txt": {
+      "sha256": "e83d57db8ad108b0f17970a3f15f235211af075198d6c70993e838c191acf5b2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/finite_signal.bin": {
+      "sha256": "e31e332590273dcfe36d9aeaca7356237c9b426f75c7a8515aac6d3c04bd9f9f",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_4.0/finite_signal.json": {
+      "sha256": "8cdaa0b488292e0ca218ba9684a2cec9c9a6b496120f4b17368c3d0494e1a98a",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_4.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/calibration_null_rates.txt": {
+      "sha256": "171e283db99bc4d9c73adf692c8cbaef0ba08aeab1964545a495d2ab2845d986",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/linear_signal_rates.txt": {
+      "sha256": "57c8962bb26366cb08fef6e25cc0cb9eeb2e6d06c037d8766282ae5c3c735735",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/calibration_null.bin": {
+      "sha256": "3d5b854038dcb34ab678ff763c9fc57bdf7d207081af07f6139110d2a777c6f9",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/calibration_null.json": {
+      "sha256": "a4eb5132c104d3c7ce9e4c9c3842dbbe0c2fc7b632949948f43d7418a46fbeaa",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/test_null.bin": {
+      "sha256": "87e41f2e32210c5936182d7a77b6ed9738842c54ae346ca90bc3ef2ba6fc1b04",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/test_null.json": {
+      "sha256": "cc69fba7e219c46541adc7d8cccc690205172125502c1f72be10cb1b03bd6355",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/linear_signal.bin": {
+      "sha256": "b6a5c36afb2cf3c21ea67c9ea505af2f07a7d139e58c09ce0444a60e638032b8",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/linear_signal.json": {
+      "sha256": "c476b4aae4f5f691ced643fd3bc6a45bef552e5565cb7f2443fc6d723e1a0fbf",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/finite_signal_rates.txt": {
+      "sha256": "e83d57db8ad108b0f17970a3f15f235211af075198d6c70993e838c191acf5b2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/finite_signal.bin": {
+      "sha256": "8502bb923b5ecb7d2e5702ab0a81d20382c85b6e0e29fd80064495e6fbf3e2ea",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_8.0/finite_signal.json": {
+      "sha256": "cf6c24a949a6bc8390f4b4fc9584eb747acb1a11b56e09abcf4b2dcf12643f41",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_8.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/calibration_null_rates.txt": {
+      "sha256": "171e283db99bc4d9c73adf692c8cbaef0ba08aeab1964545a495d2ab2845d986",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/calibration_null_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/linear_signal_rates.txt": {
+      "sha256": "57c8962bb26366cb08fef6e25cc0cb9eeb2e6d06c037d8766282ae5c3c735735",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/linear_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/calibration_null.bin": {
+      "sha256": "ea687dd43d69c6d276b174158e53add182a420ba1ef0c1673b3224b65730d9ba",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/calibration_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/calibration_null.json": {
+      "sha256": "f22a15689659a78e2d309585bb764620d43e5eeec3e79f691a629ad2ff6a2539",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/calibration_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/test_null.bin": {
+      "sha256": "9d4b5f85f65de252e229d1f94f25a594add0e307d1d01b4fd0337b704f9d2836",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/test_null.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/test_null.json": {
+      "sha256": "cf65de7b02e796dcdcbd46f6025ec34720fbb24ff58c792bbd85b1e8edbc7e7d",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/test_null.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/linear_signal.bin": {
+      "sha256": "4ec1b105159c647b2421fbeae1217b45c5e13e9926057ef689587d0d60811684",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/linear_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/linear_signal.json": {
+      "sha256": "1444a9a197639b8bd40d35417181c4f7d6f9771423c5bc1361c4fef2b8e2ec5d",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/linear_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/finite_signal_rates.txt": {
+      "sha256": "e83d57db8ad108b0f17970a3f15f235211af075198d6c70993e838c191acf5b2",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/finite_signal_rates.txt",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/finite_signal.bin": {
+      "sha256": "90a5e2871ae9429fbff9b31ca1db9f60d1e77cdaad4917911126648fa9e158cf",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/finite_signal.bin",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    },
+    "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job/results/azimuth_modulated_poisson_16.0/finite_signal.json": {
+      "sha256": "9eeb7e7b2cb3c3b7c6713e6a048559f588c8298ed7845467cb5cbcb2c63b5aee",
+      "owner": "/mnt/host_root/mnt/data2/data_research_vm_roland/agent-builds/surrogate-stability-20261024/acceptance_finite_extension_01/job",
+      "relative_path": "results/azimuth_modulated_poisson_16.0/finite_signal.json",
+      "end_status_sha256": "5d32dc90103fbcca4edf0198f58c8d33436104d9a93311101c9c4fb3e81a6864"
+    }
+  },
+  "outputs_sha256": {
+    "legacy_equal_bin_4.0_finite_csda_counts.json": "30352fbaafeca5610e5a4f2ba55bb8493557f29e6690bed1ee5260df6203621b",
+    "legacy_equal_bin_16.0_first_order_scores.npz": "2518854a303cc164ba4f0d375a62e1fa7f6b0c6ca1064a189a51653cd59a54e4",
+    "uniform_directional_area_16.0_finite_csda_counts.json": "766775591190203082a45c03a4bae66ee46db4a87ac86c2e7700b28fb1190b3d",
+    "azimuth_modulated_0.5_finite_csda_scores.npz": "d787daab81db2f77d5bf9fb6527a5d39f4e3e946183396ffc96f8a77570ef2a9",
+    "cosine_4.0_finite_csda_scores.npz": "a18bed09313fd8191d992637c670f67bca602824f6dfb8633d152ef63950e22c",
+    "legacy_equal_bin_1.0_first_order_scores.npz": "d88bfd40285045e1d3d7d51347fe08f5d74ef2a764e537d124265447a469689f",
+    "uniform_directional_area_1.0_finite_csda_scores.npz": "fd1414bb1fd15e1c966680ccf48b878cb8f1f2608af36184a4555ae02c710d64",
+    "azimuth_modulated_8.0_finite_csda_scores.npz": "6f51d527048ef7aee1dd41704108c7d01c8e722da1f1d90aa8c3f880503a08c5",
+    "uniform_directional_area_8.0_finite_csda_counts.json": "85224b8bdfda54ad90fccf597f0a8237d7d646e90f71b997a129729971d5bf8c",
+    "azimuth_modulated_8.0_first_order_counts.json": "2e896b07626f354ec10adf76762678b5f09e516fc5266ed72d0ff499a9c3e099",
+    "cosine_1.0_first_order_scores.npz": "0f3b29a28de992c1b28e91bf174ade3554a4cdb204f9f745d373737a45f9c441",
+    "azimuth_modulated_8.0_first_order_scores.npz": "249a0b46b5dc1948302f7c21dbdaae844f51605ccc7349a31646c0088f770bf0",
+    "cosine_0.5_first_order_counts.json": "4ce100a34cb620f883c14d19e87aaf5e40f859dda478dd81fb8f3d5c7681a720",
+    "azimuth_modulated_4.0_first_order_scores.npz": "e319fb675935b3ef49bdb941eade975a7fa25e4220e93b0a7619b1f9672477dc",
+    "legacy_equal_bin_2.0_first_order_counts.json": "4fa2156b58530eef86694d91f962329210241c116be45c5ca665b1e1802f1644",
+    "azimuth_modulated_16.0_first_order_scores.npz": "fdbba1c7e87c2440ef16e2cbc68d28d9f7753cf9b4d4e1133a0112ffaa65566f",
+    "azimuth_modulated_16.0_finite_csda_counts.json": "85ca79fa7231922703faf12ac013dd800dc153f73df22d2dc280b4c3a3e6c310",
+    "legacy_equal_bin_16.0_first_order_counts.json": "d2148dc678e6befaad87351052b8ba16b295e4a928fb4352060601b44ce29055",
+    "legacy_equal_bin_1.0_finite_csda_scores.npz": "f1604d18cbccb235ef6c8a3b641e617d5e754f545949e8843d8f38fe9350a1bd",
+    "uniform_directional_area_2.0_first_order_counts.json": "12615ab916bf200480ad621a9751e6ef4d53b5306d0e2996a2adb11edbf8b33c",
+    "cosine_0.5_finite_csda_scores.npz": "f7b28713ad2ebc7277247f76311105fea657943c693a0887e3ced1e68adfce9a",
+    "cosine_16.0_finite_csda_scores.npz": "f3e91bc85f8ee95a11f64e65762a883da87eabd2f95c91f7518be560fda8db9b",
+    "azimuth_modulated_1.0_finite_csda_scores.npz": "3bc425425bb8f2edde8270a4b661cae27aa217c70113ffbcf24d4ced26e03fde",
+    "cosine_2.0_first_order_counts.json": "8696f26bc0ccc33ea3035d59a719425168de2b6d07d5725e9c36617078668e1d",
+    "uniform_directional_area_1.0_first_order_scores.npz": "2adb0697ee04faeed798bc11462e52fc3aaa8d4d4a695f2b9ea2d4a04029329a",
+    "cosine_16.0_first_order_counts.json": "f3a2dc1f190aa4127a07951c039a725e70081adc19f9c8da72884244bf890c81",
+    "legacy_equal_bin_0.5_finite_csda_counts.json": "d98dbb4a271e1fe59cae329bd11ee606b1c2e8cb19fd7c878bf77f733a3d73c8",
+    "azimuth_modulated_2.0_first_order_counts.json": "7c05fb917d83134a1bcd79fe5a587ed3211e7e6da87d5828fb7c5153f9606b47",
+    "uniform_directional_area_16.0_first_order_scores.npz": "50b7d8a95c5aa540a008067c1249e9f7a6e059ff8d9b2ec2b787ea2c6b089f26",
+    "cosine_0.5_finite_csda_counts.json": "d93066b708d7c61da46460d820ece3a5d6e012b1db71b8d013d629cb1e83ed70",
+    "cosine_4.0_finite_csda_counts.json": "7c00bbc8d3ee0783a6fbad43c646d01432d1f7f118bfb3d4859daa3b702a2518",
+    "legacy_equal_bin_8.0_finite_csda_counts.json": "a790bc13a3d35540f8c5f470269754190b1bb6ad604f0cb5598fa8fbae8a63f4",
+    "cosine_2.0_first_order_scores.npz": "baa3adc895ce3873bb82cec36bb8913776c786998d33399d70c10d31838a0ba3",
+    "azimuth_modulated_0.5_finite_csda_counts.json": "e8f713a99a8e080dbd5aa123183a7461aa1f836e2f521686fe763ad9195404b2",
+    "azimuth_modulated_1.0_finite_csda_counts.json": "8b0985f9bf318fed31dfcfae91ff66f0a71dcb8b6fa84bc4b735d8b801e0c5e1",
+    "cosine_2.0_finite_csda_counts.json": "d68a23d2af7f0d1c244adba836684eef5e20444ddee10ab5b95eda612024ffa0",
+    "uniform_directional_area_8.0_first_order_scores.npz": "217da0b65641988b9a61596a557e3ab4d71e92acf63a6c2c981e37aa6f8e7ce6",
+    "azimuth_modulated_0.5_first_order_counts.json": "dab3cc5c4b873157a6e24962572ee3a2f984787bea21c6e4a68c1cd61a7c0c58",
+    "uniform_directional_area_2.0_first_order_scores.npz": "7aef56d20c42330de48d493fb27c28de2fc1fcca92bcfccd35ce394db4706141",
+    "azimuth_modulated_1.0_first_order_counts.json": "73d36459b0a7a6996256f62ea13df095b4b5f7c5b4f1a3ee1e83221ec7173665",
+    "azimuth_modulated_16.0_finite_csda_scores.npz": "10d35ae529916abbdc0930456284a5c7f5f74618ad2df2bd7be971410441ed12",
+    "legacy_equal_bin_2.0_finite_csda_counts.json": "5271ffabb1dcca86ae8abf463d20388082bd1dab3c1911d44eaf2fc1e3afc93f",
+    "legacy_equal_bin_8.0_finite_csda_scores.npz": "413e430c401e7c6e0e85f545d13812e4bcce9ea0e75748a41697909bdb44c1d1",
+    "cosine_1.0_finite_csda_counts.json": "23db644d13a7828d3e6ca65d374193198343ee1d9ee72771067aa4b37a4bad34",
+    "azimuth_modulated_4.0_first_order_counts.json": "1ef4a2d7f65e5c1643d50835f1e09a3c42e29c913620883730ffa313c09f9021",
+    "uniform_directional_area_8.0_first_order_counts.json": "947acfb56b9bc97cb3f4eeea83022bd367d112cda6e5a6b703c857a358a4cba4",
+    "uniform_directional_area_4.0_finite_csda_scores.npz": "c92a1ad9b78ff4101763e47b4182bc912c7a01cb1c4e1beb53f0f42caa65743c",
+    "uniform_directional_area_16.0_first_order_counts.json": "d6de54e4541df282a861df7410123b06cfcf35b7ed72378060e4cb5f5e8d6d2c",
+    "azimuth_modulated_0.5_first_order_scores.npz": "89dccf10d45f739c2978a5ee574f06e05937dd87d338db7b1cff47f506046479",
+    "cosine_0.5_first_order_scores.npz": "b3c762a5b282136ec4b5659bd2b7d3c271f9f547b8be673c2760d2950a6a1803",
+    "uniform_directional_area_4.0_first_order_scores.npz": "3d6f46dd27adf381e93e677613440788a4c02e4a776be100183e365f3d8db405",
+    "legacy_equal_bin_2.0_first_order_scores.npz": "ea808cc075f256c1f7e1946a426d6b8cc95d3ff4c11ac3698401fd7dd7274068",
+    "azimuth_modulated_2.0_finite_csda_counts.json": "3c7e91500ae6aba68030c61d4f8ae4da366925af59d338a76b612b1ec300fb63",
+    "cosine_4.0_first_order_counts.json": "d31b034593685ef5ac2fb2388e2155b787d0de6f7939c2c0f284d562064e829f",
+    "azimuth_modulated_2.0_finite_csda_scores.npz": "b8588ae46bf83897b2c962ecfae1405ebfc32914774957e091e91b57bc7d2e86",
+    "cosine_16.0_first_order_scores.npz": "52d52ed7642193d41505095b91e2185854f5664b950aefbccb96a373e231a6be",
+    "legacy_equal_bin_1.0_finite_csda_counts.json": "dbb861b5c8005d7787891e0dbf77a110fa0e40c949879b450b63c24e1af39017",
+    "legacy_equal_bin_0.5_finite_csda_scores.npz": "d5f1b9d60b5a16d0f922fda1946d6df2db8b4eead235d4966b09ec81781d551b",
+    "legacy_equal_bin_8.0_first_order_scores.npz": "6e605f7e0608ecb9c82d35bcb00dddd01124750f36ede347718b272d8695c816",
+    "legacy_equal_bin_16.0_finite_csda_counts.json": "5f461a130df6ec3e71d61a612f2f6ada54406551e6b30ed015f81e575187ae8b",
+    "cosine_8.0_finite_csda_scores.npz": "9e50683c309f61c702cf369148c1bcb9eef61e92268b76d4977f8aad02ecefea",
+    "uniform_directional_area_2.0_finite_csda_scores.npz": "e33acec9c953d9c084f4e702053e22f6cb320f8c489376569d3902cae65e51c2",
+    "cosine_16.0_finite_csda_counts.json": "9420b8627e2cf4009ffb3b17da66abc4bcd4d761810361e2c25ad543cae9e861",
+    "legacy_equal_bin_0.5_first_order_scores.npz": "e30599971e958912fdc8826745b1b25b1fa26dac2171b458ebdc29c83c609f8f",
+    "legacy_equal_bin_4.0_first_order_counts.json": "e71d1f4f2289b6b21023ef5974738e07b7d308872975c4bba25f90c0028a00ee",
+    "cosine_8.0_first_order_scores.npz": "86ce34c4ea15df15622804ed59d14fd5d3bb5f81a6ae2a3a590204af20bcf920",
+    "uniform_directional_area_0.5_first_order_counts.json": "1f7838bf6c9a623a019e874f577b3e744e3a9a73bca46bb44f402d50effa36e3",
+    "poisson_likelihood_reference.csv": "7a78bf2b5efd6d397ed3cf0c7db47afe6b4ad4b865c5b44136f9b5c86564c295",
+    "azimuth_modulated_2.0_first_order_scores.npz": "cf6871aa783bdda54480563db9f034556b0677c49f85961e92b015ef99b9933a",
+    "azimuth_modulated_1.0_first_order_scores.npz": "b8dbaef14efc900c1ca026dba5f72b907041b19570d5d7f2106d3c6be8176f8b",
+    "cosine_8.0_first_order_counts.json": "d1923f92cebc125c1080bc399ddd6cd143c0c77b86d88f9560647028c955357a",
+    "uniform_directional_area_2.0_finite_csda_counts.json": "ea7392a4349976e78a1fe488dc2d8350e1a0cb192d2e42af93bed26953c762e4",
+    "uniform_directional_area_0.5_finite_csda_scores.npz": "4c1d8dbe17e9c4e48890977ba945fe7cc00883afe75466fc5510bd976e2b8bca",
+    "legacy_equal_bin_2.0_finite_csda_scores.npz": "81fe9875f0990470e1a0bdaacffec369ea2c1509932b3afdfbcfc52446b18093",
+    "legacy_equal_bin_4.0_first_order_scores.npz": "1de1531ad8bff3dda837d0dc678c9d159b9fa3abd5c0fb0b9690d593a5b1e7a1",
+    "azimuth_modulated_16.0_first_order_counts.json": "d284ce6f11a7d0b5e1537ff7bcebf7f82e07eafaeed45ad05800824fb5d98982",
+    "azimuth_modulated_4.0_finite_csda_scores.npz": "62c37c9d05452ee4410c1d77724fec93dd8f3ca1057b751633812431c679dfa5",
+    "cosine_1.0_finite_csda_scores.npz": "698a44749716ecc4c4a569e38d00991ac751a47feccfaf9752f6d36817375523",
+    "legacy_equal_bin_1.0_first_order_counts.json": "e142b59e7b0e7810885059765dd00568f374d1107d4277cf2849bf85c7abab4d",
+    "uniform_directional_area_1.0_finite_csda_counts.json": "3b006c5fd3e4fb097ab9889435f999456313cb1f18ac72828fef26c63ccb59c6",
+    "cosine_8.0_finite_csda_counts.json": "bfcf6133c023db3271b9045f903f846c5fbb763740618ac7ccdec62ae9fae2cc",
+    "uniform_directional_area_4.0_finite_csda_counts.json": "fec3653b42e828fd8ac27d28fdec7d66ab11e5c79ede50e3280921b140f971f8",
+    "legacy_equal_bin_8.0_first_order_counts.json": "c4294a8d75854338f3f849f522d486feb2a72119ce087fcbed6d85203110c343",
+    "cosine_2.0_finite_csda_scores.npz": "15f1e03ccf6ebf44bce8ca79a94b6da747304db3d4606de812b5d7c8e2a7e00b",
+    "uniform_directional_area_4.0_first_order_counts.json": "1e20d6e11a15911e3ff81f57bd3ad03f596a45f7cb1a31d101f6cf4960689f28",
+    "uniform_directional_area_16.0_finite_csda_scores.npz": "56642e1c0516d2bedbe59b4cbef06b0d5711eda7344afc0de884cdf48938cc11",
+    "azimuth_modulated_8.0_finite_csda_counts.json": "4b1202d3ad751b9fca98f878f6051ca379c913e5339b5af086975c4ffbbb6bd0",
+    "cosine_4.0_first_order_scores.npz": "c54638e3d9c1bc59e81bb0d9e37f0b6279057d40b957a9d8098c7ae35d16e0bc",
+    "legacy_equal_bin_4.0_finite_csda_scores.npz": "b98963e4bd76cf681c7c5acf552a5ef31d86fa77a6e379c565c467f8522c3ff5",
+    "uniform_directional_area_0.5_finite_csda_counts.json": "ab15aecc8ad2c2677994938423725ce3961c9e8504cd78a5edf5e7fd40309f5a",
+    "legacy_equal_bin_16.0_finite_csda_scores.npz": "db20ba7af1a6e0b529962b353c61ca19737bf065e9a4bf6d369889e1902f72b8",
+    "legacy_equal_bin_0.5_first_order_counts.json": "d394f9ed0e2c76ca7199c7fb04569ae81cafae8c02c28c0e24ac360a5ce42af5",
+    "uniform_directional_area_0.5_first_order_scores.npz": "00306bf83f6e4844924322820f38219aee9cbe7f1f8b6946d67b0275576281ac",
+    "uniform_directional_area_1.0_first_order_counts.json": "aabc4b476a9562a92365f3e813cf34467abaf9bbab6c9aa1371d640b8ab21370",
+    "azimuth_modulated_4.0_finite_csda_counts.json": "a4b9e640465f921640e9eb61106e83b709d6cde3e54c91f2f991065948c41d46",
+    "uniform_directional_area_8.0_finite_csda_scores.npz": "229c00d7e7e6098db0040c1dc85aaf42899dd7840a02336d8f399315bc10c9e0",
+    "cosine_1.0_first_order_counts.json": "9ac0d4af410b12e5ad61537c6cd530103a9ea5cf9c82e85107b91e744298b757"
+  },
+  "execution_completed": true
+}
