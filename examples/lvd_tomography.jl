@@ -3099,6 +3099,34 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                 args.papermatch_absolute_prior_weight>=0 ? args.papermatch_absolute_prior_weight :
                 args.papermatch_reg*automatic_prior_scale)
             sm_prior=stable_prior
+            configuration=Dict(
+                "objective_model"=>"fixed_pseudo_huber_log_flux",
+                "absolute_prior_weight"=>stable_prior.weight,
+                "automatic_dry_prior_scale"=>automatic_prior_scale,
+                "relative_prior_multiplier"=>args.papermatch_reg,
+                "adjoint_backend"=>string(get_adjoint_derivative_mode()),
+                "legacy_adjoint_fd_step"=>get_adjoint_fd_step(),
+                "legacy_adjoint_fd_step_active"=>get_adjoint_derivative_mode()===:finite_difference,
+                "robust_log_scale"=>args.papermatch_log_scale,
+                "normalization_mode"=>(args.papermatch_abs_scale>0 ? "pinned" : "profiled"),
+                "pinned_normalization"=>args.papermatch_abs_scale,
+                "initial_field_water"=>args.papermatch_initial_water,
+                "maximum_iterations"=>args.papermatch_gn_iters,
+                "projected_gradient_tolerance"=>args.papermatch_gradient_tol,
+                "cells"=>n_cells,"support_cells"=>count(aquifer_mask),
+                "covered_bins"=>length(valid_bins),"fit_bins"=>length(fit_idx),
+                "prior_cutoff_m"=>args.papermatch_prior_cutoff,
+                "baseline_mask_ratio"=>args.papermatch_mask_ratio,
+                "support_sha256"=>bytes2hex(sha256(join(findall(aquifer_mask),','))),
+                "screen_sha256"=>bytes2hex(sha256(join(valid_bins[fit_idx],','))),
+                "correction_artifact"=>args.correction_artifact,
+                "correction_artifact_sha256"=>(isempty(args.correction_artifact) ? "" :
+                    bytes2hex(sha256(read(args.correction_artifact)))))
+            open(joinpath(args.output_dir,"lvd_solver_configuration.toml"),"w") do io
+                TOML.print(io,configuration)
+            end
+            println("  Fixed objective configured: absolute prior weight=$(stable_prior.weight), adjoint=$(get_adjoint_derivative_mode())")
+            flush(stdout)
             solver_diagnostics=NamedTuple[]
             open(joinpath(args.output_dir,"lvd_solver_progress.csv"),"w") do progress_io
                 println(progress_io,"iteration,objective,projected_gradient"); flush(progress_io)
