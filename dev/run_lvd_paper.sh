@@ -17,6 +17,7 @@ MC_SAMPLES=1024
 PAPERMATCH_MC_SAMPLES=512
 STAGES=topo,main,sweep,detection,contrast
 DRY_RUN=0
+EXTRA_OPTIONS=()
 JULIA_BIN=${JULIA_BIN:-julia}
 ORIGINAL_ARGS=("$@")
 usage() {
@@ -36,6 +37,13 @@ Usage: bash dev/run_lvd_paper.sh [options]
   --stages LIST       Comma-separated sequential stages (default all five):
                       topo,main,sweep,detection,contrast
   --dry-run           Print commands without creating outputs or running Julia
+  --correction-artifact PATH  Frozen dry/material correction artifact
+  --solver-mode MODE          Synthetic GN: legacy or stable
+  --papermatch-fit-mode MODE  Measured fit: legacy or stable
+  --papermatch-initial-water X  Initial supported-cell fraction
+  --papermatch-gn-iters N       Stable measured iteration ceiling
+  --papermatch-gradient-tol X   Stable projected-gradient tolerance
+  --papermatch-log-scale X      Fixed pseudo-Huber log-residual scale
   --help              Show this help
 Set JULIA_BIN to select a Julia executable. BLAS uses one thread. The bounded
 launcher validates against the lower host/cgroup limits. Main defaults plus the
@@ -46,6 +54,10 @@ HELP
 }
 while (($#)); do
     case "$1" in
+        --correction-artifact|--solver-mode|--papermatch-fit-mode|--papermatch-initial-water|--papermatch-gn-iters|--papermatch-gradient-tol|--papermatch-log-scale)
+            (($# >= 2)) || { echo "Missing value for $1" >&2; exit 2; }
+            EXTRA_OPTIONS+=("$1" "$2")
+            shift 2 ;;
         --output-dir|--dump|--threads|--memory-gib|--recursions|--recur-tol|--stages|--samples|--calibration-mc-samples|--inverse-mc-samples|--mc-samples|--papermatch-mc-samples)
             (($# >= 2)) || { echo "Missing value for $1" >&2; exit 2; }
             case "$1" in
@@ -117,6 +129,7 @@ run_stage() {
 RHO=2710
 # Structured grid avoids inverted cells where terrain dips below the detector.
 COMMON=(examples/lvd_tomography.jl --dump "$DUMP" --rock-density "$RHO" --geometry grid --samples "$SAMPLES" --calibration-mc-samples "$CALIBRATION_MC_SAMPLES" --inverse-mc-samples "$INVERSE_MC_SAMPLES" --mc-samples "$MC_SAMPLES" --papermatch-mc-samples "$PAPERMATCH_MC_SAMPLES" --csda-quadrature midpoint --output-dir "$OUT")
+COMMON+=("${EXTRA_OPTIONS[@]}")
 # Statistical comparisons use 2 x 4 degree bins, rather than the main 1 x 1 grid.
 COARSE=(--zenith-step 2 --azimuth-step 4)
 for stage in "${selected_stages[@]}"; do

@@ -409,6 +409,8 @@ using Random
     include("test_geometry_ad.jl")
     include("test_tomography.jl")
     include("test_shallow_mixture.jl")
+    include("test_tomography_material.jl")
+    include("stability_v2.jl")
 end
 
 println("\nAll tests passed! ✓")
