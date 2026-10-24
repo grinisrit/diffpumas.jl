@@ -45,6 +45,7 @@ using ..Geometry: compute_decay_weight_from_path, locals_air_at_altitude,
 using ..GaisserFlux: flux_gccly
 using ..Pumas: sample_energy_loguniform
 
+using TOML
 using Random
 using Statistics
 using LinearAlgebra
@@ -57,6 +58,8 @@ export cell_density, cell_stopping_power
 export compute_directional_flux_csda, directional_flux_and_grad_csda
 export assemble_forward_and_jacobian
 export build_cell_properties_for_mc, compute_directional_flux_mc
+export save_csda_corrections, load_csda_corrections!
+export CsdaMaterialCorrection, set_csda_material_correction!, get_csda_material_correction, calibrate_csda_material_correction
 export CsdaCorrection, set_csda_correction!, get_csda_correction, calibrate_csda_correction
 export SmoothnessPrior, laplacian_gradient, apply_laplacian_smoothing
 export EdgePrior, edge_gradient, edge_hessian
@@ -137,6 +140,21 @@ function set_csda_correction!(; enabled::Bool = true, kappa_strag::Float64 = 0.0
 end
 
 get_csda_correction() = CSDA_CORRECTION[]
+
+# Kept separate from CsdaCorrection so existing serialized correction objects keep
+# their layout. Coefficients are fitted to material contrasts, never dry geometry.
+struct CsdaMaterialCorrection
+    enabled::Bool
+    linear::Float64
+    quadratic::Float64
+end
+const CSDA_MATERIAL_CORRECTION = Ref(CsdaMaterialCorrection(false, 0.0, 0.0))
+get_csda_material_correction() = CSDA_MATERIAL_CORRECTION[]
+function set_csda_material_correction!(; enabled::Bool=true, linear::Real=0.0,
+                                       quadratic::Real=0.0)
+    all(isfinite, (linear, quadratic)) || throw(ArgumentError("nonfinite material coefficients"))
+    CSDA_MATERIAL_CORRECTION[] = CsdaMaterialCorrection(enabled, linear, quadratic)
+end
 
 # ===========================================================================
 # Shared types
@@ -502,6 +520,31 @@ end
 # Directional CSDA flux + sparse on-path gradient
 # ===========================================================================
 
+# q is the water mass fraction of the entire rock column, including the dry
+# remainder. Runtime mixtures use mass fractions and harmonic mixture density.
+# This differentiable composition statistic vanishes for every dry geometry.
+function _column_water_fraction(matcfg, remainder, distances, positions, shallow, w)
+    water = zero(eltype(w)) + 0.0
+    mass = zero(eltype(w)) + remainder * matcfg.rock_density
+    for k in eachindex(distances)
+        wk = w[positions[k]]
+        gx = distances[k] * cell_density(wk, shallow[k], matcfg)
+        water += wk * gx
+        mass += gx
+    end
+    return water / max(mass, 1e-30)
+end
+@inline function _material_multiplier(q)
+    c = CSDA_MATERIAL_CORRECTION[]
+    return c.enabled ? exp(c.linear*q + c.quadratic*q*q) : one(q)
+end
+function csda_material_multiplier(path, shallow, matcfg, w)
+    q = _column_water_fraction(matcfg, path.remaining_rock_distance,
+        [s.distance for s in path.segments], [s.cell_idx for s in path.segments],
+        [shallow[s.cell_idx] for s in path.segments], w)
+    return _material_multiplier(q)
+end
+
 # Core single-direction CSDA flux as a function of the on-path water fractions.
 # `wsel` is indexed via `seg_pos` for each segment so the whole computation
 # depends only on the small on-path vector (enables a sparse reverse pass).
@@ -554,7 +597,9 @@ function _directional_flux_core(physics, matcfg::MaterialConfig, site::SiteConfi
         end
         flux_sum += 2.0 * sample.weight * flux_single
     end
-    return csda_geom_multiplier(path) * flux_sum / length(energy_samples)
+    q = _column_water_fraction(matcfg, path.remaining_rock_distance,
+        seg_dist, seg_pos, seg_shallow, wsel)
+    return csda_geom_multiplier(path) * _material_multiplier(q) * flux_sum / length(energy_samples)
 end
 
 # Precompute the on-path cell list and per-segment index/shallow/distance arrays.
@@ -642,7 +687,8 @@ function compute_directional_flux_csda(physics, shallow_flags::AbstractVector{Bo
         end
         flux_sum += 2.0 * sample.weight * flux_single
     end
-    return csda_geom_multiplier(path) * flux_sum / length(energy_samples)
+    return csda_geom_multiplier(path) * csda_material_multiplier(path, shallow_flags, matcfg,
+        water_fractions) * flux_sum / length(energy_samples)
 end
 
 """
@@ -1098,6 +1144,7 @@ function calibrate_csda_correction(physics, shallow_flags::AbstractVector{Bool},
     return best_ks, best_kh, stats
 end
 
+include("Tomography_material_calibration.jl")
 include("Tomography_rules.jl")
 include("Tomography_inverse.jl")
 
