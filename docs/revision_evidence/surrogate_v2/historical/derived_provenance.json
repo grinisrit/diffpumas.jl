@@ -1,0 +1,11 @@
+{
+  "created_utc": "2026-10-24T10:03:38.791515+00:00",
+  "scope": "Previously inspected historical raw MC references; conditional errors; all bound raw hashes verified",
+  "end_status_sha256": "5e1bd91dcf13ae70f40d18a27d5207a9e85cafb5b9816f25e9396c027a1b2904",
+  "raw_sha256": {
+    "historical_flux.csv": "9ef421d2b880c2d1e8f7304d30648af3b53d65c057617a9872192f9458107a17",
+    "historical_derivatives.csv": "0adf9293068f7e04e7ca75139abc6111fdfe700f73080ca2f5aa7c9962446679"
+  },
+  "summary_helper_sha256": "5f0110047fac35e342d6b96bb6d7349c5042d30792aa41166ffa8a37bba694c2",
+  "assessment_sha256": "d96c069c162a0ae4838447a2d8d6dca17399487c74e0913bed528ccd1f2a9b89"
+}

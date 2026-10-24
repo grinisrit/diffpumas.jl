@@ -1,0 +1,6 @@
+rays = 21
+scope = "material correction disabled; frozen historical dry correction; same geometry, fields, and midpoint nodes"
+comparisons = 42
+max_absolute_relative_difference = 0.0
+pass = true
+tolerance = 1.0e-10
