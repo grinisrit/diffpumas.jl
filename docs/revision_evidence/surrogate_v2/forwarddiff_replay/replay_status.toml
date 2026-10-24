@@ -1,0 +1,26 @@
+internal_adjoint_step = 1.0e-6
+max_relative_ad_fd_error_at_original_step = 3.6441713391958555e-8
+adjoint_backend = "forwarddiff"
+internal_fd_step_active = false
+ad_fd_cases = 120
+scope = "Deterministic same-case replay; no MC, refitting, reselection, or new physical-reference accuracy claim"
+flux_checks = 96
+all_stored_primal_values_bitwise_equal = true
+ad_fd_threshold = 0.0001
+paired_secant_checks = 1920
+changed_inputs = []
+
+[source_inputs_sha256]
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/heldout_derivatives.csv" = "afa790b31e71ce9cca563df5037a86de61fca3474c471193083353e2220fb2da"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/corrected_validation/SHA256SUMS" = "78d77f704246f4104a69a804ad3e7c1dc946a2f49025dca364a99f718069181f"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/corrected_validation/config.toml" = "b2ed557bdfac645c3e2c73d32e2c70950075512ae5a937ace090f6b32d357c51"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/historical/historical_derivatives.csv" = "0adf9293068f7e04e7ca75139abc6111fdfe700f73080ca2f5aa7c9962446679"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/corrected_validation/mc_jacobian.csv" = "2e8d8f9c9ccd703d001e14361e1d91acd52de6beb28576f7c0a5a143c2f5146a"
+"/home/roland/devspace/diffpumas.jl/dev/replay_material_ad_precision.jl" = "17bed757e133e61dd62fc36fab0695452fb3a5b78d4497e54fdf622c3e0517a0"
+"/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas" = "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml" = "8667f1a7fc9a4068e074495dcb08cb04deeb6f7ae77365087aa9daabc4c4677d"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/heldout_flux.csv" = "d149a1c5495ea92c8a4faad2e7e92f6e2acbe8b95035c6d72c1dc590ff72c279"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/historical/end_status.json" = "5e1bd91dcf13ae70f40d18a27d5207a9e85cafb5b9816f25e9396c027a1b2904"
+"/home/roland/devspace/diffpumas.jl/dev/validate_surrogate_v2.jl" = "02e6f8302501571963bbf223d3b46ffdc04cbf96d04746984961aa9f7f37713a"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/preregistered_plan.toml" = "0c1a1225f761bc173fe1ff7797695b67ccc6e8447aad598fc55452540d8d10c4"
+"/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/end_status.json" = "9fcb1938dc6b455fa6d90c314f9a47d79378c51ed798c5257eadb235d25d8302"
