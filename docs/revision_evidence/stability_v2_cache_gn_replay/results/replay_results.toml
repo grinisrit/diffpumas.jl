@@ -1,0 +1,12 @@
+scope = "one outer attempt, fresh default LM damping; not original-history replay"
+artifact = "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml"
+
+[[records]]
+baseline_seconds = 704.628619311
+trials = 124
+cache_seconds = 469.290363087
+cached_ray_hits = 33278
+bitwise_trace_equal = true
+bitwise_solution_equal = true
+cached_ray_calls = 91094
+state = "dry0"
