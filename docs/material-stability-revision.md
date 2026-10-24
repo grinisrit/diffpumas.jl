@@ -1,6 +1,6 @@
 # Material calibration and fixed-objective reconstruction
 
-These are opt-in alternatives to the archived October 23 calculation. Existing defaults remain available for reproduction. The material correction passed the prespecified independent transport checks below. Matched reconstruction comparisons are in progress; passing software tests alone does not validate stochastic transport derivatives or recovered material fields.
+The material correction and fixed-objective solver are opt-in alternatives to the archived October 23 calculation. The segment-adjoint backend now defaults to local forward-mode differentiation; the old finite-difference backend remains explicitly selectable for reproduction. The material correction passed the prespecified independent transport checks below. Matched reconstruction comparisons are in progress; passing software tests alone does not validate stochastic transport derivatives or recovered material fields.
 
 ## Frozen material correction
 
@@ -43,9 +43,17 @@ An artifact freezes all correction coefficients, bypassing recursive recalibrati
 
 Stable full runs omit legacy count-space uncertainty/profile products. `lvd_stable_curvature.csv` instead describes the local robust residual Gauss–Newton curvature. It is not a calibrated posterior covariance or a detection significance.
 
+## Segment derivatives and stationarity
+
+The transport pullbacks now use local ForwardDiff tangents inside the outer Zygote reverse pass. This removes the finite-difference approximation from the default segment derivative. `set_adjoint_derivative_mode!(:finite_difference)` explicitly restores the legacy backend; changing `set_adjoint_fd_step` alone does not select it. The default mode is `:forwarddiff`.
+
+A nearly cancelling data/prior gradient exposed a 0.737% error in one legacy segment derivative that could reverse the total objective-gradient sign. The applied-library regression now agrees with a local whole-flux finite difference to about 1.9e-9 relative error, with the primal flux bitwise unchanged. A separate [fixed-case replay](revision_evidence/surrogate_v2/forwarddiff_replay/README.md) retained all 96 stored flux values and 1,920 paired CSDA secants bitwise. Across 120 selected derivative cases its maximum AD/finite-difference relative discrepancy was 3.644e-8 at the fixed outer step 1e-6. These are deterministic derivative checks, not evidence that CSDA reproduces stochastic transport. The full package suite passed 731 tests on both Julia 1.10.12 and 1.11.7.
+
+The derivative follows the executed smooth branch. Interpolation knots, adaptive transport decisions and cutoffs can still create genuine nonsmooth points. A tiny objective decrease or step does not certify the configured classical first-order KKT tolerance. Final solver status, directional diagnostics and comparisons across initializations must remain explicit even when execution succeeds.
+
 ## Recorded experiments
 
-The completed [independent production validation](revision_evidence/surrogate_v2/production/README.md) reduced median absolute relative flux bias from 24.983% to 12.937% across 48 held-out ray/field cases. Median finite-contrast derivative bias fell from 25.254% to 21.373%; comparisons exceeding twice their estimated conditional Monte Carlo standard error fell from 16 to 6. Same-surrogate AD/finite-difference agreement reached a maximum relative discrepancy of 1.287e-8. Every tested field type improved on average, including the localized lens.
+The completed [independent production validation](revision_evidence/surrogate_v2/production/README.md) reduced median absolute relative flux bias from 24.983% to 12.937% across 48 held-out ray/field cases. Median finite-contrast derivative bias fell from 25.254% to 21.373%; comparisons exceeding twice their estimated conditional Monte Carlo standard error fell from 16 to 6. The original validation's same-surrogate AD/finite-difference check reached 1.287e-8 with its recorded backend and step; the subsequent default-backend replay is reported separately above. Every tested field type improved in median flux bias, including the localized lens.
 
 These are conditional average improvements. The maximum flux bias remains 59.936%, 43/48 flux comparisons still exceed twice their estimated standard error, and the 15-degree derivative subgroup worsens in median relative bias. The uncertainty excludes coefficient fitting and physical-model uncertainty. The selected derivatives emphasize sensitive crossed cells, not the entire Jacobian. Historical replay and independent testing are reported separately.
 
@@ -53,5 +61,7 @@ These are conditional average improvements. The maximum flux bias remains 59.936
 - `dev/replay_surrogate_v2.jl`: comparisons against the already inspected October 23 MC references. This is a historical comparison, not a blind test.
 - `dev/run_stability_v2.py`: matched frozen-artifact starts at 0, 0.15 and 0.3, normalization controls and a screen-disabled fit; checks stationarity, common observations and field differences. Default is plan-only; `--execute` starts jobs.
 - `dev/run_revision_job.py`: fresh output directory, bounded CPU affinity/address space, source/runtime identities and completion hashes. Launch inside tmux. Coordinate aggregate allocations across jobs; per-process address-space limits are not aggregate cgroup memory limits.
+
+The October 24 full production and 12-case matched stability study remain in progress at this checkpoint. Their common absolute prior coefficient is 3.954930197858131. The durable production queue recomputes main, detection, contrast and exposure-sweep results from the frozen correction, then exports audited figures. The separate control queue includes three initial fields, normalization changes of ±5% and the disabled angular screen for both dry-only and material-corrected operators. A failed stationarity test remains a scientific result; an execution or provenance failure stops the affected queue. Final-field column-domain and quadrature checks are separate audits. Archived October 23 measured-field and sensitivity numbers are not results of this new configuration.
 
 The source spectrum/altitude convention, uncertain LVD table provenance and acceptance, prescribed straight paths, geological support and observation model remain separate limitations. Improvements to these two numerical components do not resolve those physical ambiguities.
