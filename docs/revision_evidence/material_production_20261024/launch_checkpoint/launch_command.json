@@ -1,0 +1,28 @@
+{
+  "started_utc": "2026-10-24T10:56:08.970676+00:00",
+  "cwd": "/home/roland/devspace/diffpumas.jl",
+  "tmux_session": "material-production-20261024",
+  "command": [
+    "python3",
+    "/home/roland/devspace/diffpumas.jl/dev/run_material_production.py",
+    "--output",
+    "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024",
+    "--dump",
+    "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas",
+    "--artifact",
+    "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml",
+    "--julia",
+    "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia",
+    "--absolute-prior-weight",
+    "3.954930197858131",
+    "--initial-water",
+    "0",
+    "--gn-iters",
+    "100",
+    "--gradient-tol",
+    "1e-6",
+    "--execute"
+  ],
+  "orchestrator_sha256": "79111a837690b8bd22dcf5e8693113e765f4a9e759addc10680ba6b352167e0c",
+  "scope": "Authorized fresh full production; numerical execution and scientific stationarity remain separate"
+}

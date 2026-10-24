@@ -1,0 +1,69 @@
+{
+  "created_utc": "2026-10-24T10:56:18.106727+00:00",
+  "scope": "Audited generated candidates only; execution is separate from scientific acceptance; no paper prose changed",
+  "stage": "topo",
+  "completed_stages": [
+    "topo"
+  ],
+  "stage_end_sha256": {
+    "topo": "be6505b698e923792dd7b918b12e3ec4bb5811404e71fd37349989214c3c860b"
+  },
+  "artifact_sources": {
+    "lvd_topography_grid.csv": [
+      {
+        "path": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/topo/data/lvd_topography_grid.csv",
+        "sha256": "a2277f915dd6bf5569a2613a042668ee008d3eb292ebee20d409e84b0f28b8ad"
+      }
+    ]
+  },
+  "auxiliary_controls": {},
+  "commands": [
+    [
+      "/home/roland/.venv/bin/python3",
+      "/home/roland/devspace/diffpumas.jl/diffmuontomoLVD/revision/stage_result_parsers.py",
+      "--stage",
+      "topo",
+      "--directory",
+      "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/topo",
+      "--output",
+      "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/candidate_exports/topo/stage_results.json"
+    ],
+    [
+      "/home/roland/.venv/bin/python3",
+      "/home/roland/devspace/diffpumas.jl/dev/reconcile_manuscript_outputs.py",
+      "--run",
+      "topo=/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/topo/data",
+      "--output",
+      "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/candidate_exports/topo/reconciliation"
+    ],
+    [
+      "/home/roland/.venv/bin/python3",
+      "/home/roland/devspace/diffpumas.jl/diffmuontomoLVD/make_figures.py",
+      "--data-dir",
+      "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/candidate_exports/topo/data",
+      "--output-dir",
+      "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/candidate_exports/topo/figures",
+      "--only",
+      "fig_topography_3d"
+    ]
+  ],
+  "figure_status": "candidate_figures_exported",
+  "helper_sha256": {
+    "/home/roland/devspace/diffpumas.jl/dev/postprocess_material_production.py": "e6d699028992a81a0ad44c5810b7face41fb5d468592167021751f72adbb09a8",
+    "/home/roland/devspace/diffpumas.jl/dev/reconcile_manuscript_outputs.py": "332d806cee9313d99c079c58a1d30b2017cf92df8d523f0a38a14d66469b0469",
+    "/home/roland/devspace/diffpumas.jl/diffmuontomoLVD/revision/stage_result_parsers.py": "357b521ffb696a16c9075730cc627d2f9046122dfddaccc0534f8c7bf9d14938",
+    "/home/roland/devspace/diffpumas.jl/diffmuontomoLVD/revision/build_surrogate_stability_report.py": "9801402f171405e907597188c71581f98a08d1235d760d1eb98dcfb3758c917a",
+    "/home/roland/devspace/diffpumas.jl/diffmuontomoLVD/make_figures.py": "db91240f7ac41433f89230af0df7c9deee007ecef455c5ed0b4d56535b77cfad"
+  },
+  "helpers_unchanged": true,
+  "outputs_sha256": {
+    "stage_results.json": "155283ea903abff1cb24afee5435d8e36ada5f9bbe59868dff47a1b7f4a64b4c",
+    "figure_export.log": "7aeb4bb901407c4751846dbf7859a39bba156e44f6c9def70eccebd3547a77a9",
+    "data/lvd_topography_grid.csv": "a2277f915dd6bf5569a2613a042668ee008d3eb292ebee20d409e84b0f28b8ad",
+    "reconciliation/reconciliation.json": "420e5a93ab0d2d958b948b9d2d0580d0fa067775675e6b91af885f1f4b699725",
+    "reconciliation/reconciliation.md": "a5986e0ef0daa89983f67c770899e87f9712ed5947d867cf72919cddbe5127b3",
+    "figures/fig_topography_3d.png": "c673bf4dd9c26ad1766cd915c22398b3891f5aff77a591bf6f6b451cb54a5dfd",
+    "figures/fig_topography_3d.pdf": "ab43e360edd8661ddf6af26fc25529dfd9cb8b4e4d06ef4eb40eb3d3d031a127",
+    "figures/layout_manifest.json": "5c10360c4ac032cb8acca77e30c6b7a218427b27b07031c3b922b95abab5fc59"
+  }
+}

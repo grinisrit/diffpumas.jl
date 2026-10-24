@@ -1,0 +1,15 @@
+{
+  "started_utc": "2026-10-24T10:56:09.231912+00:00",
+  "current_stage": "main",
+  "completed_stages": [
+    "topo"
+  ],
+  "postprocessing": {
+    "topo": {
+      "returncode": 0,
+      "completed_utc": "2026-10-24T10:56:18.115817+00:00"
+    }
+  },
+  "execution_completed": false,
+  "stage_started_utc": "2026-10-24T10:56:18.119456+00:00"
+}

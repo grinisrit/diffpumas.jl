@@ -1,0 +1,82 @@
+[
+  {
+    "label": "topo",
+    "directory": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/topo/data",
+    "exists": true,
+    "scope": "Recorded evidence only. Artifacts do not establish successful completion, scientific validity, convergence, or calibrated uncertainty coverage.",
+    "run_manifests": [],
+    "stages": {
+      "topo": {
+        "artifact_status": "outputs_available_completion_unverified",
+        "expected": [
+          "lvd_topography_grid.csv"
+        ],
+        "available": [
+          "lvd_topography_grid.csv"
+        ],
+        "missing": [],
+        "explicit_launcher_events": []
+      },
+      "main": {
+        "artifact_status": "missing_pending",
+        "expected": [
+          "lvd_tomography_inverse.txt",
+          "lvd_single_muon_angular_distribution.txt",
+          "lvd_mc_common_subset_summary.csv"
+        ],
+        "available": [],
+        "missing": [
+          "lvd_tomography_inverse.txt",
+          "lvd_single_muon_angular_distribution.txt",
+          "lvd_mc_common_subset_summary.csv"
+        ],
+        "explicit_launcher_events": []
+      },
+      "sweep": {
+        "artifact_status": "missing_pending",
+        "expected": [
+          "lvd_reconstruction_sweep.txt"
+        ],
+        "available": [],
+        "missing": [
+          "lvd_reconstruction_sweep.txt"
+        ],
+        "explicit_launcher_events": []
+      },
+      "detection": {
+        "artifact_status": "missing_pending",
+        "expected": [
+          "lvd_detection_benchmark.txt"
+        ],
+        "available": [],
+        "missing": [
+          "lvd_detection_benchmark.txt"
+        ],
+        "explicit_launcher_events": []
+      },
+      "contrast": {
+        "artifact_status": "missing_pending",
+        "expected": [
+          "lvd_detection_contrast_sweep.txt"
+        ],
+        "available": [],
+        "missing": [
+          "lvd_detection_contrast_sweep.txt"
+        ],
+        "explicit_launcher_events": []
+      }
+    },
+    "metrics": {},
+    "artifacts": {
+      "lvd_topography_grid.csv": {
+        "path": "/home/roland/devspace/diffpumas.jl/examples/data/material_production_20261024/stages/topo/data/lvd_topography_grid.csv",
+        "sha256": "a2277f915dd6bf5569a2613a042668ee008d3eb292ebee20d409e84b0f28b8ad",
+        "bytes": 1590693,
+        "modified_utc": "2026-10-24T10:56:15.427402+00:00",
+        "predates_latest_manifest": null
+      }
+    },
+    "metadata_status": "unknown_no_run_manifest",
+    "missing_metadata_policy": "Unknown sample counts/configuration remain unknown. Recorded manifests/recursion status and report lines are reproduced; no sample-count defaults are inferred from current source."
+  }
+]
