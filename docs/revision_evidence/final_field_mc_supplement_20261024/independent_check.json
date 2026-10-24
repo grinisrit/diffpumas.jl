@@ -1,0 +1,13 @@
+{
+  "strict_unique_combined_bins": 690,
+  "original630_numerical_rows_exact": true,
+  "new60": 60,
+  "independent_python_residuals_common_scale": {
+    "dry_csda_unscaled": 0.6256201476167867,
+    "wet_csda_unscaled": 0.41070189668726875,
+    "wet_mc_unscaled": 0.40876469221213674
+  },
+  "common_scale": 3542719.29102373,
+  "original630_sha256": "ada7419defcea0a0c4650ec027b469d90da750b88005179750cd8f01dee8c741",
+  "scope": "Independent arithmetic; MC shared-proposal SE does not include cross-bin covariance or model uncertainties."
+}
