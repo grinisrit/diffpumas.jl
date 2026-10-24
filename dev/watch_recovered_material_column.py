@@ -62,7 +62,11 @@ def main():
         for physical in (artifact,dump):
             key=str(physical.relative_to(ROOT)) if physical.is_relative_to(ROOT) else str(physical)
             if cfg.get(str(physical),cfg.get(key))!=sha(physical):raise ValueError('physical input does not match original science')
-        runtime=julia_runtime(a.julia)
+        # Julia's runtime query maps shared libraries; use the authorized child
+        # address-space cap briefly after the main allocation has been released.
+        resource.setrlimit(resource.RLIMIT_AS,(4*1024**3,original_limit[1]))
+        try:runtime=julia_runtime(a.julia)
+        finally:resource.setrlimit(resource.RLIMIT_AS,(256*1024**2,original_limit[1]))
         if runtime!=json.loads((main/'execution.json').read_text())['julia_runtime'] or runtime!=json.loads((failed/'execution.json').read_text())['julia_runtime']:
             raise ValueError('column Julia runtime differs from original/recovery')
         field=main/'data/lvd_fit_field.csv';rays=main/'data/lvd_fit_mask.csv'
