@@ -42,7 +42,8 @@ class CertificateTests(unittest.TestCase):
     def test_gn_complete_stream(self):
         p=copy.deepcopy(self.proof);p.update(gate_kind='actual_gn_trial',expected_trial_count=124,observed_trial_count=124)
         p['checks']['trial_stream_complete']=True
-        for prefix in ('recorded_stream','reference_end'):
+        p['checks']['copied_gn_source_match']=True
+        for prefix in ('recorded_stream','reference_end','copied_gn','original_gn_source'):
             p[prefix+'_path']=str(self.factory);p[prefix+'_sha256']=runner.sha(self.factory)
         producer.validate_proof(p)
         p['observed_trial_count']=123

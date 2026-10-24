@@ -27,7 +27,7 @@ def validate_proof(proof):
     checks = proof.get('checks', {})
     required = list(CHECKS)
     if kind == 'corrected_threaded': required.append('threaded_parity')
-    if kind == 'actual_gn_trial': required.append('trial_stream_complete')
+    if kind == 'actual_gn_trial': required.extend(('trial_stream_complete','copied_gn_source_match'))
     if any(checks.get(key) is not True for key in required):
         raise ValueError('a mandatory parity check did not pass')
     for key in ('scope', 'sample_scope', 'cpu_affinity'):
@@ -42,7 +42,7 @@ def validate_proof(proof):
     if kind == 'actual_gn_trial':
         if proof.get('expected_trial_count') != 124 or proof.get('observed_trial_count') != 124:
             raise ValueError('incomplete actual trial stream')
-        for prefix in ('recorded_stream', 'reference_end'):
+        for prefix in ('recorded_stream', 'reference_end', 'copied_gn', 'original_gn_source'):
             path = Path(proof[prefix+'_path'])
             if not path.is_absolute() or runner.sha(path) != proof[prefix+'_sha256']:
                 raise ValueError('changed trial reference: '+str(path))
@@ -95,6 +95,11 @@ def main():
         proof = validate_proof(json.loads(proof_path.read_text()))
         if proof['gate_kind'] != kind or end['output_sha256'].get(relative) != runner.sha(proof_path):
             raise ValueError('proof identity or end binding failed')
+        if kind == 'actual_gn_trial':
+            recorded = json.loads((folder/'execution.json').read_text())['source_sha256']
+            for prefix in ('copied_gn','original_gn_source'):
+                if runner.recorded_digest(recorded, proof[prefix+'_path']) != proof[prefix+'_sha256']:
+                    raise ValueError('GN copy/source is not a recorded gate input')
         current = {key:proof[key] for key in ('closure_factory_path','closure_factory_sha256','transformed_source_sha256')}
         if identity is not None and identity != current: raise ValueError('different factories between gates')
         identity = current
