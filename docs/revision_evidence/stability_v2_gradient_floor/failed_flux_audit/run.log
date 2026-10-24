@@ -1,0 +1,30 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3], "address_space_bytes": 8589934592, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "8,9,10,11", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "/home/roland/devspace/diffpumas.jl/dev/audit_stability_flux_gradient.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--output-dir", "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_flux_gradient_audit_20261024/results", "--papermatch-fit-only", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6", "--zenith-step", "10", "--azimuth-step", "15", "--samples", "32", "--csda-quadrature", "midpoint", "--rock-density", "2710", "--seed", "20261022", "--correction-artifact", "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_pilot_20261024/dry_correction.toml", "--papermatch-fit-mode", "stable", "--papermatch-gn-iters", "100", "--papermatch-gradient-tol", "1e-6", "--papermatch-log-scale", "0.3", "--papermatch-initial-water", "0.15", "--baseline-results", "/home/roland/devspace/diffpumas.jl/examples/data/stability_v2_dry_start015_20261024/results"]}
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+ERROR: LoadError: UndefVarError: `Zygote` not defined in `Main`
+Suggestion: check for spelling errors or missing imports.
+Hint: Zygote is loaded but not imported in the active module Main.
+Stacktrace:
+ [1] (::var"#384#400"{Int64, Vector{Float64}, Vector{EnergySample}, SiteConfig, Vector{Bool}, MaterialConfig, PhysicsTables{Float64}})(k::Int64)
+   @ Main ./none:0
+ [2] iterate
+   @ ./generator.jl:48 [inlined]
+ [3] grow_to!(dest::Dict{Any, Any}, itr::Base.Generator{Vector{Int64}, var"#384#400"{Int64, Vector{Float64}, Vector{EnergySample}, SiteConfig, Vector{Bool}, MaterialConfig, PhysicsTables{Float64}}})
+   @ Base ./abstractdict.jl:591
+ [4] dict_with_eltype
+   @ ./abstractdict.jl:645 [inlined]
+ [5] Dict(kv::Base.Generator{Vector{Int64}, var"#384#400"{Int64, Vector{Float64}, Vector{EnergySample}, SiteConfig, Vector{Bool}, MaterialConfig, PhysicsTables{Float64}}})
+   @ Base ./dict.jl:117
+ [6] audit_stability_flux_gradient()
+   @ Main ~/devspace/diffpumas.jl/dev/audit_stability_flux_gradient.jl:92
+ [7] top-level scope
+   @ ~/devspace/diffpumas.jl/dev/audit_stability_flux_gradient.jl:135
+in expression starting at /home/roland/devspace/diffpumas.jl/dev/audit_stability_flux_gradient.jl:135
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Building structured-grid sensitivity volume...
