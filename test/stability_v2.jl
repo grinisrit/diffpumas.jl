@@ -1,5 +1,14 @@
 using Test, LinearAlgebra
 @testset "Fixed robust profile and constrained KKT" begin
+    # Projection can turn a raw descent direction uphill at a shortened step.
+    initial=[0.1,0.05,0.9]; direction=[10.,-10.,-1.]
+    fullstep=clamp.(initial.+direction,0.,1.).-initial
+    shortstep=clamp.(initial.+0.05.*direction,0.,1.).-initial
+    @test dot(ones(3),fullstep)<0
+    @test dot(ones(3),shortstep)>0
+    @test !DiffPumas.Tomography._gn_accept_trial(1.00001,1.,ones(3),shortstep,:active_set)
+    @test !DiffPumas.Tomography._gn_accept_trial(0.9,1.,ones(3),shortstep,:active_set)
+    @test DiffPumas.Tomography._gn_accept_trial(0.9,1.,ones(3),fullstep,:active_set)
     A=[1.0 0.2; -0.3 1.0; 0.6 -0.7; -0.8 -0.1]
     model=w->(exp.(A*w),exp.(A*w).*A)
     observed=exp.(A*[0.3,0.6]).*2.5

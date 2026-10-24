@@ -394,6 +394,13 @@ state. Only a projected gradient below `projected_gradient_tol` establishes KKT
 convergence; exhausting iterations or a line-search failure does not. Optional
 `objective_tol>0` stops on objective stagnation without claiming KKT convergence.
 """
+@inline function _gn_accept_trial(fnew, fcur, gradient, displacement, mode)
+    isfinite(fnew) || return false
+    mode === :legacy && return fnew < fcur-1e-10*abs(fcur)
+    directional=dot(gradient,displacement)
+    return directional < 0 && fnew < fcur && fnew <= fcur+1e-4*directional
+end
+
 function gauss_newton_reconstruct(model, obs::AbstractVector;
                                   w0::AbstractVector,
                                   n_iter::Int = 12,
@@ -484,8 +491,7 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                     cached_w=w_new;cached_pred=pred_new;cached_J=J_new
                 end
                 f_new=objective(pred_new,w_new)
-                if isfinite(f_new) && f_new < f_cur + (solver_mode === :legacy ? -1e-10*abs(f_cur) :
-                    1e-4*dot(grad,w_new[active].-w[active]))
+                if _gn_accept_trial(f_new,f_cur,grad,w_new[active].-w[active],solver_mode)
                     # The optional prediction callback must equal model(w)[1].
                     # Build a fresh derivative only for an accepted candidate.
                     if relinearize && predict_only !== nothing && J_new === nothing
@@ -495,8 +501,7 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                     end
                     # Confirm the true objective after any callback/full-model
                     # discrepancy; an approximate callback cannot authorize an increase.
-                    if isfinite(f_new) && f_new < f_cur + (solver_mode === :legacy ? -1e-10*abs(f_cur) :
-                    1e-4*dot(grad,w_new[active].-w[active]))
+                    if _gn_accept_trial(f_new,f_cur,grad,w_new[active].-w[active],solver_mode)
                         w=w_new;r=pred_new.-obs;J=J_new;pred=pred_new;f_cur=f_new
                         accepted=true;break
                     end

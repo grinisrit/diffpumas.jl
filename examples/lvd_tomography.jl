@@ -3182,7 +3182,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     open(joinpath(args.output_dir,"lvd_recursion_status.txt"),"w") do io
         println(io,"passes=$(length(recursion_rows))")
         println(io,"converged=$recursion_converged")
-        println(io,"termination=$(recursion_converged ? "tolerance" : "maximum_passes")")
+        println(io,"termination=$(stable_fit ? "fixed_objective" : (recursion_converged ? "tolerance" : "maximum_passes"))")
         println(io,"relative_tolerance=$(args.papermatch_recur_tol)")
         println(io,"mask_ratio=$(args.papermatch_mask_ratio)")
         println(io,"prior_cutoff_m=$(args.papermatch_prior_cutoff)")
@@ -3285,6 +3285,19 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
     flush(stdout)
     args.papermatch_fit_only && return (water=w_matched,converged=recursion_converged,passes=length(recursion_rows))
 
+    if stable_fit
+        # Local GN curvature of the actual profiled robust residual operator.
+        # This is a sensitivity diagnostic; no covariance or coverage claim.
+        _,stable_J=robust_model(w_matched)
+        stable_H=transpose(stable_J)*stable_J + Matrix(DiffPumas.Tomography._prior_hessian(sm_prior,w_matched))
+        open(joinpath(args.output_dir,"lvd_stable_curvature.csv"),"w") do io
+            println(io,"cell_idx,aquifer_mask,residual_gauss_newton_curvature_diagonal")
+            for i in eachindex(w_matched)
+                println(io,join((i,aquifer_mask[i],stable_H[i,i]),','))
+            end
+        end
+        println("Stable objective: legacy count-space posterior/null/profile diagnostics skipped; local robust-residual GN curvature saved without uncertainty claims.")
+    else
     # --- Conditional curvature and separate weighted-residual diagnostics.
     if stable_fit
         println("Stable-fit caveat: the following legacy count-space curvature and scans do not describe the fixed pseudo-Huber log objective; use solver history for objective/KKT diagnostics.")
@@ -3349,6 +3362,8 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         end
     end
     println("  uncertainty + profile CSVs: $unc_csv , $prof_csv")
+
+    end
 
     # --- Reproduce the measured 2D azimuth/zenith map (measured / model / residual per bin).
     # The reconstruction targets this surface directly; no 1D angular-curve projection is
@@ -3486,6 +3501,11 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
         println(io, @sprintf("  water-insufficient (aquifer cells at the w=%.1f ceiling, water-only model under-explains): %d",
                              MAX_WATER_FRACTION, aq_ceiling))
         println(io)
+        if stable_fit
+            println(io,"Fixed pseudo-Huber log-flux objective with profiled normalization; see lvd_solver_history.csv and lvd_solver_status.txt for objective/KKT.")
+            println(io,"Local robust-residual Gauss-Newton curvature in lvd_stable_curvature.csv is a sensitivity diagnostic, not calibrated posterior uncertainty.")
+            println(io,"Legacy count-space posterior, null scores and amplitude scans are omitted for this objective.")
+        else
         stable_fit && println(io,"Stable-fit caveat: legacy count-space curvature/scans below are proxies, not the fitted pseudo-Huber log objective or its posterior.")
         println(io, "Curvature scope: JtWJ+prior uses weights without fitting Cauchy factors or median renormalization; it is not the final IRLS-objective Hessian.")
         println(io, "The fitted point is not verified as a mode under those changed weights. Inverse curvature and empirical rescaling are conditional diagnostics, not calibrated posterior covariance; legacy result names below are retained.")
@@ -3517,6 +3537,7 @@ function run_paper_match(physics, shallow_flags, matcfg::MaterialConfig, volume,
                              prof.ci68[1], prof.ci68[2], prof.ci95[1], prof.ci95[2]))
         println(io, "    csv: lvd_water_profile.csv (T, w_mean, chi2, delta_chi2, delta_chi2_calibrated)")
         println(io)
+        end
         println(io, "2D measured-vs-model map (CSDA surrogate used for the fit):")
         println(io, @sprintf("  bins used: %d", map_stats.n_bins))
         println(io, @sprintf("  relative residual RMS: %.4f", map_stats.rms_rel))
@@ -3653,6 +3674,18 @@ function main()
         calibrate_correction_to_mc(physics, shallow_flags, matcfg, site, paths,
             calibration_field, energy_samples, args)
     else
+        artifact_data=TOML.parsefile(args.correction_artifact)
+        artifact_metadata=get(artifact_data,"metadata",Dict())
+        if haskey(artifact_metadata,"physics_dump_sha256")
+            artifact_metadata["physics_dump_sha256"]==bytes2hex(sha256(read(args.dump_path))) ||
+                error("Correction artifact physics dump hash mismatch")
+        end
+        for (key,expected) in (("primary_altitude_m",args.primary_altitude_km*1000),
+                ("rock_density",matcfg.rock_density),("csda_nodes",args.n_samples),
+                ("energy_min",args.energy_min),("energy_max",args.energy_max))
+            !haskey(artifact_metadata,key) || artifact_metadata[key]==expected ||
+                error("Correction artifact metadata mismatch for $key")
+        end
         load_csda_corrections!(args.correction_artifact)
         println("Loaded frozen CSDA correction artifact: $(args.correction_artifact)")
     end
