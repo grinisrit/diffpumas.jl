@@ -1,0 +1,12 @@
+{
+  "scope": "formal applied-library regression; no process-local prototype overrides",
+  "source_directory": "/home/roland/devspace/diffpumas.jl/examples/data/segment_dual_adversarial_applied_20261024",
+  "end_status_sha256": "47c65cd43f3d9b6677f74c851530c6e9a897cbaadfb22273a3ee01dfe69aea93",
+  "copied_sha256": {
+    "execution.json": "94ca6a79fbea58b40b3a969d0d5905e55ac71efb33770fedd949ca9ae5a3fb51",
+    "run.log": "425a745ce1980758e335e80538503a663f6b301f90d2ecfcf92ee62b9136a6ee",
+    "end_status.json": "47c65cd43f3d9b6677f74c851530c6e9a897cbaadfb22273a3ee01dfe69aea93",
+    "pid.json": "9587c50d80fc776e66075723bafefcd1256f02e51e5fd53c329304dc1ee006b0",
+    "results/dual_adversarial_check.toml": "f920d36b7a678f83225c2f6c6a39b2d67fb1e3d40c5d386b9441b428766b53e3"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "ended_utc": "2026-10-24T10:52:53.485622+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "94ca6a79fbea58b40b3a969d0d5905e55ac71efb33770fedd949ca9ae5a3fb51",
+    "results/dual_adversarial_check.toml": "f920d36b7a678f83225c2f6c6a39b2d67fb1e3d40c5d386b9441b428766b53e3",
+    "run.log": "425a745ce1980758e335e80538503a663f6b301f90d2ecfcf92ee62b9136a6ee"
+  }
+}
