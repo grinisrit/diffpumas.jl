@@ -1,0 +1,21 @@
+{
+  "original_execution_sha256": "5daeeeaaf04126d32304588acbe3fa952df0993bd212cbaa2af4e0ef57c5f52f",
+  "original_end_sha256": "9fcb1938dc6b455fa6d90c314f9a47d79378c51ed798c5257eadb235d25d8302",
+  "original_commit": "d38c2a34da882749f135e17399c1872de8d40926",
+  "unchanged_dependencies": {
+    "/home/roland/devspace/diffpumas.jl/src/MixedTransport.jl": "f04d8d3ccefcd274bb369e0b8b7c4552f2c9fb53e2df024922ce74f089dcd5d0",
+    "/home/roland/devspace/diffpumas.jl/src/Materials.jl": "f646987a55687b1d275de1afe18d813a10d63aca6ecf83c95b50498eeb170510",
+    "/home/roland/devspace/diffpumas.jl/src/Context.jl": "5a9747fd4d5ceb59f5f2c27fb3b296ca72c7066b03b3fd3130e9d4be6c849d0c",
+    "/home/roland/devspace/diffpumas.jl/src/GaisserFlux.jl": "18925f3b5bbe7f32d55441b0bacc3fc2c369ae3f9085ad8fb5e8a52555147338",
+    "/home/roland/devspace/diffpumas.jl/src/Transport.jl": "262e3b28cd147e9ace96364e8bc6fc05a39a36ebab7770ec442d3ad8370fcb3d",
+    "/home/roland/devspace/diffpumas.jl/src/Constants.jl": "176783f8e3156bdbeda3195ae19ed77142fbbea63fd799c54fe1b0d84650b3a8",
+    "/home/roland/devspace/diffpumas.jl/src/DEDXLoader.jl": "20b511bc0822ee7ab09cee8c9f24c95aeb9f4dfc598e4b6fe68a2ee8ea9d9593",
+    "/home/roland/devspace/diffpumas.jl/src/AtomicShellData.jl": "390fa8679753b534ae63d673fc642919f4683f08e159773eefd65d0040bb25c5",
+    "/home/roland/devspace/diffpumas.jl/src/Coulomb.jl": "054cba676972bcd793812fb2aed3263f456ddb15f449703ddd67a2e83a8421b5"
+  },
+  "unchanged_regions_sha256": {
+    "Tomography_MC_tail": "05449cdf7c7e347dfc47297a944b8037293a8f4194e718d9bfd96fdcf6859310",
+    "energy_sampler": "97c18ca70d79bfe423d355a31c3a4a78e5edbe5ab3a20505903aa307d3a5d1e2"
+  },
+  "scope": "Physics.jl dual overloads and CSDA derivative methods changed since original; MC tail, energy sampling and transport dependencies verified unchanged. Numeric old-ray replay separately gates exact MC primal parity."
+}

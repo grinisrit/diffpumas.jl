@@ -1,0 +1,240 @@
+{
+  "scope": "Empirical sample dispersion from eight finite-training-MC material-coefficient fits with fixed dry calibration and fixed recovered field. No structural model discrepancy, inverse uncertainty, posterior or calibrated interval.",
+  "replicates": 8,
+  "coefficient_mean": [
+    -0.4806072837710116,
+    0.4021104938301808
+  ],
+  "coefficient_sample_std": [
+    0.030022336664017952,
+    0.03604780882021995
+  ],
+  "coefficient_sample_covariance": [
+    [
+      0.0009013406987676366,
+      -0.0010442208436384612
+    ],
+    [
+      -0.0010442208436384612,
+      0.0012994445207391268
+    ]
+  ],
+  "ray_groups": {
+    "covered": {
+      "rays": 1003,
+      "dry_columns": 254,
+      "final_flux": {
+        "positive_baseline_rays": 1003,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0,
+          "median": 0.001061183601875679,
+          "p95": 0.0040653053558347765,
+          "maximum": 0.004240521761138859
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": -2.220446049250313e-16,
+          "median": 0.003805952844575522,
+          "p95": 0.013404233056999004,
+          "maximum": 0.013877448432425554
+        }
+      },
+      "support_abs_jacobian": {
+        "positive_baseline_rays": 972,
+        "zero_baseline_rays": 31,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0005148472414148798,
+          "median": 0.003985157540486634,
+          "p95": 0.00693498489101908,
+          "maximum": 0.0073102472555137766
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.0018793703886945679,
+          "median": 0.013832949724562504,
+          "p95": 0.021623065102039662,
+          "maximum": 0.02257959085031236
+        }
+      },
+      "support_abs_logflux_sensitivity": {
+        "positive_baseline_rays": 972,
+        "zero_baseline_rays": 31,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0004579714978057733,
+          "median": 0.002739227089332875,
+          "p95": 0.003595667304466216,
+          "maximum": 0.00381075779165661
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.0016712680756050258,
+          "median": 0.008642562655762243,
+          "p95": 0.013067718431928744,
+          "maximum": 0.013727194161561096
+        }
+      }
+    },
+    "fitted": {
+      "rays": 690,
+      "dry_columns": 108,
+      "final_flux": {
+        "positive_baseline_rays": 690,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0,
+          "median": 0.0022170148001191617,
+          "p95": 0.004091623437370264,
+          "maximum": 0.004240521761138859
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": -2.220446049250313e-16,
+          "median": 0.007750864004782865,
+          "p95": 0.013476231338710287,
+          "maximum": 0.013877448432425554
+        }
+      },
+      "support_abs_jacobian": {
+        "positive_baseline_rays": 690,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.001390139679164579,
+          "median": 0.004657001236809477,
+          "p95": 0.00704002013646629,
+          "maximum": 0.0073102472555137766
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.005083086368205425,
+          "median": 0.01618335087032663,
+          "p95": 0.02181118954437643,
+          "maximum": 0.02257959085031236
+        }
+      },
+      "support_abs_logflux_sensitivity": {
+        "positive_baseline_rays": 690,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0010891090553664803,
+          "median": 0.003013324393061019,
+          "p95": 0.0036379173841768024,
+          "maximum": 0.00381075779165661
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.0037479025966096202,
+          "median": 0.009092883102126192,
+          "p95": 0.013123053542356844,
+          "maximum": 0.013727194161561096
+        }
+      }
+    },
+    "dry_columns": {
+      "rays": 254,
+      "dry_columns": 254,
+      "final_flux": {
+        "positive_baseline_rays": 254,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0,
+          "median": 0.0,
+          "p95": 2.4437766768365433e-16,
+          "maximum": 2.94792634081719e-16
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": -2.220446049250313e-16,
+          "median": 0.0,
+          "p95": 2.220446049250313e-16,
+          "maximum": 2.220446049250313e-16
+        }
+      },
+      "support_abs_jacobian": {
+        "positive_baseline_rays": 223,
+        "zero_baseline_rays": 31,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0008096900883295114,
+          "median": 0.0032014261639892903,
+          "p95": 0.003574145189010658,
+          "maximum": 0.0036072834475395477
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.002960655473795093,
+          "median": 0.011706108340688193,
+          "p95": 0.013068966349600886,
+          "maximum": 0.013190137360484577
+        }
+      },
+      "support_abs_logflux_sensitivity": {
+        "positive_baseline_rays": 223,
+        "zero_baseline_rays": 31,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0008096900883295026,
+          "median": 0.003201426163989309,
+          "p95": 0.003574145189010671,
+          "maximum": 0.0036072834475395837
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.002960655473795093,
+          "median": 0.01170610834068797,
+          "p95": 0.013068966349600687,
+          "maximum": 0.013190137360484577
+        }
+      }
+    },
+    "positive_columns": {
+      "rays": 749,
+      "dry_columns": 0,
+      "final_flux": {
+        "positive_baseline_rays": 749,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 1.2886358912730217e-07,
+          "median": 0.0027600051111300377,
+          "p95": 0.004086494948989774,
+          "maximum": 0.004240521761138859
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 4.711924601608075e-07,
+          "median": 0.009512147836289842,
+          "p95": 0.013462226526671551,
+          "maximum": 0.013877448432425554
+        }
+      },
+      "support_abs_jacobian": {
+        "positive_baseline_rays": 749,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0005148472414148798,
+          "median": 0.004774487676415311,
+          "p95": 0.007020368956670559,
+          "maximum": 0.0073102472555137766
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.0018793703886945679,
+          "median": 0.016158680027486882,
+          "p95": 0.021776004623839863,
+          "maximum": 0.02257959085031236
+        }
+      },
+      "support_abs_logflux_sensitivity": {
+        "positive_baseline_rays": 749,
+        "zero_baseline_rays": 0,
+        "pointwise_relative_sample_sd": {
+          "minimum": 0.0004579714978057733,
+          "median": 0.0025386871891007012,
+          "p95": 0.0036295919401764286,
+          "maximum": 0.00381075779165661
+        },
+        "pointwise_ensemble_mean_relative_shift_from_original": {
+          "minimum": 0.0016712680756050258,
+          "median": 0.007431674718185732,
+          "p95": 0.013039658209791138,
+          "maximum": 0.013727194161561096
+        }
+      }
+    }
+  },
+  "numpy_version": "2.2.4",
+  "input_sha256": {
+    "/home/roland/devspace/diffpumas.jl/dev/summarize_calibration_mc_ensemble.py": "43a1414fa56cc38e957606d4d590e5a213e35ef2a20e6ffe81f4cb25947c5ce0",
+    "/home/roland/devspace/diffpumas.jl/examples/data/calibration_mc_ensemble_20261024_v2/job/data/coefficients.csv": "e4c8c0ecf9d801cedf25b67ee9d22c379518e8af468361d89c451d9d4826ea01",
+    "/home/roland/devspace/diffpumas.jl/examples/data/calibration_mc_ensemble_20261024_v2/job/data/fixed_field_ensemble.csv": "95a6732f05bd8964ee731b9de1e33f170e77ab495ae95357cbbe3464c7b823e8",
+    "/home/roland/devspace/diffpumas.jl/examples/data/calibration_mc_ensemble_20261024_v2/job/data/ensemble_summary.toml": "827be0f961e5433b78717fabd9f3ae95dd0e831d914b769ede637a187daa049e",
+    "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/final_field_mc_coverage_20261024/final_field_coverage.csv": "48d19b92d53bb60b7a05b70a5fc4e44e354de3e3781364ed2d5b5c73773cff83"
+  }
+}

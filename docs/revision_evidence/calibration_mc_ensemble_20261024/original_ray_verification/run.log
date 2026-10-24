@@ -1,0 +1,13 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3], "address_space_bytes": 8589934592, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "16,17,18,19", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "/home/roland/devspace/diffpumas.jl/dev/replay_original_calibration_ray.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--artifact", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml", "--training", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/training.csv", "--output", "/home/roland/devspace/diffpumas.jl/examples/data/original_calibration_ray_replay_20261024/job/data"]}
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Tracing straight-line geometry on the grid volume...
+  [1/12] theta=0.0 deg phi=7.5 deg R=1390.6 m
+  [12/12] theta=45.0 deg phi=247.5 deg R=1932.7 m

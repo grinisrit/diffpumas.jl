@@ -1,0 +1,8 @@
+energy_seed = 2027112401
+scope = "Separate verification of original training simulation under current MC implementation. Not a ninth ensemble replicate, retuning, or validation of physical accuracy."
+transport_seed = 2027112402
+training_ray = 1
+all_three_mc_fluxes_bitwise_equal = true
+azimuth_deg = 7.5
+samples_per_field = 8192
+zenith_deg = 0.0
