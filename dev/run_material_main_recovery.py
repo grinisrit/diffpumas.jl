@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+from robustness_run_identity import julia_runtime
 ROOT=Path(__file__).resolve().parents[1]
 HELPER=ROOT/'dev/recover_material_main.jl'
 EXAMPLE=ROOT/'examples/lvd_tomography.jl'
@@ -36,6 +37,8 @@ def main():
     p.add_argument('--parity-only',action='store_true',help='stop before unchanged report/MC tail')
     a=p.parse_args();failed=a.failed_stage.resolve(strict=True);output=a.output_dir.resolve()
     execution,end=audit_failed(failed)
+    if julia_runtime(a.julia)!=execution['julia_runtime']:
+        raise ValueError('recovery Julia runtime differs from original stage')
     if output.exists():p.error('recovery data directory must be fresh')
     command=execution['command'];index=next(i for i,item in enumerate(command) if Path(item).name=='lvd_tomography.jl')
     args=command[index+1:]
