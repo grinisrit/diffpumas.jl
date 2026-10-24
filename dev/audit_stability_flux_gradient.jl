@@ -54,6 +54,7 @@ function audit_stability_flux_gradient()
     paths=paths[covered];obs=observed[covered]
     support=Bool[string(r["aquifer_mask"])=="true" for r in fields]
     wf=Float64[r["w"] for r in fields]
+    baseline_mode=get_adjoint_derivative_mode()
     pred,J=assemble_forward_and_jacobian(ph,shallow,cfg,site,paths,wf,energies;n_cells=nc,threaded=args.threaded)
     screen=Float64[r["fit_mask"] for r in saved]
     dem=args.papermatch_dem_unc.*max.(1 ./cosd.(zen[covered]).-1,0)
@@ -92,21 +93,34 @@ function audit_stability_flux_gradient()
     baseflux=Dict(k=>compute_directional_flux_csda(ph,shallow,cfg,site,paths[k],wf,energies) for k in affected)
     fulldiff=Dict(k=>Zygote.gradient(w->compute_directional_flux_csda(ph,shallow,cfg,site,paths[k],w,energies),wf)[1][c] for k in affected)
     rayrows=Dict{String,Any}[]; summaries=Dict{String,Any}[]
+    try
+    mode_derivatives=Dict{String,Dict{Int,Float64}}()
+    for mode in (:forwarddiff,:finite_difference)
+        set_adjoint_derivative_mode!(mode);set_adjoint_fd_step!(defaultstep)
+        derivatives=Dict{Int,Float64}()
+        for k in affected
+            _,cells,vals=directional_flux_and_grad_csda(ph,shallow,cfg,site,paths[k],wf,energies)
+            derivatives[k]=vals[findfirst(==(c),cells)]
+        end
+        mode_derivatives[string(mode)]=derivatives
+    end
+    # The numerical step is meaningful only for the legacy FD backend.
+    set_adjoint_derivative_mode!(:finite_difference)
     for internal in (1e-4,1e-5,1e-6,1e-7,1e-8)
         set_adjoint_fd_step!(internal)
         derivatives=Dict{Int,Float64}()
         for k in affected
             f,cells,vals=directional_flux_and_grad_csda(ph,shallow,cfg,site,paths[k],wf,energies)
             derivatives[k]=vals[findfirst(==(c),cells)]
-            push!(rayrows,Dict("kind"=>"internal_adjoint_step","bin"=>covered[k],"internal_step"=>internal,
+            push!(rayrows,Dict("kind"=>"internal_adjoint_step","adjoint_mode"=>"finite_difference","bin"=>covered[k],"internal_step"=>internal,
                 "flux_sparse"=>f,"flux_full"=>baseflux[k],"derivative"=>derivatives[k],
                 "default_sparse_derivative"=>J[k,c],"default_fullvector_derivative"=>fulldiff[k],"objective_coefficient"=>coefficient[k]))
         end
         datagrad=sum(coefficient[k]*derivatives[k] for k in affected)
-        push!(summaries,Dict("kind"=>"internal_adjoint_step","step"=>internal,"data_gradient"=>datagrad,
+        push!(summaries,Dict("kind"=>"internal_adjoint_step","adjoint_mode"=>"finite_difference","step"=>internal,"data_gradient"=>datagrad,
             "prior_gradient"=>priorgradient,"total_gradient"=>datagrad+priorgradient))
     end
-    set_adjoint_fd_step!(defaultstep)
+    set_adjoint_derivative_mode!(baseline_mode);set_adjoint_fd_step!(defaultstep)
     for h in (1e-4,1e-5,1e-6,1e-7,1e-8)
         lo=max(0.,wf[c]-h);hi=min(MAX_WATER_FRACTION,wf[c]+h)
         wl=copy(wf);wh=copy(wf);wl[c]=lo;wh[c]=hi
@@ -124,6 +138,14 @@ function audit_stability_flux_gradient()
             "prior_gradient"=>priorgradient,"total_gradient"=>datagrad+priorgradient))
     end
     report=Dict("cell"=>c,"water_fraction"=>wf[c],"affected_bins"=>length(affected),
+        "baseline_adjoint_mode"=>string(baseline_mode),
+        "default_fd_step"=>defaultstep,
+        "default_fd_step_active_in_baseline"=>baseline_mode===:finite_difference,
+        "dual_data_gradient"=>sum(coefficient[k]*mode_derivatives["forwarddiff"][k] for k in affected),
+        "legacy_fd_data_gradient"=>sum(coefficient[k]*mode_derivatives["finite_difference"][k] for k in affected),
+        "ray_backend_comparison"=>[Dict("bin"=>covered[k],
+            "forwarddiff_derivative"=>mode_derivatives["forwarddiff"][k],
+            "legacy_fd_derivative"=>mode_derivatives["finite_difference"][k]) for k in affected],
         "default_ad_gradient"=>grad[c],"prior_gradient"=>priorgradient,
         "default_data_gradient"=>sum(coefficient[k]*J[k,c] for k in affected),
         "max_sparse_full_flux_relative_error"=>maximum(abs(pred[k]-baseflux[k])/max(abs(pred[k]),abs(baseflux[k]),1e-300) for k in affected),
@@ -132,5 +154,9 @@ function audit_stability_flux_gradient()
     mkpath(args.output_dir)
     open(io->TOML.print(io,report),joinpath(args.output_dir,"flux_gradient_audit.toml"),"w")
     println("Flux-gradient audit complete: ",args.output_dir)
+    finally
+        set_adjoint_derivative_mode!(baseline_mode)
+        set_adjoint_fd_step!(defaultstep)
+    end
 end
 if abspath(PROGRAM_FILE)==@__FILE__; audit_stability_flux_gradient(); end
