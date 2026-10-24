@@ -106,22 +106,22 @@ function main_guarded_trial_replay()
             merge(args,(threaded=false,correction_artifact=artifact)),mk_cfg)
         threaded,threadcache=build_exact_cached_flux_factory(ph,shallow,cfg,site,paths,energies,
             merge(args,(threaded=true,correction_artifact=artifact)),mk_cfg)
-        a=raw(wf);b=serial(wf);c=threaded(wf)
+        a=raw(wf);b=serial(cfg.rock_density,wf);c=threaded(cfg.rock_density,wf)
         isequal(a,b)&&isequal(a,c)||error("warmup mismatch")
         for (j,w) in enumerate(states)
             hits=count(i->cache.valid[i] && all(k->cache.snapshots[i][k]==reinterpret(UInt64,w[cache.cells[i][k]]),eachindex(cache.cells[i])),eachindex(cache.cells))
             if isodd(j)
                 t0=time_ns();a=raw(w);rawtime=(time_ns()-t0)/1e9
-                t0=time_ns();b=serial(w);cachetime=(time_ns()-t0)/1e9
+                t0=time_ns();b=serial(cfg.rock_density,w);cachetime=(time_ns()-t0)/1e9
             else
-                t0=time_ns();b=serial(w);cachetime=(time_ns()-t0)/1e9
+                t0=time_ns();b=serial(cfg.rock_density,w);cachetime=(time_ns()-t0)/1e9
                 t0=time_ns();a=raw(w);rawtime=(time_ns()-t0)/1e9
             end
             reinterpret(UInt64,a)==reinterpret(UInt64,b)||error("raw mismatch")
             bittransform(transform(a,w),transform(b,w))||error("profile/objective mismatch")
             threaded_tested=j in threaded_indices
             if threaded_tested
-                c=threaded(w)
+                c=threaded(cfg.rock_density,w)
                 reinterpret(UInt64,a)==reinterpret(UInt64,c)||error("threaded raw mismatch")
                 bittransform(transform(a,w),transform(c,w))||error("threaded profile/objective mismatch")
             end
@@ -135,7 +135,7 @@ function main_guarded_trial_replay()
             rejected=false
             change!()
             try
-                serial(wf)
+                serial(cfg.rock_density,wf)
             catch err
                 err isa ArgumentError && occursin("physical context changed",sprint(showerror,err)) || rethrow()
                 rejected=true
