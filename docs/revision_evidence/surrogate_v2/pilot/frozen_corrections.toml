@@ -1,0 +1,45 @@
+schema_version = 1
+
+[material]
+linear = -0.9298849970621647
+enabled = true
+quadratic = 1.2417109476727146
+
+[metadata]
+rock_density = 2710.0
+training_zeniths = [0.0, 15.0, 30.0, 45.0]
+flux_acceptance = "median absolute relative residual improves >=30%; maximum absolute residual does not increase"
+training_design_rank = 2
+csda_nodes = 32
+ridge = 1.0e-6
+dry_calibration = "unchanged corrected_validation/calibration.toml"
+inference_scope = "conditional replicate standard errors; no coefficient uncertainty or calibrated confidence coverage; no retuning on test"
+source_sha256 = "3037c55b588d1e4e295318dc48754d45b9dd38378b3f9f28d08941265ee7a8f9"
+primary_altitude_m = 30000.0
+training_q_min = 0.19999999999999998
+mc_samples = 128
+energy_min = 0.001
+training_q_max = 0.6000000000000001
+scope = "fixed straight path, scattering disabled; 30km source boundary held fixed and unresolved"
+test_fields = ["uniform_0.35", "spatial_sine", "spatial_cosine", "localized_lens_0.6"]
+training_azimuths = [7.5, 127.5, 247.5]
+test_zeniths = [15.0, 45.0, 60.0, 75.0]
+physics_dump_sha256 = "77da537fb32ee597d841491cd85cca6627565aa5d488e61ed47ae23d8507fa41"
+training_mc_samples = 128
+derivative_acceptance = "AD/FD relative error <1e-4; paired-energy derivative median absolute bias and count >2 estimated SE must not worsen beyond replicate MC precision"
+training_uniform_fields = [0.2, 0.6]
+replicates = 4
+test_azimuths = [37.5, 157.5, 277.5]
+seed = 2026102401
+training_design_condition_number = 10.975555101855619
+energy_max = 1.0e9
+driver_sha256 = "02e6f8302501571963bbf223d3b46ffdc04cbf96d04746984961aa9f7f37713a"
+
+[csda]
+kappa_strag = 1.0
+resid_d = -0.03071746591694591
+enabled = true
+resid_b = 0.24209099976953696
+kappa_hard = 0.0
+resid_c = 0.0077543116657748405
+resid_a = -1.84449225478151

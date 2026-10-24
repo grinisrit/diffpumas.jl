@@ -1,0 +1,18 @@
+{
+  "ended_utc": "2026-10-24T09:51:18.466157+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "1803984daf8cda3b5517d3da1ea10e11d3b986813ac4151cf531f197a985f4f1",
+    "frozen_corrections.toml": "1b32fb6929e95f76ed928f68e2dc82474282d7751c61eca23dc0e5524d3c1fb7",
+    "heldout_derivatives.csv": "f6d0fd02a2ffa952631ec11e1b3e77b6ea31778ea284f3a99a756afa92abc2b6",
+    "heldout_flux.csv": "c8148554c5e3ce04700e16ec1e45ad05f66ea8c2631af586da2f11e9927c118a",
+    "material_calibration.toml": "fc921f6ade3defd9b257ad29198a7d02f1abc71182e47952f27922838bec397c",
+    "preregistered_plan.toml": "9ff5c01cec2d022ab43a41c44f1b154d50aa529bf8a72a58248c7f431ccdc756",
+    "run.log": "317c18b481207d5cd6422801c5c39030661e6ab0c7281dae509fd03c77fcb7b1",
+    "training.csv": "e5fc3dabb972a288f5ca772f47ebdd1a46702c552671b5e58600810f0ebd5bd9"
+  }
+}

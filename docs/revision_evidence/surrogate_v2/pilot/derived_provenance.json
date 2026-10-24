@@ -1,0 +1,12 @@
+{
+  "created_utc": "2026-10-24T09:52:06.448556+00:00",
+  "scope": "Derived conditional replicate diagnostics; independently verified all immutable raw output hashes; no coefficient uncertainty",
+  "end_status_sha256": "8552081ba0a02026f4912500c5edaaa3a8b311d6365984e8952252ca5c83dc1b",
+  "raw_sha256": {
+    "training.csv": "e5fc3dabb972a288f5ca772f47ebdd1a46702c552671b5e58600810f0ebd5bd9",
+    "heldout_flux.csv": "c8148554c5e3ce04700e16ec1e45ad05f66ea8c2631af586da2f11e9927c118a",
+    "heldout_derivatives.csv": "f6d0fd02a2ffa952631ec11e1b3e77b6ea31778ea284f3a99a756afa92abc2b6"
+  },
+  "summary_helper_sha256": "5f0110047fac35e342d6b96bb6d7349c5042d30792aa41166ffa8a37bba694c2",
+  "assessment_sha256": "a8da366ebed113f99a133a448b3fedcd6e3db59adc8f3362230d80b43fd940df"
+}
