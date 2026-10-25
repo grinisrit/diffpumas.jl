@@ -4,7 +4,7 @@ from pathlib import Path
 p=Path(sys.argv[1]); baseline=Path(sys.argv[2]);final=tomllib.loads((p/'final.toml').read_text());s=tomllib.loads((p/'polish_state.toml').read_text())
 fields=list(csv.DictReader((baseline/'lvd_fit_field.csv').open()));active=[i for i,r in enumerate(fields) if r['aquifer_mask']=='true'];initial=[float(r['w']) for r in fields];w=initial[:]
 def feasible(v):
- assert len(v)==600 and all(math.isfinite(x) and 0<=x<=.6 for x in v)
+ assert len(v)==600 and all(math.isfinite(x) and 0<=x<=.9 for x in v)
  assert all(v[i]==initial[i] for i in range(600) if i not in active)
 assert s['objective_evaluations']==len(s['attempts'])<=903
 assert s['gradient_assemblies']<=20
@@ -24,7 +24,7 @@ for rec in s['sample_records']:
  for x in rec['fields']:
   feasible(x);assert max(abs(a-b) for a,b in zip(x,base))<=rec['radius']+1e-15
  q=[sum(alpha[j]*G[j][i] for j in range(6)) for i in range(len(active))]
- r=[min(x,0.) if base[c]==0 else max(x,0.) if base[c]==.6 else x for x,c in zip(q,active)]
+ r=[min(x,0.) if base[c]==0 else max(x,0.) if base[c]==.9 else x for x,c in zip(q,active)]
  residual=math.sqrt(sum(x*x for x in r));assert math.isclose(residual,rec['sampled_residual_l2'],rel_tol=1e-10,abs_tol=1e-12)
  d=[0.]*600
  for c,x in zip(active,r):d[c]=-x

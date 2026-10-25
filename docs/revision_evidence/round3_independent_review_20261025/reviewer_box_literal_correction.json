@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "actual_box_upper": 0.9,
+  "old_reviewer_literal_upper": 0.6,
+  "maximum_checked_field_value": 0.4913602609641709,
+  "effect": "None: all checked coordinates below both upper bounds; no upper-bound normal cancellation differs. Both structural audits rerun with actual0.9 box; output bytes match prior committed results exactly.",
+  "source_history": [
+    {
+      "script": "review_polish.py",
+      "old_sha256": "be6a86a89b6b377dc75665e02262f21426af912a0fcbec9cd229195542cd4ab7",
+      "new_sha256": "5a3029859fd9357be968f64c10d03b19b4dea2be3ce3563a29e242b3a86b8983",
+      "old_source_preserved": "docs/revision_evidence/round3_independent_review_20261025/reviewer_tool_history/review_polish.py.before_box_literal_fix",
+      "old_hash_bindings": [],
+      "unchanged_output_sha256": "8ab807b6d0212bc783f39838c4e4e26688bb8f8eb86b4dd79a09191230828635"
+    },
+    {
+      "script": "review_polish_v2.py",
+      "old_sha256": "2576221720dc8d37860001fe3bf226cc0d926884467e14d09f6d038795404a7a",
+      "new_sha256": "1d47dd5e58b97cdf19fe7c5a85d4322cec4592e1dbafd154539fa167911fc3c4",
+      "old_source_preserved": "docs/revision_evidence/round3_independent_review_20261025/reviewer_tool_history/review_polish_v2.py.before_box_literal_fix",
+      "old_hash_bindings": [],
+      "unchanged_output_sha256": "410453a345617754aa870b13ebec8e93d7a099d3be66994972f317a5650dc757"
+    }
+  ],
+  "numerical_review_helpers_frozen": true
+}
