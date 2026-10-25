@@ -1,0 +1,11 @@
+{"host": "research_vm_roland", "cpus": [0], "address_space_bytes": 8589934592, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "16", "timeout", "--signal=TERM", "--kill-after=30s", "300", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/focused_revision_20261025/tail_geometry_depth.jl", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/focused_revision_20261025/current_grid_tail_selection.csv", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_fit_field.csv", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/final_field_mc_coverage_20261024/final_field_coverage.csv", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/focused_revision_20261025/tail_geometry_run/results", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6"]}
+┌ Warning: It looks like the Kaleido process is not responding since 10 seconds. 
+│ The unresponsive process will be killed, but this means that you will not be able to save figures using `savefig`.
+│ 
+│ Alternatively, you might try using a longer timeout to check if the process is not responding by passing the desired value in seconds using the `timeout` kwarg when calling `PlotlyKaleido.start` or `PlotlyKaleido.restart`
+└ @ PlotlyKaleido ~/.julia/packages/PlotlyKaleido/hHnQW/src/PlotlyKaleido.jl:38
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Building structured-grid sensitivity volume...

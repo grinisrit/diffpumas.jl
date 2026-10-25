@@ -1,0 +1,18 @@
+{
+  "ended_utc": "2026-10-25T10:30:11.989482+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "e3bb0e8fcb49a2a9198c94059a038581bc80e5224462aa73b0fa9f8aa8074532",
+    "results/accepted_000.toml": "fb27484d6fceefbe59f87591cd3c0e1d461b7693743134c335154280315cdce8",
+    "results/field.csv": "4546554442f9452550f8904571fffac9c9fdaa726a6bfff6fbe8e35ffaaa1260",
+    "results/initial_effects.toml": "ffe3221bcf46766a71cc0fb3e4ed2e1e1765e64f94bea552f7cff09fa93e8f7a",
+    "results/predictions.csv": "c3b54ffcff63adb755a98bade52b174c49e136fc282072df4ae12830cf592e85",
+    "results/report.toml": "2bfe6df199c308ea96120762feab9b5ff28fe5fafb332df2437dceccc67ea8e3",
+    "results/trials.csv": "189ffefee0a8beedc4b2d6d0c4306d4d38e9e63d9451aa6a091aefe941ee2f53",
+    "run.log": "3b08fac24c7652dac20c3d19e334b44bcc0e4f21324c8c51a01edc418f93c683"
+  }
+}

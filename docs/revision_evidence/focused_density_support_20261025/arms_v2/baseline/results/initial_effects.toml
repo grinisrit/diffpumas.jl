@@ -1,0 +1,38 @@
+baseline_flux_objective_gradient_profile_bitwise = true
+fit_crossed_support_cells = 94
+projection_objective_change = 0.0
+physics_objective_change = 0.0
+common_cells = [201, 202, 204, 205, 211, 212, 213, 214, 215, 221, 222, 223, 224, 225, 226, 231, 232, 233, 234, 235, 236, 241, 242, 243, 244, 245, 246, 247, 248, 252, 253, 254, 255, 256, 257, 258, 259, 262, 263, 264, 265, 266, 267, 268, 270, 273, 274, 275, 276, 277, 278, 280, 285, 286, 287, 288, 289, 295, 296, 297, 299, 311, 312, 313, 314, 315, 321, 322, 323, 324, 325, 326, 331, 332, 333, 334, 335, 336, 341, 342, 343, 344, 345, 346, 347, 348, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 362, 363, 364, 365, 366, 373, 374, 375, 376, 377, 384, 385, 386, 387, 388, 414, 424, 425, 426, 433, 434, 435, 436, 444, 445, 446, 451, 452, 453, 454, 455, 456, 460, 464, 465, 466, 474, 475, 476, 484, 485, 524, 525, 534, 535, 564, 565, 574, 575, 584, 585]
+scope = "Initial density-model and support-projection effects separated from subsequent finite-budget optimization; objectives from different models are not ranks of minima."
+support_cells = 147
+initial_cache_full_scalar_bitwise = true
+unseen_support_cells = 53
+removed_cells = []
+added_cells = []
+
+[projected_initial]
+prior_objective = 17.766205739812342
+rock_density = 2710.0
+data_objective = 82.82648499678194
+objective = 100.59269073659428
+selected_branch_pg = 0.003311897033113187
+support_cutoff_m = 500.0
+normalization = 3.54271929102373e6
+
+[baseline]
+prior_objective = 17.766205739812342
+rock_density = 2710.0
+data_objective = 82.82648499678194
+objective = 100.59269073659428
+selected_branch_pg = 0.003311897033113187
+cutoff_m = 500.0
+normalization = 3.54271929102373e6
+
+[physics_at_original_field]
+prior_objective = 17.766205739812342
+rock_density = 2710.0
+data_objective = 82.82648499678194
+objective = 100.59269073659428
+selected_branch_pg = 0.003311897033113187
+support_cutoff_m = 500.0
+normalization = 3.54271929102373e6

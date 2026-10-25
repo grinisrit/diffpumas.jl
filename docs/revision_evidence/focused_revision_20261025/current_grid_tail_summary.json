@@ -1,0 +1,206 @@
+{
+  "passed": true,
+  "groups": {
+    "weak": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 0.00023324461595991154,
+        "max_relative_error": 0.0020727379396345653,
+        "max_absolute_error": 6.061184606897885e-11,
+        "zero_bitwise_all": null
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 1.894741130551621e-06,
+        "max_relative_error": 0.0006220126272628592,
+        "max_absolute_error": 5.074544929841586e-13,
+        "zero_bitwise_all": null
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 2.4474810446558845e-08,
+        "max_relative_error": 0.00019131184819811211,
+        "max_absolute_error": 5.711346167253658e-14,
+        "zero_bitwise_all": null
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 1.496697340156714e-08,
+        "max_relative_error": 4.231135241940389e-06,
+        "max_absolute_error": 1.2512813059797228e-14,
+        "zero_bitwise_all": null
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 3.654953182631212e-08,
+        "max_relative_error": 2.2535837894626473e-07,
+        "max_absolute_error": 6.676947075026572e-14,
+        "zero_bitwise_all": null
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 2.48541806605437e-07,
+        "max_relative_error": 2.7490146429193342e-06,
+        "max_absolute_error": 4.835096807993815e-13,
+        "zero_bitwise_all": null
+      }
+    },
+    "middle": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 0.0013676597459081619,
+        "max_relative_error": 1.0000003238123358,
+        "max_absolute_error": 149.9987477370547,
+        "zero_bitwise_all": null
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 1.168358418308149e-05,
+        "max_relative_error": 1.0000000323812241,
+        "max_absolute_error": 1499.9874798250435,
+        "zero_bitwise_all": null
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 3.771882489468427e-08,
+        "max_relative_error": 1.0000000032381224,
+        "max_absolute_error": 14999.874797852846,
+        "zero_bitwise_all": null
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 3.267310564524595e-09,
+        "max_relative_error": 1.000000000323812,
+        "max_absolute_error": 149998.7479785307,
+        "zero_bitwise_all": null
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 6.081277112864845e-09,
+        "max_relative_error": 1.0000000000323812,
+        "max_absolute_error": 1499987.4797853075,
+        "zero_bitwise_all": null
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 2.4239047080744972e-08,
+        "max_relative_error": 1.000000000003238,
+        "max_absolute_error": 14999874.797853077,
+        "zero_bitwise_all": null
+      }
+    },
+    "high": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 0.0004499358536848549,
+        "max_relative_error": 1.0000025194711997,
+        "max_absolute_error": 149.97847562841943,
+        "zero_bitwise_all": null
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 3.2903252579395983e-05,
+        "max_relative_error": 1.0000002519465492,
+        "max_absolute_error": 1499.784753796303,
+        "zero_bitwise_all": null
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 9.167090979849895e-09,
+        "max_relative_error": 1.0000000251946493,
+        "max_absolute_error": 14997.847535481947,
+        "zero_bitwise_all": null
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 2.924649712584774e-09,
+        "max_relative_error": 1.0000000025194649,
+        "max_absolute_error": 149978.4753548896,
+        "zero_bitwise_all": null
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 4.861946401546962e-10,
+        "max_relative_error": 1.0000000002519465,
+        "max_absolute_error": 1499784.7535488955,
+        "zero_bitwise_all": null
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 12,
+        "median_relative_error": 5.493700398723018e-09,
+        "max_relative_error": 1.0000000000251947,
+        "max_absolute_error": 14997847.535488954,
+        "zero_bitwise_all": null
+      }
+    },
+    "structural_zero": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 0,
+        "median_relative_error": null,
+        "max_relative_error": null,
+        "max_absolute_error": 150.0,
+        "zero_bitwise_all": true
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 0,
+        "median_relative_error": null,
+        "max_relative_error": null,
+        "max_absolute_error": 1499.9999999998013,
+        "zero_bitwise_all": true
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 0,
+        "median_relative_error": null,
+        "max_relative_error": null,
+        "max_absolute_error": 14999.996315752192,
+        "zero_bitwise_all": true
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 0,
+        "median_relative_error": null,
+        "max_relative_error": null,
+        "max_absolute_error": 149999.9631575219,
+        "zero_bitwise_all": true
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 0,
+        "median_relative_error": null,
+        "max_relative_error": null,
+        "max_absolute_error": 1499999.6315752193,
+        "zero_bitwise_all": true
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 0,
+        "median_relative_error": null,
+        "max_relative_error": null,
+        "max_absolute_error": 14999996.315752193,
+        "zero_bitwise_all": true
+      }
+    }
+  },
+  "scope": "Prespecified finite-step current-grid checks withresolutionflags,notstochasticaccuracyorfullcoveragecertificate."
+}

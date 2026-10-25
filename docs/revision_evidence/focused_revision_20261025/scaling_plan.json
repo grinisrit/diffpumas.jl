@@ -1,0 +1,23 @@
+{
+  "frozen_utc": "2026-10-25T10:15:40.284613+00:00",
+  "cells": [
+    32,
+    64,
+    128
+  ],
+  "rays": [
+    24,
+    96
+  ],
+  "warmups": 1,
+  "measured_repeats": 3,
+  "backend": "forwarddiff",
+  "corrections": "dry andmaterial disabled, matching historical benchmark",
+  "Float64": true,
+  "nodes": 32,
+  "available_Julia_threads": 3,
+  "forward_jacobian_threaded": false,
+  "BLAS_threads": 1,
+  "noMC": true,
+  "scope": "Smallgrid warmed individualstage measurements, not large-scale capacity or fullworkflow timings."
+}

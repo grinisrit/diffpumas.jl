@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "groups": {
+    "historical": {
+      "cases": 72,
+      "median": 0.0020264856258958076,
+      "p95": 0.05693793237688397,
+      "maximum": 0.07445830404151565,
+      "all_ad_bitwise": true
+    },
+    "new": {
+      "cases": 48,
+      "median": 0.0015970226520600579,
+      "p95": 0.010204445142659144,
+      "maximum": 0.06321685173994636,
+      "all_ad_bitwise": true
+    },
+    "lowfraction_control": {
+      "cases": 48,
+      "median": 0.0008217194436495256,
+      "p95": 0.004545577278879074,
+      "maximum": 0.005441609076980701,
+      "all_ad_bitwise": true
+    }
+  },
+  "authoritative_run": "finite_contrast_run_v2",
+  "superseded_run": "finite_contrast_run",
+  "scope": "Finite deterministic window-vs-localderivative only, noMCgradientbound."
+}

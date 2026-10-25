@@ -1,0 +1,16 @@
+{
+  "README.md": "6690338db2a0dc93206caa09b7e795d698657cbf6ef07563ba02de2b31d8ed05",
+  "actual_stencil_unit.log": "dbf11a2d395ae1c6cc48fb3bee3331af8b1f393464a3c668092cee295273eeb8",
+  "actual_stencil_unit.toml": "5086b281b39c71f9862c96fc75ad95146a29c8d500cab23d1576960f55ab5992",
+  "check_actual_stencil.jl": "aa3a7ed1f654782391a69b5eeca5981f63de4bc7cbeed261eb04d0e77c9d1620",
+  "check_actual_stencil.sh": "d3d052c8ef1a169baf094e1e60c0cc75ddfd903ce2020217a9aef1cc37d3f874",
+  "contrast_scaling_review.json": "2fa9ff55abb4c610b338f45bd327b919044806b9a9c8bd0e5e96242cdbff33f4",
+  "review_contrast_scaling.py": "c212965a82dbd52d4360a1f113728546c13525ffea8f51ca78c5536729bfede1",
+  "review_contrast_scaling_v1_snapshot.py": "7d74cd6b7980f2045caf18f9f8cb5500f10332b0dd15a547caffe440e233f20d",
+  "review_tail_distributions.py": "cb8c47ece851e94c3beee51e422a1c69bfcaf983183c3b92b439ba5d900dd0d5",
+  "review_tail_geometry.py": "e59095cbeebd743caef2428888a1a7457f19492be9f465ad37afeb65d99cfe7f",
+  "scaling_independent_review.json": "215aa0c1c5866ce3e757d8b1871a8d0977c8bef429e5c23305d255d09b1f39ee",
+  "tail_existing_distributions_review.json": "749e3bfc316468589da76a571dd99c0bd78756e6f0641b80f31f291147040f06",
+  "tail_geometry_independent_review.json": "3a10a9318049d88a916616e781a89e8666a08c400b04197eb5f626e3d2f45ccd",
+  "v1_arithmetic_review_not_numerical_validation.json": "2c56f7ad9e66116fae50d538ed995ed692bb30ed4e4338f31176c73071c8ca67"
+}

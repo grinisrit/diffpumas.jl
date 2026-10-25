@@ -1,0 +1,21 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7], "address_space_bytes": 17179869184, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "8,9,10,11,12,13,14,15", "timeout", "--signal=TERM", "--kill-after=30s", "1050", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "/home/roland/devspace/diffpumas.jl/dev/focused_density_support.jl", "--dump", "/home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas", "--output-dir", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/focused_density_support_20261025/arms/rho2760/results", "--papermatch-fit-only", "--geometry", "grid", "--mesh-half-km", "5", "--surface-step-km", "1", "--grid-nz", "6", "--zenith-step", "10", "--azimuth-step", "15", "--samples", "32", "--csda-quadrature", "midpoint", "--rock-density", "2710", "--seed", "20261022", "--correction-artifact", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml", "--papermatch-fit-mode", "stable", "--papermatch-gn-iters", "10", "--papermatch-gradient-tol", "1e-6", "--papermatch-log-scale", "0.3", "--papermatch-initial-water", "0", "--baseline-results", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/material_main_recovery_20261024/completed/main/data", "--papermatch-absolute-prior-weight", "3.954930197858131", "--papermatch-prior-cutoff", "500", "--stress-arm", "rho2760"]}
+ERROR: LoadError: MethodError: no method matching (::var"#407#427"{Vector{Float64}})(::Float64, ::Vector{Float64})
+The function `#407` exists, but no method is defined for this combination of argument types.
+
+Closest candidates are:
+  (::var"#407#427")(::Any)
+   @ Main ~/devspace/diffpumas.jl/dev/focused_density_support.jl:65
+
+Stacktrace:
+ [1] (::var"#413#433"{BitVector, Float64})(w::Vector{Float64})
+   @ Main ~/devspace/diffpumas.jl/dev/focused_density_support.jl:94
+ [2] focused_density_support_main()
+   @ Main ~/devspace/diffpumas.jl/dev/focused_density_support.jl:105
+ [3] top-level scope
+   @ ~/devspace/diffpumas.jl/dev/focused_density_support.jl:159
+in expression starting at /home/roland/devspace/diffpumas.jl/dev/focused_density_support.jl:159
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Building structured-grid sensitivity volume...

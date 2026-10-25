@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "scope": "Independent source/formula/tracer-parity gate and raw grouping/provenance review; no geometry/transport rerun and no physical DEM validation.",
+  "groups": {
+    "weak": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": [
+        0.6807687168854955,
+        650.0005032940026
+      ],
+      "segment_midpoint_depth_median_m": 95.57476720711566,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1757.7548988959315
+      ],
+      "centroids_above_surface": 6
+    },
+    "middle": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": [
+        8.779300147189815,
+        404.12489089928647
+      ],
+      "segment_midpoint_depth_median_m": 40.262175521688505,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1757.7548988959315
+      ],
+      "centroids_above_surface": 8
+    },
+    "high": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": [
+        131.667238325477,
+        578.7348202397533
+      ],
+      "segment_midpoint_depth_median_m": 233.418663654895,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1118.5712992974109
+      ],
+      "centroids_above_surface": 0
+    },
+    "structural_zero": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": null,
+      "segment_midpoint_depth_median_m": null,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1438.1630990966712
+      ],
+      "centroids_above_surface": 7
+    }
+  },
+  "nonzero_cases": 36,
+  "nonzero_centroids_above_surface": 14,
+  "selected_segment_midpoint_depth_range_m": [
+    0.6807687168854955,
+    650.0005032940026
+  ],
+  "definition": "Provided local vertical surface height minus traced segment midpoint height at midpoint horizontal coordinates; not slant depth, centroid height, or an independently measured terrain depth.",
+  "input_sha256": {
+    "docs/revision_evidence/focused_revision_20261025/tail_geometry_depth.jl": "72053a553d4b8fd19d396f17cc7907c8488d7b9478014acf487469b868573fde",
+    "examples/lvd_tomography.jl": "9da5d941038255d80c4e7015814233e0e7ddc0d620d5680e099229a7428c0a19",
+    "docs/revision_evidence/focused_revision_20261025/tail_geometry_run/execution.json": "3ffb357d7f265263484834e353e7fe243e752689db68e9c10e5dcf613abd16f4",
+    "docs/revision_evidence/focused_revision_20261025/tail_geometry_run/end_status.json": "99be5687d6c972f54db19c3860ed9365eb692f072263bec0c53a3b5ea749e501",
+    "docs/revision_evidence/focused_revision_20261025/tail_geometry_run/results/status.toml": "955e97eee1c926097af7a081a7f9661d57ed5bb9266d959158b596348cf625c8",
+    "docs/revision_evidence/focused_revision_20261025/tail_geometry_run/results/selected_geometry_depth.csv": "290faf9d917f467525f161a252124b91d592f93f95d6f912a7b4d183e2558e8d",
+    "docs/revision_evidence/focused_revision_20261025/tail_geometry_summary.json": "1c93b055ec42b11283d131065f9959222fb869c9203698e1b1e7f76cccc1ddfa",
+    "docs/revision_evidence/focused_revision_20261025/current_grid_tail_selection.csv": "8bfef2d8edbcc9ea63d0d52bbb33e842d6dc8d418d103f97da23e24f24e62172",
+    "docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_fit_field.csv": "e9b12c6ee8298d8cd7690612775162058a32132385c6fed8148a69e30b82c08d"
+  },
+  "review_source_sha256": "e59095cbeebd743caef2428888a1a7457f19492be9f465ad37afeb65d99cfe7f"
+}

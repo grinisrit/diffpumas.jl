@@ -1,0 +1,73 @@
+{
+  "passed": true,
+  "independent_graph_edges": 1580,
+  "arms": [
+    {
+      "arm": "baseline",
+      "checkpoints": 1,
+      "trials": 124,
+      "accepted": 0,
+      "maximum_objective_recompute_discrepancy": 0,
+      "initial_objective": 100.59269073659428,
+      "final_objective": 100.59269073659428,
+      "branch_pg": 0.003311897033113187,
+      "termination": "all_directions_rejected",
+      "elapsed_seconds": 167.21900701522827,
+      "support_cells": 147
+    },
+    {
+      "arm": "rho2660",
+      "checkpoints": 11,
+      "trials": 11,
+      "accepted": 10,
+      "maximum_objective_recompute_discrepancy": 2.842170943040401e-14,
+      "initial_objective": 100.76679345237679,
+      "final_objective": 100.72294606073339,
+      "branch_pg": 0.004007191147031186,
+      "termination": "outer_budget_complete",
+      "elapsed_seconds": 145.28558588027954,
+      "support_cells": 147
+    },
+    {
+      "arm": "rho2760",
+      "checkpoints": 11,
+      "trials": 13,
+      "accepted": 10,
+      "maximum_objective_recompute_discrepancy": 1.4210854715202004e-14,
+      "initial_objective": 100.57655040569588,
+      "final_objective": 100.53196307794596,
+      "branch_pg": 0.0008690876693204785,
+      "termination": "outer_budget_complete",
+      "elapsed_seconds": 147.35538792610168,
+      "support_cells": 147
+    },
+    {
+      "arm": "cut400",
+      "checkpoints": 11,
+      "trials": 10,
+      "accepted": 10,
+      "maximum_objective_recompute_discrepancy": 1.4210854715202004e-14,
+      "initial_objective": 100.59269073659428,
+      "final_objective": 84.77423137047357,
+      "branch_pg": 0.002539122424330298,
+      "termination": "outer_budget_complete",
+      "elapsed_seconds": 149.67149114608765,
+      "support_cells": 205
+    },
+    {
+      "arm": "cut800",
+      "checkpoints": 11,
+      "trials": 10,
+      "accepted": 10,
+      "maximum_objective_recompute_discrepancy": 2.842170943040401e-14,
+      "initial_objective": 134.21236455050592,
+      "final_objective": 132.708389675639,
+      "branch_pg": 0.00028309988399222163,
+      "termination": "outer_budget_complete",
+      "elapsed_seconds": 141.76298809051514,
+      "support_cells": 86
+    }
+  ],
+  "scope": "Independent robust profile and graph-prior algebra on all full-confirmed checkpoints; Armijo/box/support/budget audit, not independent forward replay.",
+  "source_sha256": "f82292471bd079708064434cdda75d2986e990165d4581ed018ec1937c42b6c8"
+}

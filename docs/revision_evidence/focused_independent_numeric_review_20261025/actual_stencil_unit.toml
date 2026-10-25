@@ -1,0 +1,4 @@
+passed = true
+analytic_stencil_cases = 27
+scope = "Independent actual-helper constant/linear/quadratic tests, central and both feasible boundary stencils; no transport/MC execution"
+source_sha256 = "090d9d98f5d68ab6ecb7e62ae6d6cd932385c6a417cae09c97f8519c70fd8413"

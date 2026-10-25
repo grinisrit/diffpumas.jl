@@ -1,0 +1,62 @@
+{
+  "passed": true,
+  "primary_vs_baseline_continuation_bitwise_field_equal": true,
+  "comparisons": {
+    "baseline": {
+      "field_change_600_relative_L2": 0.0,
+      "field_change_600_absolute_L2": 0.0,
+      "field_change_600_max": 0.0,
+      "current_support_cells": 147,
+      "mean_current_support": 0.09763763848307169,
+      "mean_common": 0.09763763848307169,
+      "baseline_mean_common": 0.09763763848307169,
+      "common_relative_L2": 0.0,
+      "whole600_mean": 0.023921221428352565
+    },
+    "rho2660": {
+      "field_change_600_relative_L2": 0.024962390014639898,
+      "field_change_600_absolute_L2": 0.04492657095107457,
+      "field_change_600_max": 0.014743834992574804,
+      "current_support_cells": 147,
+      "mean_current_support": 0.09544415020319709,
+      "mean_common": 0.09544415020319709,
+      "baseline_mean_common": 0.09763763848307169,
+      "common_relative_L2": 0.024962390014639898,
+      "whole600_mean": 0.023383816799783286
+    },
+    "rho2760": {
+      "field_change_600_relative_L2": 0.02442602007988604,
+      "field_change_600_absolute_L2": 0.04396122821283476,
+      "field_change_600_max": 0.014065211735021836,
+      "current_support_cells": 147,
+      "mean_current_support": 0.09972529766564446,
+      "mean_common": 0.09972529766564446,
+      "baseline_mean_common": 0.09763763848307169,
+      "common_relative_L2": 0.02442602007988604,
+      "whole600_mean": 0.02443269792808289
+    },
+    "cut400": {
+      "field_change_600_relative_L2": 0.4398363266961313,
+      "field_change_600_absolute_L2": 0.791604406732879,
+      "field_change_600_max": 0.3720777376847683,
+      "current_support_cells": 205,
+      "mean_current_support": 0.08015844428629322,
+      "mean_common": 0.09174904465445212,
+      "baseline_mean_common": 0.09763763848307169,
+      "common_relative_L2": 0.19308992388119406,
+      "whole600_mean": 0.027387468464483523
+    },
+    "cut800": {
+      "field_change_600_relative_L2": 0.6079288580870982,
+      "field_change_600_absolute_L2": 1.094132371140655,
+      "field_change_600_max": 0.4544041951236488,
+      "current_support_cells": 86,
+      "mean_current_support": 0.09863803710448624,
+      "mean_common": 0.09863803710448624,
+      "baseline_mean_common": 0.1101175523271223,
+      "common_relative_L2": 0.15977786473004638,
+      "whole600_mean": 0.014138118651643028
+    }
+  },
+  "reference": "Baseline continuation equals original primary field bitwise; all full-field L2 comparisons are on identical600-cell domain with zero outside each arm support."
+}

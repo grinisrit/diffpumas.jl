@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "numeric_entries_checked": 171,
+  "tables_checked": 7,
+  "tex_sha256": "c64caba8cfbdc277ab1a52ce384e5856ac03cdfcfeefe68be6076847d8e19fc9",
+  "scope": "Independent exact3-significant-digit numerical check against authoritative raw v2 and retainedexistingdata, not semantic or physical-model certification.",
+  "previous_reviewed_tex_sha256": "25abc548b3fcaf4a26a8c2269aac33bfe942904f0d0c065c851bbb068272b967",
+  "cosmetic_followup": "Five terminal periods removed inside paragraph headings to avoid duplicate printed punctuation; no numeric/table/formula changes. All171numericentries rerunPASS."
+}

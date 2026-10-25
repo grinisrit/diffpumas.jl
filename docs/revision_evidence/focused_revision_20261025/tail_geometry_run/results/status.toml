@@ -1,0 +1,5 @@
+source_tracer_segment_parity = true
+scope = "Frozen-selection geometry metadata only. Cellheight is above detector; signed centroiddepth can be negative for partial topographic voxels. Actual selected-ray segment midpointdepth is separately reported. NoMC/AD/selection change."
+structural_zero_cases = 12
+cases = 48
+nonzero_cases = 36

@@ -1,0 +1,232 @@
+{
+  "passed": true,
+  "groups": {
+    "weak": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 0.00023324461595991154,
+        "p95": 0.0017994726197630517,
+        "maximum": 0.0020727379396345653,
+        "max_absolute": 6.061184606897885e-11,
+        "zero_bits_all": null
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 1.894741130551621e-06,
+        "p95": 0.00036633253510692825,
+        "maximum": 0.0006220126272628592,
+        "max_absolute": 5.074544929841586e-13,
+        "zero_bits_all": null
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 2.4474810446558845e-08,
+        "p95": 0.00010282983036701839,
+        "maximum": 0.00019131184819811211,
+        "max_absolute": 5.711346167253658e-14,
+        "zero_bits_all": null
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 1.496697340156714e-08,
+        "p95": 2.4729940291565835e-06,
+        "maximum": 4.231135241940389e-06,
+        "max_absolute": 1.2512813059797228e-14,
+        "zero_bits_all": null
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 3.654953182631212e-08,
+        "p95": 2.1293095705186821e-07,
+        "maximum": 2.2535837894626473e-07,
+        "max_absolute": 6.676947075026572e-14,
+        "zero_bits_all": null
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 2.48541806605437e-07,
+        "p95": 2.044623991438757e-06,
+        "maximum": 2.7490146429193342e-06,
+        "max_absolute": 4.835096807993815e-13,
+        "zero_bits_all": null
+      }
+    },
+    "middle": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 0.0008142867382658903,
+        "p95": 0.0050633582924397985,
+        "maximum": 0.007767945796796547,
+        "max_absolute": 2.4147600254347256e-07,
+        "zero_bits_all": null
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 3.42227903471566e-06,
+        "p95": 0.0012583124401807327,
+        "maximum": 0.0012882587436219093,
+        "max_absolute": 5.999651981975428e-08,
+        "zero_bits_all": null
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 3.771882489468427e-08,
+        "p95": 0.00024507052859115366,
+        "maximum": 0.00042436095842400415,
+        "max_absolute": 2.0609938855746068e-08,
+        "zero_bits_all": null
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 3.448022279110486e-10,
+        "p95": 1.3097667727611944e-07,
+        "maximum": 2.4472726630004446e-07,
+        "max_absolute": 2.556343434121657e-12,
+        "zero_bits_all": null
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 5.005682005306984e-09,
+        "p95": 8.229412753448599e-08,
+        "maximum": 1.6460294503623553e-07,
+        "max_absolute": 1.719390177245617e-12,
+        "zero_bits_all": null
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 1.8360180368452405e-08,
+        "p95": 1.7498578729770717e-07,
+        "maximum": 2.1181884371840587e-07,
+        "max_absolute": 5.19977078294832e-12,
+        "zero_bits_all": null
+      }
+    },
+    "high": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 0.00036050851359383635,
+        "p95": 0.0024309516756063835,
+        "maximum": 0.0028148437252837905,
+        "max_absolute": 9.330612405307665e-07,
+        "zero_bits_all": null
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 2.8815423293280447e-05,
+        "p95": 0.0005470102785731733,
+        "maximum": 0.0006547505938566153,
+        "max_absolute": 2.47407659130451e-07,
+        "zero_bits_all": null
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 9.167090979849895e-09,
+        "p95": 8.50721945636548e-06,
+        "maximum": 1.8537732622366543e-05,
+        "max_absolute": 7.004899421744672e-09,
+        "zero_bits_all": null
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 9.221224242305992e-10,
+        "p95": 1.9612506924507252e-07,
+        "maximum": 2.613252842206755e-07,
+        "max_absolute": 6.801492035595283e-11,
+        "zero_bits_all": null
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 4.861946401546962e-10,
+        "p95": 3.11847715950766e-08,
+        "maximum": 6.526851254040383e-08,
+        "max_absolute": 2.4662720596226734e-11,
+        "zero_bits_all": null
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 12,
+        "median": 5.493700398723018e-09,
+        "p95": 1.774110502741676e-08,
+        "maximum": 2.8126569316314865e-08,
+        "max_absolute": 1.0628060118176436e-11,
+        "zero_bits_all": null
+      }
+    },
+    "structural_zero": {
+      "0.01": {
+        "cases": 12,
+        "resolved": 0,
+        "median": null,
+        "p95": null,
+        "maximum": null,
+        "max_absolute": 1.3552527156068805e-18,
+        "zero_bits_all": true
+      },
+      "0.001": {
+        "cases": 12,
+        "resolved": 0,
+        "median": null,
+        "p95": null,
+        "maximum": null,
+        "max_absolute": 8.470329472543003e-19,
+        "zero_bits_all": true
+      },
+      "0.0001": {
+        "cases": 12,
+        "resolved": 0,
+        "median": null,
+        "p95": null,
+        "maximum": null,
+        "max_absolute": 2.6469779601696886e-19,
+        "zero_bits_all": true
+      },
+      "1e-05": {
+        "cases": 12,
+        "resolved": 0,
+        "median": null,
+        "p95": null,
+        "maximum": null,
+        "max_absolute": 2.646977960169688e-18,
+        "zero_bits_all": true
+      },
+      "1e-06": {
+        "cases": 12,
+        "resolved": 0,
+        "median": null,
+        "p95": null,
+        "maximum": null,
+        "max_absolute": 2.6469779601696886e-17,
+        "zero_bits_all": true
+      },
+      "1e-07": {
+        "cases": 12,
+        "resolved": 0,
+        "median": null,
+        "p95": null,
+        "maximum": null,
+        "max_absolute": 2.6469779601696886e-16,
+        "zero_bits_all": true
+      }
+    }
+  },
+  "authoritative_run": "current_grid_tail_run_v2",
+  "superseded_run": "current_grid_tail_run",
+  "scope": "Finite-step/noiseaware48caseaudit;noMC/fullcoveragecertificate."
+}

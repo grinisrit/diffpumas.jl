@@ -1,0 +1,14 @@
+{
+  "ended_utc": "2026-10-25T10:44:32.901620+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "3ffb357d7f265263484834e353e7fe243e752689db68e9c10e5dcf613abd16f4",
+    "results/selected_geometry_depth.csv": "290faf9d917f467525f161a252124b91d592f93f95d6f912a7b4d183e2558e8d",
+    "results/status.toml": "955e97eee1c926097af7a081a7f9661d57ed5bb9266d959158b596348cf625c8",
+    "run.log": "cfe7928d726478464d6f2e351d25820ceef7d174996f407515bfd8f4e82cfa38"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "ended_utc": "2026-10-25T10:31:13.031188+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "e202d8cc9e5021e607df34cba9b3880a564f2d1b83605d3d3fe9ba7f90c40308",
+    "results/finite_contrast_vs_local_ad.csv": "7120824e756275fb4d468b18f99de39c54244d64379c281d9408f5d354f6226a",
+    "results/status.toml": "993a3429b4e6e27d4e53a53c225a1cea42d1945267a050c868ec45ce599429ae",
+    "run.log": "4980cf2b9d3d8b49b5f3a4002fa20ea2f59cd259a40fa00a64c7de279b7019ac"
+  }
+}

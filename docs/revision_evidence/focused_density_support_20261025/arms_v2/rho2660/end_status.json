@@ -1,0 +1,28 @@
+{
+  "ended_utc": "2026-10-25T10:32:58.938054+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "df43dba8e6bcb9d7ad204264ecceceb44c145bb41e7ee6c0d87074e4cbffe75e",
+    "results/accepted_000.toml": "2c2921255cf9720c1cb8ab068106c6b3ece0d2d26553391f67898bd12fc9f867",
+    "results/accepted_001.toml": "7d49add5fad4e53316e292ed2a60cfdfe56a1444cd35ac3b468483c4254737f6",
+    "results/accepted_002.toml": "1cf73259821a28e8097a88de07132bd50bfbb26145dc819b923fb4f28e37c463",
+    "results/accepted_003.toml": "b2e3db26a608ca7f3f053465f921b4558eedb3c0be212c1b796068c91c05aa20",
+    "results/accepted_004.toml": "85eb7455b1d341c7deb8d0082bba191ad235f62f037ab4c0dc0907dc90f08512",
+    "results/accepted_005.toml": "ae72e36ddb6d0642b249d930a2a3cf06298d4096e5d5919bbf1b482559410820",
+    "results/accepted_006.toml": "6485e22c7f7da99f43d1e04c94b8e2143aeb759465ea9504b6d9fe7ccad01ff1",
+    "results/accepted_007.toml": "703454c09742abadd2e1a78b4cf999866bd7804128b0db29d834d1b69378df21",
+    "results/accepted_008.toml": "fb4fd8a65fdb3c3d6a356f352cbf4b9eb4d09aaefd4a9dc6aca9e7e639976a79",
+    "results/accepted_009.toml": "ab8145a29450df9dfd2dec35802a1b450d8712b0f78fb945f24c5d10817a61a4",
+    "results/accepted_010.toml": "261798b18cf64cb15fc295cf843e9bb76b40fffceca22894806cb593fbe03f4d",
+    "results/field.csv": "4ededd417c503fed02a49ee8d2cf1ba01a6d0e0be60412f73e724ce090076e8d",
+    "results/initial_effects.toml": "5a2b8c479fdb0bcb1a89ccec400743c19ed47db21591dffd64f6ee07c37cc154",
+    "results/predictions.csv": "08ff32d7844a8219e5f7991b7720a21586352959dd81bb7b8437eeef9bb2ef1f",
+    "results/report.toml": "5420b3ed68da5de16666212169897ae0abc7bdab5b8f8ab9c907e95f3d71335f",
+    "results/trials.csv": "e3d3e441af4fbbf15edcc47a97ea98e22130b560266e7a0a169da7cabf04e71c",
+    "run.log": "49254c9e91d3896432f8bfca78970e3f4aec6f8d2c4cdfaf092b0c886d1f8936"
+  }
+}

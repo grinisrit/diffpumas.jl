@@ -1,0 +1,22 @@
+# Independent numerical review index
+
+**PASS for the corrected v2 contrast/tail outputs, serial scaling, existing distribution arithmetic and geometry metadata.** This folder is the independent check of the producers in `focused_revision_20261025`. It imports no producer analysis helper and performs no new transport, MC draw, calibration, case selection or optimisation. The density/support producer was written by this agent and was independently reviewed by the other reviewer; this folder does not claim an independent review of its own producer.
+
+| Record | Verified scope |
+|---|---|
+| `contrast_scaling_review.json` | Authoritative `finite_contrast_run_v2`: all 168 stored case/window identities, stored AD bits, endpoint-to-secant arithmetic and aggregate summaries; serial scaling: all 126 rows, 42 groups, timing/allocation summaries and retained-memory arithmetic. Source/runtime/output bindings pass. |
+| `tail_existing_distributions_review.json` | Authoritative `current_grid_tail_run_v2`: 48 identities × six steps, feasible stencil choices, arithmetic, numerical-resolution flags and structural-zero flux bits; existing deterministic step distributions, historical selection coverage, six paired MC bias populations and noisy-reference denominator counts; saved supported-Jacobian counts/distributions. |
+| `actual_stencil_unit.toml` and `.log` | Independent extraction of the actual v2 arithmetic helper, without including transport: 27 constant/linear/quadratic cases across central and both boundary stencils, plus bound and invalid-stencil checks; **55 assertions pass**. The source hash is recorded. |
+| `tail_geometry_independent_review.json` | Source/formula and exact-production-tracer segment-parity gate, 48 frozen identities, raw grouping and hashes. The 36 nonzero selected segment midpoints lie 0.680769–650.000503 m vertically below the supplied local surface; 14 corresponding voxel centroids lie above the surface at their own coordinates. These are distinct geometric quantities. |
+| `scaling_independent_review.json` | Earlier standalone serial scaling PASS; unaffected by the superseded threaded contrast implementation. |
+| `v1_arithmetic_review_not_numerical_validation.json` | **Quarantined, not eligible for adoption.** Arithmetic/hash reproduction of v1 did not establish numerical correctness of its threaded producer. The corrected private-case v2 run is authoritative even where aggregate numbers coincide. |
+
+The review scripts alongside these records contain separately implemented checks and source SHA-256 bindings. `review_contrast_scaling_v1_snapshot.py` preserves the earlier arithmetic-check source. Canonical reviewed JSON files bind their raw inputs and their own review script. `review_manifest.json` indexes current review sources and results. Numerical postprocessing ran with effective CPU affinity 19 and a 2 GiB address-space limit; the actual-stencil test ran in tmux under the same bound.
+
+The v2 source review checks that each parallel contrast/tail case owns its temporary fields, receives its read-only volume explicitly and does not mutate shared inputs. The one-sided stencil coefficients use explicit multiplication by the unperturbed flux. Earlier producer attempts are preserved in the producer folder and are excluded from scientific adoption.
+
+Interpretation remains bounded: deterministic finite-window secants are not local derivatives or stochastic-gradient error bounds; relative errors for exact structural zeros are uninterpretable. The zero fluxes are invariant bitwise, while finite-difference arithmetic can retain cancellation roundoff (maximum 2.65e-17 at h=1e-6 and 2.65e-16 over the full ladder). The five-SE MC denominator rule is an additional descriptive summary, not a replacement for locked all-case screening or a confidence-coverage claim. Selection geometry is not full-domain coverage. Cell height above the detector, signed centroid depth and selected segment-midpoint depth must not be interchanged.
+
+Scaling uses serial forward/Jacobian kernels and BLAS1 although three Julia threads were available. Corrections are disabled as in its historical comparator. One warmup per stage is the measured protocol; cumulative allocations and process peak RSS are not retained or incremental stage memory, and six small grids do not establish corrected end-to-end capacity.
+
+The global `*.log` rule ignores `actual_stencil_unit.log`; it is required small diagnostic evidence and should be force-added when curating this folder. No numerical producer is changed by this index.

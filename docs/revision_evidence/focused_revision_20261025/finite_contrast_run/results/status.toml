@@ -1,0 +1,9 @@
+backend = "forwarddiff"
+artifact_sha256 = "8667f1a7fc9a4068e074495dcb08cb04deeb6f7ae77365087aa9daabc4c4677d"
+new_cases = 48
+quadrature_nodes = 32
+all_stored_ad_bitwise_equal = true
+scope = "Same stored cases and finite windows, same current production correction, local AD versus deterministic32node finite contrast. No MC/refitting/reselection. Finite contrast differences do not bound stochastic derivatives."
+cases = 168
+historical_cases = 72
+lowfraction_control_cases = 48

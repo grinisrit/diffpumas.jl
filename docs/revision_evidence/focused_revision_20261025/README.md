@@ -1,0 +1,24 @@
+# Focused quantitative reviewer evidence — 25 October 2026
+
+These are additional checks of existing data and the unchanged deterministic library, not new observations, MC samples, calibration fits or production reconstructions. Numerical accuracy, stochastic-model discrepancy and conditional inverse sensitivity remain distinct.
+
+## Authoritative outputs
+
+| Evidence | Adopted version / raw output | Meaning and gate |
+|---|---|---|
+| Existing validation selection, step/error distributions, MC denominator precision | `existing_derivative_audit.json`, `deterministic_step_distributions.csv`, `mc_case_error_vectors.csv` | Postprocessing only, one CPU; all cases retained. Input/source hashes are in the JSON. Historical 72 states are 24 geometric pairs, not 72 independently selected pairs. Weak/negative noisy MC reference means are identified; relative ratios are not calibrated accuracy bounds. |
+| Stored-window secants versus local AD | **`finite_contrast_run_v2/`**, `finite_contrast_v2_summary.json` | All 168 stored cases/windows, original production correction and 32 midpoint nodes; all stored AD values reproduce bitwise. Private-case producer source independently reviewed; source/runtime/output hashes and raw arithmetic independently pass. No MC-gradient bound follows. |
+| Current-backend scaling | `scaling_run/`, `scaling_stage_summary.csv`, `scaling_summary.json` | Six 32/64/128-cell × 24/96-ray configurations, seven stages, three measured repeats after warming. Both corrections off, matching the historical timing configuration; current ForwardDiff backend, serial stage kernels and BLAS1. Retained sparse storage, cumulative allocations and cumulative peak RSS are different metrics. No large-scale capacity threshold or end-to-end speedup is inferred. |
+| Current-grid low/middle/high and zero checks | **`current_grid_tail_run_v2/`**, `current_grid_tail_v2_summary.json` | Frozen 48-case selection before FD evaluation: 12 entries each from weak/middle/high sensitivity bands and 12 physically ray-disjoint zeros. Six feasible central/one-sided steps. Absolute errors and numerical-resolution flags retained; zero relative errors are uninterpretable. All 12 zero fluxes are bitwise invariant at every step. |
+| Independent density/support validation | `density_independent_run/`, `density_algebra_review.json`, `density_field_comparison_review.json` | Full initial/final 1003-path forward/Jacobian recomputation for all five arms; all predictions bitwise equal, costs/profile/branch PG verified. All 45 saved checkpoint losses independently recomputed using the 1580-edge graph and robust profiling; constraints, Armijo and budgets checked. Baseline continuation equals original primary bitwise. Responses are finite-budget conditional comparisons, not minima or geological uncertainty intervals. |
+| Geometry-only depth metadata | `tail_geometry_run/`, `tail_geometry_summary.json` | Fixed selections unchanged. Cell height above detector and signed centroid depth differ from actual selected-ray segment midpoint depth. Source-tracer segment parity is checked; partial topographic voxels can have centroids above the local surface. No transport, AD or MC evaluation. |
+
+The corrected numerical jobs run sequentially on CPUs 16–18 with at most 8 GiB per process and 900-second limits. Stage kernels in the scaling run are deliberately serial. The geometry-only follow-up uses CPU16. Wrapper `execution.json` records exact argv, source/input/runtime hashes and allocations; `end_status.json` binds every produced file and completion state. Plans, source and launchers are retained alongside each run.
+
+Independent producer/arithmetic review is in sibling `focused_independent_numeric_review_20261025/`, including `contrast_scaling_review.json` and `tail_existing_distributions_review.json`. The density producer, solver-equivalence/deadline tests, five-arm plan and failed original attempt are in sibling `focused_density_support_20261025/`.
+
+## Preserved non-authoritative versions
+
+`finite_contrast_run/` and `current_grid_tail_run/` remain immutable but are **excluded from paper adoption**. The former had a potential captured `w` binding in a threaded loop; v2 isolates each case in an explicit top-level function. The latter used Julia's `3f0` Float32 literal accidentally in one-sided stencil arithmetic; v2 uses explicit multiplication in an independently tested helper. Neither case/window selection nor physical input changed. See `producer_corrections.md`; v1 source, output and exploratory summaries are retained for transparent diagnosis. Their clean execution flags do not make the flawed methodology authoritative.
+
+The paper response mapping is `diffmuontomoLVD/revision/reviewer1_evidence_audit_20261025.md`. Numerical summaries should be used with their stated selected-case and finite-contrast limitations, rather than relabelled as full-domain or stochastic-gradient certification.

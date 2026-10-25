@@ -1,0 +1,80 @@
+{
+  "passed": false,
+  "independence": "Source inspection and separately implemented arithmetic/provenance checks; no producer helpers imported and no transport rerun.",
+  "run_identity": {
+    "finite_contrast_run": {
+      "output_hashes": 4,
+      "source_hashes": 69,
+      "passed": true
+    },
+    "scaling_run": {
+      "output_hashes": 4,
+      "source_hashes": 62,
+      "passed": true
+    }
+  },
+  "contrast": {
+    "historical": {
+      "cases": 72,
+      "relative_median": 0.0020264856258958076,
+      "relative_p95": 0.05693793237688397,
+      "relative_max": 0.07445830404151565,
+      "absolute_median": 5.791380564627554e-07,
+      "absolute_p95": 6.699009672645271e-06,
+      "signed_median": 1.4881614008248984e-07,
+      "over_1pct": 23,
+      "over_5pct": 11,
+      "all_stored_ad_bitwise_equal": true
+    },
+    "new": {
+      "cases": 48,
+      "relative_median": 0.0015970226520600579,
+      "relative_p95": 0.010204445142659144,
+      "relative_max": 0.06321685173994636,
+      "absolute_median": 4.1382375969633103e-07,
+      "absolute_p95": 2.3668839853728516e-06,
+      "signed_median": 2.0095564295397603e-07,
+      "over_1pct": 3,
+      "over_5pct": 1,
+      "all_stored_ad_bitwise_equal": true
+    },
+    "lowfraction_control": {
+      "cases": 48,
+      "relative_median": 0.0008217194436495256,
+      "relative_p95": 0.004545577278879074,
+      "relative_max": 0.005441609076980701,
+      "absolute_median": 7.79901035588928e-08,
+      "absolute_p95": 1.2841110980466897e-06,
+      "signed_median": 2.7609642367572057e-09,
+      "over_1pct": 0,
+      "over_5pct": 0,
+      "all_stored_ad_bitwise_equal": true
+    }
+  },
+  "scaling_groups_checked": 42,
+  "scaling_rows_checked": 126,
+  "qualifications": [
+    "Finite deterministic secant windows may be asymmetric and are not local derivatives or stochastic-gradient error bounds.",
+    "Scaling kernels are serial and BLAS1 although three Julia threads were available; small corrected-disabled grids do not establish full corrected-pipeline capacity.",
+    "Allocation totals are cumulative allocations; process peak RSS is cumulative, not stage incremental memory.",
+    "One warmup per stage is the measured protocol, not a formal guarantee excluding all latent compilation."
+  ],
+  "input_sha256": {
+    "docs/revision_evidence/focused_revision_20261025/finite_contrast_run/end_status.json": "81c8dd6c991d0528410461ebc322033b84d863f72e6409fffea41994c4fb5a06",
+    "docs/revision_evidence/focused_revision_20261025/finite_contrast_run/execution.json": "0edfa15c9b7e41742265a393445e87b4890dbb3f388546932b2350d221d0ae11",
+    "docs/revision_evidence/focused_revision_20261025/scaling_run/end_status.json": "7ba465347e19bb4f19f83fd281b2eaef0b3d22b2dee68f9357c8ca1ca3f28400",
+    "docs/revision_evidence/focused_revision_20261025/scaling_run/execution.json": "b8b33dbcee4b7b6a21173881607d1b8fe96262104f970a5ad8e43cc0df62f9f5",
+    "docs/revision_evidence/focused_revision_20261025/finite_contrast_run/results/finite_contrast_vs_local_ad.csv": "7120824e756275fb4d468b18f99de39c54244d64379c281d9408f5d354f6226a",
+    "docs/revision_evidence/corrected_validation/mc_jacobian.csv": "2e8d8f9c9ccd703d001e14361e1d91acd52de6beb28576f7c0a5a143c2f5146a",
+    "docs/revision_evidence/surrogate_v2/production/heldout_derivatives.csv": "afa790b31e71ce9cca563df5037a86de61fca3474c471193083353e2220fb2da",
+    "docs/revision_evidence/lowfraction_round3_20261025/pilot/results/heldout_derivatives.csv": "09bca53e976758bd2cc8d756ddc23520bfecaf7ea8a1c2ae97cc689d6c5f9fa5",
+    "docs/revision_evidence/surrogate_v2/forwarddiff_replay/ad_fd_replay.csv": "1e2a8ab8afd1530fc34638fe713c9a73509faf4ae4595683522528d97b8f63b3",
+    "docs/revision_evidence/lowfraction_round3_20261025/pilot/results/ad_fd_steps.csv": "f701be9460570f7ccdaf4bc95f7d18b73b57ce0e2fa57e3955705e79fc081e01",
+    "docs/revision_evidence/focused_revision_20261025/finite_contrast_summary.json": "c8d65a2d5eb81402e988cb5488b8d6cb9a43f12254e6918b62e56c872eac7a72",
+    "docs/revision_evidence/focused_revision_20261025/scaling_run/results/scaling_repeats.csv": "f82fe92edfcf8aa1c971561fdf29a71d8fec99d07e4bd4b3d82f04d6efaab86e",
+    "docs/revision_evidence/focused_revision_20261025/scaling_summary.json": "12af97dab8ef4d7f47d96519d6b39bceb53f79b2dcce5107aca60f3c556aa474"
+  },
+  "review_source_sha256": "7d74cd6b7980f2045caf18f9f8cb5500f10332b0dd15a547caffe440e233f20d",
+  "contrast_scientific_validation": "QUARANTINED: arithmetic/hash reproduction only; threaded producer capture hazard requires fresh v2 run before numerical adoption.",
+  "scaling_independent_passed": true
+}

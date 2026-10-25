@@ -1,0 +1,7 @@
+# Focused deterministic producer corrections
+
+The first finite-contrast run is preserved but quarantined for paper adoption: its threaded loop assigned a `w` binding already present in the enclosing function. All stored AD comparisons passed bitwise, but that check alone cannot rule out endpoint-copy races. Version 2 moves each case into a top-level function with private variables and explicit read-only inputs. No case, window, artifact, quadrature or physical target changes.
+
+The first current-grid tail run is also preserved and is not numerical FD evidence: `3f0` was parsed by Julia as a Float32 literal rather than multiplication by variable `f0`, corrupting one-sided stencil arithmetic. Version 2 uses explicit `3*f0` in a separately testable exact source helper. Current-grid selections remain frozen before the original evaluations; no failed case is dropped or reselected. Exact ray-disjoint zero-flux checks in the first run were unaffected, but the corrected run is authoritative for all comparisons.
+
+Both corrected producers use private per-case functions and the same stored selections. Their sources are independently reviewed before fresh bounded runs. Producer v1 sources, execution records, results and derived exploratory summaries remain immutable for transparent diagnosis. Serial scaling and existing-output statistical audits are unaffected. No new MC, fitting or production-source modification is involved.

@@ -1,0 +1,38 @@
+optimization_objective_change = -0.04384739164339635
+rock_density = 2660.0
+fit_crossed_support_cells = 94
+maximum_outer_attempts = 10
+screen_sha256 = "53652c5c61d708a99baf9f10e7d06ec7eafe7ff81ee7705879e4c88251468fa0"
+accepted_updates = 10
+common_support_change_l2 = 0.04492657095107457
+support_cutoff_m = 500.0
+elapsed_seconds = 145.28558588027954
+soft_budget_seconds = 900.0
+selected_branch_pg_tolerance_met = false
+final_direct_scalar_parity_checked = true
+generalized_stationarity_certified = false
+scope = "Matched finite-budget density/support sensitivity, not converged minima, geological confidence intervals, or identifiable groundwater inventory. Original primary result unchanged."
+support_cells = 147
+termination = "outer_budget_complete"
+original_primary_field_sha256 = "e9b12c6ee8298d8cd7690612775162058a32132385c6fed8148a69e30b82c08d"
+absolute_prior_weight = 3.954930197858131
+common_support_change_inf = 0.014743834992574804
+outer_attempts = 10
+unseen_support_cells = 53
+optimization_field_change_l2 = 0.04492657095107457
+arm = "rho2660"
+optimization_field_change_inf = 0.014743834992574804
+
+[final]
+prior_objective = 17.457858404449922
+data_objective = 83.26508765628347
+objective = 100.72294606073339
+selected_branch_pg = 0.004007191147031186
+normalization = 3.245091491660803e6
+
+[initial]
+prior_objective = 17.766205739812342
+data_objective = 83.00058771256444
+objective = 100.76679345237679
+selected_branch_pg = 0.6074215421324496
+normalization = 3.2436107983839684e6

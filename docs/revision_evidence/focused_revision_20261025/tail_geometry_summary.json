@@ -1,0 +1,56 @@
+{
+  "passed": true,
+  "groups": {
+    "weak": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": [
+        0.6807687168854955,
+        650.0005032940026
+      ],
+      "segment_midpoint_depth_median_m": 95.57476720711566,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1757.7548988959315
+      ],
+      "centroids_above_surface": 6
+    },
+    "middle": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": [
+        8.779300147189815,
+        404.12489089928647
+      ],
+      "segment_midpoint_depth_median_m": 40.262175521688505,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1757.7548988959315
+      ],
+      "centroids_above_surface": 8
+    },
+    "high": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": [
+        131.667238325477,
+        578.7348202397533
+      ],
+      "segment_midpoint_depth_median_m": 233.418663654895,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1118.5712992974109
+      ],
+      "centroids_above_surface": 0
+    },
+    "structural_zero": {
+      "cases": 12,
+      "segment_midpoint_depth_range_m": null,
+      "segment_midpoint_depth_median_m": null,
+      "centroid_height_range_m": [
+        798.9794994981507,
+        1438.1630990966712
+      ],
+      "centroids_above_surface": 7
+    }
+  },
+  "source_tracer_segment_parity": true,
+  "scope": "Geometry-only metadata, no selection change. Cellheight and signed centroiddepth are not ray-segment depth; partialvoxels may haveabove-surfacecentroids. No physicaltopographyaccuracy claim."
+}

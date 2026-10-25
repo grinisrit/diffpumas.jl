@@ -1,0 +1,14 @@
+cpu_name = "znver4"
+corrections = "both disabled to reproduce historical benchmark configuration"
+Float64 = true
+forward_and_jacobian_threaded = false
+backend = "forwarddiff"
+julia_version = "1.11.7"
+quadrature_nodes = 32
+repetitions = 3
+host_logical_cpu_threads = 96
+Julia_threads_available = 3
+scope = "Warm individual-stage measurements, noMC/JIT in timed samples, smallgrid scaling only; cumulative process peak RSS not stage incremental memory; no large-scale capacity threshold."
+machine = "x86_64-linux-gnu"
+BLAS_threads = 1
+blas_configuration = "LBTConfig([ILP64] libopenblas64_.so)"

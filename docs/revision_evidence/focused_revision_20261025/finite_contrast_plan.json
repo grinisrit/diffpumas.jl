@@ -1,0 +1,22 @@
+{
+  "frozen_utc": "2026-10-25T10:10:55.800314+00:00",
+  "cases": {
+    "historical": 72,
+    "new": 48,
+    "lowfraction_control": 48
+  },
+  "selection": "Exactly all stored bin/cell/field cases and original finitecontrast windows; no outcome-based selection.",
+  "artifact": "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml",
+  "backend": "forwarddiff",
+  "nodes": 32,
+  "cpus": [
+    16,
+    17,
+    18
+  ],
+  "memory_gib": 8,
+  "wall_cap_seconds": 900,
+  "no_mc": true,
+  "no_refit": true,
+  "scope": "Finite-window deterministic secant versus local derivative; not a stochastic-gradient accuracy bound."
+}

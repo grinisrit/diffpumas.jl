@@ -1,0 +1,9 @@
+backend = "forwarddiff"
+all_stored_ad_consistent = true
+all_zero_perturbations_bitwise_equal = true
+scope = "Prespecified current-grid geometric/sensitivity-tail deterministic checks; finite-step/noise-aware evidence, noMC or domain-wide derivative certificate."
+steps_per_case = 6
+structural_zero_cases = 12
+cases = 48
+nonzero_cases = 36
+zero_geometry_disjoint_preflight = true

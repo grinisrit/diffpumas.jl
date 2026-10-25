@@ -1,0 +1,10 @@
+{
+  "reason": "Julia nested parts() callback captured outer ray cache binding; both first arms failed before checkpoint or optimization. Only callback names and fresh output/driver paths change.",
+  "failed_driver_sha256": "97bb6c521d6e540d33bbdcbea564334c35b0f9e517ec9c664bb1806fc0043388",
+  "v2_driver_sha256": "bd94b7758636190148656863176893879b554327d216c4959632cc309e0b774f",
+  "failed_arms": [
+    "baseline",
+    "rho2760"
+  ],
+  "scientific_protocol_unchanged": true
+}

@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "source_sha256": "9ebfc7e344b8bea8016ae4cbfffd3c97160c6675103bb74113bba21d8988fa16",
+  "tex_sha256": "0fd393f0747a5053f4b9a6b292a5264902821ebdf0fa08803a302031613bab2e",
+  "height_rows_checked": 6,
+  "arm_columns": 5,
+  "all600_means_and_L2_verified": true,
+  "all45_saved_states_verified": true,
+  "scope": "Exact validated density/support tables and rounding; finitebudget conditional responses only, no preferred physical cutoff or confidence interval.",
+  "previous_reviewed_tex_sha256": "cb5b57280003fe40ddcd1c766a01934becdbf9a72947b3202dc74acb0bd723cb",
+  "wording_followup": "gridplanes clarified as cell-centroid layers; no numeric change"
+}

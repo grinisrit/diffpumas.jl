@@ -1,0 +1,103 @@
+passed = true
+scope = "Independent full initial/final forward+Jacobian and objective/profile/branchPG check for five finite-budget sensitivity arms. NoMC/refitting, no stationarity or physical uncertainty certificate."
+
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.003311897033113187
+support_cells = 147
+objective = 100.59269073659428
+stage = "initial"
+data = 82.82648499678194
+prior = 17.766205739812342
+arm = "baseline"
+normalization = 3.54271929102373e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.003311897033113187
+support_cells = 147
+objective = 100.59269073659428
+stage = "final"
+data = 82.82648499678194
+prior = 17.766205739812342
+arm = "baseline"
+normalization = 3.54271929102373e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.6074215421324496
+support_cells = 147
+objective = 100.76679345237679
+stage = "initial"
+data = 83.00058771256444
+prior = 17.766205739812342
+arm = "rho2660"
+normalization = 3.2436107983839684e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.004007191147031186
+support_cells = 147
+objective = 100.72294606073339
+stage = "final"
+data = 83.26508765628347
+prior = 17.457858404449922
+arm = "rho2660"
+normalization = 3.245091491660803e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.8590340827525694
+support_cells = 147
+objective = 100.57655040569588
+stage = "initial"
+data = 82.81034466588355
+prior = 17.766205739812342
+arm = "rho2760"
+normalization = 3.867976956936859e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.0008690876693204785
+support_cells = 147
+objective = 100.53196307794596
+stage = "final"
+data = 82.44432857970436
+prior = 18.087634498241595
+arm = "rho2760"
+normalization = 3.8711782184166885e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.9
+support_cells = 205
+objective = 100.59269073659428
+stage = "initial"
+data = 82.82648499678194
+prior = 17.766205739812342
+arm = "cut400"
+normalization = 3.54271929102373e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.002539122424330298
+support_cells = 205
+objective = 84.77423137047357
+stage = "final"
+data = 69.29780877105154
+prior = 15.476422599422035
+arm = "cut400"
+normalization = 2.392149969028783e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.7198570537882718
+support_cells = 86
+objective = 134.21236455050592
+stage = "initial"
+data = 119.13727478079763
+prior = 15.075089769708296
+arm = "cut800"
+normalization = 5.034132575381631e6
+[[checks]]
+all1003_predictions_bitwise_equal = true
+branch_pg = 0.00028309988399222163
+support_cells = 86
+objective = 132.708389675639
+stage = "final"
+data = 119.1164812314741
+prior = 13.591908444164927
+arm = "cut800"
+normalization = 5.247109535951384e6
