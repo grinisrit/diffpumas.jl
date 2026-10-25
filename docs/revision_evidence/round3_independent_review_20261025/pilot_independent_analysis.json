@@ -1,0 +1,56 @@
+{
+  "passed": true,
+  "decision": "reject",
+  "gain": 0.004614523399788184,
+  "gain_SE": 0.2905889180194216,
+  "derivative_gain": -2.074252350884547e-06,
+  "derivative_gain_SE": 5.8764920215231955e-06,
+  "max_ad_fd_relative_error": 0.0001933481213495286,
+  "ladder_error": 0.00019334632394608564,
+  "reference_precision_unresolved": true,
+  "paired_margin_unresolved": true,
+  "q_domain": {
+    "heldout_below_training_min_count": 1,
+    "heldout_above_training_max_count": 0,
+    "training_q_min": 0.02499999999999999,
+    "heldout_q_min": 0.022805047490505177,
+    "heldout_q_max": 0.12185510779620082,
+    "training_q_max": 0.15000000000000002,
+    "heldout_case_count": 48,
+    "definition": "water mass divided by total rock+water column mass; remaining dry rock included; air excluded"
+  },
+  "aggregates": {
+    "control": {
+      "ratio": {
+        "median_absolute_bias": 0.02731333231085631,
+        "maximum_absolute_bias": 0.20360172891054318
+      },
+      "absolute": {
+        "median_absolute_bias": 0.10595611750216904,
+        "maximum_absolute_bias": 0.22149134161299355
+      },
+      "derivative": {
+        "median_absolute_bias": 4.849370663292721e-05,
+        "maximum_absolute_bias": 0.00040496696826177516
+      }
+    },
+    "candidate": {
+      "ratio": {
+        "median_absolute_bias": 0.027187294299781672,
+        "maximum_absolute_bias": 0.217296305174268
+      },
+      "absolute": {
+        "median_absolute_bias": 0.11458520325441857,
+        "maximum_absolute_bias": 0.23681851035648682
+      },
+      "derivative": {
+        "median_absolute_bias": 5.056795898381176e-05,
+        "maximum_absolute_bias": 0.0004141892623025405
+      }
+    }
+  },
+  "source_sha256": "e3c97502bbc5a6eabc7bda0e75a2bbfacb9463cbd9cf32b8986000e8b598d841",
+  "scope": "Independent locked arithmetic and raw pairing/q-domain audit; no uncertainty-coverage or physical-accuracy certification.",
+  "case_statistics_checked": 864,
+  "max_case_statistic_absolute_discrepancy": 4.510281037539698e-16
+}

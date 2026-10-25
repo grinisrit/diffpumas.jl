@@ -1,0 +1,77 @@
+passed = true
+scope = "Preselected deterministic flux/Jacobian/secant and exact serial MC seed replay; verification only, no independent new replicate or refitting"
+
+[[checks]]
+bin = 1
+histories = 4096
+field = 1
+replicate = 1
+seed = 2046203511
+exact_match = true
+
+    [checks.mc_replay]
+    hi = 0.00015552140655916314
+    wet = 0.00015385859216420763
+    dry = 0.00010806480373923097
+    lo = 0.00014927519345478971
+[[checks]]
+ad_fd_errors = [5.956172314001609e-5, 1.5738976925646913e-10, 1.9726540569196909e-10]
+flux = 0.00015540801654520471
+replicate = 1
+local_ad = 0.0001681383800303596
+matched_energy_secant = 0.00017156431680540455
+field = 1
+dry_flux = 0.00011344150714202334
+bin = 1
+seed = 2046203511
+arm = "control"
+cell = 59
+[[checks]]
+ad_fd_errors = [5.874816002181198e-5, 1.5996425377521873e-10, 2.2003498306349648e-10]
+flux = 0.0001560678244945418
+replicate = 1
+local_ad = 0.00017119023182014104
+matched_energy_secant = 0.00017469279306220908
+field = 1
+dry_flux = 0.00011344150714202334
+bin = 1
+seed = 2046203511
+arm = "candidate"
+cell = 59
+[[checks]]
+bin = 12
+histories = 4096
+field = 4
+replicate = 1
+seed = 2047306511
+exact_match = true
+
+    [checks.mc_replay]
+    hi = 4.19701327813492e-6
+    wet = 3.6225771528166736e-6
+    dry = 2.7250158601628147e-6
+    lo = 4.074540634573706e-6
+[[checks]]
+ad_fd_errors = [4.5804443032689315e-5, 4.13108219413415e-5, 2.141108581626485e-9]
+flux = 4.207152575213636e-6
+replicate = 1
+local_ad = 7.361116436542466e-6
+matched_energy_secant = 7.551092084552449e-6
+field = 4
+dry_flux = 2.4654471075646678e-6
+bin = 12
+seed = 2047306511
+arm = "control"
+cell = 58
+[[checks]]
+ad_fd_errors = [4.548027259048956e-5, 4.1018337268064055e-5, 2.102003277474507e-9]
+flux = 4.2226908727844425e-6
+replicate = 1
+local_ad = 7.440986669571109e-6
+matched_energy_secant = 7.633542845223442e-6
+field = 4
+dry_flux = 2.4654471075646678e-6
+bin = 12
+seed = 2047306511
+arm = "candidate"
+cell = 58

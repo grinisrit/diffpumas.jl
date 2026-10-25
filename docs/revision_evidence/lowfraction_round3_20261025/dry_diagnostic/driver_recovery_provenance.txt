@@ -1,0 +1,1 @@
+Exact driver recovered by reversing subsequent q-only metadata additions. SHA256 4b7da4140c5d950a82d277c9d6a3a9444e8daa413a9a67dc9a63e262adde65ab equals original execution.json driver identity. Old records unchanged.

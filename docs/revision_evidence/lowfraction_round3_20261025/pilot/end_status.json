@@ -1,0 +1,22 @@
+{
+  "ended_utc": "2026-10-25T00:43:42.513325+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "00ed114a15967a5a90d8bf700154f4154b11c2c32cd61afa9c3ceae3b7a5c7db",
+    "results/ad_fd_steps.csv": "f701be9460570f7ccdaf4bc95f7d18b73b57ce0e2fa57e3955705e79fc081e01",
+    "results/candidate_frozen_before_validation.toml": "2f7619ccab5c7ca598dbbd29e41339337e5d5939466a1c071926340a67128b22",
+    "results/column_fraction_domain.toml": "c37f8eedb762545d2d8adae5709e229562631e83e583e1c4409eafd68f0437d1",
+    "results/dry_quadrature_domain.csv": "08fc5c569e1ac6c837e17171ee09e626bba2a2bb30a7caf27993bbdddef72dea",
+    "results/heldout_derivatives.csv": "09bca53e976758bd2cc8d756ddc23520bfecaf7ea8a1c2ae97cc689d6c5f9fa5",
+    "results/heldout_flux.csv": "821ce9d9e8eff1849d6bc53949a636083eaecbcfc76a58db846d57d259543d53",
+    "results/predraw_provenance.toml": "60a3311087b6df2033939b335a05d09caa56af71b8b022952387d37e11c4942f",
+    "results/preregistered_plan.toml": "0013eb3b832166b98a442bca30555b6feae13707de77832fa8919812b3b8bb3d",
+    "results/training.csv": "f343599ba03f037506a822930be7e3f80affc3a9d6dddceb005c426ecab98e9e",
+    "results/training_fit_structured.toml": "1bbabebaf6dcc9ebcea5621037d9fa9e62267a5ff1cecee4e3b0159b8fed563b",
+    "run.log": "d54e1f3ffdb13f0b3368697fef002c1bb4e542d0973c43c54ca47ee78daba75b"
+  }
+}

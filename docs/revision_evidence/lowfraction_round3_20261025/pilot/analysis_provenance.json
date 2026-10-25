@@ -1,0 +1,12 @@
+{
+  "analysis_helper_sha256": "cd56d2a93fbde7fe6e3e885aab265e8cc123e79488f30e2a0d13cbfcea72a540",
+  "analysis_output_sha256": "42cfd8be011dc7e7793865984b78050396077783754acb19d3298666e8be5516",
+  "raw_inputs_sha256": {
+    "results/heldout_flux.csv": "821ce9d9e8eff1849d6bc53949a636083eaecbcfc76a58db846d57d259543d53",
+    "results/training.csv": "f343599ba03f037506a822930be7e3f80affc3a9d6dddceb005c426ecab98e9e",
+    "results/heldout_derivatives.csv": "09bca53e976758bd2cc8d756ddc23520bfecaf7ea8a1c2ae97cc689d6c5f9fa5",
+    "results/dry_quadrature_domain.csv": "08fc5c569e1ac6c837e17171ee09e626bba2a2bb30a7caf27993bbdddef72dea",
+    "results/ad_fd_steps.csv": "f701be9460570f7ccdaf4bc95f7d18b73b57ce0e2fa57e3955705e79fc081e01"
+  },
+  "scope": "Frozen preregistered analysis applied after completed run; no coefficient adoption or retuning."
+}

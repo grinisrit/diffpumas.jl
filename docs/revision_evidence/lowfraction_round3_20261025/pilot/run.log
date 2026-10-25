@@ -1,0 +1,14 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7], "address_space_bytes": 17179869184, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "8,9,10,11,12,13,14,15", "timeout", "--kill-after=30", "5400", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "dev/lowfraction_round3.jl", "pilot", "examples/data/lowfraction_round3_20261025/results", "examples/data/revision_physics_v2_final_20261023/materials.pumas"]}
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Tracing straight-line geometry on the grid volume...
+  [1/18] theta=0.0 deg phi=37.5 deg R=1390.6 m
+  [18/18] theta=75.0 deg phi=277.5 deg R=4752.1 m
+Tracing straight-line geometry on the grid volume...
+  [1/12] theta=7.0 deg phi=19.0 deg R=1320.2 m
+  [12/12] theta=55.0 deg phi=259.0 deg R=2197.5 m
+Tracing straight-line geometry on the grid volume...
+  [1/12] theta=11.0 deg phi=61.0 deg R=1324.6 m
+  [12/12] theta=65.0 deg phi=301.0 deg R=2711.1 m

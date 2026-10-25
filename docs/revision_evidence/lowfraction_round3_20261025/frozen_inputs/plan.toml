@@ -1,0 +1,25 @@
+status = "prepared, not launched; root convergence gate required"
+train_zenith = [7.0, 23.0, 39.0, 55.0]
+train_azimuth = [19.0, 139.0, 259.0]
+train_uniform = [0.025, 0.075, 0.15]
+test_zenith = [11.0, 29.0, 47.0, 65.0]
+test_azimuth = [61.0, 181.0, 301.0]
+train_seed = 2036102501
+test_seed = 2046102501
+ntrain = 4096
+nmc = 1024
+replicates = 8
+ridge = 1e-6
+primary_altitude_m = 30000.0
+csda_nodes = 32
+scope = "fixed straight paths, stochastic energy loss, scattering disabled; new two-beta material correction only; historical dry correction frozen"
+control = "immutable surrogate_v2/production/material_calibration.toml"
+fields = ["uniform0.04", "uniform0.11", "0.015+0.12sin(x/1130+z/710+0.37)^2", "shifted lens0.14 background0.01 z>650 radius1370 center(210,-170)"]
+derivative = "fixed middle sorted crossed cell; local material mass-fraction derivative; matched-energy MC/CSDA secant width0.02, local AD versus centralFD h1e-4,1e-5,1e-6; never substitute local AD for finite-contrast target"
+seed_policy = "training base+10000bin; heldout base+100000bin+1000field+10rep; transport seed=energyseed+1; dry/wet/lo/hi share stream within replicate, independently initialized across cases; fields distinct independent streams"
+invalid_policy = "no ray replacement or pruning; invalid geometry/no crossed cells/nonpositive or nonfinite reference => entire pilot unresolved; all outcomes retained"
+uncertainty = "Primary ratio residual=(CSDAwet/CSDA dry)/(meanMCwet/meanMCdry)-1; primary absolute residual=CSDAwet/meanMCwet-1; primary derivative bias=mean(CSDAsecant-MCsecant). Every case absolute-bias change, median ratio gain, and median derivative-bias gain evaluated on full8replicates and each delete-one7replicate sample. Paired jackknifeSE=sqrt(7/8 sum((leave-one statistic -mean leave-one statistic)^2)); whole-replicate removal preserves arm, numerator/denominator and cross-case covariance. Reference mean<=5SE, nonworsening change margin within2SE, gain margin within2SE =>unresolved. Zero/nonfinite denominators, missing/duplicate cases/replicates or mismatched seeds/references =>unresolved. SE descriptive conditional only; no coverage claim."
+decision = "Screening only; branch order: reject if material ratio median gain+2SE<0.30, or any absolute flux/derivative absolute-bias worsening>2pairedSE. Otherwise unresolved if AD/FD maximum>=1e-4 or FD ladder max pairwise difference/maxabsFD>=1e-4 (finite steps may cross known interpolation kinks; this does not establish incorrect AD), or any denominator/reference/nonworsening margin unresolved, ratio median gain-0.30<=2SE, or derivative median absolute-bias gain<=2SE. Otherwise promising screening only, independent confirmation required. Individual residual bias-sign uncertainty is diagnostic only and does not determine classification. Derivative median gain>2SE is deliberately stronger than nonworsening: improvement must be established for a promising screen. ZeroSE cannot certify systematic correctness; identical paired arms cannot screen promising and fail the30% improvement rule if its zero gain is precise. No global adoption, no automatic second run, no retuning on heldout."
+resources = "CPU8-15, 8 Julia threads,16GiB max; tmux bounded runner; root may explicitly reallocate only after convergence"
+histories = 1769472
+runtime_basis = "historical production688128 histories/1514.5s on4CPU ~454hist/s; this design196608 training+1572864 validation=1769472 ~65min at4CPU, optimistic33min8CPU; budget90min8CPU including JIT/diagnostics, scaling uncertain"

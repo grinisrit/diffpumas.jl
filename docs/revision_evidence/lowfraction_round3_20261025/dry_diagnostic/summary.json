@@ -1,0 +1,7 @@
+{
+  "worst_ray_slant_m": 4752.067752990385,
+  "worst_ray_32vs256_relative": -0.0007932118184531545,
+  "max_abs_32vs256_relative": 0.0009051069057134375,
+  "scope": "Deterministic quadrature/domain diagnosis only; no MC truth or source-boundary validation. Geometric extrapolation identified, causal attribution unproven.",
+  "failed_first_attempt": "examples/data/lowfraction_round3_drydiag_20261025; parse failure before calculations, preserved immutable"
+}

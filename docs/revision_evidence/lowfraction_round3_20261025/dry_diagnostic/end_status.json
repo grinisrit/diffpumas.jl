@@ -1,0 +1,13 @@
+{
+  "ended_utc": "2026-10-24T23:53:21.928734+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "c8bb2bb356ec143e2d03b22ee30b79cdc5ba95406ec93cb9a27c78d734fce197",
+    "results/dry_quadrature_domain.csv": "08fc5c569e1ac6c837e17171ee09e626bba2a2bb30a7caf27993bbdddef72dea",
+    "run.log": "3ff5eafd7244171c5a478a2a643f46dc6b57bba3ec1d485155eac446659f5ce8"
+  }
+}

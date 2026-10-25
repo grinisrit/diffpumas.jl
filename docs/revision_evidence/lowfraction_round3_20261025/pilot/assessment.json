@@ -1,0 +1,6803 @@
+{
+  "local_derivative_checks": [
+    {
+      "bin": 1,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.874816002181198e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.5996425377521873e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.2003498306349648e-10
+        }
+      ],
+      "maximum_error": 5.874816002181198e-05,
+      "finest_error": 2.2003498306349648e-10,
+      "ladder_error": 5.874831997666814e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 1,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.956172314001609e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.5738976925646913e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.9726540569196909e-10
+        }
+      ],
+      "maximum_error": 5.956172314001609e-05,
+      "finest_error": 1.9726540569196909e-10,
+      "ladder_error": 5.956188052041094e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 1,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4410353785771487e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.4357636861025282e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.554510669687438e-09
+        }
+      ],
+      "maximum_error": 1.4410353785771487e-05,
+      "finest_error": 1.554510669687438e-09,
+      "ladder_error": 1.4411908274040126e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 1,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4636122182912781e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.5745660261625147e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.4991275725622828e-09
+        }
+      ],
+      "maximum_error": 1.4636122182912781e-05,
+      "finest_error": 1.4991275725622828e-09,
+      "ladder_error": 1.463762128854393e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 1,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.302949187395308e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 5.150770818228152e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.6528810906189047e-09
+        }
+      ],
+      "maximum_error": 3.302949187395308e-07,
+      "finest_error": 1.6528810906189047e-09,
+      "ladder_error": 3.319477992842115e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 1,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.354296724285582e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.3769691377079695e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.6171266880631398e-09
+        }
+      ],
+      "maximum_error": 3.354296724285582e-07,
+      "finest_error": 1.6171266880631398e-09,
+      "ladder_error": 3.3704679857418907e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 1,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.880927810362466e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.3344565822192633e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.2377375714843183e-09
+        }
+      ],
+      "maximum_error": 2.880927810362466e-06,
+      "finest_error": 3.2377375714843183e-09,
+      "ladder_error": 2.8810612556362403e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 1,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.924396024861971e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.3856078595879902e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.2622574333422483e-09
+        }
+      ],
+      "maximum_error": 2.924396024861971e-06,
+      "finest_error": 3.2622574333422483e-09,
+      "ladder_error": 2.9245345852427233e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.854499313378987e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.214923648874011e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.87787140034688e-10
+        }
+      ],
+      "maximum_error": 5.854499313378987e-05,
+      "finest_error": 3.87787140034688e-10,
+      "ladder_error": 5.85453808982269e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.9366964877651024e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.265592001618117e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.0405538748354496e-10
+        }
+      ],
+      "maximum_error": 5.9366964877651024e-05,
+      "finest_error": 3.0405538748354496e-10,
+      "ladder_error": 5.936729141746436e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4482926322551011e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.9926317353703705e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.1557150254147836e-09
+        }
+      ],
+      "maximum_error": 1.4482926322551011e-05,
+      "finest_error": 1.1557150254147836e-09,
+      "ladder_error": 1.4481770624262397e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4713299312463335e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.0186637487703577e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.0569344275478862e-09
+        }
+      ],
+      "maximum_error": 1.4713299312463335e-05,
+      "finest_error": 1.0569344275478862e-09,
+      "ladder_error": 1.4712242393585663e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 7.3457823559185014e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.6656133730255124e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 9.356126319288536e-10
+        }
+      ],
+      "maximum_error": 7.3457823559185014e-09,
+      "finest_error": 9.356126319288536e-10,
+      "ladder_error": 8.281394980974548e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 7.52485683708701e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.74593638557164e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 8.437637102467881e-10
+        }
+      ],
+      "maximum_error": 7.52485683708701e-09,
+      "finest_error": 8.437637102467881e-10,
+      "ladder_error": 8.368620540984596e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.0989218796564933e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.6076786598951065e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 5.597001202709601e-10
+        }
+      ],
+      "maximum_error": 3.0989218796564933e-06,
+      "finest_error": 5.597001202709601e-10,
+      "ladder_error": 3.0994815780422975e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 2,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.1454717407933465e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.7049916636828956e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.955314662579339e-10
+        }
+      ],
+      "maximum_error": 3.1454717407933465e-06,
+      "finest_error": 4.955314662579339e-10,
+      "ladder_error": 3.145967270700924e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.841588014086342e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.2065145846400634e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.4174573066263102e-09
+        }
+      ],
+      "maximum_error": 5.841588014086342e-05,
+      "finest_error": 2.4174573066263102e-09,
+      "ladder_error": 5.841575949645291e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.914614273751434e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.291938284852734e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.3557326710360398e-09
+        }
+      ],
+      "maximum_error": 5.914614273751434e-05,
+      "finest_error": 2.3557326710360398e-09,
+      "ladder_error": 5.9146013551327154e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.3830575707813918e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.1907789690232388e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.64264338462129e-11
+        }
+      ],
+      "maximum_error": 1.3830575707813918e-05,
+      "finest_error": 7.64264338462129e-11,
+      "ladder_error": 1.3830652133190744e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4029671610458039e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.0333716320623602e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.725754930839686e-10
+        }
+      ],
+      "maximum_error": 1.4029671610458039e-05,
+      "finest_error": 1.725754930839686e-10,
+      "ladder_error": 1.4029844183529945e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.3129583223033246e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.2791658520688448e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.2706551569498254e-09
+        }
+      ],
+      "maximum_error": 1.3129583223033246e-06,
+      "finest_error": 1.2706551569498254e-09,
+      "ladder_error": 1.3128304058860505e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.3303620127084978e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.2127746761714804e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.1393969732061909e-09
+        }
+      ],
+      "maximum_error": 1.3303620127084978e-06,
+      "finest_error": 1.1393969732061909e-09,
+      "ladder_error": 1.3302407354022088e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.172756908218425e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.884887032517865e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.5283412053193674e-10
+        }
+      ],
+      "maximum_error": 5.172756908218425e-05,
+      "finest_error": 2.5283412053193674e-10,
+      "ladder_error": 5.172782190322629e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 3,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.24451674554894e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.9210071953385284e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.66715735687487e-10
+        }
+      ],
+      "maximum_error": 5.24451674554894e-05,
+      "finest_error": 3.66715735687487e-10,
+      "ladder_error": 5.244553415199262e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 4,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4717922277076595e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.725467047103457e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.6491323322451164e-10
+        }
+      ],
+      "maximum_error": 1.4717922277076595e-05,
+      "finest_error": 3.6491323322451164e-10,
+      "ladder_error": 1.4718194819769983e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 4,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4933880985200492e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.7309122109408863e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.8757759590884046e-10
+        }
+      ],
+      "maximum_error": 1.4933880985200492e-05,
+      "finest_error": 3.8757759590884046e-10,
+      "ladder_error": 1.4934154072343274e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 4,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 0.0001901793647431822
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.9800542894165152e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.7389404514630812e-09
+        }
+      ],
+      "maximum_error": 0.0001901793647431822,
+      "finest_error": 1.7389404514630812e-09,
+      "ladder_error": 0.0001901776261334383,
+      "stable_ladder": false,
+      "tag": "larger-step crossing candidate",
+      "status": "unresolved"
+    },
+    {
+      "bin": 4,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 0.0001933481213495286
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.0297111367529336e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.7977510315054188e-09
+        }
+      ],
+      "maximum_error": 0.0001933481213495286,
+      "finest_error": 1.7977510315054188e-09,
+      "ladder_error": 0.00019334632394608564,
+      "stable_ladder": false,
+      "tag": "larger-step crossing candidate",
+      "status": "unresolved"
+    },
+    {
+      "bin": 4,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.21059533816997e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.3311349119260425e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 5.932702165838593e-10
+        }
+      ],
+      "maximum_error": 2.21059533816997e-05,
+      "finest_error": 5.932702165838593e-10,
+      "ladder_error": 2.2106086492248295e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 4,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.247272147367353e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.2987418736318244e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.6010183527676005e-10
+        }
+      ],
+      "maximum_error": 2.247272147367353e-05,
+      "finest_error": 4.6010183527676005e-10,
+      "ladder_error": 2.2472851344942264e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 4,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.717040783984917e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 9.206897279247801e-12
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 6.751706002053224e-10
+        }
+      ],
+      "maximum_error": 2.717040783984917e-07,
+      "finest_error": 6.751706002053224e-10,
+      "ladder_error": 2.717132852932694e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 4,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.7601775833530633e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 6.34194816918053e-12
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.571159689967846e-10
+        }
+      ],
+      "maximum_error": 2.7601775833530633e-07,
+      "finest_error": 7.571159689967846e-10,
+      "ladder_error": 2.76024100281725e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 5,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4735853766618946e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.7159627432281957e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.359640009317521e-11
+        }
+      ],
+      "maximum_error": 1.4735853766618946e-05,
+      "finest_error": 4.359640009317521e-11,
+      "ladder_error": 1.4736125358891066e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 5,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4952947165403141e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.7442402298773955e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.0030573425812164e-10
+        }
+      ],
+      "maximum_error": 1.4952947165403141e-05,
+      "finest_error": 1.0030573425812164e-10,
+      "ladder_error": 1.4953221585322682e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 5,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 0.00014309582788822367
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.96622432735876e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.728254756242103e-08
+        }
+      ],
+      "maximum_error": 0.00014309582788822367,
+      "finest_error": 7.728254756242103e-08,
+      "ladder_error": 0.000143173099376976,
+      "stable_ladder": false,
+      "tag": "larger-step crossing candidate",
+      "status": "unresolved"
+    },
+    {
+      "bin": 5,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 0.00014549926071254262
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.0160435750945935e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.860292419072605e-08
+        }
+      ],
+      "maximum_error": 0.00014549926071254262,
+      "finest_error": 7.860292419072605e-08,
+      "ladder_error": 0.00014557785220006597,
+      "stable_ladder": false,
+      "tag": "larger-step crossing candidate",
+      "status": "unresolved"
+    },
+    {
+      "bin": 5,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.854469355595618e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.4843044533028336e-07
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 5.919732905265215e-10
+        }
+      ],
+      "maximum_error": 3.854469355595618e-06,
+      "finest_error": 5.919732905265215e-10,
+      "ladder_error": 3.8538773845864845e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 5,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.9131376427901435e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.5067549733197317e-07
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 6.567418030434997e-10
+        }
+      ],
+      "maximum_error": 3.9131376427901435e-06,
+      "finest_error": 6.567418030434997e-10,
+      "ladder_error": 3.91248090355659e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 5,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.683530572213777e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.3247694395090542e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.933398045134853e-10
+        }
+      ],
+      "maximum_error": 2.683530572213777e-07,
+      "finest_error": 4.933398045134853e-10,
+      "ladder_error": 2.6884639689350195e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 5,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.7258451475654784e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.3839308805606405e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.862178014601769e-10
+        }
+      ],
+      "maximum_error": 2.7258451475654784e-07,
+      "finest_error": 4.862178014601769e-10,
+      "ladder_error": 2.7307073242547254e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.3067516913443422e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.939944511123155e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 5.93222674244122e-10
+        }
+      ],
+      "maximum_error": 1.3067516913443422e-05,
+      "finest_error": 5.93222674244122e-10,
+      "ladder_error": 1.3067566312243006e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.322813287536809e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 5.452117383062842e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 6.45429264460668e-10
+        }
+      ],
+      "maximum_error": 1.322813287536809e-05,
+      "finest_error": 6.45429264460668e-10,
+      "ladder_error": 1.3228187395820706e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 4.2713235833050634e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.113762144882758e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.2885802729798084e-09
+        }
+      ],
+      "maximum_error": 4.2713235833050634e-05,
+      "finest_error": 1.2885802729798084e-09,
+      "ladder_error": 4.271319469718631e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 4.331788723843387e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.66433214898707e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.348388932671776e-09
+        }
+      ],
+      "maximum_error": 4.331788723843387e-05,
+      "finest_error": 1.348388932671776e-09,
+      "ladder_error": 4.331784059713287e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 9.04923010768938e-08
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 5.040900271543454e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.6261157617430195e-10
+        }
+      ],
+      "maximum_error": 9.04923010768938e-08,
+      "finest_error": 4.6261157617430195e-10,
+      "ladder_error": 9.095491261120532e-08,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 9.173335050642361e-08
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 5.106827997409049e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.1305491098604064e-10
+        }
+      ],
+      "maximum_error": 9.173335050642361e-08,
+      "finest_error": 4.1305491098604064e-10,
+      "ladder_error": 9.214640537951873e-08,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.009643011689157e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.165400402847357e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 6.082439773802459e-10
+        }
+      ],
+      "maximum_error": 6.009643011689157e-09,
+      "finest_error": 6.082439773802459e-10,
+      "ladder_error": 6.126183051273529e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 6,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.123183431057872e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.1780683101898043e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 5.507938014478618e-10
+        }
+      ],
+      "maximum_error": 6.123183431057872e-09,
+      "finest_error": 5.507938014478618e-10,
+      "ladder_error": 6.2409902613554995e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.691993676601246e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 9.331020240008339e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.2054046327613423e-09
+        }
+      ],
+      "maximum_error": 3.691993676601246e-05,
+      "finest_error": 2.2054046327613423e-09,
+      "ladder_error": 3.6920030072769855e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.742173610277533e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 9.5998831775618e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.3005292030625968e-09
+        }
+      ],
+      "maximum_error": 3.742173610277533e-05,
+      "finest_error": 2.3005292030625968e-09,
+      "ladder_error": 3.7421832098014664e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 4.3462213094424124e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.019981496186867e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.9344721487944334e-10
+        }
+      ],
+      "maximum_error": 4.3462213094424124e-05,
+      "finest_error": 2.9344721487944334e-10,
+      "ladder_error": 4.346213289809482e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 4.4145265060195314e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.768122223493055e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.3633202769355456e-10
+        }
+      ],
+      "maximum_error": 4.4145265060195314e-05,
+      "finest_error": 2.3633202769355456e-10,
+      "ladder_error": 4.4145177382843784e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.0201328782889241e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 9.341665959242451e-06
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.664382999288116e-07
+        }
+      ],
+      "maximum_error": 1.0201328782889241e-05,
+      "finest_error": 7.664382999288116e-07,
+      "ladder_error": 9.434897714227394e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.0362392822022549e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 9.489033215346425e-06
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.785166350497676e-07
+        }
+      ],
+      "maximum_error": 1.0362392822022549e-05,
+      "finest_error": 7.785166350497676e-07,
+      "ladder_error": 9.583883648185629e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.9877544301475755e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.378292525696652e-07
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.141291931462182e-09
+        }
+      ],
+      "maximum_error": 1.9877544301475755e-06,
+      "finest_error": 2.141291931462182e-09,
+      "ladder_error": 1.989895717822675e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 7,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.0156574794277623e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.3978516097985828e-07
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.272947378562309e-09
+        }
+      ],
+      "maximum_error": 2.0156574794277623e-06,
+      "finest_error": 2.272947378562309e-09,
+      "ladder_error": 2.017930422224841e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.6021692918019146e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.646902258522142e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.0938749730768303e-09
+        }
+      ],
+      "maximum_error": 3.6021692918019146e-05,
+      "finest_error": 1.0938749730768303e-09,
+      "ladder_error": 3.610815882584379e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.6438751717902375e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.746900397396979e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.1830854292859097e-09
+        }
+      ],
+      "maximum_error": 3.6438751717902375e-05,
+      "finest_error": 1.1830854292859097e-09,
+      "ladder_error": 3.6526217534615025e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.071036907052631e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.2529164414170988e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.3936746605811631e-09
+        }
+      ],
+      "maximum_error": 3.071036907052631e-05,
+      "finest_error": 1.3936746605811631e-09,
+      "ladder_error": 4.3239148709434e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.111322811938638e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.269361807310729e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.4441826565076537e-09
+        }
+      ],
+      "maximum_error": 3.111322811938638e-05,
+      "finest_error": 1.4441826565076537e-09,
+      "ladder_error": 4.380645125305891e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.600913071219507e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 7.279137833248809e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.9083876341966006e-09
+        }
+      ],
+      "maximum_error": 6.600913071219507e-05,
+      "finest_error": 1.9083876341966006e-09,
+      "ladder_error": 6.60092034987685e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.678082610827935e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 7.097309038059869e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.925708549066652e-09
+        }
+      ],
+      "maximum_error": 6.678082610827935e-05,
+      "finest_error": 1.925708549066652e-09,
+      "ladder_error": 6.67808970766301e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.0185212987643317e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.79665859236152e-12
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.4849460012541193e-09
+        }
+      ],
+      "maximum_error": 1.0185212987643317e-06,
+      "finest_error": 2.4849460012541193e-09,
+      "ladder_error": 1.018512502114699e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 8,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.0308388310186795e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.535868472026736e-12
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.4220372044004242e-09
+        }
+      ],
+      "maximum_error": 1.0308388310186795e-06,
+      "finest_error": 2.4220372044004242e-09,
+      "ladder_error": 1.0308433668824757e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.527388069906493e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.25327706403907e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.0096920799286793e-09
+        }
+      ],
+      "maximum_error": 3.527388069906493e-05,
+      "finest_error": 2.0096920799286793e-09,
+      "ladder_error": 3.5273848167441845e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.562693724519498e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.4064770754559826e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.9504587994197087e-09
+        }
+      ],
+      "maximum_error": 3.562693724519498e-05,
+      "finest_error": 1.9504587994197087e-09,
+      "ladder_error": 3.562690318163785e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.6786251992558213e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.3842217855549266e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.1686151714895044e-09
+        }
+      ],
+      "maximum_error": 2.6786251992558213e-05,
+      "finest_error": 1.1686151714895044e-09,
+      "ladder_error": 4.062809906697186e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.7097631620202394e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.4003216370184798e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.2163859781029486e-09
+        }
+      ],
+      "maximum_error": 2.7097631620202394e-05,
+      "finest_error": 1.2163859781029486e-09,
+      "ladder_error": 4.1100468536388496e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.803362803712505e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.4484761999119536e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.2022030437142474e-10
+        }
+      ],
+      "maximum_error": 6.803362803712505e-05,
+      "finest_error": 1.2022030437142474e-10,
+      "ladder_error": 6.80335078249997e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.875403120289626e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.4641917197698864e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.4743345111670964e-10
+        }
+      ],
+      "maximum_error": 6.875403120289626e-05,
+      "finest_error": 1.4743345111670964e-10,
+      "ladder_error": 6.875388377958177e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4143214819707388e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.81861976424324e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.8723442120659894e-09
+        }
+      ],
+      "maximum_error": 1.4143214819707388e-06,
+      "finest_error": 2.8723442120659894e-09,
+      "ladder_error": 1.4114491418128406e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 9,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.4295281362681315e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.856220437681158e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.022505479368358e-09
+        }
+      ],
+      "maximum_error": 1.4295281362681315e-06,
+      "finest_error": 3.022505479368358e-09,
+      "ladder_error": 1.4265056351003842e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 10,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 0.00011354366325220935
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 9.211917877455853e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.153391866589961e-10
+        }
+      ],
+      "maximum_error": 0.00011354366325220935,
+      "finest_error": 7.153391866589961e-10,
+      "ladder_error": 0.00011354437851017377,
+      "stable_ladder": false,
+      "tag": "larger-step crossing candidate",
+      "status": "unresolved"
+    },
+    {
+      "bin": 10,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 0.00011472600894982694
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 9.335671195023044e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.591232273361279e-10
+        }
+      ],
+      "maximum_error": 0.00011472600894982694,
+      "finest_error": 7.591232273361279e-10,
+      "ladder_error": 0.0001147267679859631,
+      "stable_ladder": false,
+      "tag": "larger-step crossing candidate",
+      "status": "unresolved"
+    },
+    {
+      "bin": 10,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.123368217397762e-08
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.0004383793741863e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 6.91291995522899e-10
+        }
+      ],
+      "maximum_error": 2.123368217397762e-08,
+      "finest_error": 6.91291995522899e-10,
+      "ladder_error": 2.054239019265551e-08,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 10,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.131085167727067e-08
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.0075997433389817e-09
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 6.911812616282446e-10
+        }
+      ],
+      "maximum_error": 2.131085167727067e-08,
+      "finest_error": 6.911812616282446e-10,
+      "ladder_error": 2.0619670429894356e-08,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 10,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.265365662576376e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.9849409879300063e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.184854294500697e-11
+        }
+      ],
+      "maximum_error": 5.265365662576376e-05,
+      "finest_error": 7.184854294500697e-11,
+      "ladder_error": 5.2653728470523614e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 10,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 5.3299753380812134e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 5.019411486995358e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 7.65008229922051e-11
+        }
+      ],
+      "maximum_error": 5.3299753380812134e-05,
+      "finest_error": 7.65008229922051e-11,
+      "ladder_error": 5.329982987755765e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 10,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 8.139570675997934e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.418847320522745e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.672353340688444e-08
+        }
+      ],
+      "maximum_error": 8.139570675997934e-07,
+      "finest_error": 1.672353340688444e-08,
+      "ladder_error": 7.972335475254709e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 10,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 8.221879571420606e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.506025286067538e-08
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.6920740402020703e-08
+        }
+      ],
+      "maximum_error": 8.221879571420606e-07,
+      "finest_error": 1.6920740402020703e-08,
+      "ladder_error": 8.052672303657577e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.8515222165647843e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.089161339651462e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.466931678857025e-09
+        }
+      ],
+      "maximum_error": 1.8515222165647843e-07,
+      "finest_error": 2.466931678857025e-09,
+      "ladder_error": 1.8494330556115095e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 1.865230618048335e-07
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.0033878715407933e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.7034566974726777e-09
+        }
+      ],
+      "maximum_error": 1.865230618048335e-07,
+      "finest_error": 2.7034566974726777e-09,
+      "ladder_error": 1.8632272305500708e-07,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 8.934826806734714e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 8.015780501887098e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.086308206446273e-09
+        }
+      ],
+      "maximum_error": 8.934826806734714e-09,
+      "finest_error": 3.086308206446273e-09,
+      "ladder_error": 8.133248763065438e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 8.948851750386617e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 7.892891517845116e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 3.1786193554989124e-09
+        }
+      ],
+      "maximum_error": 8.948851750386617e-09,
+      "finest_error": 3.1786193554989124e-09,
+      "ladder_error": 8.15956260504236e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.008378323954926e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 7.17110855355468e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.90800747280961e-09
+        }
+      ],
+      "maximum_error": 2.008378323954926e-06,
+      "finest_error": 1.90800747280961e-09,
+      "ladder_error": 2.0102863275957345e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 2.023076571277981e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 7.072167013486763e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.0605628358918997e-09
+        }
+      ],
+      "maximum_error": 2.023076571277981e-06,
+      "finest_error": 2.0605628358918997e-09,
+      "ladder_error": 2.0251371299451962e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.050585722178026e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.200937780060937e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.8021683282857674e-09
+        }
+      ],
+      "maximum_error": 6.050585722178026e-05,
+      "finest_error": 1.8021683282857674e-09,
+      "ladder_error": 6.050765928106681e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 11,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 6.0912569090832925e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 3.391956541466088e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.6430443738064999e-09
+        }
+      ],
+      "maximum_error": 6.0912569090832925e-05,
+      "finest_error": 1.6430443738064999e-09,
+      "ladder_error": 6.091421203512468e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 1,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.700399806322184e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.495922257619942e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 4.746362697791889e-11
+        }
+      ],
+      "maximum_error": 3.700399806322184e-09,
+      "finest_error": 4.746362697791889e-11,
+      "ladder_error": 3.725359028806024e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 1,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.6194395992336427e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 2.9007516528002015e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.3903760449602298e-11
+        }
+      ],
+      "maximum_error": 3.6194395992336427e-09,
+      "finest_error": 2.3903760449602298e-11,
+      "ladder_error": 3.648447115656654e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 2,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 4.049901250623275e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.6529132452471442e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.393488093323158e-09
+        }
+      ],
+      "maximum_error": 4.049901250623275e-09,
+      "finest_error": 1.393488093323158e-09,
+      "ladder_error": 5.443389338302943e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 2,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 3.977794550326509e-09
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 1.6602582961935255e-10
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.402810419699748e-09
+        }
+      ],
+      "maximum_error": 3.977794550326509e-09,
+      "finest_error": 1.402810419699748e-09,
+      "ladder_error": 5.380604964446165e-09,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 3,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 7.842496770409162e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 5.2301910395043276e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 1.0011652901225895e-09
+        }
+      ],
+      "maximum_error": 7.842496770409162e-06,
+      "finest_error": 1.0011652901225895e-09,
+      "ladder_error": 7.84349792784765e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 3,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 7.897841629077438e-06
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.716218540232929e-11
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 9.917434204777819e-10
+        }
+      ],
+      "maximum_error": 7.897841629077438e-06,
+      "finest_error": 9.917434204777819e-10,
+      "ladder_error": 7.898833364665283e-06,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 4,
+      "arm": "candidate",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 4.548027259048956e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.1018337268064055e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.102003277474507e-09
+        }
+      ],
+      "maximum_error": 4.548027259048956e-05,
+      "finest_error": 2.102003277474507e-09,
+      "ladder_error": 4.5478170682807346e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    },
+    {
+      "bin": 12,
+      "field": 4,
+      "arm": "control",
+      "per_step": [
+        {
+          "step": 0.0001,
+          "relative_error": 4.5804443032689315e-05
+        },
+        {
+          "step": 1e-05,
+          "relative_error": 4.13108219413415e-05
+        },
+        {
+          "step": 1e-06,
+          "relative_error": 2.141108581626485e-09
+        }
+      ],
+      "maximum_error": 4.5804443032689315e-05,
+      "finest_error": 2.141108581626485e-09,
+      "ladder_error": 4.580230202217539e-05,
+      "stable_ladder": true,
+      "tag": "stable ladder",
+      "status": "resolved"
+    }
+  ],
+  "aggregates": {
+    "control": {
+      "ratio": {
+        "median_absolute_bias": 0.02731333231085642,
+        "maximum_absolute_bias": 0.20360172891054318
+      },
+      "absolute": {
+        "median_absolute_bias": 0.10595611750216904,
+        "maximum_absolute_bias": 0.22149134161299355
+      },
+      "derivative": {
+        "median_absolute_bias": 4.849370663292719e-05,
+        "maximum_absolute_bias": 0.00040496696826177516
+      }
+    },
+    "candidate": {
+      "ratio": {
+        "median_absolute_bias": 0.027187294299781783,
+        "maximum_absolute_bias": 0.217296305174268
+      },
+      "absolute": {
+        "median_absolute_bias": 0.11458520325441879,
+        "maximum_absolute_bias": 0.23681851035648682
+      },
+      "derivative": {
+        "median_absolute_bias": 5.056795898381176e-05,
+        "maximum_absolute_bias": 0.00041418926230254045
+      }
+    }
+  },
+  "decision": "reject",
+  "scope": "descriptive conditional jackknife SE; no coverage guarantee, no adoption",
+  "gain": {
+    "mean": 0.004614523399788184,
+    "SE": 0.29058891801942366
+  },
+  "derivative_median_gain": {
+    "mean": -2.0742523508845674e-06,
+    "SE": 5.876492021523225e-06
+  },
+  "ladder_error": 0.00019334632394608564,
+  "max_ad_fd_relative_error": 0.0001933481213495286,
+  "unresolved_endpoints": [
+    [
+      1,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      1,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      1,
+      1,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      1,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      1,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      1,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      1,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      1,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      1,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      1,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      1,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      2,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      2,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      3,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      1,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      4,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      3,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      4,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      4,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      5,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      3,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      5,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      5,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      1,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      6,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      6,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      6,
+      4,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      7,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      3,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      7,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      7,
+      4,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      8,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      8,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      8,
+      1,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      8,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      8,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      8,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      8,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      8,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      8,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      8,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      9,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      9,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      9,
+      1,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      9,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      9,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      9,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      9,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      9,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      10,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      3,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      10,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      10,
+      4,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      11,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      11,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      11,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      11,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      11,
+      2,
+      "absolute",
+      "nonworsening unresolved"
+    ],
+    [
+      11,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      11,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      11,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      11,
+      3,
+      "absolute",
+      "nonworsening unresolved"
+    ],
+    [
+      11,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      11,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      1,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      1,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      2,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      2,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      2,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      12,
+      3,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      3,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      3,
+      "derivative",
+      "nonworsening unresolved"
+    ],
+    [
+      12,
+      4,
+      "control",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      4,
+      "candidate",
+      "mc_secant",
+      "reference precision unresolved"
+    ],
+    [
+      12,
+      4,
+      "absolute",
+      "nonworsening unresolved"
+    ]
+  ],
+  "residual_sign_diagnostics": [
+    [
+      1,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      2,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      2,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      1,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      2,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      4,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      2,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      2,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      3,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      2,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      2,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      3,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      3,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      4,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      2,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      5,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      2,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      6,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      7,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      8,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      2,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      2,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      9,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      10,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      1,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      1,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      2,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      2,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      3,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      3,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      4,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      4,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      11,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      1,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      1,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      1,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      1,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      1,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      1,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      2,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      2,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      3,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      3,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      3,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      3,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      3,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      3,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      4,
+      "control",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      4,
+      "control",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      4,
+      "control",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      4,
+      "candidate",
+      "ratio",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      4,
+      "candidate",
+      "absolute",
+      "bias sign unresolved; diagnostic only"
+    ],
+    [
+      12,
+      4,
+      "candidate",
+      "derivative",
+      "bias sign unresolved; diagnostic only"
+    ]
+  ],
+  "cases": [
+    {
+      "bin": 1,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.010187147432783483,
+            "SE": 0.016953958616733517
+          },
+          "absolute": {
+            "mean": 0.07500684741612806,
+            "SE": 0.031091458016282054
+          },
+          "derivative": {
+            "mean": -0.00011735860081114909,
+            "SE": 0.00017875252777305785
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.00598474910740554,
+            "SE": 0.01702593918064997
+          },
+          "absolute": {
+            "mean": 0.07957094957305033,
+            "SE": 0.031223461445781198
+          },
+          "derivative": {
+            "mean": -0.00011424241578119706,
+            "SE": 0.0001787570065943704
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.004202398325377943,
+          "SE": 0.007393781666458547
+        },
+        "absolute": {
+          "mean": 0.004564102156922267,
+          "SE": 0.0001320034294991431
+        },
+        "derivative": {
+          "mean": -3.1161850299520283e-06,
+          "SE": 5.448670013081975e-06
+        }
+      }
+    },
+    {
+      "bin": 1,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.01655658589466147,
+            "SE": 0.026662836479828072
+          },
+          "absolute": {
+            "mean": 0.0840484771668688,
+            "SE": 0.04404026362781191
+          },
+          "derivative": {
+            "mean": -6.963780701839891e-05,
+            "SE": 0.00015783144019467145
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.005366970167111962,
+            "SE": 0.026966206140081703
+          },
+          "absolute": {
+            "mean": 0.0963827769502148,
+            "SE": 0.04454135359340329
+          },
+          "derivative": {
+            "mean": -6.344837072412229e-05,
+            "SE": 0.00015796806534310625
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.011189615727549507,
+          "SE": 0.017498927603927992
+        },
+        "absolute": {
+          "mean": 0.012334299783345992,
+          "SE": 0.0005010899655913822
+        },
+        "derivative": {
+          "mean": -6.189436294276617e-06,
+          "SE": 1.1946840939083445e-05
+        }
+      }
+    },
+    {
+      "bin": 1,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.013768641227733913,
+            "SE": 0.030711538798812967
+          },
+          "absolute": {
+            "mean": 0.12458611512699957,
+            "SE": 0.03403865552436364
+          },
+          "derivative": {
+            "mean": 0.00030743059028756224,
+            "SE": 0.00012369820052933947
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.003894653942602133,
+            "SE": 0.03101901770922188
+          },
+          "absolute": {
+            "mean": 0.13584528763559134,
+            "SE": 0.034379444984018244
+          },
+          "derivative": {
+            "mean": 0.00031231704884734923,
+            "SE": 0.0001236836818669977
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.00987398728513178,
+          "SE": 0.021443401606595865
+        },
+        "absolute": {
+          "mean": 0.011259172508591764,
+          "SE": 0.0003407894596546015
+        },
+        "derivative": {
+          "mean": 4.886458559786992e-06,
+          "SE": 1.0888766894080885e-07
+        }
+      }
+    },
+    {
+      "bin": 1,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.04215156028300493,
+            "SE": 0.021157280135999695
+          },
+          "absolute": {
+            "mean": 0.09523645939171654,
+            "SE": 0.02293693951768159
+          },
+          "derivative": {
+            "mean": -0.0002828364951687226,
+            "SE": 0.00015956358273611516
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.05061216472984542,
+            "SE": 0.021329043423820374
+          },
+          "absolute": {
+            "mean": 0.10412802834561696,
+            "SE": 0.023123150794309485
+          },
+          "derivative": {
+            "mean": -0.00027885470580892014,
+            "SE": 0.00015958064949195117
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.008460604446840492,
+          "SE": 0.00017176328782067852
+        },
+        "absolute": {
+          "mean": 0.00889156895390042,
+          "SE": 0.00018621127662789538
+        },
+        "derivative": {
+          "mean": -3.981789359802472e-06,
+          "SE": 6.177737862108436e-08
+        }
+      }
+    },
+    {
+      "bin": 2,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.02230891029994364,
+            "SE": 0.024393944083498636
+          },
+          "absolute": {
+            "mean": 0.10271624490775388,
+            "SE": 0.019269837659171722
+          },
+          "derivative": {
+            "mean": 4.692266866497183e-05,
+            "SE": 0.00011582514395442776
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.01815797672958608,
+            "SE": 0.024497512217111012
+          },
+          "absolute": {
+            "mean": 0.10739799145100037,
+            "SE": 0.019351650633512543
+          },
+          "derivative": {
+            "mean": 5.016332096846905e-05,
+            "SE": 0.00011583727584485524
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.004150933570357562,
+          "SE": 0.00010356813361237688
+        },
+        "absolute": {
+          "mean": 0.00468174654324649,
+          "SE": 8.181297434082297e-05
+        },
+        "derivative": {
+          "mean": 3.2406523034972173e-06,
+          "SE": 5.6605023789847175e-06
+        }
+      }
+    },
+    {
+      "bin": 2,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.014598567655487504,
+            "SE": 0.018828481559606956
+          },
+          "absolute": {
+            "mean": 0.15051679209784563,
+            "SE": 0.039630833124055916
+          },
+          "derivative": {
+            "mean": 0.00034212685378061765,
+            "SE": 9.40682687644963e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.0033866736032577283,
+            "SE": 0.019042711956967273
+          },
+          "absolute": {
+            "mean": 0.16360736813610166,
+            "SE": 0.04008175260479114
+          },
+          "derivative": {
+            "mean": 0.00034846509372189597,
+            "SE": 9.403189638618228e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.011211894052229776,
+          "SE": 0.019319391969981285
+        },
+        "absolute": {
+          "mean": 0.01309057603825603,
+          "SE": 0.0004509194807352247
+        },
+        "derivative": {
+          "mean": 6.338239941278319e-06,
+          "SE": 1.7931219945487744e-07
+        }
+      }
+    },
+    {
+      "bin": 2,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.028015788715046175,
+            "SE": 0.02838029917882264
+          },
+          "absolute": {
+            "mean": 0.09039041019106908,
+            "SE": 0.03727868227751366
+          },
+          "derivative": {
+            "mean": 0.0002723952550200378,
+            "SE": 0.0001853934655049791
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.021781756220052517,
+            "SE": 0.028562322410521514
+          },
+          "absolute": {
+            "mean": 0.09738386663865306,
+            "SE": 0.037517777227812736
+          },
+          "derivative": {
+            "mean": 0.0002766723875028556,
+            "SE": 0.00018539008069701684
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.006234032494993658,
+          "SE": 0.00018202323169887714
+        },
+        "absolute": {
+          "mean": 0.006993456447583979,
+          "SE": 0.00023909495029908148
+        },
+        "derivative": {
+          "mean": 4.277132482817807e-06,
+          "SE": 5.652167444984147e-08
+        }
+      }
+    },
+    {
+      "bin": 2,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.01375256638593192,
+            "SE": 0.018645464947597223
+          },
+          "absolute": {
+            "mean": 0.06854579308968867,
+            "SE": 0.0357671553605734
+          },
+          "derivative": {
+            "mean": 0.00032835548863655994,
+            "SE": 0.00017969703657313806
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.021891402565697105,
+            "SE": 0.018795158659589584
+          },
+          "absolute": {
+            "mean": 0.07712453256606633,
+            "SE": 0.03605430927539277
+          },
+          "derivative": {
+            "mean": 0.0003326827830830663,
+            "SE": 0.00017969412357426114
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.008138836179765185,
+          "SE": 0.0001496937119923602
+        },
+        "absolute": {
+          "mean": 0.008578739476377661,
+          "SE": 0.0002871539148193644
+        },
+        "derivative": {
+          "mean": 4.32729444650639e-06,
+          "SE": 1.3457487392723147e-07
+        }
+      }
+    },
+    {
+      "bin": 3,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.037051849076711996,
+            "SE": 0.03279504018743508
+          },
+          "absolute": {
+            "mean": 0.13368998607825788,
+            "SE": 0.05513887863143814
+          },
+          "derivative": {
+            "mean": -0.00012456986513342393,
+            "SE": 4.1411928906763785e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.04143959928638741,
+            "SE": 0.032933795491315844
+          },
+          "absolute": {
+            "mean": 0.1384866107393592,
+            "SE": 0.055372170367518486
+          },
+          "derivative": {
+            "mean": -0.00012321405991849477,
+            "SE": 4.140308540768128e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.004387750209675412,
+          "SE": 0.00013875530388076076
+        },
+        "absolute": {
+          "mean": 0.004796624661101312,
+          "SE": 0.00023329173608034736
+        },
+        "derivative": {
+          "mean": -1.3558052149291607e-06,
+          "SE": 4.829941270211194e-08
+        }
+      }
+    },
+    {
+      "bin": 3,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.02940425965853377,
+            "SE": 0.0210614504029061
+          },
+          "absolute": {
+            "mean": 0.17465146082964456,
+            "SE": 0.026232185900059983
+          },
+          "derivative": {
+            "mean": -0.00015424866767842937,
+            "SE": 9.064740484387758e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.04107307159144846,
+            "SE": 0.02130019247287529
+          },
+          "absolute": {
+            "mean": 0.18796672240403445,
+            "SE": 0.02652954084199364
+          },
+          "derivative": {
+            "mean": -0.00015142856553854224,
+            "SE": 9.063439453178963e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.011668811932914691,
+          "SE": 0.00023874206996918993
+        },
+        "absolute": {
+          "mean": 0.013315261574389892,
+          "SE": 0.0002973549419336557
+        },
+        "derivative": {
+          "mean": -2.820102139887128e-06,
+          "SE": 5.493298802123199e-08
+        }
+      }
+    },
+    {
+      "bin": 3,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.008642317121112852,
+            "SE": 0.03208684450249337
+          },
+          "absolute": {
+            "mean": 0.07851663184223567,
+            "SE": 0.036263285523414304
+          },
+          "derivative": {
+            "mean": 8.612066309211042e-05,
+            "SE": 7.673958529023887e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.0013408530800965712,
+            "SE": 0.03232316782491354
+          },
+          "absolute": {
+            "mean": 0.08646003162723126,
+            "SE": 0.03653036881719509
+          },
+          "derivative": {
+            "mean": 8.826625830898661e-05,
+            "SE": 7.671664114230819e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.007301464041016281,
+          "SE": 0.01683640388165046
+        },
+        "absolute": {
+          "mean": 0.007943399784995586,
+          "SE": 0.0002670832937807857
+        },
+        "derivative": {
+          "mean": 2.1455952168761944e-06,
+          "SE": 4.254532386104e-08
+        }
+      }
+    },
+    {
+      "bin": 3,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.007113419435627266,
+            "SE": 0.026472568261039862
+          },
+          "absolute": {
+            "mean": 0.17771009456136322,
+            "SE": 0.02770680426925501
+          },
+          "derivative": {
+            "mean": -0.000145358062694125,
+            "SE": 8.059203187389869e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.016028296741678716,
+            "SE": 0.02670690105163608
+          },
+          "absolute": {
+            "mean": 0.18813507827471332,
+            "SE": 0.027952062405862448
+          },
+          "derivative": {
+            "mean": -0.00014347465568992666,
+            "SE": 8.058084177621296e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.00891487730605145,
+          "SE": 0.016541143802283338
+        },
+        "absolute": {
+          "mean": 0.0104249837133501,
+          "SE": 0.0002452581366074378
+        },
+        "derivative": {
+          "mean": -1.8834070041983514e-06,
+          "SE": 3.8483666192971875e-08
+        }
+      }
+    },
+    {
+      "bin": 4,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.006164531969850673,
+            "SE": 0.01754241394190146
+          },
+          "absolute": {
+            "mean": 0.107736167142918,
+            "SE": 0.034037352290650816
+          },
+          "derivative": {
+            "mean": -8.990258630274745e-05,
+            "SE": 0.00021207695031476238
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.0019450550296205016,
+            "SE": 0.017616892880805316
+          },
+          "absolute": {
+            "mean": 0.11243922651589755,
+            "SE": 0.034181862954354096
+          },
+          "derivative": {
+            "mean": -8.529368286346256e-05,
+            "SE": 0.0002120369277742407
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.004219476940230171,
+          "SE": 0.008209338198689775
+        },
+        "absolute": {
+          "mean": 0.004703059372979546,
+          "SE": 0.00014451066370327779
+        },
+        "derivative": {
+          "mean": -4.608903439284884e-06,
+          "SE": 8.042231594528564e-06
+        }
+      }
+    },
+    {
+      "bin": 4,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.007166484694005826,
+            "SE": 0.019717862382026174
+          },
+          "absolute": {
+            "mean": 0.04258127423196201,
+            "SE": 0.024666194786807715
+          },
+          "derivative": {
+            "mean": -0.00021335854602154902,
+            "SE": 0.0002842441926414924
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.0041299715721767605,
+            "SE": 0.01994221215127476
+          },
+          "absolute": {
+            "mean": 0.054443760325285195,
+            "SE": 0.024946846664858614
+          },
+          "derivative": {
+            "mean": -0.00020386764530885425,
+            "SE": 0.0002843014922217156
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.0030365131218290653,
+          "SE": 0.02182181511947461
+        },
+        "absolute": {
+          "mean": 0.011862486093323188,
+          "SE": 0.0002806518780508965
+        },
+        "derivative": {
+          "mean": -9.49090071269477e-06,
+          "SE": 1.8148309365633333e-07
+        }
+      }
+    },
+    {
+      "bin": 4,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.0345873070480649,
+            "SE": 0.014451633518553013
+          },
+          "absolute": {
+            "mean": 0.042323386395346496,
+            "SE": 0.027175671849292454
+          },
+          "derivative": {
+            "mean": -4.441838933206529e-05,
+            "SE": 0.0002965880629336788
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.02380161956000948,
+            "SE": 0.01461308861849215
+          },
+          "absolute": {
+            "mean": 0.05396832786879724,
+            "SE": 0.027479281182362383
+          },
+          "derivative": {
+            "mean": -3.60738613673529e-05,
+            "SE": 0.00029652319420182436
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.010785687488055418,
+          "SE": 0.00016145509993913685
+        },
+        "absolute": {
+          "mean": 0.011644941473450743,
+          "SE": 0.0003036093330699271
+        },
+        "derivative": {
+          "mean": -8.344527964712395e-06,
+          "SE": 2.1362837827730858e-05
+        }
+      }
+    },
+    {
+      "bin": 4,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.024622700454266067,
+            "SE": 0.014758307048265472
+          },
+          "absolute": {
+            "mean": 0.10417606786142009,
+            "SE": 0.01699721300363333
+          },
+          "derivative": {
+            "mean": 0.0002578223981484709,
+            "SE": 0.0002805041192664437
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.017635682251315177,
+            "SE": 0.01486402671186538
+          },
+          "absolute": {
+            "mean": 0.11208572322145738,
+            "SE": 0.017118970847199294
+          },
+          "derivative": {
+            "mean": 0.0002654168358161052,
+            "SE": 0.0002804922614876125
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.00698701820295089,
+          "SE": 0.0001057196635999101
+        },
+        "absolute": {
+          "mean": 0.007909655360037293,
+          "SE": 0.00012175784356596359
+        },
+        "derivative": {
+          "mean": 7.594437667634321e-06,
+          "SE": 1.1139494315540129e-07
+        }
+      }
+    },
+    {
+      "bin": 5,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.06118642282529141,
+            "SE": 0.023314314804625404
+          },
+          "absolute": {
+            "mean": 0.1699608486371229,
+            "SE": 0.03860448117447626
+          },
+          "derivative": {
+            "mean": -0.00025406740876244703,
+            "SE": 9.715286919457941e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.06569184830509656,
+            "SE": 0.02341329921085731
+          },
+          "absolute": {
+            "mean": 0.17492809219060712,
+            "SE": 0.038768382266100736
+          },
+          "derivative": {
+            "mean": -0.00024930060014508515,
+            "SE": 9.706258703993472e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.004505425479805147,
+          "SE": 9.898440623190695e-05
+        },
+        "absolute": {
+          "mean": 0.004967243553484213,
+          "SE": 0.00016390109162447647
+        },
+        "derivative": {
+          "mean": -4.766808617361886e-06,
+          "SE": 1.451115064451902e-07
+        }
+      }
+    },
+    {
+      "bin": 5,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.039927391658206246,
+            "SE": 0.02802445065482772
+          },
+          "absolute": {
+            "mean": 0.082522100749296,
+            "SE": 0.029929507261394067
+          },
+          "derivative": {
+            "mean": -0.00022197485775678812,
+            "SE": 0.0004461722678414965
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.02900368887692928,
+            "SE": 0.028343312756404202
+          },
+          "absolute": {
+            "mean": 0.0948390334270992,
+            "SE": 0.030270045090379918
+          },
+          "derivative": {
+            "mean": -0.00021264621375073736,
+            "SE": 0.00044614625064904695
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.010923702781276967,
+          "SE": 0.0003188621015764807
+        },
+        "absolute": {
+          "mean": 0.012316932677803205,
+          "SE": 0.0003405378289858506
+        },
+        "derivative": {
+          "mean": -9.32864400605076e-06,
+          "SE": 1.6192401154411386e-05
+        }
+      }
+    },
+    {
+      "bin": 5,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.04275305629119819,
+            "SE": 0.020390616620718595
+          },
+          "absolute": {
+            "mean": 0.1360233016602692,
+            "SE": 0.04486692999813846
+          },
+          "derivative": {
+            "mean": -7.926112840486856e-05,
+            "SE": 0.00012960009178156039
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.03757828087573578,
+            "SE": 0.020500846130761433
+          },
+          "absolute": {
+            "mean": 0.14216452309895833,
+            "SE": 0.045109475861405506
+          },
+          "derivative": {
+            "mean": -7.360624500405506e-05,
+            "SE": 0.00012955793745236382
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.005174775415462407,
+          "SE": 0.00011022951004283698
+        },
+        "absolute": {
+          "mean": 0.006141221438689115,
+          "SE": 0.00024254586326704638
+        },
+        "derivative": {
+          "mean": -5.654883400813503e-06,
+          "SE": 9.855981612693617e-06
+        }
+      }
+    },
+    {
+      "bin": 5,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.0036035593748222627,
+            "SE": 0.022601098700867444
+          },
+          "absolute": {
+            "mean": 0.05912821788156797,
+            "SE": 0.027408889941861383
+          },
+          "derivative": {
+            "mean": -0.00013786813225184985,
+            "SE": 0.00021629164335746406
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.003484352741475183,
+            "SE": 0.02276187266070115
+          },
+          "absolute": {
+            "mean": 0.06666237539373743,
+            "SE": 0.027603864346819388
+          },
+          "derivative": {
+            "mean": -0.00012959134215975065,
+            "SE": 0.00021645469138304973
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.00011920663334707982,
+          "SE": 0.018753598179050868
+        },
+        "absolute": {
+          "mean": 0.007534157512169459,
+          "SE": 0.00019497440495800197
+        },
+        "derivative": {
+          "mean": -8.276790092099208e-06,
+          "SE": 2.364930452753968e-07
+        }
+      }
+    },
+    {
+      "bin": 6,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.053370143468615794,
+            "SE": 0.03024508800655563
+          },
+          "absolute": {
+            "mean": 0.12506265254358384,
+            "SE": 0.02928929582868135
+          },
+          "derivative": {
+            "mean": -2.858261180267618e-05,
+            "SE": 5.540720804945335e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.05784238376680406,
+            "SE": 0.030373498045746447
+          },
+          "absolute": {
+            "mean": 0.12983927409858964,
+            "SE": 0.029413647909403193
+          },
+          "derivative": {
+            "mean": -2.7120181221661183e-05,
+            "SE": 5.5390657813794596e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.004472240298188268,
+          "SE": 0.00012841003919081167
+        },
+        "absolute": {
+          "mean": 0.0047766215550058,
+          "SE": 0.00012435208072184673
+        },
+        "derivative": {
+          "mean": -1.4624305810149963e-06,
+          "SE": 2.545260761665128e-06
+        }
+      }
+    },
+    {
+      "bin": 6,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.013458870598316519,
+            "SE": 0.022676677383722116
+          },
+          "absolute": {
+            "mean": 0.10416796079520885,
+            "SE": 0.039455382514950316
+          },
+          "derivative": {
+            "mean": -4.0660848287436585e-05,
+            "SE": 8.481507525186218e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.0022340090769547016,
+            "SE": 0.022934692539716042
+          },
+          "absolute": {
+            "mean": 0.11673117999294003,
+            "SE": 0.03990430571926863
+          },
+          "derivative": {
+            "mean": -3.749247228486207e-05,
+            "SE": 8.478527119272151e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.011224861521361817,
+          "SE": 0.013375700699725494
+        },
+        "absolute": {
+          "mean": 0.012563219197731179,
+          "SE": 0.0004489232043183167
+        },
+        "derivative": {
+          "mean": -3.1683760025745153e-06,
+          "SE": 5.687413181320256e-06
+        }
+      }
+    },
+    {
+      "bin": 6,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.01335525368950674,
+            "SE": 0.027848323242045222
+          },
+          "absolute": {
+            "mean": 0.13169593557827386,
+            "SE": 0.03463152866587614
+          },
+          "derivative": {
+            "mean": 0.000106013452067884,
+            "SE": 9.100803631341309e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.020321748736444212,
+            "SE": 0.028039771606500657
+          },
+          "absolute": {
+            "mean": 0.13947598517207704,
+            "SE": 0.03486960941005784
+          },
+          "derivative": {
+            "mean": 0.00010807074742780369,
+            "SE": 9.100963357102326e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.006966495046937471,
+          "SE": 0.008766693785188453
+        },
+        "absolute": {
+          "mean": 0.007780049593803184,
+          "SE": 0.00023808074418169375
+        },
+        "derivative": {
+          "mean": 2.0572953599196927e-06,
+          "SE": 4.494596481899701e-08
+        }
+      }
+    },
+    {
+      "bin": 6,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.009947478964294154,
+            "SE": 0.02342482293456781
+          },
+          "absolute": {
+            "mean": 0.14873730010686104,
+            "SE": 0.027152805024428146
+          },
+          "derivative": {
+            "mean": -1.178698116690468e-05,
+            "SE": 0.00013318596359095003
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.018464691115376075,
+            "SE": 0.023622372005871854
+          },
+          "absolute": {
+            "mean": 0.1584249714904311,
+            "SE": 0.027381793368581587
+          },
+          "derivative": {
+            "mean": -9.791114875120946e-06,
+            "SE": 0.00013319274001600105
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.008517212151081921,
+          "SE": 0.00019754907130404423
+        },
+        "absolute": {
+          "mean": 0.009687671383570073,
+          "SE": 0.00022898834415344216
+        },
+        "derivative": {
+          "mean": -1.9958662917837338e-06,
+          "SE": 5.2806238406954394e-06
+        }
+      }
+    },
+    {
+      "bin": 7,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.035529609636814063,
+            "SE": 0.01654289097302606
+          },
+          "absolute": {
+            "mean": 0.11361316484506356,
+            "SE": 0.04445070529935509
+          },
+          "derivative": {
+            "mean": -0.00034001906321378745,
+            "SE": 0.00020299408921226045
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.03992610528357199,
+            "SE": 0.016613126287854985
+          },
+          "absolute": {
+            "mean": 0.11834117588970261,
+            "SE": 0.04463942740881996
+          },
+          "derivative": {
+            "mean": -0.00033527722580765684,
+            "SE": 0.00020295288406345979
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.004396495646757925,
+          "SE": 7.023531482892337e-05
+        },
+        "absolute": {
+          "mean": 0.004728011044639047,
+          "SE": 0.00018872210946486488
+        },
+        "derivative": {
+          "mean": -4.7418374061306045e-06,
+          "SE": 1.2683590900695867e-07
+        }
+      }
+    },
+    {
+      "bin": 7,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.03808953153222672,
+            "SE": 0.02355009423361262
+          },
+          "absolute": {
+            "mean": 0.16625507837019837,
+            "SE": 0.027479158814593955
+          },
+          "derivative": {
+            "mean": 0.00040496696826177516,
+            "SE": 0.00012964621257644882
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.049900910592815206,
+            "SE": 0.023818047123470968
+          },
+          "absolute": {
+            "mean": 0.17952472457463964,
+            "SE": 0.027791816587518604
+          },
+          "derivative": {
+            "mean": 0.00041418926230254045,
+            "SE": 0.00012960396987779347
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.01181137906058849,
+          "SE": 0.00026795288985835097
+        },
+        "absolute": {
+          "mean": 0.013269646204441266,
+          "SE": 0.0003126577729246464
+        },
+        "derivative": {
+          "mean": 9.222294040765289e-06,
+          "SE": 2.2109891105023274e-07
+        }
+      }
+    },
+    {
+      "bin": 7,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.0394579568713479,
+            "SE": 0.022189973805707183
+          },
+          "absolute": {
+            "mean": 0.09083930502106896,
+            "SE": 0.03900789547237096
+          },
+          "derivative": {
+            "mean": 4.1286675506075254e-05,
+            "SE": 0.00020152130029029333
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.027845617262701627,
+            "SE": 0.022458236411786923
+          },
+          "absolute": {
+            "mean": 0.10402685527873912,
+            "SE": 0.03947947600638721
+          },
+          "derivative": {
+            "mean": 5.097259699915447e-05,
+            "SE": 0.00020175492997394576
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.011612339608646272,
+          "SE": 0.00026826260607974207
+        },
+        "absolute": {
+          "mean": 0.013187550257670155,
+          "SE": 0.000471580534016244
+        },
+        "derivative": {
+          "mean": 9.685921493079216e-06,
+          "SE": 2.2088165142401706e-05
+        }
+      }
+    },
+    {
+      "bin": 7,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.012751994143882284,
+            "SE": 0.015286994242336288
+          },
+          "absolute": {
+            "mean": 0.15851425066353175,
+            "SE": 0.059583706300160695
+          },
+          "derivative": {
+            "mean": -7.8296489007111e-06,
+            "SE": 0.0002278212629830319
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.018829415523170745,
+            "SE": 0.0153787299349547
+          },
+          "absolute": {
+            "mean": 0.1654663764711386,
+            "SE": 0.05994126204196098
+          },
+          "derivative": {
+            "mean": -1.0537615085182898e-06,
+            "SE": 0.000227813834878439
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.006077421379288461,
+          "SE": 9.173569261841222e-05
+        },
+        "absolute": {
+          "mean": 0.006952125807606846,
+          "SE": 0.00035755574180028446
+        },
+        "derivative": {
+          "mean": -6.775887392192811e-06,
+          "SE": 1.5532315314806166e-05
+        }
+      }
+    },
+    {
+      "bin": 8,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.013778952493666563,
+            "SE": 0.024751951719373
+          },
+          "absolute": {
+            "mean": 0.09759235696587432,
+            "SE": 0.03361320980357326
+          },
+          "derivative": {
+            "mean": -3.080717780881096e-06,
+            "SE": 8.362167015458823e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.00959180371322399,
+            "SE": 0.024857039827883193
+          },
+          "absolute": {
+            "mean": 0.10225234927744897,
+            "SE": 0.033755919706988505
+          },
+          "derivative": {
+            "mean": -1.5550832014001774e-06,
+            "SE": 8.361250524985659e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.004187148780442573,
+          "SE": 0.007397045109079759
+        },
+        "absolute": {
+          "mean": 0.004659992311574657,
+          "SE": 0.0001427099034152388
+        },
+        "derivative": {
+          "mean": -1.5256345794809186e-06,
+          "SE": 4.036709023191806e-06
+        }
+      }
+    },
+    {
+      "bin": 8,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.044779583945368184,
+            "SE": 0.019762956648282568
+          },
+          "absolute": {
+            "mean": 0.18313877494657005,
+            "SE": 0.041544837762989895
+          },
+          "derivative": {
+            "mean": 4.656199207525633e-05,
+            "SE": 9.413778071548847e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.05666708239892504,
+            "SE": 0.019987819499935024
+          },
+          "absolute": {
+            "mean": 0.19660052379163195,
+            "SE": 0.04201753478181564
+          },
+          "derivative": {
+            "mean": 4.996695882036955e-05,
+            "SE": 9.411166180565647e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.011887498453556855,
+          "SE": 0.00022486285165245956
+        },
+        "absolute": {
+          "mean": 0.013461748845061905,
+          "SE": 0.00047269701882574533
+        },
+        "derivative": {
+          "mean": 3.404966745113226e-06,
+          "SE": 5.974393889570088e-06
+        }
+      }
+    },
+    {
+      "bin": 8,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.02740093812882316,
+            "SE": 0.019337866780047685
+          },
+          "absolute": {
+            "mean": 0.18561124569009468,
+            "SE": 0.02674457148071507
+          },
+          "derivative": {
+            "mean": 4.033398699328163e-05,
+            "SE": 5.514239753002814e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.03322544544991923,
+            "SE": 0.01944749637298922
+          },
+          "absolute": {
+            "mean": 0.19233267363921902,
+            "SE": 0.02689619091827636
+          },
+          "derivative": {
+            "mean": 4.21284906337918e-05,
+            "SE": 5.513428397756706e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.005824507321096073,
+          "SE": 0.00010962959294153576
+        },
+        "absolute": {
+          "mean": 0.006721427949124337,
+          "SE": 0.00015161943756128926
+        },
+        "derivative": {
+          "mean": 1.794503640510173e-06,
+          "SE": 3.8218806133104416e-08
+        }
+      }
+    },
+    {
+      "bin": 8,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.020845522274811623,
+            "SE": 0.029763374283563404
+          },
+          "absolute": {
+            "mean": 0.1654713308172937,
+            "SE": 0.04065788213959907
+          },
+          "derivative": {
+            "mean": 0.00015946442286224972,
+            "SE": 3.0000910606602916e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.02836479412638626,
+            "SE": 0.029982603243846884
+          },
+          "absolute": {
+            "mean": 0.17405587723534865,
+            "SE": 0.04095735709643263
+          },
+          "derivative": {
+            "mean": 0.00016131436749215836,
+            "SE": 2.9981193363579515e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.007519271851574638,
+          "SE": 0.00021922896028347746
+        },
+        "absolute": {
+          "mean": 0.00858454641805495,
+          "SE": 0.0002994749568335677
+        },
+        "derivative": {
+          "mean": 1.8499446299086392e-06,
+          "SE": 3.7930534481907816e-08
+        }
+      }
+    },
+    {
+      "bin": 9,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.009568576010506868,
+            "SE": 0.02206066131355779
+          },
+          "absolute": {
+            "mean": 0.10252017173664574,
+            "SE": 0.02612282899520261
+          },
+          "derivative": {
+            "mean": 1.5648154086275203e-05,
+            "SE": 3.874927407025637e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.01385485021090438,
+            "SE": 0.02215432314662076
+          },
+          "absolute": {
+            "mean": 0.10720108582195431,
+            "SE": 0.026233737367971223
+          },
+          "derivative": {
+            "mean": 1.6151569007885834e-05,
+            "SE": 3.875013354681759e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.004286274200397511,
+          "SE": 0.006164036844359701
+        },
+        "absolute": {
+          "mean": 0.004680914085308574,
+          "SE": 0.00011090837276861246
+        },
+        "derivative": {
+          "mean": 5.034149216106315e-07,
+          "SE": 1.1526004429627363e-06
+        }
+      }
+    },
+    {
+      "bin": 9,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.04556764343097952,
+            "SE": 0.030560662572769192
+          },
+          "absolute": {
+            "mean": 0.16131299882906447,
+            "SE": 0.030158743479147095
+          },
+          "derivative": {
+            "mean": -1.2490222331909818e-05,
+            "SE": 3.4168834046217835e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.057464108422608406,
+            "SE": 0.03090838168468131
+          },
+          "absolute": {
+            "mean": 0.17452641406976444,
+            "SE": 0.030501889557017162
+          },
+          "derivative": {
+            "mean": -1.1241202977041841e-05,
+            "SE": 3.4163651390998674e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.011896464991628886,
+          "SE": 0.00034771911191211697
+        },
+        "absolute": {
+          "mean": 0.013213415240699966,
+          "SE": 0.00034314607787006826
+        },
+        "derivative": {
+          "mean": -1.2490193548679766e-06,
+          "SE": 2.1855937731027523e-06
+        }
+      }
+    },
+    {
+      "bin": 9,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.036129332197725406,
+            "SE": 0.01994942603295363
+          },
+          "absolute": {
+            "mean": 0.14578228793306636,
+            "SE": 0.04793169503815648
+          },
+          "derivative": {
+            "mean": -5.006474460088255e-05,
+            "SE": 1.7779572673914475e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.043175372307828086,
+            "SE": 0.020085089073882786
+          },
+          "absolute": {
+            "mean": 0.1535740063096689,
+            "SE": 0.048257647248261086
+          },
+          "derivative": {
+            "mean": -4.9293990720598554e-05,
+            "SE": 1.7792911984425276e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.00704604011010268,
+          "SE": 0.00013566304092915634
+        },
+        "absolute": {
+          "mean": 0.00779171837660253,
+          "SE": 0.0003259522101046075
+        },
+        "derivative": {
+          "mean": -7.70753880283999e-07,
+          "SE": 1.7647046798807736e-08
+        }
+      }
+    },
+    {
+      "bin": 9,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.03429250396575756,
+            "SE": 0.02120199164615407
+          },
+          "absolute": {
+            "mean": 0.09784821833178992,
+            "SE": 0.022748786067028005
+          },
+          "derivative": {
+            "mean": -2.867769090128127e-05,
+            "SE": 3.757847717971432e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.042947890208735684,
+            "SE": 0.021379418656515582
+          },
+          "absolute": {
+            "mean": 0.10703546500465344,
+            "SE": 0.022939157291042525
+          },
+          "derivative": {
+            "mean": -2.786805686970755e-05,
+            "SE": 3.7576558007914805e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.008655386242978125,
+          "SE": 0.00017742701036150838
+        },
+        "absolute": {
+          "mean": 0.009187246672863525,
+          "SE": 0.00019037122401451974
+        },
+        "derivative": {
+          "mean": -8.096340315737218e-07,
+          "SE": 1.2341972016055407e-08
+        }
+      }
+    },
+    {
+      "bin": 10,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": -0.024895239774459288,
+            "SE": 0.045274487243644315
+          },
+          "absolute": {
+            "mean": 0.11989809191130352,
+            "SE": 0.057682721491431325
+          },
+          "derivative": {
+            "mean": -7.65256876196799e-05,
+            "SE": 4.74948361295204e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": -0.020755286852236043,
+            "SE": 0.04546670684241139
+          },
+          "absolute": {
+            "mean": 0.12465278655265455,
+            "SE": 0.05792762210225898
+          },
+          "derivative": {
+            "mean": -7.480336226859598e-05,
+            "SE": 4.749485039089338e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": -0.0041399529222232445,
+          "SE": 0.007358018666151633
+        },
+        "absolute": {
+          "mean": 0.004754694641351032,
+          "SE": 0.0002449006108276554
+        },
+        "derivative": {
+          "mean": -1.7223253510839187e-06,
+          "SE": 2.5954527457534016e-08
+        }
+      }
+    },
+    {
+      "bin": 10,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.073937729455128,
+            "SE": 0.032179137758076286
+          },
+          "absolute": {
+            "mean": 0.12119053495288568,
+            "SE": 0.029660558712133262
+          },
+          "derivative": {
+            "mean": 1.6494341474031107e-05,
+            "SE": 7.639263099953649e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.08615698918635717,
+            "SE": 0.03254527187498869
+          },
+          "absolute": {
+            "mean": 0.1339474369398712,
+            "SE": 0.02999803644546603
+          },
+          "derivative": {
+            "mean": 2.0764696875580292e-05,
+            "SE": 7.641278044638705e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.01221925973122917,
+          "SE": 0.0003661341169124072
+        },
+        "absolute": {
+          "mean": 0.012756901986985536,
+          "SE": 0.00033747773333276933
+        },
+        "derivative": {
+          "mean": 4.270355401549185e-06,
+          "SE": 9.776407287347372e-06
+        }
+      }
+    },
+    {
+      "bin": 10,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.013807797913260922,
+            "SE": 0.026738154709210416
+          },
+          "absolute": {
+            "mean": 0.22149134161299355,
+            "SE": 0.04027594849900063
+          },
+          "derivative": {
+            "mean": 2.906959252636359e-05,
+            "SE": 7.394641347363103e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.02652897133686194,
+            "SE": 0.02707366278459033
+          },
+          "absolute": {
+            "mean": 0.23681851035648682,
+            "SE": 0.04078132765144988
+          },
+          "derivative": {
+            "mean": 3.3485232862529425e-05,
+            "SE": 7.399580935123581e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.012721173423601018,
+          "SE": 0.006198293636797998
+        },
+        "absolute": {
+          "mean": 0.015327168743493269,
+          "SE": 0.0005053791524492477
+        },
+        "derivative": {
+          "mean": 4.415640336165837e-06,
+          "SE": 8.520337733785227e-06
+        }
+      }
+    },
+    {
+      "bin": 10,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.01720737041769982,
+            "SE": 0.025397443963452452
+          },
+          "absolute": {
+            "mean": 0.11749271241544168,
+            "SE": 0.02740406941429785
+          },
+          "derivative": {
+            "mean": -8.146091048628e-06,
+            "SE": 4.338650495362259e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.02188227671460341,
+            "SE": 0.025514166152224228
+          },
+          "absolute": {
+            "mean": 0.12262851251868856,
+            "SE": 0.02753001370097081
+          },
+          "derivative": {
+            "mean": -6.040793692527381e-06,
+            "SE": 4.337589879716346e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.0046749062969035915,
+          "SE": 0.00011672218877177706
+        },
+        "absolute": {
+          "mean": 0.005135800103246879,
+          "SE": 0.00012594428667296072
+        },
+        "derivative": {
+          "mean": -2.10529735610062e-06,
+          "SE": 5.389825314533124e-06
+        }
+      }
+    },
+    {
+      "bin": 11,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.06518398440969042,
+            "SE": 0.04049925617136846
+          },
+          "absolute": {
+            "mean": -0.024546945079875315,
+            "SE": 0.03024406634382301
+          },
+          "derivative": {
+            "mean": 4.14561743073077e-06,
+            "SE": 5.449004748498271e-06
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.06970638213436375,
+            "SE": 0.04067120181328669
+          },
+          "absolute": {
+            "mean": -0.020405513420497345,
+            "SE": 0.03037247204539211
+          },
+          "derivative": {
+            "mean": 4.170510027697216e-06,
+            "SE": 5.448898604730452e-06
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.004522397724673333,
+          "SE": 0.0001719456419182298
+        },
+        "absolute": {
+          "mean": -0.00414143165937797,
+          "SE": 0.00012840570156909915
+        },
+        "derivative": {
+          "mean": 2.489259696644617e-08,
+          "SE": 5.996561030993506e-10
+        }
+      }
+    },
+    {
+      "bin": 11,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.1371450517688877,
+            "SE": 0.046771192760605464
+          },
+          "absolute": {
+            "mean": 0.011835741740497951,
+            "SE": 0.031779659461224616
+          },
+          "derivative": {
+            "mean": 3.9604305860367045e-07,
+            "SE": 9.6517325775862e-06
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.15008348419242834,
+            "SE": 0.04730335522832246
+          },
+          "absolute": {
+            "mean": 0.023348405272620276,
+            "SE": 0.032141248315472146
+          },
+          "derivative": {
+            "mean": 4.800068318997882e-07,
+            "SE": 9.652526649556168e-06
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.012938432423540647,
+          "SE": 0.0005321624677169963
+        },
+        "absolute": {
+          "mean": 0.011512663532122325,
+          "SE": 0.014136722383186435
+        },
+        "derivative": {
+          "mean": 8.396377329611779e-08,
+          "SE": 2.1503732830477232e-07
+        }
+      }
+    },
+    {
+      "bin": 11,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.06954605466115749,
+            "SE": 0.029028644264622202
+          },
+          "absolute": {
+            "mean": -0.02456822969315542,
+            "SE": 0.04753877892774815
+          },
+          "derivative": {
+            "mean": 1.0072818471622121e-05,
+            "SE": 9.876407656663883e-06
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.07580193897440135,
+            "SE": 0.029198435775234
+          },
+          "absolute": {
+            "mean": -0.01886282945918849,
+            "SE": 0.04781683811002341
+          },
+          "derivative": {
+            "mean": 1.0106489181338779e-05,
+            "SE": 9.875890723520848e-06
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.006255884313243865,
+          "SE": 0.00016979151061179788
+        },
+        "absolute": {
+          "mean": -0.0057054002339669285,
+          "SE": 0.010156243189322884
+        },
+        "derivative": {
+          "mean": 3.367070971665736e-08,
+          "SE": 1.046864741971871e-09
+        }
+      }
+    },
+    {
+      "bin": 11,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.009973596531160256,
+            "SE": 0.03802731211347283
+          },
+          "absolute": {
+            "mean": -0.057245049608367404,
+            "SE": 0.04089907696114255
+          },
+          "derivative": {
+            "mean": -6.118149065112767e-06,
+            "SE": 3.895469091933762e-06
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.012433446476155074,
+            "SE": 0.03811992986301786
+          },
+          "absolute": {
+            "mean": -0.054948914619463385,
+            "SE": 0.04099868906244769
+          },
+          "derivative": {
+            "mean": -6.100766315026401e-06,
+            "SE": 3.895611959430799e-06
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.0024598499449948186,
+          "SE": 0.005603653221367002
+        },
+        "absolute": {
+          "mean": -0.0022961349889040195,
+          "SE": 9.96121013051495e-05
+        },
+        "derivative": {
+          "mean": -1.7382750086365528e-08,
+          "SE": 3.9359937647194026e-10
+        }
+      }
+    },
+    {
+      "bin": 12,
+      "field": 1,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.02722572649288968,
+            "SE": 0.0499137053619011
+          },
+          "absolute": {
+            "mean": -0.06311020277489632,
+            "SE": 0.03293239810111711
+          },
+          "derivative": {
+            "mean": 9.831677883251256e-06,
+            "SE": 8.297696097872418e-06
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.031586966763313074,
+            "SE": 0.050125621454203004
+          },
+          "absolute": {
+            "mean": -0.05913249718670277,
+            "SE": 0.033072217516749026
+          },
+          "derivative": {
+            "mean": 9.954649377669748e-06,
+            "SE": 8.297945815732988e-06
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.004361240270423394,
+          "SE": 0.007517872218623203
+        },
+        "absolute": {
+          "mean": -0.0039777055881935475,
+          "SE": 0.00013981941563191692
+        },
+        "derivative": {
+          "mean": 1.2297149441849237e-07,
+          "SE": 2.9835062024839e-09
+        }
+      }
+    },
+    {
+      "bin": 12,
+      "field": 2,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.20360172891054318,
+            "SE": 0.045273299702743214
+          },
+          "absolute": {
+            "mean": 0.15866525948556243,
+            "SE": 0.047155775322959184
+          },
+          "derivative": {
+            "mean": -3.1002972405234316e-06,
+            "SE": 1.7530805936420726e-05
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.217296305174268,
+            "SE": 0.04578841914848467
+          },
+          "absolute": {
+            "mean": 0.17184854875726852,
+            "SE": 0.04769231356972623
+          },
+          "derivative": {
+            "mean": -2.6910406298811074e-06,
+            "SE": 1.7529386698879814e-05
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.013694576263724834,
+          "SE": 0.0005151194457414648
+        },
+        "absolute": {
+          "mean": 0.013183289271706089,
+          "SE": 0.0005365382467670449
+        },
+        "derivative": {
+          "mean": -4.0925661064232413e-07,
+          "SE": 1.0487945400932267e-06
+        }
+      }
+    },
+    {
+      "bin": 12,
+      "field": 3,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.029055035141098973,
+            "SE": 0.039896594613636316
+          },
+          "absolute": {
+            "mean": 0.009412387862551608,
+            "SE": 0.01773001579049974
+          },
+          "derivative": {
+            "mean": 9.089829045521832e-07,
+            "SE": 6.821430427729703e-06
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.03250507496049182,
+            "SE": 0.04003035309629746
+          },
+          "absolute": {
+            "mean": 0.012796573171782066,
+            "SE": 0.017789457956746284
+          },
+          "derivative": {
+            "mean": 1.0009009512873692e-06,
+            "SE": 6.820966468440031e-06
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.003450039819392847,
+          "SE": 0.002554261181407117
+        },
+        "absolute": {
+          "mean": 0.0033841853092304586,
+          "SE": 5.94421662465448e-05
+        },
+        "derivative": {
+          "mean": 9.1918046735186e-08,
+          "SE": 2.3559517119643512e-07
+        }
+      }
+    },
+    {
+      "bin": 12,
+      "field": 4,
+      "arms": {
+        "control": {
+          "ratio": {
+            "mean": 0.07808800353934009,
+            "SE": 0.05591751131078028
+          },
+          "absolute": {
+            "mean": -0.025181893459710558,
+            "SE": 0.04344712799981073
+          },
+          "derivative": {
+            "mean": -9.960164518908404e-06,
+            "SE": 5.709555483013138e-06
+          }
+        },
+        "candidate": {
+          "ratio": {
+            "mean": 0.08206971133505991,
+            "SE": 0.05612403173394842
+          },
+          "absolute": {
+            "mean": -0.021581592889184154,
+            "SE": 0.04360759149415496
+          },
+          "derivative": {
+            "mean": -9.87752787602142e-06,
+            "SE": 5.7095714055532225e-06
+          }
+        }
+      },
+      "paired_absolute_change": {
+        "ratio": {
+          "mean": 0.003981707795719824,
+          "SE": 0.0002065204231681398
+        },
+        "absolute": {
+          "mean": -0.0036003005705264046,
+          "SE": 0.006353874216926786
+        },
+        "derivative": {
+          "mean": -8.263664288698368e-08,
+          "SE": 2.083104720160079e-09
+        }
+      }
+    }
+  ]
+}

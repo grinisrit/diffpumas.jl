@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "files_verified": 39,
+  "inventory_sha256": "05e3b974d765a75014e94febeb6205ae72c8f549416e1edb8779d871b7e6aa60",
+  "scope": "Final curated pilot/dry diagnostic/frozen-input inventory integrity; scientific screening remains REJECT.",
+  "historical_dry_driver_execution_hashes_verified": 2
+}

@@ -60,4 +60,15 @@ report=dict(passed=True,decision=decision,gain=float(gain),gain_SE=gse,derivativ
 if len(sys.argv)>2:
  locked=json.loads(Path(sys.argv[2]).read_text());assert locked['decision']==decision
  for x,y in [(gain,locked['gain']['mean']),(gse,locked['gain']['SE']),(dgain,locked['derivative_median_gain']['mean']),(dgse,locked['derivative_median_gain']['SE'])]:assert math.isclose(x,y,rel_tol=1e-9,abs_tol=1e-12)
+ case_errors=[];stderr=se(loo)
+ for j,(b,k) in enumerate(keys):
+  case=next(x for x in locked['cases'] if (x['bin'],x['field'])==(b,k))
+  for i,label in enumerate(['ratio','absolute','derivative']):
+   for a,arm in enumerate(arms):
+    for v,expected in [(full[i,a,j],case['arms'][arm][label]['mean']),(stderr[i,a,j],case['arms'][arm][label]['SE'])]:
+     assert math.isclose(v,expected,rel_tol=1e-9,abs_tol=1e-12);case_errors.append(abs(float(v)-expected))
+   for v,expected in [(change[i,j],case['paired_absolute_change'][label]['mean']),(chgse[i,j],case['paired_absolute_change'][label]['SE'])]:
+    assert math.isclose(v,expected,rel_tol=1e-9,abs_tol=1e-12);case_errors.append(abs(float(v)-expected))
+ report['case_statistics_checked']=len(case_errors);report['max_case_statistic_absolute_discrepancy']=max(case_errors)
+
 print(json.dumps(report,indent=2))

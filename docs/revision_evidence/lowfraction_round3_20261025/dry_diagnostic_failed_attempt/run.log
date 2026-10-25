@@ -1,0 +1,10 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7], "address_space_bytes": 17179869184, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "8,9,10,11,12,13,14,15", "/home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia", "--startup-file=no", "--project=.", "dev/lowfraction_round3.jl", "diagnose", "examples/data/lowfraction_round3_drydiag_20261025/results", "examples/data/revision_physics_v2_final_20261023/materials.pumas"]}
+ERROR: LoadError: ParseError:
+# Error @ /home/roland/devspace/diffpumas.jl/dev/lowfraction_round3.jl:86:34
+end
+abspath(PROGRAM_FILE)==@__FILE__ && main3()
+#                                └┘ ── invalid identifier
+Stacktrace:
+ [1] top-level scope
+   @ ~/devspace/diffpumas.jl/dev/lowfraction_round3.jl:86
+in expression starting at /home/roland/devspace/diffpumas.jl/dev/lowfraction_round3.jl:86
