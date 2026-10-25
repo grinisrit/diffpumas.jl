@@ -1,0 +1,17 @@
+{
+  "ended_utc": "2026-10-25T00:13:05.874306+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "execution.json": "2e8b55e3e0ad379389eb1d8d709c78a4bd0eda8053f3c078b22bbc62823aaa50",
+    "results/accepted_1.toml": "f9c544daa5f97d22e05e7c6eef201a86c128bf744e8b4cc3ff5f171e91c4dd12",
+    "results/accepted_2.toml": "5d35294aa4351cc24d01e9e2752ca5696fa36ffac3c2b38d5e840605633cca3d",
+    "results/final.toml": "0d250ad1cd84e51012d2dd5acb3bb0f1e924551aef3c4074d70c829d59488da0",
+    "results/harmonic_reduction.toml": "502f681f118011f1a58050741b74a25ba16efb8638feb806bba63b431101d273",
+    "results/polish_state.toml": "1d4adcbbf71e5c70456938d2cfe9d05bf34b5a8f2b80cf0028ff6db4d1468b86",
+    "run.log": "44157507fa8266c4037aaa09e07e5f5795d5d71a88a9055dd839ff022d93117a"
+  }
+}

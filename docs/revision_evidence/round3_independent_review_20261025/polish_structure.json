@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "accepted": 35,
+  "objective_improvement": 7.289816039701691e-08,
+  "selected_branch_pg": 0.003545350202706521,
+  "evaluations": 827,
+  "gradient_assemblies": 20,
+  "qp": [
+    {
+      "radius": 1e-05,
+      "residual": 0.004671924919136728,
+      "converged": false
+    },
+    {
+      "radius": 1e-07,
+      "residual": 0.004718031422089583,
+      "converged": true
+    },
+    {
+      "radius": 1e-09,
+      "residual": 0.005101096381401835,
+      "converged": true
+    }
+  ],
+  "scope": "Structural and algebraic audit; independent full numerical endpoint check is separate."
+}

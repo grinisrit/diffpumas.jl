@@ -1,0 +1,8 @@
+{"host": "research_vm_roland", "cpus": [0, 1, 2, 3, 4, 5, 6, 7], "address_space_bytes": 17179869184, "effective_budget": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "max_cpus": 21, "max_address_space_bytes": 54760833024}, "cgroup": {"cpu_equivalents": 70.0, "memory_bytes": 182536110080, "observed": [{"controller": "cpu", "files": ["/sys/fs/cgroup/cpu.max"], "values": ["7000000 100000"]}, {"controller": "memory", "files": ["/sys/fs/cgroup/memory.max"], "values": ["182536110080"]}], "unavailable": []}, "command": ["taskset", "-c", "0,1,2,3,4,5,6,7", "timeout", "--signal=TERM", "--kill-after=30s", "300", "bash", "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/convergence_round3_20261025/v2_tests_job.sh"]}
+Test Summary:                             | Pass  Total  Time
+Exact pair simplex transfers and dual gap |   13     13  0.7s
+Test Summary:                                    | Pass  Total  Time
+Actual saved sampled-gradient convex subproblems |   12     12  0.4s
+Test Summary:                                      | Pass  Total  Time
+Harmonic reduction and explicit reduced derivative |    8      8  3.6s
+Independent scipy finite-QP comparison: PASS

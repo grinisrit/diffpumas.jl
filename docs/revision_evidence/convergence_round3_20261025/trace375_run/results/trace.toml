@@ -1,0 +1,2355 @@
+caveat = "Branch transitions identify mechanisms but do not certify nonsmooth stationarity; event mismatches after changed step count may be downstream consequences."
+affected_ray_count = 16
+cell = 375
+interval_scope = "all physics tables including potentially unused materials; candidate events only"
+
+[[reports]]
+bin_idx = 666
+flux = 3.062514221420182e-6
+delta = 0.0
+base_flux = 3.062514221420182e-6
+trace_step_count = 38841
+first_30_changed_events = []
+ray_position = 665
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 38841
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 666
+flux = 3.0625141765989693e-6
+delta = -1.0e-6
+base_flux = 3.062514221420182e-6
+trace_step_count = 38841
+first_30_changed_events = []
+ray_position = 665
+air_overshoot_steps = 0
+flux_change = -4.48212125780164e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 38841
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 666
+flux = 3.062514266241288e-6
+delta = 1.0e-6
+base_flux = 3.062514221420182e-6
+trace_step_count = 38841
+first_30_changed_events = []
+ray_position = 665
+air_overshoot_steps = 0
+flux_change = 4.482110627538152e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 38841
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 666
+flux = 3.062514216938067e-6
+delta = -1.0e-7
+base_flux = 3.062514221420182e-6
+trace_step_count = 38841
+first_30_changed_events = []
+ray_position = 665
+air_overshoot_steps = 0
+flux_change = -4.482114650944651e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 38841
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 666
+flux = 3.0625142259023033e-6
+delta = 1.0e-7
+base_flux = 3.062514221420182e-6
+trace_step_count = 38841
+first_30_changed_events = []
+ray_position = 665
+air_overshoot_steps = 0
+flux_change = 4.482121427208229e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 38841
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 666
+flux = 3.0625142209719684e-6
+delta = -1.0e-8
+base_flux = 3.062514221420182e-6
+trace_step_count = 38841
+first_30_changed_events = []
+ray_position = 665
+air_overshoot_steps = 0
+flux_change = -4.482134132702438e-16
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 38841
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 666
+flux = 3.0625142218684025e-6
+delta = 1.0e-8
+base_flux = 3.062514221420182e-6
+trace_step_count = 38841
+first_30_changed_events = []
+ray_position = 665
+air_overshoot_steps = 0
+flux_change = 4.482206130502955e-16
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 38841
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 667
+flux = 7.0155464850911e-6
+delta = 0.0
+base_flux = 7.0155464850911e-6
+trace_step_count = 38484
+first_30_changed_events = []
+ray_position = 666
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38484
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 667
+flux = 7.0155455757763335e-6
+delta = -1.0e-6
+base_flux = 7.0155464850911e-6
+trace_step_count = 38484
+first_30_changed_events = []
+ray_position = 666
+air_overshoot_steps = 0
+flux_change = -9.09314766563943e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38484
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 667
+flux = 7.015547394403586e-6
+delta = 1.0e-6
+base_flux = 7.0155464850911e-6
+trace_step_count = 38484
+first_30_changed_events = []
+ray_position = 666
+air_overshoot_steps = 0
+flux_change = 9.09312486351249e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38484
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 667
+flux = 7.015546394159709e-6
+delta = -1.0e-7
+base_flux = 7.0155464850911e-6
+trace_step_count = 38484
+first_30_changed_events = []
+ray_position = 666
+air_overshoot_steps = 0
+flux_change = -9.093139076725345e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38484
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 667
+flux = 7.015546576022416e-6
+delta = 1.0e-7
+base_flux = 7.0155464850911e-6
+trace_step_count = 38484
+first_30_changed_events = []
+ray_position = 666
+air_overshoot_steps = 0
+flux_change = 9.093131622835409e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38484
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 667
+flux = 7.015546475997939e-6
+delta = -1.0e-8
+base_flux = 7.0155464850911e-6
+trace_step_count = 38484
+first_30_changed_events = []
+ray_position = 666
+air_overshoot_steps = 0
+flux_change = -9.093161268988563e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38484
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 667
+flux = 7.015546494184243e-6
+delta = 1.0e-8
+base_flux = 7.0155464850911e-6
+trace_step_count = 38484
+first_30_changed_events = []
+ray_position = 666
+air_overshoot_steps = 0
+flux_change = 9.093142634263723e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38484
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 668
+flux = 9.889087608746483e-6
+delta = 0.0
+base_flux = 9.889087608746483e-6
+trace_step_count = 38330
+first_30_changed_events = []
+ray_position = 667
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38330
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 668
+flux = 9.889085741410255e-6
+delta = -1.0e-6
+base_flux = 9.889087608746483e-6
+trace_step_count = 38330
+first_30_changed_events = []
+ray_position = 667
+air_overshoot_steps = 0
+flux_change = -1.867336228136493e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38330
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 668
+flux = 9.889089476078176e-6
+delta = 1.0e-6
+base_flux = 9.889087608746483e-6
+trace_step_count = 38330
+first_30_changed_events = []
+ray_position = 667
+air_overshoot_steps = 0
+flux_change = 1.8673316931220934e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38330
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 668
+flux = 9.88908742201304e-6
+delta = -1.0e-7
+base_flux = 9.889087608746483e-6
+trace_step_count = 38330
+first_30_changed_events = []
+ray_position = 667
+air_overshoot_steps = 0
+flux_change = -1.867334429038513e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38330
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 668
+flux = 9.889087795479879e-6
+delta = 1.0e-7
+base_flux = 9.889087608746483e-6
+trace_step_count = 38330
+first_30_changed_events = []
+ray_position = 667
+air_overshoot_steps = 0
+flux_change = 1.8673339547000626e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38330
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 668
+flux = 9.889087590073156e-6
+delta = -1.0e-8
+base_flux = 9.889087608746483e-6
+trace_step_count = 38330
+first_30_changed_events = []
+ray_position = 667
+air_overshoot_steps = 0
+flux_change = -1.8673327519132775e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38330
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 668
+flux = 9.889087627419828e-6
+delta = 1.0e-8
+base_flux = 9.889087608746483e-6
+trace_step_count = 38330
+first_30_changed_events = []
+ray_position = 667
+air_overshoot_steps = 0
+flux_change = 1.867334445979172e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 38330
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 743
+flux = 1.0832584542090868e-6
+delta = 0.0
+base_flux = 1.0832584542090868e-6
+trace_step_count = 43230
+first_30_changed_events = []
+ray_position = 738
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 574]
+base_step_count = 43230
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 743
+flux = 1.083257637195131e-6
+delta = -1.0e-6
+base_flux = 1.0832584542090868e-6
+trace_step_count = 43230
+first_30_changed_events = []
+ray_position = 738
+air_overshoot_steps = 0
+flux_change = -8.170139558197651e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 574]
+base_step_count = 43230
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 743
+flux = 1.0832592712216558e-6
+delta = 1.0e-6
+base_flux = 1.0832584542090868e-6
+trace_step_count = 43230
+first_30_changed_events = []
+ray_position = 738
+air_overshoot_steps = 0
+flux_change = 8.170125690150722e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 574]
+base_step_count = 43230
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 743
+flux = 1.0832583725077542e-6
+delta = -1.0e-7
+base_flux = 1.0832584542090868e-6
+trace_step_count = 43230
+first_30_changed_events = []
+ray_position = 738
+air_overshoot_steps = 0
+flux_change = -8.170133266860436e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 574]
+base_step_count = 43230
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 743
+flux = 1.0832585359104023e-6
+delta = 1.0e-7
+base_flux = 1.0832584542090868e-6
+trace_step_count = 43230
+first_30_changed_events = []
+ray_position = 738
+air_overshoot_steps = 0
+flux_change = 8.170131551618717e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 574]
+base_step_count = 43230
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 743
+flux = 1.0832584460389482e-6
+delta = -1.0e-8
+base_flux = 1.0832584542090868e-6
+trace_step_count = 43230
+first_30_changed_events = []
+ray_position = 738
+air_overshoot_steps = 0
+flux_change = -8.170138666695474e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 574]
+base_step_count = 43230
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 743
+flux = 1.0832584623792215e-6
+delta = 1.0e-8
+base_flux = 1.0832584542090868e-6
+trace_step_count = 43230
+first_30_changed_events = []
+ray_position = 738
+air_overshoot_steps = 0
+flux_change = 8.170134643288975e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 574]
+base_step_count = 43230
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 744
+flux = 9.719674823903117e-7
+delta = 0.0
+base_flux = 9.719674823903117e-7
+trace_step_count = 43287
+first_30_changed_events = []
+ray_position = 739
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 474, 574, 584]
+base_step_count = 43287
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 744
+flux = 9.719664014573573e-7
+delta = -1.0e-6
+base_flux = 9.719674823903117e-7
+trace_step_count = 43287
+first_30_changed_events = []
+ray_position = 739
+air_overshoot_steps = 0
+flux_change = -1.0809329543814028e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 474, 574, 584]
+base_step_count = 43287
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 744
+flux = 9.719685633219119e-7
+delta = 1.0e-6
+base_flux = 9.719674823903117e-7
+trace_step_count = 43287
+first_30_changed_events = []
+ray_position = 739
+air_overshoot_steps = 0
+flux_change = 1.0809316001874784e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 474, 574, 584]
+base_step_count = 43287
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 744
+flux = 9.71967374297077e-7
+delta = -1.0e-7
+base_flux = 9.719674823903117e-7
+trace_step_count = 43287
+first_30_changed_events = []
+ray_position = 739
+air_overshoot_steps = 0
+flux_change = -1.0809323457882302e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 474, 574, 584]
+base_step_count = 43287
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 744
+flux = 9.719675904835304e-7
+delta = 1.0e-7
+base_flux = 9.719674823903117e-7
+trace_step_count = 43287
+first_30_changed_events = []
+ray_position = 739
+air_overshoot_steps = 0
+flux_change = 1.0809321869695526e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 474, 574, 584]
+base_step_count = 43287
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 744
+flux = 9.719674715809903e-7
+delta = -1.0e-8
+base_flux = 9.719674823903117e-7
+trace_step_count = 43287
+first_30_changed_events = []
+ray_position = 739
+air_overshoot_steps = 0
+flux_change = -1.0809321382651582e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 474, 574, 584]
+base_step_count = 43287
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 744
+flux = 9.719674931996288e-7
+delta = 1.0e-8
+base_flux = 9.719674823903117e-7
+trace_step_count = 43287
+first_30_changed_events = []
+ray_position = 739
+air_overshoot_steps = 0
+flux_change = 1.0809317147486845e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 474, 574, 584]
+base_step_count = 43287
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 745
+flux = 1.2161662352119384e-6
+delta = 0.0
+base_flux = 1.2161662352119384e-6
+trace_step_count = 43164
+first_30_changed_events = []
+ray_position = 740
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575, 585]
+base_step_count = 43164
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 745
+flux = 1.2161645828874518e-6
+delta = -1.0e-6
+base_flux = 1.2161662352119384e-6
+trace_step_count = 43164
+first_30_changed_events = []
+ray_position = 740
+air_overshoot_steps = 0
+flux_change = -1.6523244865270209e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575, 585]
+base_step_count = 43164
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 745
+flux = 1.2161678875347946e-6
+delta = 1.0e-6
+base_flux = 1.2161662352119384e-6
+trace_step_count = 43164
+first_30_changed_events = []
+ray_position = 740
+air_overshoot_steps = 0
+flux_change = 1.6523228562003556e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575, 585]
+base_step_count = 43164
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 745
+flux = 1.216166069979559e-6
+delta = -1.0e-7
+base_flux = 1.2161662352119384e-6
+trace_step_count = 43164
+first_30_changed_events = []
+ray_position = 740
+air_overshoot_steps = 0
+flux_change = -1.6523237932305535e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575, 585]
+base_step_count = 43164
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 745
+flux = 1.2161664004442952e-6
+delta = 1.0e-7
+base_flux = 1.2161662352119384e-6
+trace_step_count = 43164
+first_30_changed_events = []
+ray_position = 740
+air_overshoot_steps = 0
+flux_change = 1.6523235687668225e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575, 585]
+base_step_count = 43164
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 745
+flux = 1.2161662186886994e-6
+delta = -1.0e-8
+base_flux = 1.2161662352119384e-6
+trace_step_count = 43164
+first_30_changed_events = []
+ray_position = 740
+air_overshoot_steps = 0
+flux_change = -1.652323899109672e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575, 585]
+base_step_count = 43164
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 745
+flux = 1.2161662517351708e-6
+delta = 1.0e-8
+base_flux = 1.2161662352119384e-6
+trace_step_count = 43164
+first_30_changed_events = []
+ray_position = 740
+air_overshoot_steps = 0
+flux_change = 1.6523232426591378e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575, 585]
+base_step_count = 43164
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 746
+flux = 1.7557382870366893e-6
+delta = 0.0
+base_flux = 1.7557382870366893e-6
+trace_step_count = 42998
+first_30_changed_events = []
+ray_position = 741
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 42998
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 746
+flux = 1.7557356992974926e-6
+delta = -1.0e-6
+base_flux = 1.7557382870366893e-6
+trace_step_count = 42998
+first_30_changed_events = []
+ray_position = 741
+air_overshoot_steps = 0
+flux_change = -2.5877391967203076e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 42998
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 746
+flux = 1.755740874773416e-6
+delta = 1.0e-6
+base_flux = 1.7557382870366893e-6
+trace_step_count = 42998
+first_30_changed_events = []
+ray_position = 741
+air_overshoot_steps = 0
+flux_change = 2.5877367267722334e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 42998
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 746
+flux = 1.755738028262876e-6
+delta = -1.0e-7
+base_flux = 1.7557382870366893e-6
+trace_step_count = 42998
+first_30_changed_events = []
+ray_position = 741
+air_overshoot_steps = 0
+flux_change = -2.587738133905717e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 42998
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 746
+flux = 1.7557385458104732e-6
+delta = 1.0e-7
+base_flux = 1.7557382870366893e-6
+trace_step_count = 42998
+first_30_changed_events = []
+ray_position = 741
+air_overshoot_steps = 0
+flux_change = 2.587737839561768e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 42998
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 746
+flux = 1.7557382611593055e-6
+delta = -1.0e-8
+base_flux = 1.7557382870366893e-6
+trace_step_count = 42998
+first_30_changed_events = []
+ray_position = 741
+air_overshoot_steps = 0
+flux_change = -2.587738381662854e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 42998
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 746
+flux = 1.7557383129140742e-6
+delta = 1.0e-8
+base_flux = 1.7557382870366893e-6
+trace_step_count = 42998
+first_30_changed_events = []
+ray_position = 741
+air_overshoot_steps = 0
+flux_change = 2.5877384875419725e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475, 575]
+base_step_count = 42998
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 747
+flux = 2.975777124611619e-6
+delta = 0.0
+base_flux = 2.975777124611619e-6
+trace_step_count = 42788
+first_30_changed_events = []
+ray_position = 742
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42788
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 747
+flux = 2.97577244038127e-6
+delta = -1.0e-6
+base_flux = 2.975777124611619e-6
+trace_step_count = 42788
+first_30_changed_events = []
+ray_position = 742
+air_overshoot_steps = 0
+flux_change = -4.6842303489664616e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42788
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 747
+flux = 2.9757818088373713e-6
+delta = 1.0e-6
+base_flux = 2.975777124611619e-6
+trace_step_count = 42788
+first_30_changed_events = []
+ray_position = 742
+air_overshoot_steps = 0
+flux_change = 4.684225752118657e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42788
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 747
+flux = 2.9757766561887816e-6
+delta = -1.0e-7
+base_flux = 2.975777124611619e-6
+trace_step_count = 42788
+first_30_changed_events = []
+ray_position = 742
+air_overshoot_steps = 0
+flux_change = -4.684228375803211e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42788
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 747
+flux = 2.9757775930344068e-6
+delta = 1.0e-7
+base_flux = 2.975777124611619e-6
+trace_step_count = 42788
+first_30_changed_events = []
+ray_position = 742
+air_overshoot_steps = 0
+flux_change = 4.684227876053772e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42788
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 747
+flux = 2.975777077769322e-6
+delta = -1.0e-8
+base_flux = 2.975777124611619e-6
+trace_step_count = 42788
+first_30_changed_events = []
+ray_position = 742
+air_overshoot_steps = 0
+flux_change = -4.6842297141152676e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42788
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 747
+flux = 2.9757771714539006e-6
+delta = 1.0e-8
+base_flux = 2.975777124611619e-6
+trace_step_count = 42788
+first_30_changed_events = []
+ray_position = 742
+air_overshoot_steps = 0
+flux_change = 4.684228147104315e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42788
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 748
+flux = 4.768138780732212e-6
+delta = 0.0
+base_flux = 4.768138780732212e-6
+trace_step_count = 42608
+first_30_changed_events = []
+ray_position = 743
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42608
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 748
+flux = 4.768130914328275e-6
+delta = -1.0e-6
+base_flux = 4.768138780732212e-6
+trace_step_count = 42608
+first_30_changed_events = []
+ray_position = 743
+air_overshoot_steps = 0
+flux_change = -7.866403937677072e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42608
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 748
+flux = 4.768146647128285e-6
+delta = 1.0e-6
+base_flux = 4.768138780732212e-6
+trace_step_count = 42608
+first_30_changed_events = []
+ray_position = 743
+air_overshoot_steps = 0
+flux_change = 7.866396072976156e-12
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42608
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 748
+flux = 4.768137994092154e-6
+delta = -1.0e-7
+base_flux = 4.768138780732212e-6
+trace_step_count = 42608
+first_30_changed_events = []
+ray_position = 743
+air_overshoot_steps = 0
+flux_change = -7.866400580038469e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42608
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 748
+flux = 4.768139567372164e-6
+delta = 1.0e-7
+base_flux = 4.768138780732212e-6
+trace_step_count = 42608
+first_30_changed_events = []
+ray_position = 743
+air_overshoot_steps = 0
+flux_change = 7.866399512776955e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42608
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 748
+flux = 4.7681387020682125e-6
+delta = -1.0e-8
+base_flux = 4.768138780732212e-6
+trace_step_count = 42608
+first_30_changed_events = []
+ray_position = 743
+air_overshoot_steps = 0
+flux_change = -7.866399978645076e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42608
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 748
+flux = 4.768138859396214e-6
+delta = 1.0e-8
+base_flux = 4.768138780732212e-6
+trace_step_count = 42608
+first_30_changed_events = []
+ray_position = 743
+air_overshoot_steps = 0
+flux_change = 7.866400148051666e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 475]
+base_step_count = 42608
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 826
+flux = 7.162387055679274e-7
+delta = 0.0
+base_flux = 7.162387055679274e-7
+trace_step_count = 48758
+first_30_changed_events = []
+ray_position = 812
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 484]
+base_step_count = 48758
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 826
+flux = 7.162378954966494e-7
+delta = -1.0e-6
+base_flux = 7.162387055679274e-7
+trace_step_count = 48758
+first_30_changed_events = []
+ray_position = 812
+air_overshoot_steps = 0
+flux_change = -8.100712780079243e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 484]
+base_step_count = 48758
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 826
+flux = 7.162395156382205e-7
+delta = 1.0e-6
+base_flux = 7.162387055679274e-7
+trace_step_count = 48758
+first_30_changed_events = []
+ray_position = 812
+air_overshoot_steps = 0
+flux_change = 8.100702931203649e-13
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 484]
+base_step_count = 48758
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 826
+flux = 7.162386245608404e-7
+delta = -1.0e-7
+base_flux = 7.162387055679274e-7
+trace_step_count = 48758
+first_30_changed_events = []
+ray_position = 812
+air_overshoot_steps = 0
+flux_change = -8.10070869949802e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 484]
+base_step_count = 48758
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 826
+flux = 7.162387865750003e-7
+delta = 1.0e-7
+base_flux = 7.162387055679274e-7
+trace_step_count = 48758
+first_30_changed_events = []
+ray_position = 812
+air_overshoot_steps = 0
+flux_change = 8.100707291305745e-14
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 484]
+base_step_count = 48758
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 826
+flux = 7.162386974672191e-7
+delta = -1.0e-8
+base_flux = 7.162387055679274e-7
+trace_step_count = 48758
+first_30_changed_events = []
+ray_position = 812
+air_overshoot_steps = 0
+flux_change = -8.100708223041987e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 484]
+base_step_count = 48758
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 826
+flux = 7.162387136686336e-7
+delta = 1.0e-8
+base_flux = 7.162387055679274e-7
+trace_step_count = 48758
+first_30_changed_events = []
+ray_position = 812
+air_overshoot_steps = 0
+flux_change = 8.100706211338737e-15
+path_cell_indices = [55, 155, 165, 265, 365, 375, 374, 474, 484]
+base_step_count = 48758
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 827
+flux = 6.173191996410714e-7
+delta = 0.0
+base_flux = 6.173191996410714e-7
+trace_step_count = 48800
+first_30_changed_events = []
+ray_position = 813
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 474, 484]
+base_step_count = 48800
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 827
+flux = 6.173174236875555e-7
+delta = -1.0e-6
+base_flux = 6.173191996410714e-7
+trace_step_count = 48800
+first_30_changed_events = []
+ray_position = 813
+air_overshoot_steps = 0
+flux_change = -1.7759535158744485e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 474, 484]
+base_step_count = 48800
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 827
+flux = 6.173209755955688e-7
+delta = 1.0e-6
+base_flux = 6.173191996410714e-7
+trace_step_count = 48800
+first_30_changed_events = []
+ray_position = 813
+air_overshoot_steps = 0
+flux_change = 1.7759544974797553e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 474, 484]
+base_step_count = 48800
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 827
+flux = 6.173190220456746e-7
+delta = -1.0e-7
+base_flux = 6.173191996410714e-7
+trace_step_count = 48800
+first_30_changed_events = []
+ray_position = 813
+air_overshoot_steps = 0
+flux_change = -1.7759539672371303e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 474, 484]
+base_step_count = 48800
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 827
+flux = 6.173193772364767e-7
+delta = 1.0e-7
+base_flux = 6.173191996410714e-7
+trace_step_count = 48800
+first_30_changed_events = []
+ray_position = 813
+air_overshoot_steps = 0
+flux_change = 1.7759540529992162e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 474, 484]
+base_step_count = 48800
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 827
+flux = 6.173191818815294e-7
+delta = -1.0e-8
+base_flux = 6.173191996410714e-7
+trace_step_count = 48800
+first_30_changed_events = []
+ray_position = 813
+air_overshoot_steps = 0
+flux_change = -1.7759541917008613e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 474, 484]
+base_step_count = 48800
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 827
+flux = 6.173192174006127e-7
+delta = 1.0e-8
+base_flux = 6.173191996410714e-7
+trace_step_count = 48800
+first_30_changed_events = []
+ray_position = 813
+air_overshoot_steps = 0
+flux_change = 1.775954138761302e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 474, 484]
+base_step_count = 48800
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 828
+flux = 7.586523591122556e-7
+delta = 0.0
+base_flux = 7.586523591122556e-7
+trace_step_count = 48735
+first_30_changed_events = []
+ray_position = 814
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48735
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 828
+flux = 7.586502251347478e-7
+delta = -1.0e-6
+base_flux = 7.586523591122556e-7
+trace_step_count = 48735
+first_30_changed_events = []
+ray_position = 814
+air_overshoot_steps = 0
+flux_change = -2.1339775077931355e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48735
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 828
+flux = 7.586544930904832e-7
+delta = 1.0e-6
+base_flux = 7.586523591122556e-7
+trace_step_count = 48735
+first_30_changed_events = []
+ray_position = 814
+air_overshoot_steps = 0
+flux_change = 2.1339782275593824e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48735
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 828
+flux = 7.586521457144746e-7
+delta = -1.0e-7
+base_flux = 7.586523591122556e-7
+trace_step_count = 48735
+first_30_changed_events = []
+ray_position = 814
+air_overshoot_steps = 0
+flux_change = -2.1339778099721394e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48735
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 828
+flux = 7.586525725100495e-7
+delta = 1.0e-7
+base_flux = 7.586523591122556e-7
+trace_step_count = 48735
+first_30_changed_events = []
+ray_position = 814
+air_overshoot_steps = 0
+flux_change = 2.1339779391446638e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48735
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 828
+flux = 7.5865233777248e-7
+delta = -1.0e-8
+base_flux = 7.586523591122556e-7
+trace_step_count = 48735
+first_30_changed_events = []
+ray_position = 814
+air_overshoot_steps = 0
+flux_change = -2.1339775590386288e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48735
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 828
+flux = 7.586523804520346e-7
+delta = 1.0e-8
+base_flux = 7.586523591122556e-7
+trace_step_count = 48735
+first_30_changed_events = []
+ray_position = 814
+air_overshoot_steps = 0
+flux_change = 2.1339778978518077e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48735
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 829
+flux = 9.748059941295326e-7
+delta = 0.0
+base_flux = 9.748059941295326e-7
+trace_step_count = 48630
+first_30_changed_events = []
+ray_position = 815
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48630
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 829
+flux = 9.748032038343408e-7
+delta = -1.0e-6
+base_flux = 9.748059941295326e-7
+trace_step_count = 48630
+first_30_changed_events = []
+ray_position = 815
+air_overshoot_steps = 0
+flux_change = -2.790295191785463e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48630
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 829
+flux = 9.748087844256182e-7
+delta = 1.0e-6
+base_flux = 9.748059941295326e-7
+trace_step_count = 48630
+first_30_changed_events = []
+ray_position = 815
+air_overshoot_steps = 0
+flux_change = 2.7902960856169808e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48630
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 829
+flux = 9.74805715099968e-7
+delta = -1.0e-7
+base_flux = 9.748059941295326e-7
+trace_step_count = 48630
+first_30_changed_events = []
+ray_position = 815
+air_overshoot_steps = 0
+flux_change = -2.790295646853914e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48630
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 829
+flux = 9.74806273159099e-7
+delta = 1.0e-7
+base_flux = 9.748059941295326e-7
+trace_step_count = 48630
+first_30_changed_events = []
+ray_position = 815
+air_overshoot_steps = 0
+flux_change = 2.790295663794573e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48630
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 829
+flux = 9.748059662265781e-7
+delta = -1.0e-8
+base_flux = 9.748059941295326e-7
+trace_step_count = 48630
+first_30_changed_events = []
+ray_position = 815
+air_overshoot_steps = 0
+flux_change = -2.7902954478011715e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48630
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 829
+flux = 9.748060220324863e-7
+delta = 1.0e-8
+base_flux = 9.748059941295326e-7
+trace_step_count = 48630
+first_30_changed_events = []
+ray_position = 815
+air_overshoot_steps = 0
+flux_change = 2.7902953630978768e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48630
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 830
+flux = 1.5668959204323356e-6
+delta = 0.0
+base_flux = 1.5668959204323356e-6
+trace_step_count = 48450
+first_30_changed_events = []
+ray_position = 816
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48450
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 830
+flux = 1.5668913962587689e-6
+delta = -1.0e-6
+base_flux = 1.5668959204323356e-6
+trace_step_count = 48450
+first_30_changed_events = []
+ray_position = 816
+air_overshoot_steps = 0
+flux_change = -4.5241735666854104e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48450
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 830
+flux = 1.5669004446066415e-6
+delta = 1.0e-6
+base_flux = 1.5668959204323356e-6
+trace_step_count = 48450
+first_30_changed_events = []
+ray_position = 816
+air_overshoot_steps = 0
+flux_change = 4.524174305933415e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48450
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 830
+flux = 1.5668954680149517e-6
+delta = -1.0e-7
+base_flux = 1.5668959204323356e-6
+trace_step_count = 48450
+first_30_changed_events = []
+ray_position = 816
+air_overshoot_steps = 0
+flux_change = -4.524173839006503e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48450
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 830
+flux = 1.5668963728497354e-6
+delta = 1.0e-7
+base_flux = 1.5668959204323356e-6
+trace_step_count = 48450
+first_30_changed_events = []
+ray_position = 816
+air_overshoot_steps = 0
+flux_change = 4.5241739978251806e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48450
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 830
+flux = 1.5668958751906016e-6
+delta = -1.0e-8
+base_flux = 1.5668959204323356e-6
+trace_step_count = 48450
+first_30_changed_events = []
+ray_position = 816
+air_overshoot_steps = 0
+flux_change = -4.5241733943142057e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48450
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 830
+flux = 1.5668959656740797e-6
+delta = 1.0e-8
+base_flux = 1.5668959204323356e-6
+trace_step_count = 48450
+first_30_changed_events = []
+ray_position = 816
+air_overshoot_steps = 0
+flux_change = 4.5241744107537424e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475, 485]
+base_step_count = 48450
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 831
+flux = 2.46740456066083e-6
+delta = 0.0
+base_flux = 2.46740456066083e-6
+trace_step_count = 48259
+first_30_changed_events = []
+ray_position = 817
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475]
+base_step_count = 48259
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 831
+flux = 2.467397660787852e-6
+delta = -1.0e-6
+base_flux = 2.46740456066083e-6
+trace_step_count = 48259
+ray_position = 817
+air_overshoot_steps = 0
+flux_change = -6.8998729781344316e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475]
+base_step_count = 48259
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 2
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+
+    [[reports.first_30_changed_events]]
+    base_limiter = "2"
+    trial_candidates = [64.17422937344236, 60.0, 617032.1842595144]
+    base_remaining = 64.17422937344236
+    base_limiter_density = 0.09139064965591352
+    step = 1176
+    trial_ds = 60.0
+    base_tied_branches = [2]
+    base_intervals = [118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118]
+    base_candidates = [64.17422937344236, 60.0, 617032.1195498181]
+    trial_tied_branches = [2]
+    sample = 16
+    trial_limiter = "2"
+    trial_air_floor = false
+    trial_energy = 29999.970610347493
+    base_energy = 29999.937601725393
+    base_ds = 60.0
+    trial_limiter_density = 0.09139064965591352
+    segment = -2
+    base_air_floor = false
+    trial_remaining = 64.17422937344236
+    trial_intervals = [118, 118, 118, 118, 118, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119]
+    [[reports.first_30_changed_events]]
+    base_limiter = "1"
+    trial_candidates = [4.174229373442358, 60.0, 617703.6339948416]
+    base_remaining = 4.174229373442358
+    base_limiter_density = 0.09129130869865569
+    step = 1177
+    trial_ds = 4.174229373442358
+    base_tied_branches = [1]
+    base_intervals = [118, 118, 118, 118, 118, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119]
+    base_candidates = [4.174229373442358, 60.0, 617703.6732305601]
+    trial_tied_branches = [1]
+    sample = 16
+    trial_limiter = "1"
+    trial_air_floor = false
+    trial_energy = 30000.028954142763
+    base_energy = 29999.995945457675
+    base_ds = 4.174229373442358
+    trial_limiter_density = 0.09129130869865569
+    segment = -2
+    base_air_floor = false
+    trial_remaining = 4.174229373442358
+    trial_intervals = [119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119]
+[[reports]]
+bin_idx = 831
+flux = 2.467411526859724e-6
+delta = 1.0e-6
+base_flux = 2.46740456066083e-6
+trace_step_count = 48259
+ray_position = 817
+air_overshoot_steps = 0
+flux_change = 6.966198893993818e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475]
+base_step_count = 48259
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 1
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+
+    [[reports.first_30_changed_events]]
+    base_limiter = "1"
+    trial_candidates = [4.174229373442358, 60.0, 617703.6084501478]
+    base_remaining = 4.174229373442358
+    base_limiter_density = 0.09129130869865569
+    step = 1177
+    trial_ds = 4.174229373442358
+    base_tied_branches = [1]
+    base_intervals = [118, 118, 118, 118, 118, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119]
+    base_candidates = [4.174229373442358, 60.0, 617703.6732305601]
+    trial_tied_branches = [1]
+    sample = 16
+    trial_limiter = "1"
+    trial_air_floor = false
+    trial_energy = 29999.962936896693
+    base_energy = 29999.995945457675
+    base_ds = 4.174229373442358
+    trial_limiter_density = 0.09129130869865569
+    segment = -2
+    base_air_floor = false
+    trial_remaining = 4.174229373442358
+    trial_intervals = [118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118]
+[[reports]]
+bin_idx = 831
+flux = 2.467403870673613e-6
+delta = -1.0e-7
+base_flux = 2.46740456066083e-6
+trace_step_count = 48259
+first_30_changed_events = []
+ray_position = 817
+air_overshoot_steps = 0
+flux_change = -6.899872171759066e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475]
+base_step_count = 48259
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 831
+flux = 2.4674052572806773e-6
+delta = 1.0e-7
+base_flux = 2.46740456066083e-6
+trace_step_count = 48259
+ray_position = 817
+air_overshoot_steps = 0
+flux_change = 6.966198472594927e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475]
+base_step_count = 48259
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 1
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+
+    [[reports.first_30_changed_events]]
+    base_limiter = "1"
+    trial_candidates = [4.174229373442358, 60.0, 617703.6667524836]
+    base_remaining = 4.174229373442358
+    base_limiter_density = 0.09129130869865569
+    step = 1177
+    trial_ds = 4.174229373442358
+    base_tied_branches = [1]
+    base_intervals = [118, 118, 118, 118, 118, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119]
+    base_candidates = [4.174229373442358, 60.0, 617703.6732305601]
+    trial_tied_branches = [1]
+    sample = 16
+    trial_limiter = "1"
+    trial_air_floor = false
+    trial_energy = 29999.992644596106
+    base_energy = 29999.995945457675
+    base_ds = 4.174229373442358
+    trial_limiter_density = 0.09129130869865569
+    segment = -2
+    base_air_floor = false
+    trial_remaining = 4.174229373442358
+    trial_intervals = [118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118]
+[[reports]]
+bin_idx = 831
+flux = 2.4674044916621152e-6
+delta = -1.0e-8
+base_flux = 2.46740456066083e-6
+trace_step_count = 48259
+first_30_changed_events = []
+ray_position = 817
+air_overshoot_steps = 0
+flux_change = -6.899871477192049e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475]
+base_step_count = 48259
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 831
+flux = 2.467404630322719e-6
+delta = 1.0e-8
+base_flux = 2.46740456066083e-6
+trace_step_count = 48259
+ray_position = 817
+air_overshoot_steps = 0
+flux_change = 6.966188905357788e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 475]
+base_step_count = 48259
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 1
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+
+    [[reports.first_30_changed_events]]
+    base_limiter = "1"
+    trial_candidates = [4.174229373442358, 60.0, 617703.6725827522]
+    base_remaining = 4.174229373442358
+    base_limiter_density = 0.09129130869865569
+    step = 1177
+    trial_ds = 4.174229373442358
+    base_tied_branches = [1]
+    base_intervals = [118, 118, 118, 118, 118, 119, 119, 119, 119, 119, 119, 119, 119, 119, 119]
+    base_candidates = [4.174229373442358, 60.0, 617703.6732305601]
+    trial_tied_branches = [1]
+    sample = 16
+    trial_limiter = "1"
+    trial_air_floor = false
+    trial_energy = 29999.99561537147
+    base_energy = 29999.995945457675
+    base_ds = 4.174229373442358
+    trial_limiter_density = 0.09129130869865569
+    segment = -2
+    base_air_floor = false
+    trial_remaining = 4.174229373442358
+    trial_intervals = [118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118, 118]
+[[reports]]
+bin_idx = 916
+flux = 1.0199599942108107e-6
+delta = 0.0
+base_flux = 1.0199599942108107e-6
+trace_step_count = 56223
+first_30_changed_events = []
+ray_position = 882
+air_overshoot_steps = 0
+flux_change = 0.0
+path_cell_indices = [55, 155, 165, 265, 275, 375, 385]
+base_step_count = 56223
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 916
+flux = 1.0199585598988429e-6
+delta = -1.0e-6
+base_flux = 1.0199599942108107e-6
+trace_step_count = 56223
+first_30_changed_events = []
+ray_position = 882
+air_overshoot_steps = 0
+flux_change = -1.4343119678598162e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 385]
+base_step_count = 56223
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 916
+flux = 1.019961428520937e-6
+delta = 1.0e-6
+base_flux = 1.0199599942108107e-6
+trace_step_count = 56223
+first_30_changed_events = []
+ray_position = 882
+air_overshoot_steps = 0
+flux_change = 1.4343101261984307e-12
+path_cell_indices = [55, 155, 165, 265, 275, 375, 385]
+base_step_count = 56223
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 916
+flux = 1.0199598507796907e-6
+delta = -1.0e-7
+base_flux = 1.0199599942108107e-6
+trace_step_count = 56223
+first_30_changed_events = []
+ray_position = 882
+air_overshoot_steps = 0
+flux_change = -1.4343112006597243e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 385]
+base_step_count = 56223
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 916
+flux = 1.0199601376419094e-6
+delta = 1.0e-7
+base_flux = 1.0199599942108107e-6
+trace_step_count = 56223
+first_30_changed_events = []
+ray_position = 882
+air_overshoot_steps = 0
+flux_change = 1.434310986783905e-13
+path_cell_indices = [55, 155, 165, 265, 275, 375, 385]
+base_step_count = 56223
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 916
+flux = 1.0199599798677024e-6
+delta = -1.0e-8
+base_flux = 1.0199599942108107e-6
+trace_step_count = 56223
+first_30_changed_events = []
+ray_position = 882
+air_overshoot_steps = 0
+flux_change = -1.4343108322003922e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 385]
+base_step_count = 56223
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0
+[[reports]]
+bin_idx = 916
+flux = 1.0199600085539222e-6
+delta = 1.0e-8
+base_flux = 1.0199599942108107e-6
+trace_step_count = 56223
+first_30_changed_events = []
+ray_position = 882
+air_overshoot_steps = 0
+flux_change = 1.4343111498377474e-14
+path_cell_indices = [55, 155, 165, 265, 275, 375, 385]
+base_step_count = 56223
+air_floor_steps = 0
+
+    [reports.changes]
+    removed_step = 0
+    interval = 0
+    new_step = 0
+    limiter = 0
+    air_floor = 0

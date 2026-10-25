@@ -1,0 +1,11 @@
+{
+  "render_time_source": {
+    "path": "docs/revision_evidence/convergence_round3_20261025/figure_run/render_source_snapshot.tex",
+    "sha256": "5c988c85ecff7c1ddd4151988f86294edbfdfdb7210605c3a4cbf1f387f60dce"
+  },
+  "final_source": {
+    "path": "diffmuontomoLVD/revision/convergence_round3_results.tex",
+    "sha256": "b6539636d50798f39f4d3a4130db0de21e9a5fb56cd6dc441957e9f535a72136"
+  },
+  "changes": "Reviewer wording: fitted-ray coverage does not imply identifiability; explicit harmonic-extension derivative T; attribution rounded to99.95%; font-compatible T^top. Figure source/data/graphics unchanged."
+}

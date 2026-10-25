@@ -1,0 +1,30 @@
+{
+  "frozen_utc": "2026-10-25T00:17:37.825771+00:00",
+  "helper_sha256": "c700acb365d4f0e04a21f9eb552313b6b0e5c31ca376c09634892ec938439917",
+  "cases": [
+    {
+      "bin": 1,
+      "field": 1,
+      "replicate": 1
+    },
+    {
+      "bin": 12,
+      "field": 4,
+      "replicate": 1
+    }
+  ],
+  "deterministic_arms": [
+    "control",
+    "candidate"
+  ],
+  "mc_replay_states": [
+    "dry",
+    "wet",
+    "lo",
+    "hi"
+  ],
+  "mc_replay_histories": 8192,
+  "mc_policy": "Exact bitwise equality expected against original threaded output; replay reuses stored seeds and is verification only, no new independent replicate.",
+  "deterministic_tolerance": "Flux/Jacobian relative1e-12; subtraction-sensitive secants/FD relative1e-10 absolute1e-20. Same algorithm should ordinarily match bitwise.",
+  "heldout_inspected": false
+}

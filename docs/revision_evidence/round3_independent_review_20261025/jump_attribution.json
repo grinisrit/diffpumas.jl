@@ -1,0 +1,30 @@
+{
+  "profile_score_sum": 6.444844657949034e-14,
+  "checks": [
+    {
+      "step": 1e-06,
+      "full_objective_one_sided_slope_jump": 0.007470006835319509,
+      "all_trace_ray_first_order_jump": 0.007408977887164238,
+      "dominant_bin": 831,
+      "dominant_ray_jump": 0.007409840919944088,
+      "dominant_fraction_of_full": 0.9919456679623175
+    },
+    {
+      "step": 1e-07,
+      "full_objective_one_sided_slope_jump": 0.007416502967316774,
+      "all_trace_ray_first_order_jump": 0.007409816682477774,
+      "dominant_bin": 831,
+      "dominant_ray_jump": 0.007409883928991113,
+      "dominant_fraction_of_full": 0.9991075256957586
+    },
+    {
+      "step": 1e-08,
+      "full_objective_one_sided_slope_jump": 0.007412381819449365,
+      "all_trace_ray_first_order_jump": 0.00740906923691936,
+      "dominant_bin": 831,
+      "dominant_ray_jump": 0.007408892686378163,
+      "dominant_fraction_of_full": 0.9995292831432337
+    }
+  ],
+  "scope": "Finite-step envelope first-order decomposition. Residual difference includes curvature/subtraction; observed transition is not a limiting nonsmooth-stationarity proof."
+}

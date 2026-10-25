@@ -1,0 +1,5 @@
+#!/bin/bash
+set -eu
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+cd /home/roland/devspace/diffpumas.jl
+exec /home/roland/.venv/bin/python3 /home/roland/devspace/diffpumas.jl/dev/run_revision_job.py --output /home/roland/devspace/diffpumas.jl/docs/revision_evidence/convergence_round3_20261025/figure_run --dump /home/roland/devspace/diffpumas.jl/examples/data/revision_physics_v2_final_20261023/materials.pumas --julia /home/roland/.julia/juliaup/julia-1.11.7+0.x64.linux.gnu/bin/julia --cpus 1 --cpu-start 0 --memory-gib 2 --input /home/roland/devspace/diffpumas.jl/diffmuontomoLVD/revision/build_convergence_round3_figure.py --input /home/roland/devspace/diffpumas.jl/diffmuontomoLVD/revision/convergence_round3_results.tex -- /home/roland/.venv/bin/python3 /home/roland/devspace/diffpumas.jl/diffmuontomoLVD/revision/build_convergence_round3_figure.py --evidence /home/roland/devspace/diffpumas.jl/docs/revision_evidence/convergence_round3_20261025 --review /home/roland/devspace/diffpumas.jl/docs/revision_evidence/round3_independent_review_20261025/final_v2_recheck --output /home/roland/devspace/diffpumas.jl/diffmuontomoLVD/revision/convergence_round3_20261025

@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "rows": 72,
+  "rays": 18,
+  "max_abs_relative": 0.0009051069057134375,
+  "worst_domain_ray": {
+    "valid": "true",
+    "zenith": "75.0",
+    "azimuth": "277.5",
+    "slant_m": "4752.067752990385",
+    "outside_training_angle": "true",
+    "outside_training_slant": "true",
+    "nodes": "32",
+    "flux": "4.901605825559196e-9",
+    "source_altitude_m": "30000.0"
+  },
+  "worst_domain_ray_32vs256": -0.0007932118184531545,
+  "scope": "Quadrature/domain diagnostic only; no MC truth, source-boundary validation or causal structural explanation."
+}

@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "rows": 258,
+  "directions": 43,
+  "resolved_descents": 22,
+  "best_trial": {
+    "direction": "coordinate_256_1",
+    "step": "1.0e-5",
+    "actual_step_inf": "9.999999999999593e-6",
+    "objective": "100.59269071334649",
+    "objective_change": "-2.324779302398383e-8",
+    "slope": "-0.002324779302398383",
+    "branch_prediction": "-0.00012925162283660723",
+    "affected_bins": "172",
+    "data_objective": "82.8265312410642",
+    "prior_objective": "17.76615947228228",
+    "normalization": "3.5426967505434607e6",
+    "resolved": "true"
+  },
+  "scope": "Independent consistency checks; no objective recomputation or stationarity certification.",
+  "sha256": {
+    "diagnostic.toml": "79e5bc51ee13d0cec4418431e2e8149a4b7396e139b11af296d9f45226b5cb09",
+    "directions.toml": "95adfe0e5054873c74598299db6653250806dd4cdd59f9e620d445df163b584c",
+    "directional_checks.csv": "8af95e18de98a8ef33c33c2c38b6c189d58e8a31cee5b8b45883dced767e95a2"
+  }
+}

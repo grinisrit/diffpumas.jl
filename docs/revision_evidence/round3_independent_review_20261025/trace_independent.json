@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "cell": 375,
+  "rays": 16,
+  "reports": 112,
+  "candidate_transition_counts": {
+    "removed_step": 0,
+    "interval": 5,
+    "new_step": 0,
+    "limiter": 0,
+    "air_floor": 0
+  },
+  "scope": "Output hash and summary consistency only; unused-table events and downstream step consequences preclude causal proof."
+}

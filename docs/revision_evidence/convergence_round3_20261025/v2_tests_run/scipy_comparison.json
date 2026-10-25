@@ -1,0 +1,59 @@
+{
+  "results": [
+    {
+      "radius": 1e-05,
+      "passed": true,
+      "scipy_success": true,
+      "scipy_message": "Optimization terminated successfully",
+      "objective": 9.157555026011513e-06,
+      "julia_objective": 9.157555026011496e-06,
+      "objective_difference": 1.6940658945086007e-20,
+      "frank_wolfe_gap": 4.0657581468206416e-20,
+      "alpha": [
+        0.57276167926771,
+        0.0,
+        3.1589314497537657e-15,
+        0.427238320732285,
+        0.0,
+        2.3869795029440866e-15
+      ]
+    },
+    {
+      "radius": 1e-07,
+      "passed": true,
+      "scipy_success": true,
+      "scipy_message": "Optimization terminated successfully",
+      "objective": 1.1125503895624455e-05,
+      "julia_objective": 1.1125503896005987e-05,
+      "objective_difference": 3.815324385635435e-16,
+      "frank_wolfe_gap": 4.22500034090445e-18,
+      "alpha": [
+        0.8029078147226408,
+        0.0,
+        0.07006406755233649,
+        0.12702811772502348,
+        0.0,
+        1.3877787807814457e-17
+      ]
+    },
+    {
+      "radius": 1e-09,
+      "passed": true,
+      "scipy_success": true,
+      "scipy_message": "Optimization terminated successfully",
+      "objective": 1.301039422262004e-05,
+      "julia_objective": 1.3010394222620035e-05,
+      "objective_difference": 5.082197683525802e-21,
+      "frank_wolfe_gap": 3.3881317890172014e-21,
+      "alpha": [
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        1.5522160848007797e-16,
+        0.0
+      ]
+    }
+  ],
+  "passed": true
+}

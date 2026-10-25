@@ -1,0 +1,19 @@
+expected_objective = 100.59269066369612
+absolute_trial_discrepancy = 0.0
+scope = "Independent full forward objective and selected-branch gradient recomputation; no stationarity certificate."
+selected_branch_pg = 0.003545350202706521
+full_paths_recomputed_per_field = 1003
+supported_max_displacement = 2.1647816325617852e-5
+difference = -7.289816039701691e-8
+
+[trial]
+objective = 100.59269066369612
+data = 82.82649461873172
+prior = 17.76619604496441
+normalization = 3.5426571429882706e6
+
+[baseline]
+objective = 100.59269073659428
+data = 82.82648499678194
+prior = 17.766205739812342
+normalization = 3.54271929102373e6

@@ -1,0 +1,14 @@
+{
+  "ended_utc": "2026-10-25T00:05:30.620322+00:00",
+  "returncode": 0,
+  "execution_completed": true,
+  "source_unchanged": true,
+  "source_changes": [],
+  "runtime_unchanged": true,
+  "output_sha256": {
+    "actual_qp.toml": "1b5dc1d4d3e5ea84382a4017c3fc9874488416dc382a5684764ed5b87bcd40c3",
+    "execution.json": "51b74d603794e0e4fa764342e38bbf165a872325d44a40ba40fe59fbc39b35c3",
+    "run.log": "d0396707f6a3ac4f976d22842368b8befb20023f7309c4de67ff037f815966cf",
+    "scipy_comparison.json": "8a497fb116958267a16060984029ad8f9f8540511ae9d03186886f6a9db7ca61"
+  }
+}

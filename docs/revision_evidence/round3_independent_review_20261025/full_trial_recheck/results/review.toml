@@ -1,0 +1,20 @@
+expected_objective = 100.59269071334649
+step = 1.0e-5
+absolute_trial_discrepancy = 0.0
+scope = "Independent full forward objective recomputation; no stationarity certificate."
+full_paths_recomputed_per_field = 1003
+direction = "coordinate_256_1"
+supported_max_displacement = 9.999999999999593e-6
+difference = -2.324779302398383e-8
+
+[trial]
+objective = 100.59269071334649
+data = 82.8265312410642
+prior = 17.76615947228228
+normalization = 3.5426967505434607e6
+
+[baseline]
+objective = 100.59269073659428
+data = 82.82648499678194
+prior = 17.766205739812342
+normalization = 3.54271929102373e6

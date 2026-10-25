@@ -1,0 +1,25 @@
+{
+  "scope": "Methods lookup for independently reviewed convergence investigation and low-fraction calibration pilot; not evidence of achieved convergence or physical validity.",
+  "consensus_thread": "https://consensus.app/search/we-are-revising-cpc-paper-comphy-d-26-00704-on-dif/-DndWmoDTHyD3D87cRrAgg/",
+  "consensus_interaction": "FpFQ1u7_S8K92Io9zGoyRg",
+  "sources": [
+    {
+      "title": "A Robust Gradient Sampling Algorithm for Nonsmooth, Nonconvex Optimization",
+      "authors": "Burke, Lewis and Overton",
+      "year": 2005,
+      "doi": "10.1137/030601296",
+      "primary_url": "https://epubs.siam.org/doi/10.1137/030601296",
+      "use": "Background on sampling nearby gradients for nonsmooth optimization; its assumptions and algorithmic guarantees cannot be transferred to a finite directional audit."
+    },
+    {
+      "title": "A Sequential Quadratic Programming Algorithm for Nonconvex, Nonsmooth Constrained Optimization",
+      "authors": "Curtis and Overton",
+      "year": 2012,
+      "doi": "10.1137/090780201",
+      "primary_url": "https://epubs.siam.org/doi/10.1137/090780201",
+      "author_pdf": "https://coral.ise.lehigh.edu/frankecurtis/files/papers/CurtOver12.pdf",
+      "use": "Constraint-aware nonsmooth optimization background. Applicability requires checking regularity and implementing the stated method, not simply projecting an unconstrained sampled gradient."
+    }
+  ],
+  "screening": "Consensus also returned flux-corrected transport discretization papers unrelated to our multiplicative muon-surrogate calibration; these are not adopted as support. Full generated synthesis retained in private task scratch."
+}

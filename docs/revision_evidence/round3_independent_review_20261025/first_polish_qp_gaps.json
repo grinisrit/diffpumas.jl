@@ -1,0 +1,26 @@
+[
+  {
+    "radius": 1e-05,
+    "psi": 1.0913441225025358e-05,
+    "FWgap": 4.043360059686383e-06,
+    "gap_over_psi": 0.3704935937543374,
+    "alpha_change": 3.56215668073645e-10,
+    "declared_converged": false
+  },
+  {
+    "radius": 1e-07,
+    "psi": 1.1129910249912327e-05,
+    "FWgap": 4.443964755602661e-09,
+    "gap_over_psi": 0.0003992812750343308,
+    "alpha_change": 7.772116283888408e-13,
+    "declared_converged": true
+  },
+  {
+    "radius": 1e-09,
+    "psi": 1.3010592146175447e-05,
+    "FWgap": 1.9794849423206097e-10,
+    "gap_over_psi": 1.5214410843725455e-05,
+    "alpha_change": 2.0039525594484076e-14,
+    "declared_converged": true
+  }
+]

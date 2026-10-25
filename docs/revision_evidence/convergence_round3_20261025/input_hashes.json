@@ -1,0 +1,11 @@
+{
+  "dev/convergence_round3_diagnostic.jl": "e2b36c15487528139d9384b561a6edb536fab43d9ddb7662f6982128c1c6ef2a",
+  "docs/revision_evidence/convergence_round3_20261025/preregistration.md": "00ec459dd5c2175ef367e0142ed269fd6eae8906f9d910e5a7203d5d7f7601fb",
+  "docs/revision_evidence/convergence_round3_20261025/proposed_command.json": "9d2f040f5f45ff70291abff8aa43fe0c407f4ead333b3ff14c14eba9f70be365",
+  "docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml": "8667f1a7fc9a4068e074495dcb08cb04deeb6f7ae77365087aa9daabc4c4677d",
+  "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_fit_mask.csv": "2f941e953b97371acb29c6e7903a6c3e1d4bd4cce1784924efb2785477036252",
+  "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_fit_predictions.csv": "c047752d11b82d8849d9f46ed3a6fb108fe6202231aa0395fd6157904849af87",
+  "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_fit_field.csv": "e9b12c6ee8298d8cd7690612775162058a32132385c6fed8148a69e30b82c08d",
+  "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_solver_status.txt": "1180d4ae40125ec84f3ad86788d714abfc351913aba187c9ab20c61045d5850f",
+  "/home/roland/devspace/diffpumas.jl/docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_solver_configuration.toml": "98e8e4d10bebe261c85a2cb34906c16057c7332cd76725a09eb992fd6a769b4b"
+}

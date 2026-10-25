@@ -1,0 +1,45 @@
+{
+  "report_source_sha256": "9d1d45bdc47831a256f3ee4c18edae9b59e89a48b8b564754a6950f71367aab4",
+  "outputs": {
+    "README.md": "5ecce5ae8042b3d0f53bb49a78abe971aaf4df3a14740fd19fc6c12f9cb8b69a",
+    "final_summary.json": "e49b1777c4ccad98084e06676c8cfccad65d56f9580a3cf0d9a10ede969a9f0a",
+    "trace_mechanism_assessment.json": "310e2d98de5eb60f4004d286d3ae19aae8d13a137047359f583a400419a58fec"
+  },
+  "run_identity": {
+    "diagnostic_run": {
+      "execution_sha256": "fcf5a3dbf0d50ffcb86d69addddcb8c468259c3b8aa00087ec621d12e4e45091",
+      "end_status_sha256": "650872c1dd7623225c6cdc20780377a7754d7cb1696e68a8418cf48525f0b7d1",
+      "output_hashes_verified": 5,
+      "source_hashes_verified": 67,
+      "passed": true
+    },
+    "polish_run": {
+      "execution_sha256": "209a221e324d976fcf8d789a1a3128ebbe5e0494210e469cb0250f01970b93a3",
+      "end_status_sha256": "7bae5af592abfef71b687310e4d1c0aeb374b964ecde2c6dfea48a641c63696c",
+      "output_hashes_verified": 39,
+      "source_hashes_verified": 70,
+      "passed": true
+    },
+    "trace375_run": {
+      "execution_sha256": "13b08a99ce3eeba5f595abc7f540aad4b3aa5ca86d54f436ae476365b8297644",
+      "end_status_sha256": "0805df07e78bff81f380f927694a5d7621bb48899bd2529053e48e59c70fc152",
+      "output_hashes_verified": 3,
+      "source_hashes_verified": 68,
+      "passed": true
+    },
+    "v2_tests_run": {
+      "execution_sha256": "51b74d603794e0e4fa764342e38bbf165a872325d44a40ba40fe59fbc39b35c3",
+      "end_status_sha256": "e304be73ca69e6f2986fd372434017b59de7aee1e1b053afbc07039e6d117600",
+      "output_hashes_verified": 4,
+      "source_hashes_verified": 64,
+      "passed": true
+    },
+    "polish_v2_run": {
+      "execution_sha256": "2e8b55e3e0ad379389eb1d8d709c78a4bd0eda8053f3c078b22bbc62823aaa50",
+      "end_status_sha256": "89a8f317a0a850d6c05e5acc029b96fdcfb267dcf6461260f37e74275072d654",
+      "output_hashes_verified": 7,
+      "source_hashes_verified": 75,
+      "passed": true
+    }
+  }
+}

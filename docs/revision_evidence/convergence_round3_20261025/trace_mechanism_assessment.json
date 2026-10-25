@@ -1,0 +1,70 @@
+{
+  "bin_idx": 831,
+  "water_cell": 375,
+  "robust_log_scale": 0.3,
+  "dem_slope": 0.15,
+  "W": 0.9543181030046736,
+  "t": 1.0694491179193761,
+  "profile_scale": 3542719.29102373,
+  "envelope_score_dF_dp": 111718.63703553246,
+  "comparisons": [
+    {
+      "step": 1e-06,
+      "left_flux_secant": 6.8998729781344316e-06,
+      "right_flux_secant": 6.966198893993818e-06,
+      "observed_objective_secant_jump": 0.007470006835319509,
+      "score_times_flux_secant_jump": 0.007409840919944089,
+      "attributed_fraction": 0.9919456679623176,
+      "remainder": 6.016591537542047e-05
+    },
+    {
+      "step": 1e-07,
+      "left_flux_secant": 6.899872171759066e-06,
+      "right_flux_secant": 6.966198472594927e-06,
+      "observed_objective_secant_jump": 0.007416502967316774,
+      "score_times_flux_secant_jump": 0.007409883928991114,
+      "attributed_fraction": 0.9991075256957587,
+      "remainder": 6.619038325659729e-06
+    },
+    {
+      "step": 1e-08,
+      "left_flux_secant": 6.899871477192049e-06,
+      "right_flux_secant": 6.966188905357788e-06,
+      "observed_objective_secant_jump": 0.007412381819449365,
+      "score_times_flux_secant_jump": 0.007408892686378164,
+      "attributed_fraction": 0.9995292831432339,
+      "remainder": 3.4891330712013766e-06
+    }
+  ],
+  "actual_air_table_crossing": {
+    "material_index": 3,
+    "energy_knots_118_to_120": [
+      25000.0,
+      30000.0,
+      35000.0
+    ],
+    "base_intervals_dedx0_predictor_next": [
+      118,
+      119,
+      119
+    ],
+    "trial_intervals_dedx0_predictor_next": [
+      118,
+      118,
+      118
+    ],
+    "used_by": "propagate_csda_air_segment: property_stopping_power(physics, ENERGY_LOSS_CSDA, air_material, energy/energy_predict/energy_next)"
+  },
+  "input_sha256": {
+    "docs/revision_evidence/convergence_round3_20261025/trace375_run/results/trace.toml": "8cebcceb12cc9c28c0b7f98b0d395e5d29b397c46d044c4b63086b7452a6b7c0",
+    "docs/revision_evidence/convergence_round3_20261025/diagnostic_run/results/directional_checks.csv": "8af95e18de98a8ef33c33c2c38b6c189d58e8a31cee5b8b45883dced767e95a2",
+    "docs/revision_evidence/material_main_recovery_20261024/completed/main/data/lvd_fit_predictions.csv": "c047752d11b82d8849d9f46ed3a6fb108fe6202231aa0395fd6157904849af87",
+    "examples/data/lvd_conf/lvd_single_muon_flux_2d.csv": "b2bf7fa72bccce8e20408f16ac6c6dc53fe9d392c790cdeacdf363fac24e5e4b",
+    "docs/revision_evidence/convergence_round3_20261025/polish_v2_run/results/harmonic_reduction.toml": "502f681f118011f1a58050741b74a25ba16efb8638feb806bba63b431101d273",
+    "src/Tomography.jl": "9221b2cc173563286df117e692f111c24ea1c24a2e0ac7aa7223e8141e0eb843",
+    "src/Physics.jl": "79592a977291b6fc50c35e7ccf2ff8497074425f0474f542bcf7560076d90538",
+    "dev/convergence_round3_trace_assessment.py": "55c8c79175765f24a6436771e87eb8c5734267a698f97c05add2c124a571c484"
+  },
+  "algebra": "Fdata=sum W*c\u00b2*(sqrt(1+(t/c)\u00b2)-1), t=log(p)+a-log(obs). Profile score sum W*t/sqrt(1+(t/c)\u00b2)=0, so da/dw cancels in dF/dw; each flux coefficient is W*t/(p*sqrt(1+(t/c)\u00b2)).",
+  "caveat": "Finite h secant attribution, not derivative-limit or causal proof. Smooth prior and other rays contribute finite-step curvature; interval tracing records predictor/next-energy table crossings, with unchanged adaptive step counts/limiters at h=1e-8."
+}

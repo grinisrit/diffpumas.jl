@@ -1,0 +1,25 @@
+difference = -9.520353216885269e-8
+harmonic_tangent_prior_residual_inf = 4.107825191113079e-15
+final_unseen_gradient_inf = 3.293140924835567e-15
+harmonic_fit_flux_identical = true
+absolute_trial_discrepancy = 0.0
+harmonic_unseen_count = 53
+scope = "Independent full forward objective and selected-branch gradient recomputation; no stationarity certificate."
+full_paths_recomputed_per_field = 1003
+harmonic_objective = 100.59269066366015
+reduced_count = 94
+selected_branch_pg = 0.003671222111425232
+supported_max_displacement = 3.1627259236426813e-5
+expected_objective = 100.59269064139075
+
+[trial]
+objective = 100.59269064139075
+data = 82.82646290697745
+prior = 17.76622773441329
+normalization = 3.5426229358209865e6
+
+[baseline]
+objective = 100.59269073659428
+data = 82.82648499678194
+prior = 17.766205739812342
+normalization = 3.54271929102373e6
