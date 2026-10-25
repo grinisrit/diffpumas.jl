@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "pdf": "/mnt/big_data/agent-builds/convergence-lowfraction-round3-20261025/paper-convergence-proof/main.pdf",
+  "pdf_sha256": "8a4061a74f5d16a4cdc75afa7e5db56bf05d3a35c189b26cb8283bcab5f32a5a",
+  "pages_reviewed": [
+    45,
+    46,
+    47
+  ],
+  "paper_supplement_sha256": "d610cd7eade3118954e62208db3c13b1dbfe4fb767d3690bda6269b18da42598",
+  "render_execution_verified": true,
+  "render_source_history_verified": true,
+  "figure_manifest_sha256": "4607f202f2dbd7dc6eaccc5b38412ab6609beb87aa181bb02bfb8f015cc7cf84",
+  "plotted_points_verified": 144,
+  "all_twose_bars_visible": true,
+  "history_counts_verified": 1769472,
+  "scope": "Integrated content/visual and provenance review; validation PASS is distinct from scientific screening REJECT. No adoption or calibrated confidence claim."
+}

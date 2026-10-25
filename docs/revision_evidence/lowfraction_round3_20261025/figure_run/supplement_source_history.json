@@ -1,0 +1,11 @@
+{
+  "render_time_source": {
+    "path": "docs/revision_evidence/lowfraction_round3_20261025/figure_run/render_source_snapshot.tex",
+    "sha256": "a65d4720c230b5d7d522b8a1246b66b88f6a4dfc67b0dd65625f2813e2b49695"
+  },
+  "final_source": {
+    "path": "diffmuontomoLVD/revision/lowfraction_round3_results.tex",
+    "sha256": "d610cd7eade3118954e62208db3c13b1dbfe4fb767d3690bda6269b18da42598"
+  },
+  "changes": "Reviewer clarifications: independent replicates with within-replicate pairing; bitwise replay applies to eight MC flux estimates, not individual trajectory logs. Figure source/data/graphics unchanged. Manuscript include width reduced to .95 textwidth to fit the float."
+}
