@@ -4,8 +4,9 @@
 # steps: gate | g0c | dry | templates | dev | test | diag | summary | run
 #   gate       G1 report (truth only), crossed-cell list, coverage                    (one process)
 #   g0c        gate G0c: same dry rays through the sweep and the validation drivers   (two processes in sequence)
-#   dry        gate G0b: dry template (16384 histories, seed 44), s, dry_calibration.toml
-#   templates  MC (16384 histories, claimed in chunks of 25 bins) + exact templates of fields D and T, then merge
+#   dry        gate G0b (replaced): dry calibration, 2 x 8192 histories (seeds 441, 442), three checks, dry_calibration.toml
+#   templates  MC (16384 histories, per-bin streams, one template per realisation: D 421-422, T 431-438; claimed in
+#              chunks of 25 bins) + exact templates of fields D and T, then merge
 #   dev        phases 1-3 of the development stage with selection and edge rules, then selection.toml
 #   test       the 36 h trigger (plan step -> cuts.toml), then the test stage on field T with the frozen selection.toml
 #   diag       oracle-weight diagnostic (GN-0, arm Mc, tau 1e4 and 1e8)
@@ -27,7 +28,7 @@ NPROC="${NPROC:-34}"
 (( NPROC <= MAX_PROCESSES )) || { echo "NPROC=$NPROC exceeds the limit of $MAX_PROCESSES single-thread worker processes" >&2; exit 2; }
 DATA="${DATA:-/home/roland/devspace/diffpumas.jl}"      # checkout holding the (untracked) physics dump
 DUMP="$DATA/examples/data/revision_physics_v2_final_20261023/materials.pumas"
-export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 JULIA_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 JULIA_NUM_THREADS=1 S7_NPROC="$NPROC"
 COMMON=(--dump "$DUMP"
   --rock-density 2710 --geometry grid --mesh-half-km 5 --surface-step-km 1 --grid-nz 6
   --zenith-max 60 --zenith-step 2 --azimuth-step 4 --primary-altitude-km 30 --seed 42
@@ -37,7 +38,18 @@ COMMON=(--dump "$DUMP"
   --reconstruction-sweep --sweep-data all)
 WANTED_FILE="$OUT/WORKERS_WANTED"; PAUSE_FILE="$OUT/PAUSE"
 mkdir -p "$OUT" "$OUT/claims"
-jl() { nice -n 19 julia --project="$R" "$R/examples/lvd_tomography.jl" "${COMMON[@]}" "$@"; }
+TEMPLATE_MODE_FILE="$OUT/TEMPLATE_MODE"       # "replicates" (one MC template per realisation) or "single" (6 h fallback)
+jl() { nice -n 19 julia --project="$R" "$R/examples/lvd_tomography.jl" "${COMMON[@]}" --template-mode "$(cat "$TEMPLATE_MODE_FILE" 2>/dev/null || echo replicates)" "$@"; }
+decide_template_mode() {   # fallback rule: one template per field if the projected template stage exceeds 6 h wall
+  local th mode proj
+  th=$(awk '/thread_hours_per_16384_template/{print $3}' "$OUT/dry/dry_report.toml" 2>/dev/null)
+  if [ -z "$th" ]; then mode=replicates; proj="unknown"; else
+    proj=$(awk -v th="$th" -v n="$NPROC" 'BEGIN{printf "%.2f", 10*th/n}')           # 10 templates (D: 2, T: 8) of 16384 histories
+    mode=$(awk -v p="$proj" 'BEGIN{print (p > 6 ? "single" : "replicates")}')
+  fi
+  echo "$mode" > "$TEMPLATE_MODE_FILE"
+  LOGSTAGE=templates log "template mode = $mode (projected template stage $proj h at $NPROC workers from $th thread-hours per template; limit 6 h)"
+}
 
 STAGE="-"; STAGE_DONE=0; STAGE_TOTAL=0; STAGE_T0=$(date +%s); WORKERS_ALIVE=0
 log() { echo "[orch $(date -u +%FT%TZ)] $*" >> "$OUT/log_${LOGSTAGE:-run}.txt"; }
@@ -117,7 +129,7 @@ run_step() {
                LOGSTAGE=dev; jl --protocol-stage finalize --truth-field dev >> "$OUT/log_dev.txt" 2>&1 || fail "finalize failed" ;;
     test)      local el; LOGSTAGE=test
                el=$(awk -v n="$(date +%s)" -v s="$(cat "$OUT/RUN_START" 2>/dev/null || date +%s)" 'BEGIN{printf "%.3f", (n-s)/3600}')
-               jl --protocol-stage plan --truth-field dev --elapsed-hours "$el" --ref-processes 16 >> "$OUT/log_test.txt" 2>&1 || fail "36 h plan failed"
+               jl --protocol-stage plan --truth-field dev --elapsed-hours "$el" --ref-processes "$NPROC" >> "$OUT/log_test.txt" 2>&1 || fail "36 h plan failed"
                pool test --protocol-stage test --truth-field test ;;
     diag)      pool diag --protocol-stage diag --truth-field test ;;
     summary)   LOGSTAGE=summary; jl --protocol-stage summary --truth-field test >> "$OUT/log_summary.txt" 2>&1 || fail "summary failed" ;;
@@ -135,6 +147,7 @@ case "$step" in
          [ -e "$WANTED_FILE" ] || echo $(( NPROC < 8 ? NPROC : 8 )) > "$WANTED_FILE"
          rm -f "$OUT/RUN_FAILED" "$OUT/RUN_DONE"
          [ -s "$OUT/dry_calibration.toml" ] || fail "no dry_calibration.toml: gate G0b has not passed"
+         [ -e "$TEMPLATE_MODE_FILE" ] || decide_template_mode
          for s in templates dev test diag summary; do run_step "$s"; done
          STAGE=done; status_line; echo "all stages complete $(date -u +%FT%TZ)" > "$OUT/RUN_DONE"; log "RUN_DONE" ;;
   *) echo "unknown step" >&2; exit 2 ;;

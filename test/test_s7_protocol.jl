@@ -286,6 +286,41 @@ end
         end
     end
 
+    @testset "per-bin MC streams and one template per realisation" begin
+        # seed rule: 100000 b + m; every bin and every base seed has its own streams
+        @test mc_bin_seeds(421, 7)[1] == 42100007
+        allseeds = [mc_bin_seeds(b, m) for b in vcat(PROTOCOL_DRY_BASES, PROTOCOL_TEMPLATE_BASES[:dev], PROTOCOL_TEMPLATE_BASES[:test], [439]) for m in 1:2700]
+        @test length(unique(first.(allseeds))) == length(allseeds) && length(unique(last.(allseeds))) == length(allseeds)
+        @test isempty(intersect(first.(allseeds), last.(allseeds)))
+        @test PROTOCOL_TEMPLATE_BASES[:dev] == [421, 422] && PROTOCOL_TEMPLATE_BASES[:test] == collect(431:438) && PROTOCOL_DRY_BASES == [441, 442]
+        # the 90 zenith-0 bins (identical rays) get different samples, hence different MC fluxes
+        e1 = sample_energy_set(256, 1e-3, 1e9, mc_bin_seeds(441, 1)[1]); e2 = sample_energy_set(256, 1e-3, 1e9, mc_bin_seeds(441, 2)[1])
+        @test [x.energy for x in e1] != [x.energy for x in e2]
+        @test [x.energy for x in e1] != [x.energy for x in sample_energy_set(256, 1e-3, 1e9, mc_bin_seeds(442, 1)[1])]
+        # a template cache without mc_stream = per_bin (the shared-sample runs) is refused
+        mktempdir() do dir
+            w = [0.0, 0.3]; bins = [1, 2, 3]
+            old = template_key(:dev, "M", 16384, 42, w, bins; mc_stream = "shared")
+            path = joinpath(dir, "old.jls"); save_template(path, old, [1.0, 2.0, 3.0])
+            @test_throws ErrorException load_template(path, template_key(:dev, "M", 16384, 42, w, bins))
+            @test template_key(:dev, "M", 16384, 42, w, bins).mc_stream == "per_bin" && template_key(:dev, "X", 0, 0, w, bins).mc_stream == "none"
+        end
+        # realisation r reads replicate r, identically in arms M and Mc; arm X keeps its single template
+        C = s7_toy_centroids(); op = s7_toy_operator(C); n = size(C, 2)
+        wt = zeros(n); wt[findall(op.free)[1:8]] .= 0.4
+        reps = [op.predict(wt) .* (1 .+ 0.02 .* sin.(r .* (1:length(op.f0)))) for r in 1:3]
+        geo = make_geometry(:test, wt, C, op.free)
+        ctx = ProtocolContext(op, geo, :test, Dict("M" => reps, "Mc" => reps, "X" => op.predict(wt)), [1e5], 3, 42, "x", scale_operator(op, 0.9))
+        for r in 1:3
+            um = draw_unit(ctx, "M", 1, r); uc = draw_unit(ctx, "Mc", 1, r)
+            @test um.counts == uc.counts && um.counts == make_unit(reps[r], :test, "M", 1, 1e5, r).counts
+        end
+        @test draw_unit(ctx, "M", 1, 1).counts != draw_unit(ctx, "M", 1, 2).counts
+        @test unit_template(ctx, "X", 2) === ctx.templates["X"] && unit_template(ctx, "M", 3) === reps[3]
+        single = ProtocolContext(op, geo, :test, Dict("M" => reps[1]), [1e5], 3, 42, "x")
+        @test unit_template(single, "M", 3) === reps[1]          # fallback mode: one template for every realisation
+    end
+
     @testset "template cache refuses a mismatching key" begin
         mktempdir() do dir
             w = [0.0, 0.3]; bins = [1, 2, 3]
@@ -347,19 +382,41 @@ end
             rep = dry_report(mc, csda, 0.01 .* mc, zen)
             @test rep["s"] ≈ 0.825 && rep["n_bins"] == 4 && rep["ratio_of_sums"] ≈ sum(mc[[1,2,4,5]]) / sum(csda[[1,2,4,5]])
             @test rep["median_rel_sigma_mc"] ≈ 0.01 && length(rep["band_median_r"]) == length(rep["band_counts"])
-            @test check_g0b(0.801)[1] && check_g0b(0.83)[1] && check_g0b(0.772)[1]
-            @test !check_g0b(0.8311)[1] && !check_g0b(0.7689)[1] && !check_g0b(NaN)[1]
+            # dry calibration checks (G0b ruling): two independent runs with per-bin errors on 90 zenith-0 bins
+            rng = MersenneTwister(5)
+            nb = 450; zen0 = repeat([0.0, 10.0, 20.0, 30.0, 40.0], inner = 90)[1:nb]
+            csda0 = [z == 0.0 ? 2.0e-4 : 2.0e-4 * (1 - z / 100) for z in zen0]
+            sg = 0.0218 .* csda0 .* 0.873
+            mk(sd_scale) = 0.873 .* csda0 .+ sd_scale .* sg .* randn(rng, nb)
+            ca, cb = mk(1.0), mk(1.0)
+            ck = dry_checks(ca, cb, sg, sg, csda0, zen0)
+            @test ck.n_zenith0 == 90 && ck.csda_zenith0_equal && 0.75 <= ck.q <= 1.33 && ck.check1 === true
+            @test abs(ck.s - 0.873) < 0.01 && ck.s_a != ck.s_b && ck.passed == (ck.check2 && ck.check3)
+            # a shared sample (identical noise in both bins of the zenith-0 set) fails the error model
+            shared = 0.873 .* csda0 .* (1 .+ 0.0218 .* randn(rng) .* ones(nb))
+            ck = dry_checks(shared, shared, sg, sg, csda0, zen0)
+            @test ck.q < 0.75 && ck.check1 === false && !ck.passed
+            # inflated errors (q too large) fail too; a skewed pair fails the half split; a far s fails the consistency check
+            @test dry_checks(mk(3.0), mk(3.0), sg, sg, csda0, zen0).check1 === false
+            @test !dry_checks(0.873 .* csda0 .* 1.02, 0.873 .* csda0 .* 0.98, sg, sg, csda0, zen0).check2
+            @test !dry_checks(0.80 .* csda0, 0.80 .* csda0, sg, sg, csda0, zen0).check3
+            @test dry_checks(0.873 .* csda0, 0.873 .* csda0, sg, sg, csda0 .* (1 .+ 1e-6 .* (zen0 .== 0.0) .* (1:nb)), zen0).check1 === nothing   # skipped
             # dry_calibration.toml: frozen with a hash; arm Mc refuses without a valid file
             path = joinpath(dir, "dry_calibration.toml")
             @test_throws ErrorException load_dry_calibration(path)
-            sha = write_dry_calibration(path, 0.8012, Dict("n_bins" => 2700, "seed" => 44, "histories" => 16384, "git_commit" => "abc"))
+            sha = write_dry_calibration(path, 0.8012, Dict("n_bins" => 2700, "seeds" => [441, 442], "histories" => 8192, "mc_stream" => "per_bin", "git_commit" => "abc"))
             s_, sha2, cal = load_dry_calibration(path)
-            @test s_ == 0.8012 && sha == sha2 && cal["seed"] == 44 && isfile(path * ".sha256") && strip(read(path * ".sha256", String)) == sha
+            @test s_ == 0.8012 && sha == sha2 && cal["seeds"] == [441, 442] && isfile(path * ".sha256") && strip(read(path * ".sha256", String)) == sha
             write(joinpath(dir, "tampered.toml"), replace(read(path, String), "0.8012" => "0.9012"))
             @test_throws ErrorException load_dry_calibration(joinpath(dir, "tampered.toml"))
             write(joinpath(dir, "bad.toml"), "[meta]\ncontent_sha256 = \"x\"\n")
             @test_throws ErrorException load_dry_calibration(joinpath(dir, "bad.toml"))
             @test_throws ArgumentError write_dry_calibration(joinpath(dir, "z.toml"), -1.0, Dict{String,Any}())
+            # a shared-sample calibration is refused
+            write_dry_calibration(joinpath(dir, "shared.toml"), 0.87309, Dict{String,Any}("mc_stream" => "shared"))
+            @test_throws ErrorException load_dry_calibration(joinpath(dir, "shared.toml"))
+            write_dry_calibration(joinpath(dir, "nostream.toml"), 0.87309, Dict{String,Any}())
+            @test_throws ErrorException load_dry_calibration(joinpath(dir, "nostream.toml"))
             # contexts without the calibrated operator refuse arm Mc
             geo = make_geometry(:dev, zeros(n), C, op.free)
             ctx = ProtocolContext(op, geo, :dev, Dict("Mc" => op.predict(wt)), [1e4], 1, 42, joinpath(dir, "o"))

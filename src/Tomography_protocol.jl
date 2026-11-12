@@ -36,9 +36,31 @@ const PROTOCOL_GN_CAP_EXT = 32
 const PROTOCOL_GD_CAP = 40
 "Hard upper bound of concurrent single-thread worker processes of the full run (the run uses about 34; the resource monitor scales between)."
 const PROTOCOL_MAX_PROCESSES = 64
-"Dry MC/CSDA ratio found by the gate run and the tolerance of gate G0b."
-const PROTOCOL_G0B_REFERENCE = 0.801
-const PROTOCOL_G0B_TOLERANCE = 0.03
+"""
+G0b ruling: every MC template draws an independent energy sample and independent straggling draws
+for each bin (`mc_stream = per_bin`); bin `m` of a template with base seed `b` uses the stream
+seeds `mc_bin_seeds(b, m)`. Base seeds: dry calibration 441 and 442 (8192 histories each), field D
+templates 421 and 422, field T templates 431 to 438 (16384 histories each), single 21600-ray run 439.
+"""
+const PROTOCOL_MC_STREAM = "per_bin"
+const PROTOCOL_DRY_BASES = [441, 442]
+const PROTOCOL_DRY_HISTORIES = 8192
+const PROTOCOL_TEMPLATE_BASES = Dict(:dev => [421, 422], :test => collect(431:438))
+const PROTOCOL_SINGLE_RUN_MC_BASE = 439
+"Checks of the dry calibration (G0b ruling): error model q, half split, consistency with the shared-sample value."
+const PROTOCOL_DRY_Q_RANGE = (0.75, 1.33)
+const PROTOCOL_DRY_SPLIT_TOL = 0.004
+const PROTOCOL_DRY_SHARED_S = 0.87309        # shared-sample, seed 44: report only, never read by a driver
+const PROTOCOL_DRY_SHARED_TOL = 0.057
+
+"""
+    mc_bin_seeds(base, m) -> (energy_seed, straggling_seed)
+
+`MersenneTwister(100000 base + m)` draws the energy sample of bin `m`; the straggling stream of
+the same bin is seeded `100000 base + m + 10^9` so that the two generators do not start in the
+same state (distinct for every bin and every base seed, as `m <= 2700 < 100000`).
+"""
+mc_bin_seeds(base::Integer, m::Integer) = (100000 * Int(base) + Int(m), 100000 * Int(base) + Int(m) + 1_000_000_000)
 
 "The template an arm reads: arm `Mc` shares the observation vectors (template) of arm `M`."
 template_arm(arm::AbstractString) = arm == "Mc" ? "M" : String(arm)
@@ -538,11 +560,13 @@ end
 """
     template_key(field, arm, histories, seed, w_true, valid_bins) -> NamedTuple
 
-Cache key of a template: field, arm, MC histories, base seed, and content hashes of the
-truth field and of the valid-bin list.
+Cache key of a template: field, arm, MC histories, base seed, MC stream (`per_bin`), and content
+hashes of the truth field and of the valid-bin list. A template made with another stream
+(e.g. the shared energy sample of the first runs) never matches.
 """
-template_key(field::Symbol, arm::AbstractString, histories::Integer, seed::Integer, w_true, valid_bins) =
-    (schema = 1, field = String(field), arm = String(arm), histories = Int(histories), seed = Int(seed),
+template_key(field::Symbol, arm::AbstractString, histories::Integer, seed::Integer, w_true, valid_bins;
+             mc_stream::AbstractString = (arm == "X" ? "none" : PROTOCOL_MC_STREAM)) =
+    (schema = 2, field = String(field), arm = String(arm), histories = Int(histories), seed = Int(seed), mc_stream = String(mc_stream),
      w_true_sha256 = bytes2hex(sha256(reinterpret(UInt8, collect(Float64, w_true)))),
      valid_bins_sha256 = bytes2hex(sha256(reinterpret(UInt8, collect(Int, valid_bins)))))
 
@@ -751,7 +775,7 @@ struct ProtocolContext
     op::ProtocolOperator
     geo::ProtocolGeometry
     field::Symbol
-    templates::Dict{String,Vector{Float64}}
+    templates::Dict{String,Any}                  # arm => template, or arm => one template per realisation (Vector of Vectors)
     exposures::Vector{Float64}
     nreps::Int
     base_seed::Int
@@ -781,8 +805,15 @@ function enumerate_units(ctx::ProtocolContext; arms = collect(keys(ctx.templates
     return [u for (n, u) in enumerate(units) if (n - 1) % shard[2] == shard[1] - 1]
 end
 
+"""
+Noise-free template of realisation `r` of an arm: replicate `r` when the arm holds one template per
+realisation (MC arms, G0b ruling), the single template otherwise. Arms M and Mc get the same replicate.
+"""
+unit_template(ctx::ProtocolContext, arm, r) =
+    (t = ctx.templates[arm]; t isa AbstractVector{<:AbstractVector} ? t[r] : t)
+
 draw_unit(ctx::ProtocolContext, arm, i, r) =
-    make_unit(ctx.templates[arm], ctx.field, arm, i, ctx.exposures[i], r; base_seed = ctx.base_seed)
+    make_unit(unit_template(ctx, arm, r), ctx.field, arm, i, ctx.exposures[i], r; base_seed = ctx.base_seed)
 
 function _unit_stem(stage, u::ProtocolUnit, solver, param)
     s = replace(solver, "->" => "to")
@@ -938,7 +969,7 @@ function test_stage!(ctx::ProtocolContext, selection::Dict, sha::AbstractString;
         end
         op = arm_operator(ctx, arm)
         u = draw_unit(ctx, arm, i, r)
-        W = weights === :oracle ? oracle_weights(ctx.templates[arm], u.tau) : protocol_weights(u.counts, u.tau)
+        W = weights === :oracle ? oracle_weights(unit_template(ctx, arm, r), u.tau) : protocol_weights(u.counts, u.tau)
         if "ZERO" in solvers && weights === :obs &&
            !(result_key(String(ctx.field), arm, i, r, "ZERO", "-", wlabel, "", 0.0, "final") in done)
             z = SolveRun(["final" => zeros(n)], 0.0, 0, 0, 0, "-", Any[])
@@ -1076,6 +1107,38 @@ end
 dry_scale(r::AbstractVector) = (isempty(r) ? throw(ArgumentError("no bin with a positive dry CSDA flux")) : median(r))
 
 """
+    dry_checks(mc_a, mc_b, sigma_a, sigma_b, csda_dry, zenith) -> NamedTuple
+
+Checks of the dry calibration from two independent runs A and B (G0b ruling). `s` is the median
+ratio of the pooled flux (mean of the two runs) to the dry CSDA flux, `s_a`, `s_b` the medians of
+each run alone.
+- check 1 (error model): `q` = sample standard deviation of the pooled flux over the zenith-0 bins
+  divided by the mean of their reported MC standard errors; pass if `0.75 <= q <= 1.33`.
+  Precondition: the dry CSDA flux is equal in those bins to 1e-12 relative; otherwise the check is
+  skipped (`check1 = nothing`).
+- check 2: `abs(s_a - s_b) <= 0.004`.
+- check 3: `abs(s - 0.87309) <= 0.057`.
+`passed` needs check 2, check 3 and check 1 unless it was skipped.
+"""
+function dry_checks(mc_a::AbstractVector, mc_b::AbstractVector, sigma_a::AbstractVector, sigma_b::AbstractVector,
+                    csda_dry::AbstractVector, zenith::AbstractVector)
+    pooled = (mc_a .+ mc_b) ./ 2
+    sigma_pooled = sqrt.(sigma_a .^ 2 .+ sigma_b .^ 2) ./ 2
+    s = dry_scale(dry_ratios(pooled, csda_dry)[2])
+    s_a = dry_scale(dry_ratios(mc_a, csda_dry)[2]); s_b = dry_scale(dry_ratios(mc_b, csda_dry)[2])
+    z0 = findall(==(0.0), zenith)
+    precond = length(z0) >= 2 && all(isfinite, csda_dry[z0]) &&
+              maximum(abs.(csda_dry[z0] .- mean(csda_dry[z0]))) <= 1e-12 * abs(mean(csda_dry[z0]))
+    q = length(z0) >= 2 ? std(pooled[z0]) / mean(sigma_pooled[z0]) : NaN
+    check1 = precond ? (PROTOCOL_DRY_Q_RANGE[1] <= q <= PROTOCOL_DRY_Q_RANGE[2]) : nothing
+    check2 = abs(s_a - s_b) <= PROTOCOL_DRY_SPLIT_TOL
+    check3 = abs(s - PROTOCOL_DRY_SHARED_S) <= PROTOCOL_DRY_SHARED_TOL
+    return (s = s, s_a = s_a, s_b = s_b, q = q, n_zenith0 = length(z0), csda_zenith0_equal = precond,
+            check1 = check1, check2 = check2, check3 = check3,
+            passed = check1 !== false && check2 && check3)
+end
+
+"""
     dry_report(mc_dry, csda_dry, sigma_mc, zenith; band_deg=10) -> Dict
 
 Statistics reported next to `s` (no decision uses them): `s`, mean of `r_m`, ratio of sums,
@@ -1094,14 +1157,6 @@ function dry_report(mc_dry::AbstractVector, csda_dry::AbstractVector, sigma_mc::
         "band_median_r" => [any(==(b), band) ? median(r[band .== b]) : NaN for b in 1:nb],
         "median_sigma_mc" => median(sigma_mc[bins]), "median_rel_sigma_mc" => median(sigma_mc[bins] ./ mc_dry[bins]))
 end
-
-"""
-    check_g0b(s; reference=0.801, tol=0.03) -> (passed, difference)
-
-Gate G0b: proceed when `abs(s - reference) <= tol`.
-"""
-check_g0b(s::Real; reference::Real = PROTOCOL_G0B_REFERENCE, tol::Real = PROTOCOL_G0B_TOLERANCE) =
-    (isfinite(s) && abs(s - reference) <= tol, s - reference)
 
 """
     write_dry_calibration(path, s, meta) -> sha256
@@ -1123,8 +1178,8 @@ end
 """
     load_dry_calibration(path) -> (s, sha256, calibration)
 
-Arm `Mc` calls this first. It errors if the file is missing, fails its content hash or holds
-no positive finite `s`.
+Arm `Mc` calls this first. It errors if the file is missing, fails its content hash, holds
+no positive finite `s` or was not made with the per-bin MC stream.
 """
 function load_dry_calibration(path::AbstractString)
     isfile(path) || error("dry_calibration.toml not found at $path: arm Mc refuses to run without the frozen dry factor")
@@ -1134,6 +1189,8 @@ function load_dry_calibration(path::AbstractString)
     sha == get(d["meta"], "content_sha256", "") || error("dry calibration file $path fails its content hash")
     s = get(d["calibration"], "s", nothing)
     (s isa Real && isfinite(s) && s > 0) || error("dry calibration file $path holds no valid s")
+    get(d["calibration"], "mc_stream", "") == PROTOCOL_MC_STREAM ||
+        error("dry calibration file $path was not made with mc_stream = $PROTOCOL_MC_STREAM (shared-sample calibrations are never used)")
     return Float64(s), sha, d["calibration"]
 end
 

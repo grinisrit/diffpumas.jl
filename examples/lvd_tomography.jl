@@ -101,6 +101,7 @@ Options:
     --cuts PATH                   cuts.toml of the 36 h trigger (default: <output-dir>/cuts.toml)
     --elapsed-hours FLOAT         Run time already spent (stage plan)
     --ref-processes INT           Process count of the 36 h projection (default: 16)
+    --template-mode STR           replicates (one MC template per realisation, default) | single (fallback: one per field)
     --protocol-phase INT          Development phase: 1 SART+MLEM, 2 GN family, 3 GD (default: 1)
     --shard I/N                   Process share I of N of the (arm, exposure, realisation) units
     --sweep-exposures LIST        Comma-separated per-bin exposures (default: 1e3,3.16e3,1e4,3.16e4,1e5,1e6,1e8)
@@ -1452,6 +1453,7 @@ function parse_commandline()
         cuts_path = "",                # cuts.toml of the 36 h trigger (default: <output-dir>/cuts.toml)
         elapsed_hours = 0.0,           # run time already spent (stage plan)
         ref_processes = 16,            # process count of the 36 h projection
+        template_mode = "replicates",  # "replicates": one MC template per realisation; "single": one per field (fallback)
     )
 
     i = 1
@@ -1621,6 +1623,8 @@ function parse_commandline()
             args = merge(args, (shard_index = parse(Int, parts[1]), shard_count = parse(Int, parts[2]))); i += 2
         elseif arg == "--selection"
             args = merge(args, (selection_path = ARGS[i + 1],)); i += 2
+        elseif arg == "--template-mode"
+            args = merge(args, (template_mode = lowercase(ARGS[i + 1]),)); i += 2
         elseif arg == "--worker"
             args = merge(args, (worker_id = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--claim-dir"
@@ -1676,6 +1680,7 @@ function parse_commandline()
     args.protocol_stage in ("", "gate", "g0c", "dry", "templates", "merge", "dev", "select", "finalize", "plan", "test", "diag", "summary") ||
         error("--protocol-stage must be gate, g0c, dry, templates, merge, dev, select, finalize, plan, test, diag or summary")
     args.protocol_phase in (1, 2, 3) || error("--protocol-phase must be 1, 2 or 3")
+    args.template_mode in ("replicates", "single") || error("--template-mode must be replicates or single")
     1 <= args.shard_index <= args.shard_count || error("--shard i/n needs 1 <= i <= n")
     args.shard_count <= PROTOCOL_MAX_PROCESSES || error("--shard i/n: at most $PROTOCOL_MAX_PROCESSES worker processes")
     args.sweep_realizations >= 1 || error("--sweep-realizations must be positive")
@@ -1835,7 +1840,8 @@ function inverse_mc_cache_identity(physics,shallow_flags,matcfg,site,paths,w_tru
     isfile(args.dump_path) || error("MC cache identity requires an existing physics dump: $(args.dump_path)")
     sources=[(path=abspath(path),sha256=bytes2hex(sha256(read(path)))) for path in source_paths]
     metadata=physics isa DiffPumas.Physics.PhysicsTables ? DiffPumas.Physics.material_metadata(physics) : nothing
-    serialized_content_sha256((schema=3,transport=:fixed_path_energy_loss_no_scattering,
+    serialized_content_sha256((schema=3,transport=:fixed_path_energy_loss_no_scattering,mc_stream=PROTOCOL_MC_STREAM,
+        mc_base_seed=PROTOCOL_SINGLE_RUN_MC_BASE,
         julia_version=string(VERSION),machine=Sys.MACHINE,threads=Threads.nthreads(),
         dump_path=abspath(args.dump_path),dump_sha256=bytes2hex(sha256(read(args.dump_path))),
         source_sha256=sources,physics=physics,material_metadata=metadata,
@@ -1901,14 +1907,15 @@ function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfi
         export_inverse_mc_diagnostics(cache_path,identity,paths,valid,cached.obs,cached.sigma_mc,args;cache_hit=true)
         return cached.obs
     end
-    mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, args.seed + 40_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
-    println("  generating fixed-path energy-loss MC observations for $(length(valid)) bins (energy-loss straggling; scattering disabled, $(args.inverse_mc_samples) samples)...")
+    println("  generating fixed-path energy-loss MC observations for $(length(valid)) bins (energy-loss straggling; scattering disabled, $(args.inverse_mc_samples) samples per bin, mc_stream=$(PROTOCOL_MC_STREAM), base seed $(PROTOCOL_SINGLE_RUN_MC_BASE))...")
     obs = Vector{Float64}(undef, length(valid))
     sigma_mc = similar(obs)
     Threads.@threads for k in eachindex(valid)
+        eseed, sseed = mc_bin_seeds(PROTOCOL_SINGLE_RUN_MC_BASE, k)          # independent sample set per bin
+        mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, eseed)
         f, sigma = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
-            mc_samples, args.seed + 50_000 + k;
+            mc_samples, sseed;
             straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
             scattering = false)
         obs[k] = f
@@ -2810,17 +2817,19 @@ end
 function protocol_mc_template(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
                               paths::Vector{DirectionalPath}, w_true::Vector{Float64},
                               valid::Vector{Int}, args; histories::Int, seed::Int, ks = eachindex(valid))
-    mc_samples = sample_energy_set(histories, args.energy_min, args.energy_max, seed + 40_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
-    println("  generating fixed-path energy-loss MC template: $(length(ks)) of $(length(valid)) bins, $histories histories, seed $seed (straggling on, scattering off)...")
+    println("  generating fixed-path energy-loss MC template: $(length(ks)) of $(length(valid)) bins, $histories histories per bin, base seed $seed, mc_stream=$(PROTOCOL_MC_STREAM) (straggling on, scattering off)...")
     flush(stdout)
     kv = collect(ks)
     obs = Vector{Float64}(undef, length(kv)); sigma_mc = similar(obs)
-    # the per-bin seed depends on the global bin position k only, so any split into chunks gives the same template
+    # per-bin streams: every bin draws its own energy sample and its own straggling draws, seeded from the
+    # base seed and the global bin position only, so any split into chunks gives the same template
     Threads.@threads for j in eachindex(kv)
         k = kv[j]
+        eseed, sseed = mc_bin_seeds(seed, k)
+        mc_samples = sample_energy_set(histories, args.energy_min, args.energy_max, eseed)
         f, sigma = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
-            mc_samples, seed + 50_000 + k;
+            mc_samples, sseed;
             straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
             scattering = false)
         obs[j] = f; sigma_mc[j] = sigma
@@ -2909,7 +2918,7 @@ function run_protocol_selection_stage(args)
     if stage == "finalize"
         meta = Dict{String,Any}("field" => "dev", "arms" => arms, "exposures" => exposures,
             "realizations" => nreps, "git_commit" => protocol_git_commit(), "inverse_mc_samples" => args.inverse_mc_samples,
-            "created_unix" => time())
+            "mc_stream" => PROTOCOL_MC_STREAM, "template_mode" => args.template_mode, "created_unix" => time())
         if "Mc" in arms          # the selection records the hash of the frozen dry calibration it was made with
             s_dry, dry_sha, _ = load_dry_calibration(protocol_dry_path(args))
             meta["dry_calibration_sha256"] = dry_sha; meta["dry_scale"] = s_dry
@@ -2960,6 +2969,8 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
             cuts = load_cuts(isempty(args.cuts_path) ? joinpath(outdir, "cuts.toml") : args.cuts_path, sha)
             println("  budget cuts of the plan step: $(sort(collect(cuts)))")
         end
+        get(meta, "template_mode", "") == args.template_mode ||
+            error("selection.toml was made with template mode $(get(meta, "template_mode", "?")), not $(args.template_mode)")
         meta["exposures"] == exposures || error("selection.toml was made for exposures $(meta["exposures"]), not $exposures")
         for a in arms; a in meta["arms"] || error("selection.toml has no arm $a"); end
         if "Mc" in arms
@@ -3014,49 +3025,62 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
         return failed ? 3 : 0
     end
 
-    # Gate G0b: the dry calibration run (field w = 0, 16384 histories, base seed 44) and the global factor s.
+    # Gate G0b (replaced by the G0b ruling): dry calibration from two independent 8192-history runs
+    # (base seeds 441 and 442, per-bin MC streams), pooled flux, three checks, then s.
     if stage == "dry"
-        args.inverse_mc_samples == 16384 || error("gate G0b is defined at 16384 histories (--inverse-mc-samples 16384)")
         zero_w = zeros(n_cells)
-        dseed = args.seed + 2                                  # 44; fields D and T use 42 and 43
         zen = Float64[paths[b].zenith for b in valid_bins]
-        function dry_template(histories)
-            key = template_key(:dry, "M", histories, dseed, zero_w, valid_bins)
-            path = protocol_template_path(outdir, "dry", "M", histories, dseed)
+        runs = Any[]
+        for dseed in PROTOCOL_DRY_BASES
+            key = template_key(:dry, "M", PROTOCOL_DRY_HISTORIES, dseed, zero_w, valid_bins)
+            path = protocol_template_path(outdir, "dry", "M", PROTOCOL_DRY_HISTORIES, dseed)
             if isfile(path)
                 c = load_template(path, key)                   # errors on a mismatching key
                 println("  dry template $path exists with a matching key; kept")
-                return c.template, c.extra.sigma_mc
+                push!(runs, (flux = c.template, sigma = c.extra.sigma_mc, wall = get(c.extra, :wall_s, NaN), threads = get(c.extra, :threads, 0)))
+            else
+                t0 = time()
+                tmpl, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, zero_w, valid_bins, args;
+                                                 histories = PROTOCOL_DRY_HISTORIES, seed = dseed)
+                wall = time() - t0
+                save_template(path, key, tmpl, (sigma_mc = sig, wall_s = wall, threads = Threads.nthreads()))
+                println("  wrote $path  [$(round(wall; digits = 0)) s on $(Threads.nthreads()) threads]")
+                push!(runs, (flux = tmpl, sigma = sig, wall = wall, threads = Threads.nthreads()))
             end
-            tmpl, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, zero_w, valid_bins, args;
-                                             histories = histories, seed = dseed)
-            save_template(path, key, tmpl, (sigma_mc = sig,))
-            println("  wrote $path")
-            return tmpl, sig
         end
-        mc16, sig16 = dry_template(16384)
-        rep16 = dry_report(mc16, f0, sig16, zen)
-        mc1k, sig1k = dry_template(1024)                       # report only: the dry ratio of the gate run
-        rep1k = dry_report(mc1k, f0, sig1k, zen)
-        passed, diff = check_g0b(rep16["s"])
-        report = Dict{String,Any}("g0b" => Dict{String,Any}("s" => rep16["s"], "reference" => PROTOCOL_G0B_REFERENCE,
-                "tolerance" => PROTOCOL_G0B_TOLERANCE, "difference" => diff, "passed" => passed, "seed" => dseed,
-                "expected_standard_error" => 1.25 * 0.02 / sqrt(rep16["n_bins"])),
-            "histories_16384" => rep16, "histories_1024" => rep1k, "git_commit" => protocol_git_commit())
+        chk = dry_checks(runs[1].flux, runs[2].flux, runs[1].sigma, runs[2].sigma, f0, zen)
+        pooled = (runs[1].flux .+ runs[2].flux) ./ 2
+        sig_pooled = sqrt.(runs[1].sigma .^ 2 .+ runs[2].sigma .^ 2) ./ 2
+        rep = dry_report(pooled, f0, sig_pooled, zen)
+        thread_hours = sum(r.wall * r.threads for r in runs) / 3600       # CPU-hours of the pooled 2 x 8192 = one 16384-history template
+        report = Dict{String,Any}("pooled" => rep, "seeds" => PROTOCOL_DRY_BASES, "histories" => PROTOCOL_DRY_HISTORIES,
+            "mc_stream" => PROTOCOL_MC_STREAM, "git_commit" => protocol_git_commit(),
+            "checks" => Dict{String,Any}("s" => chk.s, "s_a" => chk.s_a, "s_b" => chk.s_b, "q" => chk.q, "n_zenith0" => chk.n_zenith0,
+                "csda_zenith0_equal" => chk.csda_zenith0_equal, "check1" => chk.check1 === nothing ? "skipped" : string(chk.check1),
+                "check2" => chk.check2, "check3" => chk.check3, "passed" => chk.passed,
+                "split_difference" => abs(chk.s_a - chk.s_b), "shared_sample_s" => PROTOCOL_DRY_SHARED_S,
+                "expected_standard_error_s" => 1.2533 * rep["median_rel_sigma_mc"] * chk.s / sqrt(rep["n_bins"])),
+            "timing" => Dict{String,Any}("thread_hours_per_16384_template" => thread_hours,
+                "wall_s_total" => sum(r.wall for r in runs), "threads" => runs[1].threads))
         open(joinpath(stagedir, "dry_report.toml"), "w") do io; TOML.print(io, report; sorted = true); end
-        println("  G0b dry ratio (16384 histories, seed $dseed): s = median r_m = $(round(rep16["s"]; digits = 5)) over $(rep16["n_bins"]) bins; " *
-                "mean r = $(round(rep16["mean_r"]; digits = 5)), ratio of sums = $(round(rep16["ratio_of_sums"]; digits = 5)), " *
-                "quartiles $(round(rep16["q25"]; digits = 4)) / $(round(rep16["q75"]; digits = 4))")
-        println("    median r per 10-degree zenith band: $(round.(rep16["band_median_r"]; digits = 4)); " *
-                "median per-bin MC standard error $(round(100 * rep16["median_rel_sigma_mc"]; digits = 2)) % (1024 histories: " *
-                "s = $(round(rep1k["s"]; digits = 4)), standard error $(round(100 * rep1k["median_rel_sigma_mc"]; digits = 2)) %)")
-        println("  G0b: |s - $(PROTOCOL_G0B_REFERENCE)| = $(round(abs(diff); digits = 5)) vs tolerance $(PROTOCOL_G0B_TOLERANCE): passed=$passed")
-        if !passed
-            println("  G0b FAILED: dry_calibration.toml is not written; return the report $(joinpath(stagedir, "dry_report.toml")) to the reviewer before the development stage")
+        println("  dry calibration (2 x $(PROTOCOL_DRY_HISTORIES) histories, per-bin streams, seeds $(PROTOCOL_DRY_BASES)): s = $(round(chk.s; digits = 5)) over $(rep["n_bins"]) bins; " *
+                "s_A = $(round(chk.s_a; digits = 5)), s_B = $(round(chk.s_b; digits = 5)), |s_A - s_B| = $(round(abs(chk.s_a - chk.s_b); digits = 5))")
+        println("    mean r = $(round(rep["mean_r"]; digits = 5)), ratio of sums = $(round(rep["ratio_of_sums"]; digits = 5)), quartiles $(round(rep["q25"]; digits = 4)) / $(round(rep["q75"]; digits = 4)); " *
+                "median r per 10-degree zenith band: $(round.(rep["band_median_r"]; digits = 4)); median per-bin MC standard error of the pool $(round(100 * rep["median_rel_sigma_mc"]; digits = 2)) %")
+        println("    check 1 (error model, $(chk.n_zenith0) zenith-0 bins): q = $(round(chk.q; digits = 4)) -> $(chk.check1 === nothing ? "skipped (dry CSDA not equal in the zenith-0 bins)" : chk.check1); " *
+                "check 2 (half split <= $(PROTOCOL_DRY_SPLIT_TOL)): $(chk.check2); check 3 (|s - $(PROTOCOL_DRY_SHARED_S)| <= $(PROTOCOL_DRY_SHARED_TOL)): $(chk.check3)")
+        println("    template cost: $(round(thread_hours; digits = 1)) thread-hours per 16384-history template")
+        if !chk.passed
+            println("  dry calibration FAILED a check: dry_calibration.toml is not written; return s, s_A, s_B and q (report $(joinpath(stagedir, "dry_report.toml")))")
             return 4
         end
-        sha = write_dry_calibration(dry_path, rep16["s"], Dict{String,Any}("n_bins" => rep16["n_bins"], "seed" => dseed,
-            "histories" => 16384, "field" => "dry", "git_commit" => protocol_git_commit(), "git_dirty" => protocol_git_dirty(),
+        # the shared-sample value is archived for the record and never read by a driver
+        write_dry_calibration(joinpath(outdir, "dry_calibration_shared_seed44.toml"), PROTOCOL_DRY_SHARED_S,
+            Dict{String,Any}("note" => "report only; shared energy sample, seed 44, 16384 histories; never read by a driver", "mc_stream" => "shared"))
+        sha = write_dry_calibration(dry_path, chk.s, Dict{String,Any}("n_bins" => rep["n_bins"], "seeds" => PROTOCOL_DRY_BASES,
+            "histories" => PROTOCOL_DRY_HISTORIES, "mc_stream" => PROTOCOL_MC_STREAM, "s_a" => chk.s_a, "s_b" => chk.s_b, "q" => chk.q,
+            "field" => "dry", "supersedes" => "shared sample, seed 44, s = 0.87309",
+            "git_commit" => protocol_git_commit(), "git_dirty" => protocol_git_dirty(),
             "correction_artifact" => args.correction_artifact, "created_unix" => time()))
         println("  wrote $dry_path  sha256 $sha")
         return 0
@@ -3099,7 +3123,9 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
         return 0
     end
 
-    mcseed = args.seed + (field === :test ? 1 : 0)         # D: 42, T: 43
+    # MC template base seeds (G0b ruling): one template per realisation. Field D: 421, 422; field T: 431 to 438.
+    # Fallback (--template-mode single, only if the projected template stage exceeds 6 h): one per field.
+    bases(f) = args.template_mode == "single" ? PROTOCOL_TEMPLATE_BASES[f][1:1] : PROTOCOL_TEMPLATE_BASES[f]
     if stage in ("templates", "merge")
         # Both truth fields in one stage. Exact (CSDA) templates are single units; each MC template is split
         # into chunks of PROTOCOL_MC_CHUNK bins that workers claim; `merge` joins the chunks (one process).
@@ -3107,28 +3133,29 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
             n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
         fields = Symbol[:dev, :test]
         truth(f) = f === :dev ? create_initial_water_field(volume, merge(args, (truth_field = "dev",))) : protocol_test_field(centroids)
-        fseed(f) = args.seed + (f === :test ? 1 : 0)
-        tkey(f, arm) = arm == "M" ? template_key(f, "M", args.inverse_mc_samples, fseed(f), truth(f), valid_bins) :
-                                    template_key(f, "X", 0, 0, truth(f), valid_bins)
-        tpath(f, arm) = protocol_template_path(outdir, f, arm, arm == "M" ? args.inverse_mc_samples : 0, arm == "M" ? fseed(f) : 0)
+        tkey(f, arm, b) = arm == "M" ? template_key(f, "M", args.inverse_mc_samples, b, truth(f), valid_bins) :
+                                       template_key(f, "X", 0, 0, truth(f), valid_bins)
+        tpath(f, arm, b) = protocol_template_path(outdir, f, arm, arm == "M" ? args.inverse_mc_samples : 0, arm == "M" ? b : 0)
         nbin = length(valid_bins)
         chunks = [(first = c, last = min(c + PROTOCOL_MC_CHUNK - 1, nbin)) for c in 1:PROTOCOL_MC_CHUNK:nbin]
-        chunkdir(f) = joinpath(outdir, "templates", "parts_$(f)_h$(args.inverse_mc_samples)_s$(fseed(f))")
-        chunkfile(f, c) = joinpath(chunkdir(f), "chunk_$(lpad(c.first, 5, '0')).jls")
+        chunkdir(f, b) = joinpath(outdir, "templates", "parts_$(f)_h$(args.inverse_mc_samples)_b$(b)")
+        chunkfile(f, b, c) = joinpath(chunkdir(f, b), "chunk_$(lpad(c.first, 5, '0')).jls")
+        mcunits = [(f, b) for f in fields for b in bases(f)]
         if stage == "merge"
-            for f in fields
-                haskey_missing = [c for c in chunks if !isfile(chunkfile(f, c))]
-                isempty(haskey_missing) || error("MC template of field $f is incomplete: $(length(haskey_missing)) chunks missing")
-                path = tpath(f, "M")
+            for (f, b) in mcunits
+                missing_chunks = [c for c in chunks if !isfile(chunkfile(f, b, c))]
+                isempty(missing_chunks) || error("MC template of field $f, base seed $b is incomplete: $(length(missing_chunks)) chunks missing")
+                path = tpath(f, "M", b)
                 tmpl = Vector{Float64}(undef, nbin); sig = similar(tmpl)
                 for c in chunks
-                    part = Serialization.deserialize(chunkfile(f, c))
-                    part.ks == collect(c.first:c.last) && part.seed == fseed(f) && part.histories == args.inverse_mc_samples ||
-                        error("chunk $(chunkfile(f, c)) does not match the requested key")
+                    part = Serialization.deserialize(chunkfile(f, b, c))
+                    part.ks == collect(c.first:c.last) && part.seed == b && part.histories == args.inverse_mc_samples &&
+                        get(part, :mc_stream, "") == PROTOCOL_MC_STREAM ||
+                        error("chunk $(chunkfile(f, b, c)) does not match the requested key")
                     tmpl[c.first:c.last] .= part.values; sig[c.first:c.last] .= part.sigma
                 end
-                csda_f = isfile(tpath(f, "X")) ? load_template(tpath(f, "X"), tkey(f, "X")).template : model(truth(f))[1]
-                save_template(path, tkey(f, "M"), tmpl, (sigma_mc = sig, median_rel_error = median(sig ./ tmpl),
+                csda_f = load_template(tpath(f, "X", 0), tkey(f, "X", 0)).template
+                save_template(path, tkey(f, "M", b), tmpl, (sigma_mc = sig, median_rel_error = median(sig ./ tmpl),
                     median_mc_over_csda = median(tmpl ./ csda_f), chunks = length(chunks)))
                 println("  merged $(length(chunks)) chunks into $path: median per-bin MC error $(round(100 * median(sig ./ tmpl); digits = 2)) %, median MC/CSDA $(round(median(tmpl ./ csda_f); digits = 4))")
             end
@@ -3136,17 +3163,17 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
         end
         claim = isempty(args.claim_dir) ? nothing : args.claim_dir
         pause = isempty(args.pause_file) ? nothing : args.pause_file
-        units = [("csda", f, 0) for f in fields]
-        append!(units, [("mc", f, c.first) for f in fields for c in chunks])
+        units = [("csda", f, 0, 0) for f in fields]
+        append!(units, [("mc", f, b, c.first) for (f, b) in mcunits for c in chunks])
         claim === nothing || announce_units!(claim, length(units))
-        for (kind, f, first) in units
-            uname = "$(kind)_$(f)_$(first)"
+        for (kind, f, b, first) in units
+            uname = "$(kind)_$(f)_b$(b)_$(first)"
             if claim !== nothing
                 wait_unpaused(pause)
                 claim_unit!(claim, uname) || continue
             end
             if kind == "csda"
-                key = tkey(f, "X"); path = tpath(f, "X")
+                key = tkey(f, "X", 0); path = tpath(f, "X", 0)
                 if isfile(path)
                     load_template(path, key); println("  template $path exists with a matching key; kept")
                 else
@@ -3154,16 +3181,17 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
                 end
             else
                 c = only(c for c in chunks if c.first == first)
-                if isfile(tpath(f, "M")) || isfile(chunkfile(f, c))
+                if isfile(tpath(f, "M", b)) || isfile(chunkfile(f, b, c))
                     println("  chunk $uname exists; kept")
                 else
                     ks = c.first:c.last
                     vals, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, truth(f), valid_bins, args;
-                                                     histories = args.inverse_mc_samples, seed = fseed(f), ks = ks)
-                    mkpath(chunkdir(f))
-                    tmp = chunkfile(f, c) * ".tmp$(getpid())"
-                    Serialization.serialize(tmp, (ks = collect(ks), values = vals, sigma = sig, seed = fseed(f), histories = args.inverse_mc_samples))
-                    mv(tmp, chunkfile(f, c); force = true)
+                                                     histories = args.inverse_mc_samples, seed = b, ks = ks)
+                    mkpath(chunkdir(f, b))
+                    tmp = chunkfile(f, b, c) * ".tmp$(getpid())"
+                    Serialization.serialize(tmp, (ks = collect(ks), values = vals, sigma = sig, seed = b, histories = args.inverse_mc_samples,
+                                                  mc_stream = PROTOCOL_MC_STREAM))
+                    mv(tmp, chunkfile(f, b, c); force = true)
                     println("  wrote chunk $uname")
                 end
             end
@@ -3177,24 +3205,27 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
         n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
     predict = flux_only_operator(physics, shallow_flags, matcfg, site, paths[valid_bins], energy_samples; threaded = args.threaded)
     op = ProtocolOperator(J0, f0, model, predict, cell_neighbors(volume), free; delta = args.edge_delta)
-    templates = Dict{String,Vector{Float64}}()
+    templates = Dict{String,Any}()
+    tkey_x = template_key(field, "X", 0, 0, w_true, valid_bins)
+    tpath_x = protocol_template_path(outdir, field, "X", 0, 0)
+    function mc_templates()          # one MC template per realisation (replicate r serves realisation r in arms M and Mc)
+        bs = bases(field)
+        args.template_mode == "single" || length(bs) >= nreps || error("field $field has $(length(bs)) MC templates for $nreps realisations")
+        reps = [load_template(protocol_template_path(outdir, field, "M", args.inverse_mc_samples, b),
+                              template_key(field, "M", args.inverse_mc_samples, b, w_true, valid_bins)).template for b in (args.template_mode == "single" ? bs : bs[1:nreps])]
+        return args.template_mode == "single" ? reps[1] : reps
+    end
     for arm in arms
-        tarm = template_arm(arm)
-        key = tarm == "M" ? template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins) :
-                            template_key(field, "X", 0, 0, w_true, valid_bins)
-        path = protocol_template_path(outdir, field, tarm, tarm == "M" ? args.inverse_mc_samples : 0, tarm == "M" ? mcseed : 0)
-        templates[arm] = load_template(path, key).template        # arms M and Mc: the same observation template
+        templates[arm] = template_arm(arm) == "M" ? mc_templates() : load_template(tpath_x, tkey_x).template
     end
     diag_arms = ["Mc"]                                            # oracle-weight diagnostic: on arm Mc
-    if stage == "diag"
-        key = template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins)
-        templates["Mc"] = load_template(protocol_template_path(outdir, field, "M", args.inverse_mc_samples, mcseed), key).template
-    end
+    stage == "diag" && !haskey(templates, "Mc") && (templates["Mc"] = mc_templates())
     op_cal = s_dry === nothing ? nothing : scale_operator(op, s_dry)   # dry-normalised operator, only from a valid dry_calibration.toml
     open(joinpath(stagedir, "manifest_$(stage)$(stage == "dev" ? "_p$(args.protocol_phase)" : "")_w$(worker)of$(shard[2]).toml"), "w") do io
         TOML.print(io, Dict{String,Any}("stage" => stage, "phase" => args.protocol_phase, "field" => String(field), "arms" => arms,
             "exposures" => exposures, "realizations" => nreps, "shard" => collect(shard), "git_commit" => protocol_git_commit(),
-            "inverse_mc_samples" => args.inverse_mc_samples, "mc_seed" => mcseed, "noise_base_seed" => args.seed,
+            "inverse_mc_samples" => args.inverse_mc_samples, "mc_stream" => PROTOCOL_MC_STREAM, "template_mode" => args.template_mode,
+            "template_bases" => bases(field), "timing_flag" => "loaded, $(get(ENV, "S7_NPROC", "?")) concurrent", "noise_base_seed" => args.seed,
             "julia_threads" => Threads.nthreads(), "selection_sha256" => something(sha, ""), "worker" => worker, "cuts" => sort(collect(cuts)),
             "dry_calibration_sha256" => something(dry_sha, ""), "dry_scale" => something(s_dry, 0.0), "started_unix" => time()); sorted = true)
     end
