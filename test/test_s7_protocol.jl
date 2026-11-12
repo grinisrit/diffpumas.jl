@@ -489,14 +489,125 @@ end
         @test c3["MLEM"]["n_negative"] == "0" && parse(Float64, c3["MLEM"]["lo"]) ≈ 0.05   # constant difference
     end
 
+    @testset "claim-based work sharing" begin
+        mktempdir() do dir
+            claims = joinpath(dir, "claims")
+            mkpath(claims)
+            @test claim_unit!(claims, "X_e1_r1") && !claim_unit!(claims, "X_e1_r1") && claim_unit!(claims, "X_e1_r2")
+            mark_unit_done!(claims, "X_e1_r1"); @test isfile(joinpath(claims, "X_e1_r1.done"))
+            announce_units!(claims, 7); @test strip(read(joinpath(claims, "TOTAL"), String)) == "7"
+            @test unit_name("Mc", 3, 2) == "Mc_e3_r2"
+            # the pause file blocks a worker until it disappears
+            pf = joinpath(dir, "PAUSE"); touch(pf)
+            t = @async (wait_unpaused(pf; poll = 0.05); :resumed)
+            sleep(0.3); @test !istaskdone(t)
+            rm(pf); @test fetch(t) === :resumed
+            wait_unpaused(nothing)
+            # two workers on one claim dir share the units of a phase without overlap; the result equals a serial run
+            C = s7_toy_centroids(); op = s7_toy_operator(C); n = size(C, 2)
+            wd = zeros(n); wd[findall(op.free)[1:10]] .= 0.4
+            geo = make_geometry(:dev, wd, C, op.free)
+            tm = Dict("X" => op.predict(wd))
+            exps = [1e4, 1e5]
+            serial = ProtocolContext(op, geo, :dev, tm, exps, 2, 42, joinpath(dir, "serial"))
+            dev_phase!(serial, 1, default_grids(["X"], 2))
+            shared = ProtocolContext(op, geo, :dev, tm, exps, 2, 42, joinpath(dir, "shared"))
+            cdir = joinpath(dir, "cl")
+            n1 = dev_phase!(shared, 1, default_grids(["X"], 2); claim_dir = cdir, worker = 1)
+            n2 = dev_phase!(shared, 1, default_grids(["X"], 2); claim_dir = cdir, worker = 2)
+            @test n1 > 0 && n2 == 0                                   # everything was claimed by the first worker
+            @test strip(read(joinpath(cdir, "TOTAL"), String)) == "4" && length(filter(endswith(".done"), readdir(cdir))) == 4
+            key(r) = (r["arm"], r["exp_index"], r["rep"], r["solver"], r["param"], r["iter"], r["rmse_s"])
+            @test sort(key.(read_rows(rows_in(joinpath(dir, "serial"), "rows_phase")))) == sort(key.(read_rows(rows_in(joinpath(dir, "shared"), "rows_phase"))))
+            @test isfile(joinpath(dir, "shared", "rows_phase1_shard1.tsv"))
+            # a claimed unit of a dead worker is skipped until its claim is removed
+            rm(joinpath(cdir, "X_e1_r1")); rm(joinpath(cdir, "X_e1_r1.done"))
+            rm(joinpath(dir, "shared"); recursive = true)
+            @test dev_phase!(shared, 1, default_grids(["X"], 2); claim_dir = cdir, worker = 3) > 0
+            @test length(filter(endswith(".done"), readdir(cdir))) == 4
+        end
+    end
+
+    @testset "budget cuts and the 36 h trigger" begin
+        # cut semantics
+        @test !cut_excludes(Set(), "X", 3.16e3, "GN-0")
+        @test cut_excludes(Set([1]), "Mc", 1e4, "MLEM->GD") && !cut_excludes(Set([1]), "Mc", 1e4, "GD-0")
+        @test cut_excludes(Set([2]), "X", 3.16e3, "GD-0") && cut_excludes(Set([2]), "X", 3.16e4, "GD-0") && !cut_excludes(Set([2]), "X", 1e5, "GD-0")
+        @test !cut_excludes(Set([2]), "X", 3.16e3, "GN-0")
+        @test cut_excludes_unit(Set([3]), "M", 1e5) && !cut_excludes_unit(Set([3]), "Mc", 1e5) && !cut_excludes_unit(Set([3]), "M", 1e4)
+        @test cut_excludes_unit(Set([4]), "X", 3.16e3) && cut_excludes(Set([4]), "Mc", 3.16e3, "SART") && !cut_excludes_unit(Set([4]), "X", 1e3)
+        @test !cut_excludes_unit(Set([0]), "X", 3.16e3)               # cut 0 removes no unit
+        @test PROTOCOL_CUT_ORDER == [0, 1, 2, 3, 4]
+        # projection from the measured development times
+        exps = [1e4]
+        drow(solver, rep, secs, upd; arm = "X") = Dict("solver" => solver, "arm" => arm, "exp_index" => "1", "weights" => "obs", "param" => "0.1",
+            "cap" => "20", "rep" => string(rep), "secs" => string(secs), "updates" => string(upd), "iter" => "K=2")
+        rows = [drow("GN-0", r, 3600.0, 10) for r in 1:2]
+        sel = Dict("GN-0|X|1" => Dict("solver" => "GN-0", "arm" => "X", "exp_index" => 1, "param" => 0.1, "iter" => "K=2", "cap" => 20))
+        @test project_test_cost(rows, sel, exps, 8, Set{Int}()) ≈ 8 * 3600
+        @test project_test_cost(rows, sel, exps, 8, Set([0])) ≈ 2 * 3600 + 6 * 720    # reps 3..8 stop at K = 2 of 10 updates
+        @test project_test_cost(rows, sel, exps, 8, Set([0, 1])) ≈ 2 * 3600 + 6 * 720
+        seln = merge(sel, Dict("GN-0|X|1" => merge(sel["GN-0|X|1"], Dict("iter" => "final"))))
+        @test project_test_cost(rows, seln, exps, 8, Set([0])) ≈ 8 * 3600                 # final: nothing to save
+        # trigger: projected total = elapsed + test/16 processes
+        p = plan_cuts(rows, sel, exps, 8; elapsed_h = 10.0)
+        @test p.cuts == Int[] && p.met && p.final.total_h ≈ 10 + 28800 / 3600 / 16
+        p = plan_cuts(rows, sel, exps, 8; elapsed_h = 35.7)
+        @test p.cuts == [0] && p.met && p.final.total_h ≈ 35.7 + 11520 / 3600 / 16 && length(p.history) == 2
+        p = plan_cuts(rows, sel, exps, 8; elapsed_h = 36.5)
+        @test p.cuts == [0, 1, 2, 3, 4] && !p.met                                            # cannot be met: all cuts, reported
+        # cuts.toml belongs to one selection
+        mktempdir() do dir
+            path = joinpath(dir, "cuts.toml")
+            @test_throws ErrorException load_cuts(path, "abc")
+            write_cuts(path, plan_cuts(rows, sel, exps, 8; elapsed_h = 35.7), "abc")
+            @test load_cuts(path, "abc") == Set([0])
+            @test_throws ErrorException load_cuts(path, "other")
+        end
+        # cut 0 and cut 1 in the test stage
+        C = s7_toy_centroids(); op = s7_toy_operator(C); n = size(C, 2)
+        wt = zeros(n); wt[findall(op.free)[1:10]] .= 0.4
+        geo = make_geometry(:test, wt, C, op.free)
+        mset = Dict("param" => 0.5, "iter" => "n=25")
+        selt = Dict{String,Any}()
+        for sname in PROTOCOL_SOLVERS
+            e = Dict{String,Any}("solver" => sname, "arm" => "X", "exp_index" => 1, "tau" => 1e4, "param" => sname in ("SART",) ? 0.1 : 0.5,
+                                 "iter" => sname in ("SART", "MLEM") ? "n=25" : "K=2")
+            sname in PROTOCOL_GN_SOLVERS && (e["cap"] = 20; e["param"] = 0.1)
+            sname in PROTOCOL_GD_SOLVERS && (e["cap"] = 40; e["param"] = 0.1)
+            selt[group_key(sname, "X", 1)] = e
+        end
+        mktempdir() do dir
+            ctx = ProtocolContext(op, geo, :test, Dict("X" => op.predict(wt)), [1e4], 3, 42, joinpath(dir, "t"))
+            test_stage!(ctx, selt, "sha"; cuts = Set([0, 1]))
+            trows = read_rows(rows_in(joinpath(dir, "t"), "rows_"))
+            @test isempty([r for r in trows if r["solver"] == "MLEM->GD"])
+            gn = [r for r in trows if r["solver"] == "GN-0"]
+            @test any(r -> r["rep"] == "1" && r["iter"] == "final", gn) && any(r -> r["rep"] == "2" && r["iter"] == "final", gn)
+            @test !any(r -> r["rep"] == "3" && r["iter"] == "final", gn)                 # realisation 3 stops at the selected K
+            @test !any(r -> r["rep"] == "3" && r["iter"] in ("K=3", "K=5", "K=8", "K=13"), gn)
+            @test count(r -> r["rep"] == "3" && r["selected"] == "1", gn) == 1 && any(r -> r["rep"] == "3" && r["iter"] == "K=2" && r["selected"] == "1", gn)
+            # without cuts the same selection logs every realisation to the end
+            ctx2 = ProtocolContext(op, geo, :test, Dict("X" => op.predict(wt)), [1e4], 3, 42, joinpath(dir, "t2"))
+            test_stage!(ctx2, selt, "sha")
+            t2 = read_rows(rows_in(joinpath(dir, "t2"), "rows_"))
+            @test any(r -> r["solver"] == "MLEM->GD", t2) && any(r -> r["rep"] == "3" && r["solver"] == "GN-0" && r["iter"] == "final", t2)
+            # the selected K is always among the logged iterates (also for a GD K outside the default list)
+            selg = deepcopy(selt); selg[group_key("GD-0", "X", 1)]["iter"] = "K=3"
+            ctx3 = ProtocolContext(op, geo, :test, Dict("X" => op.predict(wt)), [1e4], 1, 42, joinpath(dir, "t3"))
+            test_stage!(ctx3, selg, "sha"; solvers = ("GD-0",))
+            @test any(r -> r["solver"] == "GD-0" && r["iter"] == "K=3" && r["selected"] == "1", read_rows(rows_in(joinpath(dir, "t3"), "rows_")))
+        end
+    end
+
     @testset "process count of the driver script" begin
         script = joinpath(@__DIR__, "..", "examples", "s7_protocol.sh")
         mktempdir() do dir
             env = Dict("OUT" => dir, "REPO" => joinpath(@__DIR__, ".."))
-            p = run(pipeline(ignorestatus(setenv(`bash $script test`, merge(env, Dict("NPROC" => "17"))));
+            p = run(pipeline(ignorestatus(setenv(`bash $script test`, merge(env, Dict("NPROC" => "65"))));
                              stderr = joinpath(dir, "err.txt"), stdout = devnull))
             @test p.exitcode != 0
-            @test occursin("NPROC=17 exceeds", read(joinpath(dir, "err.txt"), String))
+            @test occursin("NPROC=65 exceeds", read(joinpath(dir, "err.txt"), String))
             @test !isdir(joinpath(dir, "test"))                                 # refused before anything ran
             @test occursin("JULIA_NUM_THREADS=1", read(script, String))
         end

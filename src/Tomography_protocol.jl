@@ -34,8 +34,8 @@ const PROTOCOL_ARM_M_EXPOSURES = [1.0e4, 1.0e5, 1.0e8]
 const PROTOCOL_GN_CAP = 20
 const PROTOCOL_GN_CAP_EXT = 32
 const PROTOCOL_GD_CAP = 40
-"Upper bound of concurrent single-thread worker processes of the full run."
-const PROTOCOL_MAX_PROCESSES = 16
+"Hard upper bound of concurrent single-thread worker processes of the full run (the run uses about 34; the resource monitor scales between)."
+const PROTOCOL_MAX_PROCESSES = 64
 "Dry MC/CSDA ratio found by the gate run and the tolerance of gate G0b."
 const PROTOCOL_G0B_REFERENCE = 0.801
 const PROTOCOL_G0B_TOLERANCE = 0.03
@@ -796,6 +796,37 @@ function _save_run(dir, stage, u, solver, param, run::SolveRun)
     return f
 end
 
+# ---- dynamic work sharing: units are claimed by an atomic mkdir, so workers can be added or paused ----
+
+"Atomically claim a unit (`mkdir`); `true` for the first claimant only."
+function claim_unit!(dir::AbstractString, name::AbstractString)
+    try
+        mkdir(joinpath(dir, name)); return true
+    catch
+        return false
+    end
+end
+
+mark_unit_done!(dir::AbstractString, name::AbstractString) = (touch(joinpath(dir, name * ".done")); nothing)
+
+"Publish the number of units of the stage (every worker writes the same value)."
+function announce_units!(dir::AbstractString, total::Integer)
+    mkpath(dir)
+    tmp = joinpath(dir, "TOTAL.$(getpid())")
+    write(tmp, string(total, "\n")); mv(tmp, joinpath(dir, "TOTAL"); force = true)
+    return nothing
+end
+
+"Block while the pause file exists (the resource monitor creates it when the host is loaded)."
+function wait_unpaused(pause_file; poll::Real = 20)
+    while pause_file !== nothing && isfile(pause_file)
+        sleep(poll)
+    end
+    return nothing
+end
+
+unit_name(arm, i, r) = "$(arm)_e$(i)_r$(r)"
+
 function _mlem_vector(op, unit, setting)
     n = setting.iter === :final ? error("MLEM iteration count cannot be final") : setting.iter
     return only(run_mlem(op, unit.obs, setting.param, [n]).vectors).second
@@ -813,13 +844,20 @@ solver runs done. `mlem_selection` (phase 1 selection) feeds `MLEM->GN`; `gn_sel
 (phase 2 selection) gives `c` for the GD solvers.
 """
 function dev_phase!(ctx::ProtocolContext, phase::Int, grids::Dict;
-                    mlem_selection = nothing, gn_selection = nothing, shard = (1, 1))
+                    mlem_selection = nothing, gn_selection = nothing, shard = (1, 1),
+                    claim_dir = nothing, pause_file = nothing, worker::Integer = shard[1])
     haskey(PROTOCOL_PHASES, phase) || throw(ArgumentError("phase must be 1, 2 or 3"))
     ctx.field === :dev || throw(ArgumentError("the development stage runs on the development field"))
     done = Set(row_key(r) for r in read_rows(rows_in(ctx.outdir, "rows_phase")))
-    out = joinpath(ctx.outdir, "rows_phase$(phase)_shard$(shard[1]).tsv")
+    out = joinpath(ctx.outdir, "rows_phase$(phase)_shard$(worker).tsv")
     nruns = 0
-    for (arm, i, r) in enumerate_units(ctx; shard = shard)
+    units = enumerate_units(ctx; shard = shard)
+    claim_dir === nothing || announce_units!(claim_dir, length(units))
+    for (arm, i, r) in units
+        if claim_dir !== nothing
+            wait_unpaused(pause_file)
+            claim_unit!(claim_dir, unit_name(arm, i, r)) || continue
+        end
         op = arm_operator(ctx, arm)
         u = draw_unit(ctx, arm, i, r)
         W = protocol_weights(u.counts, u.tau)
@@ -863,6 +901,7 @@ function dev_phase!(ctx::ProtocolContext, phase::Int, grids::Dict;
                 println("  dev phase $phase $arm e$i r$r $solver c/q=$p ", "$(round(run.secs; digits = 1))s"); flush(stdout)
             end
         end
+        claim_dir === nothing || mark_unit_done!(claim_dir, unit_name(arm, i, r))
     end
     return nruns
 end
@@ -880,16 +919,23 @@ already present are skipped.
 function test_stage!(ctx::ProtocolContext, selection::Dict, sha::AbstractString;
                      shard = (1, 1), weights::Symbol = :obs, solvers = ("ZERO", PROTOCOL_SOLVERS...),
                      exp_indices = eachindex(ctx.exposures), arms = collect(keys(ctx.templates)),
-                     stage::String = "test")
+                     stage::String = "test", cuts = Set{Int}(), claim_dir = nothing, pause_file = nothing,
+                     worker::Integer = shard[1])
     ctx.field === :test || throw(ArgumentError("the test stage runs on the test field"))
     weights in (:obs, :oracle) || throw(ArgumentError("weights must be :obs or :oracle"))
     wlabel = String(weights)
     done = Set(row_key(r) for r in read_rows(rows_in(ctx.outdir, "rows_")))
-    out = joinpath(ctx.outdir, "rows_shard$(shard[1]).tsv")
+    out = joinpath(ctx.outdir, "rows_shard$(worker).tsv")
     n = length(ctx.geo.w_true)
     nruns = 0
-    for (arm, i, r) in enumerate_units(ctx; arms = arms, shard = shard)
-        i in exp_indices || continue
+    units = [u for u in enumerate_units(ctx; arms = arms, shard = shard)
+             if u[2] in exp_indices && !cut_excludes_unit(cuts, u[1], ctx.exposures[u[2]])]
+    claim_dir === nothing || announce_units!(claim_dir, length(units))
+    for (arm, i, r) in units
+        if claim_dir !== nothing
+            wait_unpaused(pause_file)
+            claim_unit!(claim_dir, unit_name(arm, i, r)) || continue
+        end
         op = arm_operator(ctx, arm)
         u = draw_unit(ctx, arm, i, r)
         W = weights === :oracle ? oracle_weights(ctx.templates[arm], u.tau) : protocol_weights(u.counts, u.tau)
@@ -903,6 +949,7 @@ function test_stage!(ctx::ProtocolContext, selection::Dict, sha::AbstractString;
         mlem_vec = nothing
         for solver in arm_solvers(arm)
             solver in solvers || continue
+            cut_excludes(cuts, arm, ctx.exposures[i], solver) && continue
             s = selected_setting(selection, solver, arm, i)
             warm = solver in ("MLEM->GN", "MLEM->GD")
             start = warm ? "mlem(c=$(mset.param),n=$(mset.label))" : solver in ("GN-lin", "GN-0", "GD-0") ? "zero" : "-"
@@ -912,7 +959,12 @@ function test_stage!(ctx::ProtocolContext, selection::Dict, sha::AbstractString;
             cap = solver in PROTOCOL_GN_SOLVERS ? something(s.cap, PROTOCOL_GN_CAP) :
                   solver in PROTOCOL_GD_SOLVERS ? something(s.cap, PROTOCOL_GD_CAP) : nothing
             klist = solver in PROTOCOL_GN_SOLVERS ? (cap == PROTOCOL_GN_CAP ? PROTOCOL_GN_K : PROTOCOL_GN_K_EXT) : [5, 10, 20]
-            labels = solver in ("SART", "MLEM") ? [s.label] : [_iter_label("K", K) for K in [klist; :final]]
+            s.iter === :final || solver in ("SART", "MLEM") || (klist = sort(unique([klist; s.iter])))   # the selected K is always logged
+            # cut 0: realisations 3 and up stop at the selected K (no `final`)
+            kstop = (0 in cuts && r >= 3 && s.iter !== :final && solver in (PROTOCOL_GN_SOLVERS..., PROTOCOL_GD_SOLVERS...)) ? s.iter : nothing
+            kstop === nothing || (klist = [k for k in klist if k <= kstop])
+            kall = kstop === nothing ? [klist; :final] : klist
+            labels = solver in ("SART", "MLEM") ? [s.label] : [_iter_label("K", K) for K in kall]
             keyf(l) = result_key(String(ctx.field), arm, i, r, solver, start, wlabel, cap === nothing ? "" : cap, c, l)
             all(l -> keyf(l) in done, labels) && continue
             warm && mlem_vec === nothing && (mlem_vec = _mlem_vector(op, u, mset))
@@ -921,10 +973,10 @@ function test_stage!(ctx::ProtocolContext, selection::Dict, sha::AbstractString;
             elseif solver == "MLEM"
                 run_mlem(op, u.obs, c, [s.iter])
             elseif solver in PROTOCOL_GN_SOLVERS
-                run_gn(op, u.obs, W, c, [klist; :final], solver == "GN-lin" ? :lin : :relin,
-                       warm ? mlem_vec : zeros(n); max_updates = cap)
+                run_gn(op, u.obs, W, c, kall, solver == "GN-lin" ? :lin : :relin,
+                       warm ? mlem_vec : zeros(n); max_updates = kstop === nothing ? cap : Int(kstop))
             else
-                run_gd(op, u.obs, W, c, [klist; :final], warm ? mlem_vec : zeros(n); max_iter = cap)
+                run_gd(op, u.obs, W, c, kall, warm ? mlem_vec : zeros(n); max_iter = kstop === nothing ? cap : Int(kstop))
             end
             nruns += 1
             rec = _save_run(ctx.outdir, stage * "_" * wlabel * (cap === nothing ? "" : "_cap$(cap)"), u, solver, c, run)
@@ -934,6 +986,7 @@ function test_stage!(ctx::ProtocolContext, selection::Dict, sha::AbstractString;
             append_rows(out, rows)
             println("  $stage $arm e$i r$r $solver ", "$(round(run.secs; digits = 1))s"); flush(stdout)
         end
+        claim_dir === nothing || mark_unit_done!(claim_dir, unit_name(arm, i, r))
     end
     return nruns
 end
@@ -1199,4 +1252,101 @@ function write_test_summary(path::AbstractString, summary)
         end
     end
     return path
+end
+
+# --------------------------------------------------------------------------
+# Budget cuts and the 36 h trigger (G0 ruling R4)
+# --------------------------------------------------------------------------
+
+"Order in which the cuts are applied: 0 = test realisations 3..8 stop at the selected K, 1 = MLEM->GD, 2 = GD-0 at 3.16e3 and 3.16e4, 3 = arm M at 1e5, 4 = exposure 3.16e3 for all solvers."
+const PROTOCOL_CUT_ORDER = [0, 1, 2, 3, 4]
+_tau_is(tau, v) = isapprox(tau, v; rtol = 1e-9)
+
+"Cuts 3 and 4 remove a whole (arm, exposure) from the test stage."
+cut_excludes_unit(cuts, arm::AbstractString, tau::Real) =
+    (3 in cuts && arm == "M" && _tau_is(tau, 1.0e5)) || (4 in cuts && _tau_is(tau, 3.16e3))
+
+"Cuts 1 and 2 (and 3, 4) remove a solver of an (arm, exposure) from the test stage."
+cut_excludes(cuts, arm::AbstractString, tau::Real, solver::AbstractString) =
+    cut_excludes_unit(cuts, arm, tau) || (1 in cuts && solver == "MLEM->GD") ||
+    (2 in cuts && solver == "GD-0" && (_tau_is(tau, 3.16e3) || _tau_is(tau, 3.16e4)))
+
+"""
+    project_test_cost(dev_rows, selection, exposures, test_reps, cuts; full_reps=2, solvers=PROTOCOL_SOLVERS, arms=PROTOCOL_ARMS) -> process seconds
+
+Cost of the test stage from the measured development solve times at the selected setting:
+`full_reps` realisations run to the cap, the others cost the same unless cut 0 is active
+(then a GN/GD run with a numeric selected K costs `K / updates` of the measured run).
+"""
+function project_test_cost(dev_rows, selection::Dict, exposures, test_reps::Integer, cuts;
+                           full_reps::Integer = 2, solvers = PROTOCOL_SOLVERS, arms = PROTOCOL_ARMS)
+    total = 0.0
+    for (_, sel) in selection
+        solver = sel["solver"]; arm = sel["arm"]; i = Int(sel["exp_index"])
+        solver in solvers && arm in arms && solver in arm_solvers(arm) && arm_exposure_active(arm, exposures[i]) || continue
+        cut_excludes(cuts, arm, exposures[i], solver) && continue
+        per_rep = Dict{String,Tuple{Float64,Float64}}()
+        for r in dev_rows
+            r["solver"] == solver && r["arm"] == arm && r["exp_index"] == string(i) && r["weights"] == "obs" || continue
+            parse(Float64, r["param"]) == Float64(sel["param"]) || continue
+            haskey(sel, "cap") && get(r, "cap", "") != string(sel["cap"]) && continue
+            per_rep[r["rep"]] = (parse(Float64, r["secs"]), parse(Float64, r["updates"]))
+        end
+        isempty(per_rep) && continue
+        secs = mean(first.(values(per_rep))); upd = mean(last.(values(per_rep)))
+        cut_secs = secs
+        if 0 in cuts && solver in (PROTOCOL_GN_SOLVERS..., PROTOCOL_GD_SOLVERS...) && sel["iter"] != "final" && upd > 0
+            cut_secs = secs * min(_iterkey(sel["iter"]), upd) / upd
+        end
+        nfull = min(full_reps, test_reps)
+        total += nfull * secs + (test_reps - nfull) * cut_secs
+    end
+    return total
+end
+
+"""
+    plan_cuts(dev_rows, selection, exposures, test_reps; elapsed_h, ref_processes=16, limit_h=36, diag_reps=8) -> NamedTuple
+
+36 h trigger: the projected total wall time is the elapsed time plus the test stage and the
+oracle-weight diagnostic at `ref_processes` processes. While it exceeds `limit_h`, the cuts
+are applied in `PROTOCOL_CUT_ORDER`. Returns the cuts applied, the projections after each
+step and whether the limit is met.
+"""
+function plan_cuts(dev_rows, selection::Dict, exposures, test_reps::Integer; elapsed_h::Real,
+                   ref_processes::Integer = 16, limit_h::Real = 36.0, diag_reps::Integer = 8)
+    function projected(cuts)
+        test_h = project_test_cost(dev_rows, selection, exposures, test_reps, cuts) / 3600 / ref_processes
+        dsel = Dict(k => v for (k, v) in selection if v["solver"] == "GN-0" && v["arm"] == "Mc" &&
+                    any(t -> _tau_is(exposures[Int(v["exp_index"])], t), (1.0e4, 1.0e8)))
+        diag_h = project_test_cost(dev_rows, dsel, exposures, diag_reps, Int[]) / 3600 / ref_processes
+        return (elapsed_h = Float64(elapsed_h), test_h = test_h, diag_h = diag_h, total_h = Float64(elapsed_h) + test_h + diag_h)
+    end
+    cuts = Int[]
+    history = Any[(cuts = copy(cuts), projected(cuts)...)]
+    for c in PROTOCOL_CUT_ORDER
+        history[end].total_h <= limit_h && break
+        push!(cuts, c)
+        push!(history, (cuts = copy(cuts), projected(cuts)...))
+    end
+    return (cuts = cuts, final = history[end], history = history, limit_h = Float64(limit_h),
+            met = history[end].total_h <= limit_h, ref_processes = Int(ref_processes))
+end
+
+"Write `cuts.toml` next to `selection.toml` (hash of the selection recorded)."
+function write_cuts(path::AbstractString, plan, selection_sha::AbstractString)
+    d = Dict{String,Any}("cuts" => collect(Int, plan.cuts), "limit_h" => plan.limit_h, "limit_met" => plan.met,
+        "ref_processes" => plan.ref_processes, "selection_sha256" => selection_sha, "created_unix" => time(),
+        "history" => [Dict{String,Any}("cuts" => collect(Int, h.cuts), "elapsed_h" => h.elapsed_h, "test_h" => h.test_h,
+                                       "diag_h" => h.diag_h, "total_h" => h.total_h) for h in plan.history])
+    mkpath(dirname(abspath(path)))
+    open(path, "w") do io; TOML.print(io, d; sorted = true); end
+    return path
+end
+
+"Read `cuts.toml`; errors if absent (the test stage refuses to start before the plan step) or made for another selection."
+function load_cuts(path::AbstractString, selection_sha::AbstractString)
+    isfile(path) || error("cuts.toml not found at $path: run the plan step (36 h trigger) before the test stage")
+    d = TOML.parsefile(path)
+    get(d, "selection_sha256", "") == selection_sha || error("$path was planned for another selection.toml")
+    return Set{Int}(Int.(d["cuts"]))
 end
