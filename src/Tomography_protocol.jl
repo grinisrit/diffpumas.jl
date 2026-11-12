@@ -13,7 +13,7 @@
 
 using SHA
 using Serialization
-using SpecialFunctions: gamma_inc
+using SpecialFunctions: gamma_inc, beta_inc
 
 # --------------------------------------------------------------------------
 # Exposure grid, seeds, Poisson observations
@@ -21,8 +21,27 @@ using SpecialFunctions: gamma_inc
 
 "Per-bin exposure grid of the protocol (7 values)."
 const PROTOCOL_EXPOSURES = [1.0e3, 3.16e3, 1.0e4, 3.16e4, 1.0e5, 1.0e6, 1.0e8]
-"Data arms: `M` = fixed-path Monte Carlo template, `X` = exact (corrected CSDA) template."
-const PROTOCOL_ARMS = ("M", "X")
+"""
+Data arms: `M` = fixed-path Monte Carlo template with the operator as published (reduced
+grid: `PROTOCOL_ARM_M_EXPOSURES`, no GD), `Mc` = the same observation vectors with the
+operator multiplied by the frozen dry factor `s` (primary MC arm), `X` = exact (corrected
+CSDA) template.
+"""
+const PROTOCOL_ARMS = ("M", "Mc", "X")
+"Exposures at which arm `M` is run (the other arms use the full grid)."
+const PROTOCOL_ARM_M_EXPOSURES = [1.0e4, 1.0e5, 1.0e8]
+"Caps of the iterative solvers: GN outer updates (one extension, `PROTOCOL_GN_CAP_EXT`) and GD iterations (fixed)."
+const PROTOCOL_GN_CAP = 20
+const PROTOCOL_GN_CAP_EXT = 32
+const PROTOCOL_GD_CAP = 40
+"Upper bound of concurrent single-thread worker processes of the full run."
+const PROTOCOL_MAX_PROCESSES = 16
+"Dry MC/CSDA ratio found by the gate run and the tolerance of gate G0b."
+const PROTOCOL_G0B_REFERENCE = 0.801
+const PROTOCOL_G0B_TOLERANCE = 0.03
+
+"The template an arm reads: arm `Mc` shares the observation vectors (template) of arm `M`."
+template_arm(arm::AbstractString) = arm == "Mc" ? "M" : String(arm)
 
 """
     parse_exposure_list(text) -> Vector{Float64}
@@ -49,11 +68,12 @@ end
 
 `base + 9000 + 100000 f + 10000 a + 100 i + r` with `f = 0` for the development field
 (`:dev`) and `1` for the test field (`:test`), `a = 0` for arm `"M"` and `1` for `"X"`,
-`i` the exposure index (1-based) and `r` the realisation index (1-based).
+`i` the exposure index (1-based) and `r` the realisation index (1-based). Arm `"Mc"` has
+`a = 0` like `"M"`: the two arms see the same noise vectors.
 """
 function protocol_noise_seed(field::Symbol, arm::AbstractString, exp_index::Integer, rep::Integer; base::Integer = 42)
     f = field === :dev ? 0 : field === :test ? 1 : throw(ArgumentError("field must be :dev or :test"))
-    a = arm == "M" ? 0 : arm == "X" ? 1 : throw(ArgumentError("arm must be \"M\" or \"X\""))
+    a = arm in ("M", "Mc") ? 0 : arm == "X" ? 1 : throw(ArgumentError("arm must be \"M\", \"Mc\" or \"X\""))
     return Int(base) + 9000 + 100000f + 10000a + 100 * Int(exp_index) + Int(rep)
 end
 
@@ -294,6 +314,23 @@ function ProtocolOperator(J0::AbstractMatrix, f0::AbstractVector, model, predict
                             Float64(delta), box, positive_sensitivity_scale(J), max.(J, 0.0))
 end
 
+"""
+    scale_operator(op, s) -> ProtocolOperator
+
+Dry-normalised operator of arm `Mc`: `pred_cal = s pred`, `f0_cal = s f0`, `J0_cal = s J0`,
+`J_cal(w) = s J(w)`. The free set is unchanged; `s_+` is recomputed from the scaled `J0`
+by the constructor (and `h_+` per solve from the scaled `J0` in `run_gn`/`run_gd`).
+Observations and counts are never rescaled.
+"""
+function scale_operator(op::ProtocolOperator, s::Real)
+    sc = Float64(s)
+    (isfinite(sc) && sc > 0) || throw(ArgumentError("dry scale must be positive and finite, got $s"))
+    model = w -> (r = op.model(w); (sc .* r[1], sc .* r[2]))
+    predict = w -> sc .* op.predict(w)
+    return ProtocolOperator(sc .* op.J0, sc .* op.f0, model, predict, op.neighbors, op.free;
+                            delta = op.delta, box = op.box)
+end
+
 mutable struct EvalCounter
     fwd::Int
     jac::Int
@@ -341,7 +378,7 @@ Gauss-Newton run (at most `max_updates` outer updates; stop on projected gradien
 `:lin` (frozen operator, prediction `f0 + J0 w`), or `:relin` (relinearised; start `w_start`).
 """
 function run_gn(op::ProtocolOperator, obs::AbstractVector, W::AbstractVector, c::Real,
-                K_list, mode::Symbol, w_start::AbstractVector; max_updates::Int = 20, rel_tol::Float64 = 1e-5)
+                K_list, mode::Symbol, w_start::AbstractVector; max_updates::Int = PROTOCOL_GN_CAP, rel_tol::Float64 = 1e-5)
     mode in (:lin, :relin) || throw(ArgumentError("mode must be :lin or :relin"))
     ctr = EvalCounter(0, 0)
     model = w -> (ctr.jac += 1; op.model(w))
@@ -362,7 +399,7 @@ end
 
 "Projected, Jacobi-preconditioned gradient descent (at most `max_iter` iterations)."
 function run_gd(op::ProtocolOperator, obs::AbstractVector, W::AbstractVector, c::Real,
-                K_list, w_start::AbstractVector; max_iter::Int = 40)
+                K_list, w_start::AbstractVector; max_iter::Int = PROTOCOL_GD_CAP)
     ctr = EvalCounter(0, 0)
     model = w -> (ctr.jac += 1; op.model(w))
     prior = EdgePrior(op.neighbors, c * curvature_scale(W, op.J0, op.free), op.delta)
@@ -384,13 +421,24 @@ end
 
 const PROTOCOL_SOLVERS = ("SART", "MLEM", "GN-lin", "GN-0", "MLEM->GN", "GD-0", "MLEM->GD")
 const PROTOCOL_PHASES = Dict(1 => ("SART", "MLEM"), 2 => ("GN-lin", "GN-0", "MLEM->GN"), 3 => ("GD-0", "MLEM->GD"))
+const PROTOCOL_GN_SOLVERS = ("GN-lin", "GN-0", "MLEM->GN")
+const PROTOCOL_GD_SOLVERS = ("GD-0", "MLEM->GD")
+"GN K grid at the first cap, and the K grid of the one extension to cap 32."
+const PROTOCOL_GN_K = [1, 2, 3, 5, 8, 13]
+const PROTOCOL_GN_K_EXT = [1, 2, 3, 5, 8, 13, 20]
+
+"Solvers run in `arm`: arm `M` has no GD."
+arm_solvers(arm::AbstractString) = arm == "M" ? Tuple(s for s in PROTOCOL_SOLVERS if !(s in PROTOCOL_GD_SOLVERS)) : PROTOCOL_SOLVERS
+
+"Arm `M` is run at `PROTOCOL_ARM_M_EXPOSURES` only; every other arm at all exposures."
+arm_exposure_active(arm::AbstractString, tau::Real) = arm != "M" || any(t -> isapprox(t, tau; rtol = 1e-9), PROTOCOL_ARM_M_EXPOSURES)
 
 "Initial hyperparameter grids (Q2.7) of one group `solver|arm|exp_index`."
 function default_grid(solver::AbstractString)
     solver == "SART" && return Dict{String,Any}("param" => [0.0, 0.03, 0.1, 0.3], "iter" => [1, 2, 5, 10, 25, 50, 100, 200])
     solver == "MLEM" && return Dict{String,Any}("param" => [0.0, 0.05, 0.16, 0.5, 1.6, 5.0], "iter" => [10, 25, 50, 100, 200, 400])
-    solver in ("GN-lin", "GN-0", "MLEM->GN") && return Dict{String,Any}("param" => [0.001, 0.01, 0.1, 1.0], "iter" => [1, 2, 3, 5, 8])
-    solver in ("GD-0", "MLEM->GD") && return Dict{String,Any}("param" => Float64[], "iter" => [5, 10, 20])
+    solver in PROTOCOL_GN_SOLVERS && return Dict{String,Any}("param" => [0.001, 0.01, 0.1, 1.0], "iter" => copy(PROTOCOL_GN_K), "cap" => PROTOCOL_GN_CAP)
+    solver in PROTOCOL_GD_SOLVERS && return Dict{String,Any}("param" => Float64[], "iter" => [5, 10, 20], "cap" => PROTOCOL_GD_CAP)
     throw(ArgumentError("unknown solver $solver"))
 end
 
@@ -400,16 +448,16 @@ function default_grids(arms, n_exposures::Integer)
     g = Dict{String,Any}()
     for s in PROTOCOL_SOLVERS, a in arms, i in 1:n_exposures
         d = default_grid(s)
-        d["ext"] = Dict{String,Any}("param_lo" => 0, "param_hi" => 0, "iter_lo" => 0, "iter_hi" => 0)
+        d["ext"] = Dict{String,Any}("param_lo" => 0, "param_hi" => 0, "iter_lo" => 0, "iter_hi" => 0, "cap" => 0)
         g[group_key(s, a, i)] = d
     end
     return g
 end
 
 const PROTOCOL_COLUMNS = ["stage", "field", "arm", "exp_index", "tau", "rep", "seed", "solver", "start",
-    "weights", "param", "iter", "selected", "rmse_s", "rmse500", "anom_rmse", "bg_mean", "bg_rmse",
+    "weights", "cap", "param", "iter", "selected", "rmse_s", "rmse500", "anom_rmse", "bg_mean", "bg_rmse",
     "s1_mean", "s2_mean", "s3_mean", "corr", "relres", "chi2m", "secs", "fwd", "jac", "updates", "stop",
-    "rec", "selection_sha256"]
+    "rec", "selection_sha256", "final_note", "budget_limited"]
 
 function append_rows(path::AbstractString, rows::Vector{Dict{String,String}})
     isempty(rows) && return
@@ -440,8 +488,23 @@ end
 
 rows_in(dir, stem) = isdir(dir) ? sort([joinpath(dir, f) for f in readdir(dir) if startswith(f, stem) && endswith(f, ".tsv")]) : String[]
 
+"Identity string of a solver result (resume, duplicate checks). `cap` is the iteration cap of the run (`\"\"` for SART/MLEM)."
+result_key(field, arm, exp_index, rep, solver, start, weights, cap, param, iter) =
+    join(string.((field, arm, exp_index, rep, solver, start, weights, cap, param, iter)), '|')
+
 "Identity of a logged row (used for resume)."
-row_key(r) = join((r["field"], r["arm"], r["exp_index"], r["rep"], r["solver"], r["start"], r["weights"], r["param"], r["iter"]), '|')
+row_key(r) = result_key(r["field"], r["arm"], r["exp_index"], r["rep"], r["solver"], r["start"], r["weights"], get(r, "cap", ""), r["param"], r["iter"])
+
+"""
+Budget label of a final iterate: GN `final` that stopped on the cap is written `K = <cap> (cap)`
+and is budget-limited, not converged; GD `final` on the cap is a fixed budget of `cap` iterations.
+"""
+function final_budget_note(solver::AbstractString, label::AbstractString, stop::AbstractString, cap)
+    (label == "final" && cap !== nothing) || return ""
+    solver in PROTOCOL_GN_SOLVERS && stop == "max_updates" && return "K = $(cap) (cap)"
+    solver in PROTOCOL_GD_SOLVERS && stop == "max_iter" && return "fixed budget of $(cap) iterations"
+    return ""
+end
 
 _s(x) = x isa AbstractString ? String(x) : string(x)
 
@@ -451,20 +514,21 @@ Build one log row for field `w` of a run (`label` = `n=..`, `K=..` or `final`).
 """
 function protocol_log_row(stage, geo::ProtocolGeometry, op::ProtocolOperator, unit::ProtocolUnit, W,
                           solver, start, weights, param, label::AbstractString, w, run::SolveRun;
-                          selected = true, rec = "", selection_sha256 = "")
+                          selected = true, rec = "", selection_sha256 = "", cap = nothing)
     m = protocol_metrics(w, geo)
     f = protocol_fit_metrics(op.predict(w), unit.obs, W)
     sm = [k <= length(m.struct_means) ? m.struct_means[k] : NaN for k in 1:3]
+    note = final_budget_note(solver, label, run.stop, cap)
     return Dict{String,String}(
         "stage" => stage, "field" => String(unit.field), "arm" => unit.arm, "exp_index" => _s(unit.exp_index),
         "tau" => _s(unit.tau), "rep" => _s(unit.rep), "seed" => _s(unit.seed), "solver" => solver,
-        "start" => start, "weights" => weights, "param" => _s(param), "iter" => label,
+        "start" => start, "weights" => weights, "cap" => cap === nothing ? "" : _s(cap), "param" => _s(param), "iter" => label,
         "selected" => selected ? "1" : "0", "rmse_s" => _s(m.rmse_s), "rmse500" => _s(m.rmse500),
         "anom_rmse" => _s(m.anom_rmse), "bg_mean" => _s(m.bg_mean), "bg_rmse" => _s(m.bg_rmse),
         "s1_mean" => _s(sm[1]), "s2_mean" => _s(sm[2]), "s3_mean" => _s(sm[3]), "corr" => _s(m.corr),
         "relres" => _s(f.relres), "chi2m" => _s(f.chi2m), "secs" => _s(run.secs), "fwd" => _s(run.fwd),
         "jac" => _s(run.jac), "updates" => _s(run.updates), "stop" => run.stop, "rec" => rec,
-        "selection_sha256" => selection_sha256)
+        "selection_sha256" => selection_sha256, "final_note" => note, "budget_limited" => isempty(note) ? "0" : "1")
 end
 
 # --------------------------------------------------------------------------
@@ -505,10 +569,11 @@ end
 _iterkey(lbl::AbstractString) = lbl == "final" ? typemax(Int) : parse(Int, split(lbl, '=')[end])
 
 "Strictly-keyed means of `rmse_s` over the repetitions for each (param, iter) candidate of a group."
-function candidate_means(rows, solver, arm, exp_index, nreps)
+function candidate_means(rows, solver, arm, exp_index, nreps; cap = nothing)
     acc = Dict{Tuple{Float64,String},Vector{Float64}}()
     for r in rows
         r["solver"] == solver && r["arm"] == arm && r["exp_index"] == string(exp_index) && r["weights"] == "obs" || continue
+        cap === nothing || get(r, "cap", "") == string(cap) || continue
         push!(get!(acc, (parse(Float64, r["param"]), r["iter"]), Float64[]), parse(Float64, r["rmse_s"]))
     end
     return Dict(k => mean(v) for (k, v) in acc if length(v) == nreps)
@@ -555,9 +620,11 @@ function select_phase!(rows, phase::Int, grids::Dict, arms, exposures, nreps::In
     selection = Dict{String,Any}()
     pending = 0
     for solver in PROTOCOL_PHASES[phase], arm in arms, i in eachindex(exposures)
+        solver in arm_solvers(arm) && arm_exposure_active(arm, exposures[i]) || continue
         key = group_key(solver, arm, i)
         g = grids[key]
-        cands = candidate_means(rows, solver, arm, i, nreps)
+        cap = get(g, "cap", nothing)
+        cands = candidate_means(rows, solver, arm, i, nreps; cap = cap)
         isempty(cands) && error("no complete development rows for group $key")
         (p, lbl), val = best_candidate(cands)
         iterval = lbl == "final" ? nothing : _iterkey(lbl)
@@ -567,7 +634,7 @@ function select_phase!(rows, phase::Int, grids::Dict, arms, exposures, nreps::In
         iter_integer_extendable = solver in ("SART", "MLEM", "GD-0", "MLEM->GD")
         extended = false
         if !isempty(params)
-            cap = solver == "SART" ? q_cap : Inf
+            qcap = solver == "SART" ? q_cap : Inf
             if p == minimum(params)
                 nv = extend_value(params, :lo)
                 if nv !== nothing && ext["param_lo"] < 2
@@ -576,7 +643,7 @@ function select_phase!(rows, phase::Int, grids::Dict, arms, exposures, nreps::In
                     push!(edge, "param_lo")
                 end
             elseif p == maximum(params)
-                nv = extend_value(params, :hi; cap = cap)
+                nv = extend_value(params, :hi; cap = qcap)
                 if nv !== nothing && nv > maximum(params) && ext["param_hi"] < 2
                     push!(g["param"], nv); ext["param_hi"] += 1; extended = true
                 else
@@ -601,10 +668,29 @@ function select_phase!(rows, phase::Int, grids::Dict, arms, exposures, nreps::In
                 end
             end
         end
+        # K edge rule of the GN family (replaces the twice-rule for K): `final` selected and both
+        # realisations at the selected c stopped on the cap -> one rerun of the cell at cap 32.
+        stops = cap === nothing ? String[] : String[r["stop"] for r in rows if r["solver"] == solver && r["arm"] == arm && r["exp_index"] == string(i) &&
+                       r["weights"] == "obs" && get(r, "cap", "") == string(cap) && r["iter"] == "final" &&
+                       parse(Float64, r["param"]) == p]
+        on_cap = lbl == "final" && length(stops) == nreps && all(==("max_updates"), stops)
+        note = ""
+        if solver in PROTOCOL_GN_SOLVERS && on_cap
+            if cap == PROTOCOL_GN_CAP && ext["cap"] == 0
+                g["cap"] = PROTOCOL_GN_CAP_EXT; g["iter"] = copy(PROTOCOL_GN_K_EXT); ext["cap"] = 1
+                extended = true
+                push!(edge, "K_cap")
+            else
+                note = "not converged at $(cap) updates"
+            end
+        elseif solver in PROTOCOL_GD_SOLVERS && lbl == "final" && all(==("max_iter"), stops) && length(stops) == nreps
+            note = "fixed budget of $(cap) iterations"
+        end
         extended && (pending += 1)
         selection[key] = Dict{String,Any}("solver" => solver, "arm" => arm, "exp_index" => i,
             "tau" => exposures[i], "param" => p, "iter" => lbl, "dev_rmse_s_mean" => val,
-            "at_edge" => join(edge, ","), "extensions_pending" => extended)
+            "at_edge" => join(edge, ","), "extensions_pending" => extended, "budget_note" => note)
+        cap === nothing || (selection[key]["cap"] = cap)
     end
     return selection, pending
 end
@@ -648,7 +734,8 @@ function selected_setting(selection::Dict, solver, arm, exp_index)
     s = get(selection, group_key(solver, arm, exp_index), nothing)
     s === nothing && error("selection has no entry for $(group_key(solver, arm, exp_index))")
     lbl = s["iter"]
-    return (param = Float64(s["param"]), iter = lbl == "final" ? :final : _iterkey(lbl), label = lbl)
+    return (param = Float64(s["param"]), iter = lbl == "final" ? :final : _iterkey(lbl), label = lbl,
+            cap = haskey(s, "cap") ? Int(s["cap"]) : nothing, budget_note = get(s, "budget_note", ""))
 end
 
 # --------------------------------------------------------------------------
@@ -657,7 +744,8 @@ end
 
 """
 Context of a stage run. `templates` maps arm => noise-free template (used for the
-Poisson draw and the oracle diagnostic only); `units` are drawn once.
+Poisson draw and the oracle diagnostic only; the entries of `M` and `Mc` are the same
+vector); `units` are drawn once.
 """
 struct ProtocolContext
     op::ProtocolOperator
@@ -668,11 +756,26 @@ struct ProtocolContext
     nreps::Int
     base_seed::Int
     outdir::String
+    op_cal::Union{Nothing,ProtocolOperator}      # dry-normalised operator of arm Mc (needs dry_calibration.toml)
+end
+ProtocolContext(op, geo, field, templates, exposures, nreps, base_seed, outdir) =
+    ProtocolContext(op, geo, field, templates, exposures, nreps, base_seed, outdir, nothing)
+
+"""
+Operator of an arm: the published operator for `M` and `X`, the dry-normalised operator
+for `Mc`. Arm `Mc` refuses to run when no calibrated operator was supplied (the drivers
+build it only from a valid `dry_calibration.toml`).
+"""
+function arm_operator(ctx::ProtocolContext, arm::AbstractString)
+    arm == "Mc" || return ctx.op
+    ctx.op_cal === nothing && error("arm Mc needs the dry-normalised operator: no valid dry_calibration.toml was loaded")
+    return ctx.op_cal
 end
 
 function enumerate_units(ctx::ProtocolContext; arms = collect(keys(ctx.templates)), shard = (1, 1))
     units = Tuple{String,Int,Int}[]
     for arm in sort(collect(arms)), i in eachindex(ctx.exposures), r in 1:ctx.nreps
+        arm_exposure_active(arm, ctx.exposures[i]) || continue
         push!(units, (arm, i, r))
     end
     return [u for (n, u) in enumerate(units) if (n - 1) % shard[2] == shard[1] - 1]
@@ -717,18 +820,21 @@ function dev_phase!(ctx::ProtocolContext, phase::Int, grids::Dict;
     out = joinpath(ctx.outdir, "rows_phase$(phase)_shard$(shard[1]).tsv")
     nruns = 0
     for (arm, i, r) in enumerate_units(ctx; shard = shard)
+        op = arm_operator(ctx, arm)
         u = draw_unit(ctx, arm, i, r)
         W = protocol_weights(u.counts, u.tau)
         zero = zeros(length(ctx.geo.w_true))
         for solver in PROTOCOL_PHASES[phase]
+            solver in arm_solvers(arm) || continue
             g = grids[group_key(solver, arm, i)]
+            cap = get(g, "cap", nothing)
             start = "-"; w_start = zero
             if solver == "MLEM->GN"
                 s = selected_setting(mlem_selection, "MLEM", arm, i)
-                w_start = _mlem_vector(ctx.op, u, s); start = "mlem(c=$(s.param),n=$(s.label))"
+                w_start = _mlem_vector(op, u, s); start = "mlem(c=$(s.param),n=$(s.label))"
             elseif solver == "MLEM->GD"
                 s = selected_setting(mlem_selection, "MLEM", arm, i)
-                w_start = _mlem_vector(ctx.op, u, s); start = "mlem(c=$(s.param),n=$(s.label))"
+                w_start = _mlem_vector(op, u, s); start = "mlem(c=$(s.param),n=$(s.label))"
             elseif solver in ("GN-0", "GN-lin", "GD-0")
                 start = "zero"
             end
@@ -737,22 +843,22 @@ function dev_phase!(ctx::ProtocolContext, phase::Int, grids::Dict;
             for p in params
                 labels = solver in ("SART", "MLEM") ? [_iter_label("n", n) for n in Int.(g["iter"])] :
                          [_iter_label("K", K) for K in _iter_values(g)]
-                key(l) = join((String(ctx.field), arm, string(i), string(r), solver, start, "obs", string(p), l), '|')
+                key(l) = result_key(String(ctx.field), arm, i, r, solver, start, "obs", cap === nothing ? "" : cap, p, l)
                 missing_labels = [l for l in labels if !(key(l) in done)]
                 isempty(missing_labels) && continue
                 run = if solver == "SART"
-                    run_sart(ctx.op, u.obs, p, Int.(g["iter"]))
+                    run_sart(op, u.obs, p, Int.(g["iter"]))
                 elseif solver == "MLEM"
-                    run_mlem(ctx.op, u.obs, p, Int.(g["iter"]))
-                elseif solver in ("GN-lin", "GN-0", "MLEM->GN")
-                    run_gn(ctx.op, u.obs, W, p, _iter_values(g), solver == "GN-lin" ? :lin : :relin, w_start)
+                    run_mlem(op, u.obs, p, Int.(g["iter"]))
+                elseif solver in PROTOCOL_GN_SOLVERS
+                    run_gn(op, u.obs, W, p, _iter_values(g), solver == "GN-lin" ? :lin : :relin, w_start; max_updates = cap)
                 else
-                    run_gd(ctx.op, u.obs, W, p, _iter_values(g), w_start)
+                    run_gd(op, u.obs, W, p, _iter_values(g), w_start; max_iter = cap)
                 end
                 nruns += 1
-                rec = _save_run(ctx.outdir, "dev", u, solver, p, run)
-                rows = [protocol_log_row("dev", ctx.geo, ctx.op, u, W, solver, start, "obs", p, lbl, w, run;
-                                         rec = rec * "#" * lbl) for (lbl, w) in run.vectors if lbl in missing_labels]
+                rec = _save_run(ctx.outdir, "dev" * (cap === nothing ? "" : "_cap$(cap)"), u, solver, p, run)
+                rows = [protocol_log_row("dev", ctx.geo, op, u, W, solver, start, "obs", p, lbl, w, run;
+                                         rec = rec * "#" * lbl, cap = cap) for (lbl, w) in run.vectors if lbl in missing_labels]
                 append_rows(out, rows)
                 println("  dev phase $phase $arm e$i r$r $solver c/q=$p ", "$(round(run.secs; digits = 1))s"); flush(stdout)
             end
@@ -784,43 +890,46 @@ function test_stage!(ctx::ProtocolContext, selection::Dict, sha::AbstractString;
     nruns = 0
     for (arm, i, r) in enumerate_units(ctx; arms = arms, shard = shard)
         i in exp_indices || continue
+        op = arm_operator(ctx, arm)
         u = draw_unit(ctx, arm, i, r)
         W = weights === :oracle ? oracle_weights(ctx.templates[arm], u.tau) : protocol_weights(u.counts, u.tau)
         if "ZERO" in solvers && weights === :obs &&
-           !(join((String(ctx.field), arm, string(i), string(r), "ZERO", "-", wlabel, "0.0", "final"), '|') in done)
+           !(result_key(String(ctx.field), arm, i, r, "ZERO", "-", wlabel, "", 0.0, "final") in done)
             z = SolveRun(["final" => zeros(n)], 0.0, 0, 0, 0, "-", Any[])
-            append_rows(out, [protocol_log_row(stage, ctx.geo, ctx.op, u, W, "ZERO", "-", wlabel, 0.0, "final",
+            append_rows(out, [protocol_log_row(stage, ctx.geo, op, u, W, "ZERO", "-", wlabel, 0.0, "final",
                                                zeros(n), z; selection_sha256 = sha)])
         end
         mset = selected_setting(selection, "MLEM", arm, i)
         mlem_vec = nothing
-        for solver in PROTOCOL_SOLVERS
+        for solver in arm_solvers(arm)
             solver in solvers || continue
             s = selected_setting(selection, solver, arm, i)
             warm = solver in ("MLEM->GN", "MLEM->GD")
             start = warm ? "mlem(c=$(mset.param),n=$(mset.label))" : solver in ("GN-lin", "GN-0", "GD-0") ? "zero" : "-"
             c = solver in ("GD-0", "MLEM->GD") ?
                 selected_setting(selection, solver == "GD-0" ? "GN-0" : "MLEM->GN", arm, i).param : s.param
-            labels = solver in ("SART", "MLEM") ? [s.label] :
-                     solver in ("GD-0", "MLEM->GD") ? [_iter_label("K", K) for K in [5, 10, 20, :final]] :
-                     [_iter_label("K", K) for K in [1, 2, 3, 5, 8, :final]]
-            keyf(l) = join((String(ctx.field), arm, string(i), string(r), solver, start, wlabel, string(c), l), '|')
+            # iteration cap of the run: the selection's cap for GN/GD (20 or the one extension to 32; GD 40)
+            cap = solver in PROTOCOL_GN_SOLVERS ? something(s.cap, PROTOCOL_GN_CAP) :
+                  solver in PROTOCOL_GD_SOLVERS ? something(s.cap, PROTOCOL_GD_CAP) : nothing
+            klist = solver in PROTOCOL_GN_SOLVERS ? (cap == PROTOCOL_GN_CAP ? PROTOCOL_GN_K : PROTOCOL_GN_K_EXT) : [5, 10, 20]
+            labels = solver in ("SART", "MLEM") ? [s.label] : [_iter_label("K", K) for K in [klist; :final]]
+            keyf(l) = result_key(String(ctx.field), arm, i, r, solver, start, wlabel, cap === nothing ? "" : cap, c, l)
             all(l -> keyf(l) in done, labels) && continue
-            warm && mlem_vec === nothing && (mlem_vec = _mlem_vector(ctx.op, u, mset))
+            warm && mlem_vec === nothing && (mlem_vec = _mlem_vector(op, u, mset))
             run = if solver == "SART"
-                run_sart(ctx.op, u.obs, c, [s.iter])
+                run_sart(op, u.obs, c, [s.iter])
             elseif solver == "MLEM"
-                run_mlem(ctx.op, u.obs, c, [s.iter])
-            elseif solver in ("GN-lin", "GN-0", "MLEM->GN")
-                run_gn(ctx.op, u.obs, W, c, [1, 2, 3, 5, 8, :final], solver == "GN-lin" ? :lin : :relin,
-                       warm ? mlem_vec : zeros(n))
+                run_mlem(op, u.obs, c, [s.iter])
+            elseif solver in PROTOCOL_GN_SOLVERS
+                run_gn(op, u.obs, W, c, [klist; :final], solver == "GN-lin" ? :lin : :relin,
+                       warm ? mlem_vec : zeros(n); max_updates = cap)
             else
-                run_gd(ctx.op, u.obs, W, c, [5, 10, 20, :final], warm ? mlem_vec : zeros(n))
+                run_gd(op, u.obs, W, c, [klist; :final], warm ? mlem_vec : zeros(n); max_iter = cap)
             end
             nruns += 1
-            rec = _save_run(ctx.outdir, stage * "_" * wlabel, u, solver, c, run)
-            rows = [protocol_log_row(stage, ctx.geo, ctx.op, u, W, solver, start, wlabel, c, lbl, w, run;
-                                     selected = lbl == s.label, rec = rec * "#" * lbl, selection_sha256 = sha)
+            rec = _save_run(ctx.outdir, stage * "_" * wlabel * (cap === nothing ? "" : "_cap$(cap)"), u, solver, c, run)
+            rows = [protocol_log_row(stage, ctx.geo, op, u, W, solver, start, wlabel, c, lbl, w, run;
+                                     selected = lbl == s.label, rec = rec * "#" * lbl, selection_sha256 = sha, cap = cap)
                     for (lbl, w) in run.vectors if !(keyf(lbl) in done)]
             append_rows(out, rows)
             println("  $stage $arm e$i r$r $solver ", "$(round(run.secs; digits = 1))s"); flush(stdout)
@@ -847,6 +956,9 @@ function save_grids(outdir::AbstractString, grids::Dict)
     mkpath(outdir)
     clean = Dict{String,Any}(k => Dict{String,Any}("param" => sort(Float64.(g["param"])), "iter" => sort(Int.(g["iter"])),
                                                    "ext" => g["ext"]) for (k, g) in grids)
+    for (k, g) in grids
+        haskey(g, "cap") && (clean[k]["cap"] = Int(g["cap"]))
+    end
     open(joinpath(outdir, "grids.toml"), "w") do io; TOML.print(io, clean; sorted = true); end
 end
 
@@ -890,4 +1002,201 @@ function dev_finalize!(outdir::AbstractString, path::AbstractString, meta::Dict)
         end
     end
     return write_selection(path, merged, meta)
+end
+
+# --------------------------------------------------------------------------
+# Dry calibration (arm Mc): gate G0b and the frozen dry_calibration.toml
+# --------------------------------------------------------------------------
+
+"""
+    dry_ratios(mc_dry, csda_dry) -> (bins, r)
+
+`r_m = Φ_MC,dry(m) / Φ_CSDA,dry(m)` for every bin with `Φ_CSDA,dry > 0` (and a finite MC flux).
+"""
+function dry_ratios(mc_dry::AbstractVector, csda_dry::AbstractVector)
+    length(mc_dry) == length(csda_dry) || throw(ArgumentError("dry MC and CSDA vectors differ in length"))
+    bins = [m for m in eachindex(csda_dry) if isfinite(csda_dry[m]) && csda_dry[m] > 0 && isfinite(mc_dry[m])]
+    return bins, mc_dry[bins] ./ csda_dry[bins]
+end
+
+"The global dry factor `s`: the median of the per-bin ratios `r_m`."
+dry_scale(r::AbstractVector) = (isempty(r) ? throw(ArgumentError("no bin with a positive dry CSDA flux")) : median(r))
+
+"""
+    dry_report(mc_dry, csda_dry, sigma_mc, zenith; band_deg=10) -> Dict
+
+Statistics reported next to `s` (no decision uses them): `s`, mean of `r_m`, ratio of sums,
+quartiles, median `r_m` per `band_deg` zenith band, median per-bin MC standard error
+(absolute and relative to the MC flux).
+"""
+function dry_report(mc_dry::AbstractVector, csda_dry::AbstractVector, sigma_mc::AbstractVector, zenith::AbstractVector;
+                    band_deg::Real = 10.0)
+    bins, r = dry_ratios(mc_dry, csda_dry)
+    nb = max(1, ceil(Int, maximum(zenith[bins]) / band_deg + 1e-9))
+    band = clamp.(floor.(Int, zenith[bins] ./ band_deg) .+ 1, 1, nb)
+    q = quantile(r, [0.25, 0.5, 0.75])
+    return Dict{String,Any}("s" => median(r), "n_bins" => length(bins), "mean_r" => mean(r),
+        "ratio_of_sums" => sum(mc_dry[bins]) / sum(csda_dry[bins]), "q25" => q[1], "q50" => q[2], "q75" => q[3],
+        "band_edges_deg" => collect(0.0:band_deg:band_deg * nb), "band_counts" => [count(==(b), band) for b in 1:nb],
+        "band_median_r" => [any(==(b), band) ? median(r[band .== b]) : NaN for b in 1:nb],
+        "median_sigma_mc" => median(sigma_mc[bins]), "median_rel_sigma_mc" => median(sigma_mc[bins] ./ mc_dry[bins]))
+end
+
+"""
+    check_g0b(s; reference=0.801, tol=0.03) -> (passed, difference)
+
+Gate G0b: proceed when `abs(s - reference) <= tol`.
+"""
+check_g0b(s::Real; reference::Real = PROTOCOL_G0B_REFERENCE, tol::Real = PROTOCOL_G0B_TOLERANCE) =
+    (isfinite(s) && abs(s - reference) <= tol, s - reference)
+
+"""
+    write_dry_calibration(path, s, meta) -> sha256
+
+Freeze `s` (`dry_calibration.toml` + `dry_calibration.toml.sha256`). `meta` carries the bin
+count, seed, histories and commit. The content hash covers the `[calibration]` table.
+"""
+function write_dry_calibration(path::AbstractString, s::Real, meta::Dict)
+    (isfinite(s) && s > 0) || throw(ArgumentError("dry scale must be positive and finite"))
+    body = Dict{String,Any}("calibration" => merge(Dict{String,Any}(meta), Dict{String,Any}("s" => Float64(s))))
+    sha = bytes2hex(sha256(_toml_text(body)))
+    full = Dict{String,Any}("meta" => Dict{String,Any}("content_sha256" => sha), "calibration" => body["calibration"])
+    mkpath(dirname(abspath(path)))
+    open(path, "w") do io; TOML.print(io, full; sorted = true); end
+    write(path * ".sha256", sha * "\n")
+    return sha
+end
+
+"""
+    load_dry_calibration(path) -> (s, sha256, calibration)
+
+Arm `Mc` calls this first. It errors if the file is missing, fails its content hash or holds
+no positive finite `s`.
+"""
+function load_dry_calibration(path::AbstractString)
+    isfile(path) || error("dry_calibration.toml not found at $path: arm Mc refuses to run without the frozen dry factor")
+    d = TOML.parsefile(path)
+    haskey(d, "calibration") && haskey(d, "meta") || error("$path is not a dry calibration file")
+    sha = bytes2hex(sha256(_toml_text(Dict{String,Any}("calibration" => d["calibration"]))))
+    sha == get(d["meta"], "content_sha256", "") || error("dry calibration file $path fails its content hash")
+    s = get(d["calibration"], "s", nothing)
+    (s isa Real && isfinite(s) && s > 0) || error("dry calibration file $path holds no valid s")
+    return Float64(s), sha, d["calibration"]
+end
+
+# --------------------------------------------------------------------------
+# Test-stage summary: per-cell statistics and the paired contrasts C1, C2, C3
+# --------------------------------------------------------------------------
+
+"Two-sided 95 % Student-t critical value with `df` degrees of freedom (bisection on the CDF)."
+function t_crit95(df::Integer)
+    df >= 1 || throw(ArgumentError("df must be >= 1"))
+    cdf(t) = 1 - 0.5 * beta_inc(df / 2, 0.5, df / (df + t^2))[1]       # t >= 0
+    lo, hi = 0.0, 1.0
+    while cdf(hi) < 0.975
+        hi *= 2
+    end
+    for _ in 1:200
+        mid = (lo + hi) / 2
+        cdf(mid) < 0.975 ? (lo = mid) : (hi = mid)
+    end
+    return (lo + hi) / 2
+end
+
+"Mean, standard deviation and 95 % t-interval of the mean of `v` (interval `NaN` for one value)."
+function mean_ci95(v::AbstractVector{<:Real})
+    n = length(v); m = mean(v)
+    n < 2 && return (n = n, mean = m, sd = NaN, lo = NaN, hi = NaN)
+    sd = std(v); h = t_crit95(n - 1) * sd / sqrt(n)
+    return (n = n, mean = m, sd = sd, lo = m - h, hi = m + h)
+end
+
+"Selected test-stage `rmse_s` values: `(arm, solver, exp_index) => Dict(rep => rmse_s)` (observed-count weights)."
+function test_rmse_table(rows)
+    t = Dict{Tuple{String,String,Int},Dict{Int,Float64}}()
+    for r in rows
+        r["stage"] == "test" && r["selected"] == "1" && r["weights"] == "obs" || continue
+        d = get!(t, (r["arm"], r["solver"], parse(Int, r["exp_index"])), Dict{Int,Float64}())
+        d[parse(Int, r["rep"])] = parse(Float64, r["rmse_s"])
+    end
+    return t
+end
+
+"""
+    paired_contrast(table, (armA, solverA), (armB, solverB), exp_index) -> NamedTuple or nothing
+
+`Δ = RMSE_s(A) − RMSE_s(B)` per realisation (same observation vector: the realisations are
+matched by index), with mean, 95 % t-interval and the number of realisations with `Δ < 0`.
+"""
+function paired_contrast(table, A::Tuple{String,String}, B::Tuple{String,String}, exp_index::Integer)
+    a = get(table, (A[1], A[2], Int(exp_index)), nothing); b = get(table, (B[1], B[2], Int(exp_index)), nothing)
+    (a === nothing || b === nothing) && return nothing
+    reps = sort(collect(intersect(keys(a), keys(b))))
+    isempty(reps) && return nothing
+    d = [a[r] - b[r] for r in reps]
+    ci = mean_ci95(d)
+    return (n = ci.n, mean = ci.mean, lo = ci.lo, hi = ci.hi, n_negative = count(<(0), d), ref = mean(b[r] for r in reps))
+end
+
+"Decision label of Q2.8 for a contrast against MLEM (`Δ = solver − MLEM`)."
+function contrast_label(c)
+    (c === nothing || isnan(c.lo)) && return "not available"
+    c.hi < 0 && return (-c.mean >= 0.1 * c.ref ? "clearly better" : "better")
+    c.lo > 0 && return "MLEM better"
+    return "not distinguished"
+end
+
+"""
+    test_summary(rows) -> Vector{Dict{String,String}}
+
+Test-stage summary rows. `cell`: mean, standard deviation, 95 % interval and the number of
+solves that ended on the iteration cap, per (arm, exposure, solver). `C1`: MLEM->GN against
+MLEM and `C2`: GN-0 against MLEM, per arm and exposure (arms X and Mc at 7 exposures, arm M at
+3). `C3`: RMSE_s(arm M) − RMSE_s(arm Mc), same solver and same observation vector, for MLEM,
+GN-0 and MLEM->GN at the exposures of arm M; it measures the cost of the dry offset.
+"""
+function test_summary(rows)
+    table = test_rmse_table(rows)
+    out = Dict{String,String}[]
+    caps = Dict{Tuple{String,String,Int},Int}()
+    for r in rows
+        r["stage"] == "test" && r["selected"] == "1" && r["weights"] == "obs" && get(r, "budget_limited", "0") == "1" || continue
+        k = (r["arm"], r["solver"], parse(Int, r["exp_index"])); caps[k] = get(caps, k, 0) + 1
+    end
+    fmt(x) = string(x)
+    for k in sort(collect(keys(table)))
+        ci = mean_ci95(collect(values(table[k])))
+        push!(out, Dict("kind" => "cell", "arm" => k[1], "solver" => k[2], "exp_index" => fmt(k[3]), "n" => fmt(ci.n),
+            "mean" => fmt(ci.mean), "sd" => fmt(ci.sd), "lo" => fmt(ci.lo), "hi" => fmt(ci.hi),
+            "n_negative" => "", "label" => "", "solves_on_cap" => fmt(get(caps, k, 0))))
+    end
+    exps = sort(unique(k[3] for k in keys(table)))
+    for (name, solver) in (("C1", "MLEM->GN"), ("C2", "GN-0")), arm in PROTOCOL_ARMS, i in exps
+        c = paired_contrast(table, (arm, solver), (arm, "MLEM"), i)
+        c === nothing && continue
+        push!(out, Dict("kind" => name, "arm" => arm, "solver" => solver, "exp_index" => fmt(i), "n" => fmt(c.n),
+            "mean" => fmt(c.mean), "sd" => "", "lo" => fmt(c.lo), "hi" => fmt(c.hi), "n_negative" => fmt(c.n_negative),
+            "label" => contrast_label(c), "solves_on_cap" => ""))
+    end
+    for solver in ("MLEM", "GN-0", "MLEM->GN"), i in exps
+        c = paired_contrast(table, ("M", solver), ("Mc", solver), i)
+        c === nothing && continue
+        push!(out, Dict("kind" => "C3", "arm" => "M-Mc", "solver" => solver, "exp_index" => fmt(i), "n" => fmt(c.n),
+            "mean" => fmt(c.mean), "sd" => "", "lo" => fmt(c.lo), "hi" => fmt(c.hi), "n_negative" => fmt(c.n_negative),
+            "label" => "", "solves_on_cap" => ""))
+    end
+    return out
+end
+
+const SUMMARY_COLUMNS = ["kind", "arm", "solver", "exp_index", "n", "mean", "sd", "lo", "hi", "n_negative", "label", "solves_on_cap"]
+
+function write_test_summary(path::AbstractString, summary)
+    mkpath(dirname(abspath(path)))
+    open(path, "w") do io
+        println(io, join(SUMMARY_COLUMNS, '\t'))
+        for r in summary
+            println(io, join((get(r, c, "") for c in SUMMARY_COLUMNS), '\t'))
+        end
+    end
+    return path
 end

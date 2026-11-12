@@ -94,14 +94,16 @@ Options:
     --max-plot-cells INT          Maximum cells rendered in the 3D sensitivity plot (default: 150)
     --no-straggling               Disable stochastic energy-loss fluctuations for MC validation
     --reconstruction-sweep        Run one stage of the reconstruction protocol (needs --protocol-stage)
-    --protocol-stage STR          gate | templates | dev | select | finalize | test | diag
+    --protocol-stage STR          gate | g0c | dry | templates | dev | select | finalize | test | diag | summary
     --protocol-phase INT          Development phase: 1 SART+MLEM, 2 GN family, 3 GD (default: 1)
     --shard I/N                   Process share I of N of the (arm, exposure, realisation) units
     --sweep-exposures LIST        Comma-separated per-bin exposures (default: 1e3,3.16e3,1e4,3.16e4,1e5,1e6,1e8)
     --sweep-realizations INT      Realisations per (arm, exposure) (default: dev 2, test and diag 8)
-    --sweep-data STR              Data arm: mc (M), csda (X) or both (default: both)
+    --sweep-data STR              Data arm: mc (M, operator as published), mc-cal (Mc, dry-normalised operator),
+                                  csda (X) or all (default: all)
     --truth-field STR             dev (development field) or test (held-out field) (default: dev)
     --selection PATH              Frozen selection.toml (default: <output-dir>/selection.toml)
+    --dry-calibration PATH        Frozen dry_calibration.toml of arm Mc (default: <output-dir>/dry_calibration.toml)
 """
 
 const lvd_tomography = nothing
@@ -1430,13 +1432,14 @@ function parse_commandline()
         sweep_realizations = 80,       # noise realizations per (arm, exposure) of the protocol stages
         sweep_realizations_given = false,  # set by --sweep-realizations (else the stage default: dev 2, test/diag 8)
         sweep_exposures = copy(PROTOCOL_EXPOSURES),  # explicit per-bin exposure grid of the protocol
-        sweep_data = "both",           # protocol data arms: "mc" (arm M), "csda" (arm X) or "both"
+        sweep_data = "all",            # protocol data arms: "mc" (M), "mc-cal" (Mc), "csda" (X) or "all"
         truth_field = "dev",           # synthetic truth: "dev" (development field) or "test" (held-out field)
-        protocol_stage = "",           # gate | templates | dev | select | finalize | test | diag
+        protocol_stage = "",           # gate | g0c | dry | templates | dev | select | finalize | test | diag | summary
         protocol_phase = 1,            # development phase 1 (SART, MLEM), 2 (GN family), 3 (GD)
         shard_index = 1,               # process share i of n (--shard i/n)
         shard_count = 1,
         selection_path = "",           # frozen selection.toml (default: <output-dir>/selection.toml)
+        dry_calibration_path = "",     # frozen dry_calibration.toml (default: <output-dir>/dry_calibration.toml)
     )
 
     i = 1
@@ -1606,6 +1609,8 @@ function parse_commandline()
             args = merge(args, (shard_index = parse(Int, parts[1]), shard_count = parse(Int, parts[2]))); i += 2
         elseif arg == "--selection"
             args = merge(args, (selection_path = ARGS[i + 1],)); i += 2
+        elseif arg == "--dry-calibration"
+            args = merge(args, (dry_calibration_path = ARGS[i + 1],)); i += 2
         elseif arg == "--sweep-n"
             args = merge(args, (sweep_n = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-threads"
@@ -1642,12 +1647,13 @@ function parse_commandline()
     args.geometry in ("auto", "tetra", "grid") || error("--geometry must be auto, tetra, or grid")
     args.solver in ("all", "sart", "mlem", "gd", "gn") || error("--solver must be all, sart, mlem, gd, or gn")
     args.inverse_data in ("mc", "csda") || error("--inverse-data must be mc or csda")
-    args.sweep_data in ("mc", "csda", "both") || error("--sweep-data must be mc, csda or both")
+    args.sweep_data in ("mc", "mc-cal", "csda", "all", "both") || error("--sweep-data must be mc, mc-cal, csda or all")
     args.truth_field in ("dev", "test") || error("--truth-field must be dev or test")
-    args.protocol_stage in ("", "gate", "templates", "dev", "select", "finalize", "test", "diag") ||
-        error("--protocol-stage must be gate, templates, dev, select, finalize, test or diag")
+    args.protocol_stage in ("", "gate", "g0c", "dry", "templates", "dev", "select", "finalize", "test", "diag", "summary") ||
+        error("--protocol-stage must be gate, g0c, dry, templates, dev, select, finalize, test, diag or summary")
     args.protocol_phase in (1, 2, 3) || error("--protocol-phase must be 1, 2 or 3")
     1 <= args.shard_index <= args.shard_count || error("--shard i/n needs 1 <= i <= n")
+    args.shard_count <= PROTOCOL_MAX_PROCESSES || error("--shard i/n: at most $PROTOCOL_MAX_PROCESSES worker processes")
     args.sweep_realizations >= 1 || error("--sweep-realizations must be positive")
     args.papermatch_mask_ratio > 1 || error("--papermatch-mask-ratio must exceed 1 (Inf disables masking)")
     0 <= args.papermatch_calibration_water <= MAX_WATER_FRACTION || error("--papermatch-calibration-water must be in [0,0.9]")
@@ -2803,6 +2809,17 @@ function protocol_git_commit()
     end
 end
 
+function protocol_git_dirty()
+    try
+        !isempty(strip(read(`git -C $(@__DIR__) status --porcelain --untracked-files=no`, String)))
+    catch
+        true
+    end
+end
+
+# Rock path length of a ray: in-volume segments (rock when dry) plus the remaining rock to the surface.
+protocol_rock_path(p::DirectionalPath) = sum(seg.distance for seg in p.segments; init = 0.0) + p.remaining_rock_distance
+
 protocol_template_path(dir, field, arm, histories, seed) =
     joinpath(dir, "templates", "template_$(field)_$(arm)_h$(histories)_s$(seed).jls")
 
@@ -2822,19 +2839,38 @@ function protocol_coverage(centroids, free, valid_zenith_max)
     return cls
 end
 
-# Selection steps need no physics: select (per phase) and finalize (freeze selection.toml).
+# Data arms of `--sweep-data`: M (MC data, operator as published), Mc (same MC data, dry-normalised operator), X (exact).
+protocol_arms(args) = args.sweep_data == "mc" ? ["M"] : args.sweep_data == "mc-cal" ? ["Mc"] :
+                      args.sweep_data == "csda" ? ["X"] : ["M", "Mc", "X"]
+
+protocol_dry_path(args) = isempty(args.dry_calibration_path) ? joinpath(args.output_dir, "dry_calibration.toml") : args.dry_calibration_path
+
+# Selection steps need no physics: select (per phase), finalize (freeze selection.toml) and summary.
 function run_protocol_selection_stage(args)
     stage = args.protocol_stage
-    args.truth_field == "dev" || error("stage '$stage' works on the development stage output (--truth-field dev)")
-    arms = args.sweep_data == "mc" ? ["M"] : args.sweep_data == "csda" ? ["X"] : ["M", "X"]
+    arms = protocol_arms(args)
     exposures = collect(Float64, args.sweep_exposures)
+    if stage == "summary"
+        testdir = joinpath(args.output_dir, "test")
+        rows = read_rows(rows_in(testdir, "rows_"))
+        isempty(rows) && error("no test-stage rows under $testdir")
+        path = write_test_summary(joinpath(args.output_dir, "test_summary.tsv"), test_summary(rows))
+        println("  wrote $path")
+        return 0
+    end
+    args.truth_field == "dev" || error("stage '$stage' works on the development stage output (--truth-field dev)")
     nreps = args.sweep_realizations_given ? args.sweep_realizations : 2
     devdir = joinpath(args.output_dir, "dev")
     selpath = isempty(args.selection_path) ? joinpath(args.output_dir, "selection.toml") : args.selection_path
     if stage == "finalize"
-        sha = dev_finalize!(devdir, selpath, Dict{String,Any}("field" => "dev", "arms" => arms, "exposures" => exposures,
+        meta = Dict{String,Any}("field" => "dev", "arms" => arms, "exposures" => exposures,
             "realizations" => nreps, "git_commit" => protocol_git_commit(), "inverse_mc_samples" => args.inverse_mc_samples,
-            "created_unix" => time()))
+            "created_unix" => time())
+        if "Mc" in arms          # the selection records the hash of the frozen dry calibration it was made with
+            s_dry, dry_sha, _ = load_dry_calibration(protocol_dry_path(args))
+            meta["dry_calibration_sha256"] = dry_sha; meta["dry_scale"] = s_dry
+        end
+        sha = dev_finalize!(devdir, selpath, meta)
         println("  wrote $selpath  sha256 $sha")
         return 0
     end
@@ -2846,14 +2882,21 @@ end
 function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
                                      volume, paths::Vector{DirectionalPath}, energy_samples, args)
     stage = args.protocol_stage
-    isempty(stage) && error("--reconstruction-sweep needs --protocol-stage gate|templates|dev|select|finalize|test|diag")
-    stage in ("select", "finalize") && error("stage '$stage' is handled before the physics set-up")
+    isempty(stage) && error("--reconstruction-sweep needs --protocol-stage gate|g0c|dry|templates|dev|select|finalize|test|diag|summary")
+    stage in ("select", "finalize", "summary") && error("stage '$stage' is handled before the physics set-up")
     field = Symbol(args.truth_field)
     stage == "dev" && field !== :dev && error("stage '$stage' runs on the development field (--truth-field dev)")
     stage in ("test", "diag") && field !== :test && error("stage '$stage' runs on the held-out field: pass --truth-field test")
-    arms = args.sweep_data == "mc" ? ["M"] : args.sweep_data == "csda" ? ["X"] : ["M", "X"]
+    arms = protocol_arms(args)
     exposures = collect(Float64, args.sweep_exposures)
     nreps = args.sweep_realizations_given ? args.sweep_realizations : (stage == "dev" ? 2 : 8)
+    dry_path = protocol_dry_path(args)
+    # Arm Mc refuses to run without a valid frozen dry_calibration.toml.
+    s_dry = dry_sha = nothing
+    if stage in ("dev", "test", "diag") && ("Mc" in arms || stage == "diag")
+        s_dry, dry_sha, _ = load_dry_calibration(dry_path)
+        println("  frozen dry calibration $(dry_path): s = $s_dry, sha256 $dry_sha")
+    end
     outdir = args.output_dir
     stagedir = joinpath(outdir, stage)
     selpath = isempty(args.selection_path) ? joinpath(outdir, "selection.toml") : args.selection_path
@@ -2866,6 +2909,10 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
         println("  frozen selection $(selpath): sha256 $sha")
         meta["exposures"] == exposures || error("selection.toml was made for exposures $(meta["exposures"]), not $exposures")
         for a in arms; a in meta["arms"] || error("selection.toml has no arm $a"); end
+        if "Mc" in arms
+            get(meta, "dry_calibration_sha256", "") == dry_sha ||
+                error("selection.toml was made with another dry calibration ($(get(meta, "dry_calibration_sha256", "none"))), not $dry_sha")
+        end
     end
     mkpath(stagedir)
 
@@ -2914,12 +2961,97 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
         return failed ? 3 : 0
     end
 
+    # Gate G0b: the dry calibration run (field w = 0, 16384 histories, base seed 44) and the global factor s.
+    if stage == "dry"
+        args.inverse_mc_samples == 16384 || error("gate G0b is defined at 16384 histories (--inverse-mc-samples 16384)")
+        zero_w = zeros(n_cells)
+        dseed = args.seed + 2                                  # 44; fields D and T use 42 and 43
+        zen = Float64[paths[b].zenith for b in valid_bins]
+        function dry_template(histories)
+            key = template_key(:dry, "M", histories, dseed, zero_w, valid_bins)
+            path = protocol_template_path(outdir, "dry", "M", histories, dseed)
+            if isfile(path)
+                c = load_template(path, key)                   # errors on a mismatching key
+                println("  dry template $path exists with a matching key; kept")
+                return c.template, c.extra.sigma_mc
+            end
+            tmpl, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, zero_w, valid_bins, args;
+                                             histories = histories, seed = dseed)
+            save_template(path, key, tmpl, (sigma_mc = sig,))
+            println("  wrote $path")
+            return tmpl, sig
+        end
+        mc16, sig16 = dry_template(16384)
+        rep16 = dry_report(mc16, f0, sig16, zen)
+        mc1k, sig1k = dry_template(1024)                       # report only: the dry ratio of the gate run
+        rep1k = dry_report(mc1k, f0, sig1k, zen)
+        passed, diff = check_g0b(rep16["s"])
+        report = Dict{String,Any}("g0b" => Dict{String,Any}("s" => rep16["s"], "reference" => PROTOCOL_G0B_REFERENCE,
+                "tolerance" => PROTOCOL_G0B_TOLERANCE, "difference" => diff, "passed" => passed, "seed" => dseed,
+                "expected_standard_error" => 1.25 * 0.02 / sqrt(rep16["n_bins"])),
+            "histories_16384" => rep16, "histories_1024" => rep1k, "git_commit" => protocol_git_commit())
+        open(joinpath(stagedir, "dry_report.toml"), "w") do io; TOML.print(io, report; sorted = true); end
+        println("  G0b dry ratio (16384 histories, seed $dseed): s = median r_m = $(round(rep16["s"]; digits = 5)) over $(rep16["n_bins"]) bins; " *
+                "mean r = $(round(rep16["mean_r"]; digits = 5)), ratio of sums = $(round(rep16["ratio_of_sums"]; digits = 5)), " *
+                "quartiles $(round(rep16["q25"]; digits = 4)) / $(round(rep16["q75"]; digits = 4))")
+        println("    median r per 10-degree zenith band: $(round.(rep16["band_median_r"]; digits = 4)); " *
+                "median per-bin MC standard error $(round(100 * rep16["median_rel_sigma_mc"]; digits = 2)) % (1024 histories: " *
+                "s = $(round(rep1k["s"]; digits = 4)), standard error $(round(100 * rep1k["median_rel_sigma_mc"]; digits = 2)) %)")
+        println("  G0b: |s - $(PROTOCOL_G0B_REFERENCE)| = $(round(abs(diff); digits = 5)) vs tolerance $(PROTOCOL_G0B_TOLERANCE): passed=$passed")
+        if !passed
+            println("  G0b FAILED: dry_calibration.toml is not written; return the report $(joinpath(stagedir, "dry_report.toml")) to the reviewer before the development stage")
+            return 4
+        end
+        sha = write_dry_calibration(dry_path, rep16["s"], Dict{String,Any}("n_bins" => rep16["n_bins"], "seed" => dseed,
+            "histories" => 16384, "field" => "dry", "git_commit" => protocol_git_commit(), "git_dirty" => protocol_git_dirty(),
+            "correction_artifact" => args.correction_artifact, "created_unix" => time()))
+        println("  wrote $dry_path  sha256 $sha")
+        return 0
+    end
+
+    # Gate G0c: the same dry rays through the sweep code path (here) and the correction-validation driver
+    # (dev/g0c_validation_path.jl, which reads the rays written below).
+    if stage == "g0c"
+        args.inverse_mc_samples == 16384 || error("gate G0c is defined at 16384 histories (--inverse-mc-samples 16384)")
+        bins = Int[]
+        for z in (10.0, 30.0, 50.0), a in (8.0, 96.0, 184.0, 272.0)
+            k = findfirst(b -> paths[b].valid && isapprox(paths[b].zenith, z; atol = 1e-9) && isapprox(paths[b].azimuth, a; atol = 1e-9), valid_bins)
+            k === nothing && error("sweep grid has no valid bin at zenith $z, azimuth $a")
+            push!(bins, valid_bins[k])
+        end
+        zero_w = zeros(n_cells)
+        sub = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
+            n_cells = n_cells, valid_bins = bins, threaded = false)
+        csda_sweep = sub(zero_w)[1]
+        mc_sweep, sig_sweep = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, zero_w, bins, args;
+                                                   histories = 16384, seed = args.seed + 3)
+        f0_bins = f0[[findfirst(==(b), valid_bins) for b in bins]]
+        println("  sweep path on $(length(bins)) dry rays: max |CSDA(sub-operator) - CSDA(full operator)| / CSDA = $(maximum(abs.(csda_sweep .- f0_bins) ./ f0_bins))")
+        rocks_all = [protocol_rock_path(paths[b]) for b in valid_bins]
+        open(joinpath(stagedir, "sweep_values.tsv"), "w") do io
+            println(io, "bin\tzenith\tazimuth\trock_path_m\tcsda\tmc\tmc_sigma")
+            for (j, b) in enumerate(bins)
+                println(io, join((b, paths[b].zenith, paths[b].azimuth, protocol_rock_path(paths[b]), csda_sweep[j], mc_sweep[j], sig_sweep[j]), '\t'))
+            end
+        end
+        Serialization.serialize(joinpath(stagedir, "sweep_rays.jls"), (paths = paths[bins], bins = bins, n_cells = n_cells,
+            histories = 16384, seed = args.seed + 3, correction_artifact = args.correction_artifact))
+        open(joinpath(stagedir, "sweep_rock.toml"), "w") do io
+            TOML.print(io, Dict{String,Any}("all_valid_bins" => Dict{String,Any}("n" => length(rocks_all), "min_m" => minimum(rocks_all),
+                    "max_m" => maximum(rocks_all), "median_m" => median(rocks_all)),
+                "g0c_bins" => Dict{String,Any}("n" => length(bins), "min_m" => minimum(protocol_rock_path(paths[b]) for b in bins),
+                    "max_m" => maximum(protocol_rock_path(paths[b]) for b in bins))); sorted = true)
+        end
+        println("  wrote the sweep-path values and rays under $stagedir; next: dev/g0c_validation_path.jl $stagedir <dump>")
+        return 0
+    end
+
     mcseed = args.seed + (field === :test ? 1 : 0)         # D: 42, T: 43
     if stage == "templates"
         model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
             n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
         csda_t = model(w_true)[1]
-        for arm in arms
+        for arm in unique(template_arm.(arms))               # arm Mc reads the template of arm M
             key = arm == "M" ? template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins) :
                                template_key(field, "X", 0, 0, w_true, valid_bins)
             path = protocol_template_path(outdir, field, arm, arm == "M" ? args.inverse_mc_samples : 0, arm == "M" ? mcseed : 0)
@@ -2949,18 +3081,26 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
     op = ProtocolOperator(J0, f0, model, predict, cell_neighbors(volume), free; delta = args.edge_delta)
     templates = Dict{String,Vector{Float64}}()
     for arm in arms
-        key = arm == "M" ? template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins) :
-                           template_key(field, "X", 0, 0, w_true, valid_bins)
-        path = protocol_template_path(outdir, field, arm, arm == "M" ? args.inverse_mc_samples : 0, arm == "M" ? mcseed : 0)
-        templates[arm] = load_template(path, key).template
+        tarm = template_arm(arm)
+        key = tarm == "M" ? template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins) :
+                            template_key(field, "X", 0, 0, w_true, valid_bins)
+        path = protocol_template_path(outdir, field, tarm, tarm == "M" ? args.inverse_mc_samples : 0, tarm == "M" ? mcseed : 0)
+        templates[arm] = load_template(path, key).template        # arms M and Mc: the same observation template
     end
+    diag_arms = ["Mc"]                                            # oracle-weight diagnostic: on arm Mc
+    if stage == "diag"
+        key = template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins)
+        templates["Mc"] = load_template(protocol_template_path(outdir, field, "M", args.inverse_mc_samples, mcseed), key).template
+    end
+    op_cal = s_dry === nothing ? nothing : scale_operator(op, s_dry)   # dry-normalised operator, only from a valid dry_calibration.toml
     open(joinpath(stagedir, "manifest_$(stage)_shard$(shard[1])of$(shard[2]).toml"), "w") do io
         TOML.print(io, Dict{String,Any}("stage" => stage, "phase" => args.protocol_phase, "field" => String(field), "arms" => arms,
             "exposures" => exposures, "realizations" => nreps, "shard" => collect(shard), "git_commit" => protocol_git_commit(),
             "inverse_mc_samples" => args.inverse_mc_samples, "mc_seed" => mcseed, "noise_base_seed" => args.seed,
-            "julia_threads" => Threads.nthreads(), "selection_sha256" => something(sha, ""), "started_unix" => time()); sorted = true)
+            "julia_threads" => Threads.nthreads(), "selection_sha256" => something(sha, ""),
+            "dry_calibration_sha256" => something(dry_sha, ""), "dry_scale" => something(s_dry, 0.0), "started_unix" => time()); sorted = true)
     end
-    ctx = ProtocolContext(op, geo, field, templates, exposures, nreps, args.seed, stagedir)
+    ctx = ProtocolContext(op, geo, field, templates, exposures, nreps, args.seed, stagedir, op_cal)
     if stage == "dev"
         phase = args.protocol_phase
         grids = load_grids(stagedir, arms, length(exposures))
@@ -2979,7 +3119,7 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
         idx = [i for (i, t) in enumerate(exposures) if t in (1.0e4, 1.0e8)]
         isempty(idx) && error("the diagnostic needs exposures 1e4 and/or 1e8 in --sweep-exposures")
         n = test_stage!(ctx, selection, sha; shard = shard, weights = :oracle, solvers = ("GN-0",),
-                        arms = ["M"], exp_indices = idx, stage = "diag")
+                        arms = diag_arms, exp_indices = idx, stage = "diag")
         println("  oracle-weight diagnostic (not a competitor): $n solver runs done on shard $(shard[1])/$(shard[2])")
     end
     return 0
@@ -3809,7 +3949,7 @@ end
 
 function main()
     args = parse_commandline()
-    if args.reconstruction_sweep && args.protocol_stage in ("select", "finalize")
+    if args.reconstruction_sweep && args.protocol_stage in ("select", "finalize", "summary")
         return run_protocol_selection_stage(args)
     end
 

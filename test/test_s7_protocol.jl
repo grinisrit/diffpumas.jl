@@ -186,14 +186,17 @@ end
             for (m, v) in zip(dm, dv); w_dev[m] .= max.(w_dev[m], v); end
             w_dev .*= op.free
             w_test = protocol_test_field(C) .* op.free
-            exposures = [1e4, 1e5]
+            exposures = [1e3, 1e4]            # arm M runs at 1e4 only (reduced grid), X and Mc at both
+            s_dry = 0.8
+            op_cal = scale_operator(op, s_dry)
             geo_d = make_geometry(:dev, w_dev, C, op.free)
             geo_t = make_geometry(:test, w_test, C, op.free)
-            templates_d = Dict("M" => op.predict(w_dev), "X" => op.predict(w_dev) .* 0.9)
-            templates_t = Dict("M" => op.predict(w_test), "X" => op.predict(w_test) .* 0.9)
+            tm_d = s_dry .* op.predict(w_dev); tm_t = s_dry .* op.predict(w_test)     # MC data 20 % below the published operator
+            templates_d = Dict("M" => tm_d, "Mc" => tm_d, "X" => op.predict(w_dev) .* 0.9)
+            templates_t = Dict("M" => tm_t, "Mc" => tm_t, "X" => op.predict(w_test) .* 0.9)
             devdir = joinpath(dir, "dev")
-            ctx = ProtocolContext(op, geo_d, :dev, templates_d, exposures, 2, 42, devdir)
-            arms = ["M", "X"]
+            ctx = ProtocolContext(op, geo_d, :dev, templates_d, exposures, 2, 42, devdir, op_cal)
+            arms = ["M", "Mc", "X"]
             for phase in 1:3
                 mlem_sel = phase >= 2 ? Tomography.read_phase_selection(devdir, 1) : nothing
                 gn_sel = phase == 3 ? Tomography.read_phase_selection(devdir, 2) : nothing
@@ -211,6 +214,16 @@ end
             @test length(unique(Tomography.row_key(r) for r in rows)) == length(rows)       # no duplicates
             @test Set(r["rep"] for r in rows) == Set(["1", "2"])
             @test Set(r["solver"] for r in rows) == Set(PROTOCOL_SOLVERS)
+            # reduced arm M: exposure 1e4 only, no GD
+            @test Set(r["exp_index"] for r in rows if r["arm"] == "M") == Set(["2"])
+            @test isempty([r for r in rows if r["arm"] == "M" && r["solver"] in ("GD-0", "MLEM->GD")])
+            @test Set(r["exp_index"] for r in rows if r["arm"] == "Mc") == Set(["1", "2"])
+            @test !isempty([r for r in rows if r["arm"] == "Mc" && r["solver"] == "GD-0"])
+            # arms M and Mc read identical observation vectors (same seeds, same template) at the same exposure
+            @test [r["seed"] for r in rows if r["arm"] == "M" && r["rep"] == "1" && r["exp_index"] == "2"][1] ==
+                  [r["seed"] for r in rows if r["arm"] == "Mc" && r["rep"] == "1" && r["exp_index"] == "2"][1]
+            # GN rows record the cap and the K = 13 iterate
+            @test any(r -> r["solver"] == "GN-0" && r["iter"] == "K=13" && r["cap"] == "20", rows)
             @test all(r -> r["seed"] == string(protocol_noise_seed(:dev, r["arm"], parse(Int, r["exp_index"]), parse(Int, r["rep"]))), rows)
             r1 = first(r for r in rows if r["solver"] == "GN-0")
             @test parse(Float64, r1["secs"]) > 0 && parse(Int, r1["jac"]) >= 1 && r1["stop"] != ""
@@ -225,10 +238,11 @@ end
             @test_throws ErrorException load_selection(selpath)
             sha = Tomography.dev_finalize!(devdir, selpath, Dict("field" => "dev"))
             sel, sha2, _ = load_selection(selpath)
-            @test sha == sha2 && length(sel) == length(PROTOCOL_SOLVERS) * 2 * 2
+            @test sha == sha2 && length(sel) == (7 * 2) * 2 + 5          # X and Mc: 7 solvers x 2 exposures; M: 5 solvers x 1
+            @test all(k -> get(sel[k], "cap", 0) in (20, 32, 40), [k for k in keys(sel) if sel[k]["solver"] in ("GN-0", "GN-lin", "MLEM->GN", "GD-0", "MLEM->GD")])
             # the test stage refuses a missing or altered selection
             testdir = joinpath(dir, "test")
-            tctx = ProtocolContext(op, geo_t, :test, templates_t, exposures, 2, 42, testdir)
+            tctx = ProtocolContext(op, geo_t, :test, templates_t, exposures, 2, 42, testdir, op_cal)
             @test_throws ErrorException (s = load_selection(joinpath(dir, "absent.toml")); test_stage!(tctx, s[1], s[2]))
             txt = read(selpath, String)
             write(joinpath(dir, "tampered.toml"), replace(txt, "param = " => "param = 9"; count = 1))
@@ -240,14 +254,35 @@ end
             trows = read_rows(rows_in(testdir, "rows_"))
             @test all(r -> r["selection_sha256"] == sha && r["field"] == "test", trows)
             @test Set(r["solver"] for r in trows) == Set(["ZERO"; collect(PROTOCOL_SOLVERS)])
-            @test count(r -> r["selected"] == "1" && r["solver"] == "GN-0", trows) == 2 * 2 * 2
-            @test_throws ArgumentError test_stage!(ProtocolContext(op, geo_d, :dev, templates_d, exposures, 1, 42, testdir), sel, sha)
+            @test count(r -> r["selected"] == "1" && r["solver"] == "GN-0", trows) == (2 + 2 + 1) * 2     # X, Mc: 2 exposures; M: 1; 2 reps
+            @test isempty([r for r in trows if r["arm"] == "M" && (r["solver"] in ("GD-0", "MLEM->GD") || r["exp_index"] == "1")])
+            # the amended GN K grid is logged at the test stage (K = 13 from the saved iterates)
+            @test any(r -> r["solver"] == "GN-0" && r["iter"] == "K=13", trows)
+            # test-stage summary: cell statistics and the paired contrasts C1, C2, C3
+            sm = test_summary(trows)
+            c3 = [r for r in sm if r["kind"] == "C3"]
+            @test Set(r["solver"] for r in c3) == Set(["MLEM", "GN-0", "MLEM->GN"]) && all(r -> r["exp_index"] == "2" && r["arm"] == "M-Mc", c3)
+            tab = Tomography.test_rmse_table(trows)
+            for r in c3
+                d = [tab[("M", r["solver"], 2)][k] - tab[("Mc", r["solver"], 2)][k] for k in 1:2]
+                @test parse(Float64, r["mean"]) ≈ mean(d) && parse(Int, r["n_negative"]) == count(<(0), d)
+            end
+            @test Set((r["kind"], r["arm"]) for r in sm if r["kind"] in ("C1", "C2")) == Set((k, a) for k in ("C1", "C2") for a in arms)
+            @test count(r -> r["kind"] == "C1" && r["arm"] == "M", sm) == 1 && count(r -> r["kind"] == "C1" && r["arm"] == "Mc", sm) == 2
+            sfile = Tomography.write_test_summary(joinpath(dir, "summary.tsv"), sm)
+            @test countlines(sfile) == length(sm) + 1
+            @test_throws ArgumentError test_stage!(ProtocolContext(op, geo_d, :dev, templates_d, exposures, 1, 42, testdir, op_cal), sel, sha)
             # oracle-weight diagnostic goes to its own directory and is labelled
             diagdir = joinpath(dir, "diag")
-            dctx = ProtocolContext(op, geo_t, :test, templates_t, exposures, 2, 42, diagdir)
-            test_stage!(dctx, sel, sha; weights = :oracle, solvers = ("GN-0",), arms = ["M"], stage = "diag")
+            dctx = ProtocolContext(op, geo_t, :test, templates_t, exposures, 2, 42, diagdir, op_cal)
+            test_stage!(dctx, sel, sha; weights = :oracle, solvers = ("GN-0",), arms = ["Mc"], stage = "diag")
             drows = read_rows(rows_in(diagdir, "rows_"))
-            @test !isempty(drows) && all(r -> r["weights"] == "oracle" && r["arm"] == "M" && r["solver"] == "GN-0", drows)
+            @test !isempty(drows) && all(r -> r["weights"] == "oracle" && r["arm"] == "Mc" && r["solver"] == "GN-0", drows)
+            # arm Mc refuses to run without the dry-normalised operator
+            nocal = ProtocolContext(op, geo_t, :test, templates_t, exposures, 2, 42, joinpath(dir, "nocal"))
+            @test_throws ErrorException test_stage!(nocal, sel, sha; arms = ["Mc"])
+            @test_throws ErrorException dev_phase!(ProtocolContext(op, geo_d, :dev, templates_d, exposures, 2, 42, joinpath(dir, "nocal2")),
+                                                   1, default_grids(arms, 2); shard = (1, 1))
         end
     end
 
@@ -261,6 +296,209 @@ end
             @test_throws ErrorException load_template(path, template_key(:dev, "M", 1024, 42, w, bins))
             @test_throws ErrorException load_template(path, template_key(:test, "M", 16384, 43, w, bins))
             @test_throws ErrorException load_template(joinpath(dir, "none.jls"), k)
+        end
+    end
+
+    @testset "arm Mc: shared noise, dry-normalised operator, dry calibration" begin
+        @test protocol_noise_seed(:test, "Mc", 4, 2) == protocol_noise_seed(:test, "M", 4, 2)
+        @test protocol_noise_seed(:test, "Mc", 4, 2) != protocol_noise_seed(:test, "X", 4, 2)
+        tmpl = fill(3.0e-4, 500)
+        um = make_unit(tmpl, :dev, "M", 3, 1e5, 2); uc = make_unit(tmpl, :dev, "Mc", 3, 1e5, 2)
+        @test um.counts == uc.counts && um.obs == uc.obs && um.seed == uc.seed
+        @test template_arm("Mc") == "M" && template_arm("X") == "X"
+        # reduced arm M
+        @test arm_solvers("M") == ("SART", "MLEM", "GN-lin", "GN-0", "MLEM->GN")
+        @test arm_solvers("Mc") == PROTOCOL_SOLVERS && arm_solvers("X") == PROTOCOL_SOLVERS
+        @test [t for t in PROTOCOL_EXPOSURES if arm_exposure_active("M", t)] == [1e4, 1e5, 1e8]
+        @test all(t -> arm_exposure_active("Mc", t) && arm_exposure_active("X", t), PROTOCOL_EXPOSURES)
+
+        op = s7_toy_operator(C)
+        n = size(C, 2)
+        ops = scale_operator(op, 0.8)
+        w = 0.3 .* op.free .* (C[3, :] .> 1000)
+        @test ops.f0 == 0.8 .* op.f0 && ops.J0 == 0.8 .* op.J0 && ops.free == op.free
+        @test ops.predict(w) == 0.8 .* op.predict(w)
+        @test all(ops.model(w) .≈ (0.8 .* op.model(w)[1], 0.8 .* op.model(w)[2]))
+        @test ops.s_plus ≈ 0.8 * op.s_plus                        # recomputed from the scaled J0
+        @test_throws ArgumentError scale_operator(op, 0.0)
+        @test_throws ArgumentError scale_operator(op, NaN)
+        # s = 1 reproduces arm M to machine precision (here: bit for bit)
+        op1 = scale_operator(op, 1.0)
+        wt = zeros(n); wt[findall(op.free)[1:8]] .= 0.5
+        unit = make_unit(op.predict(wt), :dev, "Mc", 1, 1e5, 1)
+        W = protocol_weights(unit.counts, unit.tau)
+        for (a, b) in ((run_mlem(op, unit.obs, 0.5, [20, 60]), run_mlem(op1, unit.obs, 0.5, [20, 60])),
+                       (run_sart(op, unit.obs, 0.1, [5, 20]), run_sart(op1, unit.obs, 0.1, [5, 20])),
+                       (run_gn(op, unit.obs, W, 0.1, [2, :final], :relin, zeros(n)), run_gn(op1, unit.obs, W, 0.1, [2, :final], :relin, zeros(n))),
+                       (run_gn(op, unit.obs, W, 0.1, [2, :final], :lin, zeros(n)), run_gn(op1, unit.obs, W, 0.1, [2, :final], :lin, zeros(n))),
+                       (run_gd(op, unit.obs, W, 0.1, [5, :final], zeros(n)), run_gd(op1, unit.obs, W, 0.1, [5, :final], zeros(n))))
+            @test maximum(maximum(abs.(va .- vb)) for ((_, va), (_, vb)) in zip(a.vectors, b.vectors)) <= 1e-14
+        end
+        # the weights do not depend on the scale (counts only); h_+ does
+        @test curvature_scale(W, ops.J0, ops.free) ≈ 0.64 * curvature_scale(W, op.J0, op.free)
+
+        mktempdir() do dir
+            # G0b: s = median of the ratios over the bins with a positive dry CSDA flux
+            csda = [1.0, 2.0, 0.0, 4.0, 5.0, NaN]; mc = [0.8, 1.7, 0.3, 3.2, 4.4, 1.0]
+            bins, r = dry_ratios(mc, csda)
+            @test bins == [1, 2, 4, 5] && r ≈ [0.8, 0.85, 0.8, 0.88]
+            @test dry_scale(r) ≈ 0.825
+            zen = collect(range(0, 58; length = 6))
+            rep = dry_report(mc, csda, 0.01 .* mc, zen)
+            @test rep["s"] ≈ 0.825 && rep["n_bins"] == 4 && rep["ratio_of_sums"] ≈ sum(mc[[1,2,4,5]]) / sum(csda[[1,2,4,5]])
+            @test rep["median_rel_sigma_mc"] ≈ 0.01 && length(rep["band_median_r"]) == length(rep["band_counts"])
+            @test check_g0b(0.801)[1] && check_g0b(0.83)[1] && check_g0b(0.772)[1]
+            @test !check_g0b(0.8311)[1] && !check_g0b(0.7689)[1] && !check_g0b(NaN)[1]
+            # dry_calibration.toml: frozen with a hash; arm Mc refuses without a valid file
+            path = joinpath(dir, "dry_calibration.toml")
+            @test_throws ErrorException load_dry_calibration(path)
+            sha = write_dry_calibration(path, 0.8012, Dict("n_bins" => 2700, "seed" => 44, "histories" => 16384, "git_commit" => "abc"))
+            s_, sha2, cal = load_dry_calibration(path)
+            @test s_ == 0.8012 && sha == sha2 && cal["seed"] == 44 && isfile(path * ".sha256") && strip(read(path * ".sha256", String)) == sha
+            write(joinpath(dir, "tampered.toml"), replace(read(path, String), "0.8012" => "0.9012"))
+            @test_throws ErrorException load_dry_calibration(joinpath(dir, "tampered.toml"))
+            write(joinpath(dir, "bad.toml"), "[meta]\ncontent_sha256 = \"x\"\n")
+            @test_throws ErrorException load_dry_calibration(joinpath(dir, "bad.toml"))
+            @test_throws ArgumentError write_dry_calibration(joinpath(dir, "z.toml"), -1.0, Dict{String,Any}())
+            # contexts without the calibrated operator refuse arm Mc
+            geo = make_geometry(:dev, zeros(n), C, op.free)
+            ctx = ProtocolContext(op, geo, :dev, Dict("Mc" => op.predict(wt)), [1e4], 1, 42, joinpath(dir, "o"))
+            @test_throws ErrorException Tomography.arm_operator(ctx, "Mc")
+            @test Tomography.arm_operator(ctx, "M") === op
+            @test Tomography.arm_operator(ProtocolContext(op, geo, :dev, Dict("Mc" => op.predict(wt)), [1e4], 1, 42, joinpath(dir, "o"), ops), "Mc") === ops
+        end
+    end
+
+    @testset "GN cap and K grid, GD fixed budget" begin
+        @test Tomography.default_grid("GN-0")["iter"] == [1, 2, 3, 5, 8, 13]
+        @test Tomography.default_grid("GD-0")["iter"] == [5, 10, 20]
+        @test PROTOCOL_GN_CAP == 20 && PROTOCOL_GN_CAP_EXT == 32 && PROTOCOL_GD_CAP == 40
+        g = default_grids(["X"], 1)
+        @test g["GN-0|X|1"]["cap"] == 20 && g["GN-lin|X|1"]["cap"] == 20 && g["MLEM->GN|X|1"]["cap"] == 20
+        @test g["GD-0|X|1"]["cap"] == 40 && !haskey(g["MLEM|X|1"], "cap")
+        mkrow(solver, rep, c, it, rm, stop; cap = "20") = Dict("solver" => solver, "arm" => "X", "exp_index" => "1", "weights" => "obs",
+            "param" => string(c), "iter" => it, "rmse_s" => string(rm), "stop" => stop, "cap" => cap, "rep" => string(rep))
+        function gnrows(; stops, best = "final", cap = "20")
+            out = Dict{String,String}[]
+            for rep in 1:2, c in (0.01, 0.1), it in ("K=1", "K=5", "K=13", "final")
+                rm = (it == best && c == 0.1) ? 0.1 : 0.2
+                push!(out, mkrow("GN-0", rep, c, it, rm, it == "final" ? stops[rep] : "-"; cap = cap))
+                # the other GN solvers of the phase converge early (never on the cap)
+                for other in ("GN-lin", "MLEM->GN")
+                    push!(out, mkrow(other, rep, c, it, it == "K=5" && c == 0.1 ? 0.1 : 0.2, "objective_decrease"; cap = cap))
+                end
+            end
+            return out
+        end
+        # (a) final selected and both realisations stopped on the cap -> one rerun with cap 32 and K up to 20
+        grids = default_grids(["X"], 1)
+        sel, pending = Tomography.select_phase!(gnrows(stops = ["max_updates", "max_updates"]), 2, grids, ["X"], [1e4], 2)
+        @test pending == 1 && grids["GN-0|X|1"]["cap"] == 32 && grids["GN-0|X|1"]["iter"] == [1, 2, 3, 5, 8, 13, 20]
+        @test grids["GN-0|X|1"]["ext"]["cap"] == 1 && sel["GN-0|X|1"]["extensions_pending"]
+        @test grids["GN-lin|X|1"]["cap"] == 20 && grids["MLEM->GN|X|1"]["cap"] == 20     # other cells untouched
+        # (b) selected K not final, or one realisation converged: no extension
+        grids = default_grids(["X"], 1)
+        sel, pending = Tomography.select_phase!(gnrows(stops = ["max_updates", "max_updates"], best = "K=13"), 2, grids, ["X"], [1e4], 2)
+        @test pending == 0 && grids["GN-0|X|1"]["cap"] == 20 && sel["GN-0|X|1"]["budget_note"] == ""
+        grids = default_grids(["X"], 1)
+        sel, pending = Tomography.select_phase!(gnrows(stops = ["max_updates", "objective_decrease"]), 2, grids, ["X"], [1e4], 2)
+        @test pending == 0 && grids["GN-0|X|1"]["cap"] == 20
+        # (c) after the extension only the cap-32 rows count; final at the cap again: kept and reported once
+        grids = default_grids(["X"], 1)
+        rows = gnrows(stops = ["max_updates", "max_updates"])
+        Tomography.select_phase!(rows, 2, grids, ["X"], [1e4], 2)
+        rows32 = gnrows(stops = ["max_updates", "max_updates"], cap = "32")
+        sel, pending = Tomography.select_phase!([rows; rows32], 2, grids, ["X"], [1e4], 2)
+        @test pending == 0 && grids["GN-0|X|1"]["cap"] == 32 && sel["GN-0|X|1"]["cap"] == 32
+        @test sel["GN-0|X|1"]["budget_note"] == "not converged at 32 updates"
+        # ... and when the cap-32 rows prefer a smaller K, nothing is reported
+        grids = default_grids(["X"], 1)
+        Tomography.select_phase!(rows, 2, grids, ["X"], [1e4], 2)
+        sel, pending = Tomography.select_phase!([rows; gnrows(stops = ["max_updates", "max_updates"], cap = "32", best = "K=13")], 2, grids, ["X"], [1e4], 2)
+        @test pending == 0 && sel["GN-0|X|1"]["iter"] == "K=13" && sel["GN-0|X|1"]["budget_note"] == ""
+        # GD: the cap of 40 is never extended; a final on the cap is a fixed budget
+        grids = default_grids(["X"], 1)
+        gdrows = [mkrow("GD-0", rep, 0.1, it, it == "final" ? 0.1 : 0.2, it == "final" ? "max_iter" : "-"; cap = "40") for rep in 1:2, it in ("K=5", "K=20", "final")]
+        gdother = [mkrow("MLEM->GD", rep, 0.1, it, it == "K=20" ? 0.1 : 0.2, "objective_change"; cap = "40") for rep in 1:2, it in ("K=5", "K=20", "final")]
+        sel, pending = Tomography.select_phase!([vec(gdrows); vec(gdother)], 3, grids, ["X"], [1e4], 2)
+        @test pending == 0 && grids["GD-0|X|1"]["cap"] == 40 && sel["GD-0|X|1"]["budget_note"] == "fixed budget of 40 iterations"
+        # labels of the logged final iterate
+        @test Tomography.final_budget_note("GN-0", "final", "max_updates", 20) == "K = 20 (cap)"
+        @test Tomography.final_budget_note("MLEM->GN", "final", "max_updates", 32) == "K = 32 (cap)"
+        @test Tomography.final_budget_note("GN-0", "final", "objective_decrease", 20) == ""
+        @test Tomography.final_budget_note("GN-0", "K=5", "max_updates", 20) == ""
+        @test Tomography.final_budget_note("GD-0", "final", "max_iter", 40) == "fixed budget of 40 iterations"
+        @test Tomography.final_budget_note("GD-0", "final", "objective_change", 40) == ""
+        @test Tomography.final_budget_note("MLEM", "final", "n_iter", nothing) == ""
+        # real runs: the run labels the cap-limited GN and GD solves
+        op = s7_toy_operator(C); n = size(C, 2)
+        wt = zeros(n); wt[findall(op.free)[1:8]] .= 0.5
+        unit = make_unit(op.predict(wt), :dev, "X", 1, 1e8, 1)
+        W = protocol_weights(unit.counts, unit.tau)
+        geo = make_geometry(:dev, wt, C, op.free)
+        g2 = run_gn(op, unit.obs, W, 1e-3, [1, 2, :final], :relin, zeros(n); max_updates = 2)
+        @test g2.stop == "max_updates" && g2.updates == 2
+        row = Tomography.protocol_log_row("dev", geo, op, unit, W, "GN-0", "zero", "obs", 1e-3, "final", last(g2.vectors[end]), g2; cap = 2)
+        @test row["final_note"] == "K = 2 (cap)" && row["budget_limited"] == "1" && row["cap"] == "2"
+        d2 = run_gd(op, unit.obs, W, 1e-3, [5, :final], zeros(n); max_iter = 3)
+        @test d2.stop == "max_iter"
+        rowd = Tomography.protocol_log_row("dev", geo, op, unit, W, "GD-0", "zero", "obs", 1e-3, "final", last(d2.vectors[end]), d2; cap = 3)
+        @test rowd["final_note"] == "fixed budget of 3 iterations" && rowd["budget_limited"] == "1"
+        rowk = Tomography.protocol_log_row("dev", geo, op, unit, W, "GN-0", "zero", "obs", 1e-3, "K=1", last(g2.vectors[1]), g2; cap = 2)
+        @test rowk["final_note"] == "" && rowk["budget_limited"] == "0"
+        # a development phase honours the cap of the grid and records it; resume keys include the cap
+        mktempdir() do dir
+            tm = op.predict(wt)
+            ctx = ProtocolContext(op, geo, :dev, Dict("X" => tm), [1e5], 2, 42, dir)
+            grids = default_grids(["X"], 1)
+            grids["GN-0|X|1"]["param"] = [0.1]; grids["GN-lin|X|1"]["param"] = [0.1]; grids["MLEM->GN|X|1"]["param"] = [0.1]
+            grids["GN-0|X|1"]["cap"] = 32; grids["GN-0|X|1"]["iter"] = copy(PROTOCOL_GN_K_EXT)
+            sel1 = Dict(k => Dict("param" => 0.5, "iter" => "n=50") for k in ("MLEM|X|1",))
+            n1 = dev_phase!(ctx, 2, grids; mlem_selection = sel1)
+            rows = read_rows(rows_in(dir, "rows_phase"))
+            gn0 = [r for r in rows if r["solver"] == "GN-0"]
+            @test !isempty(gn0) && all(r -> r["cap"] == "32", gn0) && any(r -> r["iter"] == "K=20", gn0)
+            @test dev_phase!(ctx, 2, grids; mlem_selection = sel1) == 0        # resume: nothing missing
+            grids["GN-0|X|1"]["cap"] = 20; grids["GN-0|X|1"]["iter"] = copy(PROTOCOL_GN_K)
+            @test dev_phase!(ctx, 2, grids; mlem_selection = sel1) == 2        # the cap-20 cell (2 realisations) is a different cell
+        end
+    end
+
+    @testset "summary statistics" begin
+        @test t_crit95(7) ≈ 2.364624 atol = 1e-5
+        @test t_crit95(1) ≈ 12.7062 atol = 1e-3
+        ci = Tomography.mean_ci95([1.0, 2.0, 3.0, 4.0])
+        @test ci.mean == 2.5
+        @test isapprox(ci.lo, 2.5 - 3.182446 * std([1.0, 2.0, 3.0, 4.0]) / 2; atol = 1e-4)
+        mk(arm, solver, rep, v) = Dict("stage" => "test", "selected" => "1", "weights" => "obs", "arm" => arm, "solver" => solver,
+            "exp_index" => "1", "rep" => string(rep), "rmse_s" => string(v), "budget_limited" => "0")
+        rows = Dict{String,String}[]
+        for rep in 1:8
+            push!(rows, mk("Mc", "MLEM", rep, 0.20 + 0.001rep)); push!(rows, mk("Mc", "MLEM->GN", rep, 0.10 + 0.001rep))
+            push!(rows, mk("Mc", "GN-0", rep, 0.19 + 0.001rep))
+            push!(rows, mk("M", "MLEM", rep, 0.25 + 0.001rep)); push!(rows, mk("M", "GN-0", rep, 0.30 + 0.001rep))
+            push!(rows, mk("M", "MLEM->GN", rep, 0.27 + 0.001rep))
+        end
+        sm = test_summary(rows)
+        lab(kind, arm) = only(r["label"] for r in sm if r["kind"] == kind && r["arm"] == arm && r["exp_index"] == "1")
+        @test lab("C1", "Mc") == "clearly better"       # 50 % reduction, interval below 0
+        @test lab("C2", "Mc") == "not distinguished" || lab("C2", "Mc") == "better"
+        @test lab("C2", "M") == "MLEM better"
+        c3 = Dict(r["solver"] => r for r in sm if r["kind"] == "C3")
+        @test parse(Float64, c3["MLEM"]["mean"]) ≈ 0.05 && parse(Float64, c3["GN-0"]["mean"]) ≈ 0.11
+        @test c3["MLEM"]["n_negative"] == "0" && parse(Float64, c3["MLEM"]["lo"]) ≈ 0.05   # constant difference
+    end
+
+    @testset "process count of the driver script" begin
+        script = joinpath(@__DIR__, "..", "examples", "s7_protocol.sh")
+        mktempdir() do dir
+            env = Dict("OUT" => dir, "REPO" => joinpath(@__DIR__, ".."))
+            p = run(pipeline(ignorestatus(setenv(`bash $script test`, merge(env, Dict("NPROC" => "17"))));
+                             stderr = joinpath(dir, "err.txt"), stdout = devnull))
+            @test p.exitcode != 0
+            @test occursin("NPROC=17 exceeds", read(joinpath(dir, "err.txt"), String))
+            @test !isdir(joinpath(dir, "test"))                                 # refused before anything ran
+            @test occursin("JULIA_NUM_THREADS=1", read(script, String))
         end
     end
 
