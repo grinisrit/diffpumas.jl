@@ -77,7 +77,7 @@ export run_sart, run_mlem, run_gn, run_gd, default_grids, group_key, append_rows
 export template_key, save_template, load_template, select_phase!, write_selection, load_selection
 export load_grids, save_grids, dev_select!, dev_finalize!, read_phase_selection
 export selected_setting, ProtocolContext, enumerate_units, draw_unit, dev_phase!, test_stage!
-export PROTOCOL_MC_STREAM, PROTOCOL_DRY_BASES, PROTOCOL_DRY_HISTORIES, PROTOCOL_TEMPLATE_BASES, PROTOCOL_SINGLE_RUN_MC_BASE, mc_bin_seeds, unit_template, PROTOCOL_GN_SOLVERS, PROTOCOL_GD_SOLVERS, PROTOCOL_GN_K, PROTOCOL_GN_K_EXT, PROTOCOL_ARM_M_EXPOSURES, PROTOCOL_GN_CAP, PROTOCOL_GN_CAP_EXT, PROTOCOL_GD_CAP, PROTOCOL_MAX_PROCESSES
+export PROTOCOL_DRY_Q_RANGE, PROTOCOL_DRY_SPLIT_TOL, PROTOCOL_DRY_SHARED_S, PROTOCOL_DRY_SHARED_TOL, PROTOCOL_MC_STREAM, PROTOCOL_DRY_BASES, PROTOCOL_DRY_HISTORIES, PROTOCOL_TEMPLATE_BASES, PROTOCOL_SINGLE_RUN_MC_BASE, mc_bin_seeds, unit_template, PROTOCOL_GN_SOLVERS, PROTOCOL_GD_SOLVERS, PROTOCOL_GN_K, PROTOCOL_GN_K_EXT, PROTOCOL_ARM_M_EXPOSURES, PROTOCOL_GN_CAP, PROTOCOL_GN_CAP_EXT, PROTOCOL_GD_CAP, PROTOCOL_MAX_PROCESSES
 export template_arm, arm_solvers, arm_exposure_active, scale_operator, arm_operator
 export dry_ratios, dry_scale, dry_report, dry_checks, write_dry_calibration, load_dry_calibration
 export test_summary, write_test_summary, paired_contrast, t_crit95

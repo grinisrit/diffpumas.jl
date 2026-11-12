@@ -42,7 +42,8 @@ TEMPLATE_MODE_FILE="$OUT/TEMPLATE_MODE"       # "replicates" (one MC template pe
 jl() { nice -n 19 julia --project="$R" "$R/examples/lvd_tomography.jl" "${COMMON[@]}" --template-mode "$(cat "$TEMPLATE_MODE_FILE" 2>/dev/null || echo replicates)" "$@"; }
 decide_template_mode() {   # fallback rule: one template per field if the projected template stage exceeds 6 h wall
   local th mode proj
-  th=$(awk '/thread_hours_per_16384_template/{print $3}' "$OUT/dry/dry_report.toml" 2>/dev/null)
+  th=$(awk '/^cpu_hours_per_16384_template/{print $3}' "$OUT/dry/dry_report.toml" 2>/dev/null)          # measured CPU-hours if recorded
+  { [ -z "$th" ] || [ "$th" = "0.0" ]; } && th=$(awk '/^thread_hours_per_16384_template/{print $3}' "$OUT/dry/dry_report.toml" 2>/dev/null)   # else the (pessimistic) thread-hours
   if [ -z "$th" ]; then mode=replicates; proj="unknown"; else
     proj=$(awk -v th="$th" -v n="$NPROC" 'BEGIN{printf "%.2f", 10*th/n}')           # 10 templates (D: 2, T: 8) of 16384 histories
     mode=$(awk -v p="$proj" 'BEGIN{print (p > 6 ? "single" : "replicates")}')

@@ -2847,6 +2847,17 @@ function protocol_git_commit()
     end
 end
 
+# CPU seconds used by this process so far (user + system, from /proc; 0 where unavailable)
+function protocol_cpu_seconds()
+    try
+        f = split(read("/proc/self/stat", String), ") ")[end]            # fields after the command name
+        v = split(f)
+        return (parse(Float64, v[12]) + parse(Float64, v[13])) / 100      # utime, stime in clock ticks (100 Hz)
+    catch
+        return 0.0
+    end
+end
+
 function protocol_git_dirty()
     try
         !isempty(strip(read(`git -C $(@__DIR__) status --porcelain --untracked-files=no`, String)))
@@ -3037,22 +3048,23 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
             if isfile(path)
                 c = load_template(path, key)                   # errors on a mismatching key
                 println("  dry template $path exists with a matching key; kept")
-                push!(runs, (flux = c.template, sigma = c.extra.sigma_mc, wall = get(c.extra, :wall_s, NaN), threads = get(c.extra, :threads, 0)))
+                push!(runs, (flux = c.template, sigma = c.extra.sigma_mc, wall = get(c.extra, :wall_s, NaN), cpu = get(c.extra, :cpu_s, 0.0), threads = get(c.extra, :threads, 0)))
             else
-                t0 = time()
+                t0 = time(); c0 = protocol_cpu_seconds()
                 tmpl, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, zero_w, valid_bins, args;
                                                  histories = PROTOCOL_DRY_HISTORIES, seed = dseed)
-                wall = time() - t0
-                save_template(path, key, tmpl, (sigma_mc = sig, wall_s = wall, threads = Threads.nthreads()))
-                println("  wrote $path  [$(round(wall; digits = 0)) s on $(Threads.nthreads()) threads]")
-                push!(runs, (flux = tmpl, sigma = sig, wall = wall, threads = Threads.nthreads()))
+                wall = time() - t0; cpu = protocol_cpu_seconds() - c0
+                save_template(path, key, tmpl, (sigma_mc = sig, wall_s = wall, cpu_s = cpu, threads = Threads.nthreads()))
+                println("  wrote $path  [$(round(wall; digits = 0)) s wall, $(round(cpu; digits = 0)) s CPU on $(Threads.nthreads()) threads]")
+                push!(runs, (flux = tmpl, sigma = sig, wall = wall, cpu = cpu, threads = Threads.nthreads()))
             end
         end
         chk = dry_checks(runs[1].flux, runs[2].flux, runs[1].sigma, runs[2].sigma, f0, zen)
         pooled = (runs[1].flux .+ runs[2].flux) ./ 2
         sig_pooled = sqrt.(runs[1].sigma .^ 2 .+ runs[2].sigma .^ 2) ./ 2
         rep = dry_report(pooled, f0, sig_pooled, zen)
-        thread_hours = sum(r.wall * r.threads for r in runs) / 3600       # CPU-hours of the pooled 2 x 8192 = one 16384-history template
+        thread_hours = sum(r.wall * r.threads for r in runs) / 3600       # thread-hours (upper bound) of the pooled 2 x 8192 = one 16384-history template
+        cpu_hours = sum(r.cpu for r in runs) / 3600                       # measured CPU-hours of the same (0 if not recorded)
         report = Dict{String,Any}("pooled" => rep, "seeds" => PROTOCOL_DRY_BASES, "histories" => PROTOCOL_DRY_HISTORIES,
             "mc_stream" => PROTOCOL_MC_STREAM, "git_commit" => protocol_git_commit(),
             "checks" => Dict{String,Any}("s" => chk.s, "s_a" => chk.s_a, "s_b" => chk.s_b, "q" => chk.q, "n_zenith0" => chk.n_zenith0,
@@ -3060,7 +3072,7 @@ function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialCon
                 "check2" => chk.check2, "check3" => chk.check3, "passed" => chk.passed,
                 "split_difference" => abs(chk.s_a - chk.s_b), "shared_sample_s" => PROTOCOL_DRY_SHARED_S,
                 "expected_standard_error_s" => 1.2533 * rep["median_rel_sigma_mc"] * chk.s / sqrt(rep["n_bins"])),
-            "timing" => Dict{String,Any}("thread_hours_per_16384_template" => thread_hours,
+            "timing" => Dict{String,Any}("thread_hours_per_16384_template" => thread_hours, "cpu_hours_per_16384_template" => cpu_hours,
                 "wall_s_total" => sum(r.wall for r in runs), "threads" => runs[1].threads))
         open(joinpath(stagedir, "dry_report.toml"), "w") do io; TOML.print(io, report; sorted = true); end
         println("  dry calibration (2 x $(PROTOCOL_DRY_HISTORIES) histories, per-bin streams, seeds $(PROTOCOL_DRY_BASES)): s = $(round(chk.s; digits = 5)) over $(rep["n_bins"]) bins; " *
