@@ -65,8 +65,11 @@ status_line() {   # one line: stage, units done/total, start time, ETA, workers,
     mv "$OUT/RUN_STATUS.tmp" "$OUT/RUN_STATUS"
 }
 fail() {          # fail <reason>: stop the workers this run started, leave the marker
-  log "FAILED: $*"; pkill -TERM -P $$ 2>/dev/null || true
-  echo "stage=$STAGE reason=$*" > "$OUT/RUN_FAILED"; status_line; exit 1
+  log "FAILED: $*"
+  echo "stage=$STAGE reason=$*" > "$OUT/RUN_FAILED"; status_line
+  # the run is started with setsid, so its process group is exactly this orchestrator and its workers
+  if [ "$(ps -o pgid= -p $$ | tr -d ' ')" = "$$" ]; then trap '' TERM; kill -TERM -- "-$$" 2>/dev/null; fi
+  exit 1
 }
 
 # pool <stage-name> <jl args...>: run workers that claim the units of one stage until all are done.
