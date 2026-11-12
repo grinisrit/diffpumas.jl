@@ -93,6 +93,15 @@ Options:
     --papermatch-paper-samples INT  MC samples for the Fig.8 energy spectrum (default: 2000)
     --max-plot-cells INT          Maximum cells rendered in the 3D sensitivity plot (default: 150)
     --no-straggling               Disable stochastic energy-loss fluctuations for MC validation
+    --reconstruction-sweep        Run one stage of the reconstruction protocol (needs --protocol-stage)
+    --protocol-stage STR          gate | templates | dev | select | finalize | test | diag
+    --protocol-phase INT          Development phase: 1 SART+MLEM, 2 GN family, 3 GD (default: 1)
+    --shard I/N                   Process share I of N of the (arm, exposure, realisation) units
+    --sweep-exposures LIST        Comma-separated per-bin exposures (default: 1e3,3.16e3,1e4,3.16e4,1e5,1e6,1e8)
+    --sweep-realizations INT      Realisations per (arm, exposure) (default: dev 2, test and diag 8)
+    --sweep-data STR              Data arm: mc (M), csda (X) or both (default: both)
+    --truth-field STR             dev (development field) or test (held-out field) (default: dev)
+    --selection PATH              Frozen selection.toml (default: <output-dir>/selection.toml)
 """
 
 const lvd_tomography = nothing
@@ -761,6 +770,11 @@ end
 function create_initial_water_field(volume::AbstractSensitivityVolume, args)
     fractions = zeros(Float64, num_cells(volume))
 
+    # Held-out test field of the reconstruction protocol (defined before any run).
+    if args.truth_field == "test"
+        return protocol_test_field(reduce(hcat, [collect(Float64, cell_centroid(volume, i)) for i in 1:num_cells(volume)]))
+    end
+
     if !args.rich_field
         # Legacy single aquifer box (off unless --aquifer-water-fraction > 0).
         args.aquifer_water_fraction <= 0.0 && return fractions
@@ -1413,7 +1427,16 @@ function parse_commandline()
         sweep_exp_min = 1.0e5,         # exposure sweep range (detector exposure units)
         sweep_exp_max = 1.0e9,
         sweep_n = 13,                  # number of exposure points (log-spaced)
-        sweep_realizations = 80,       # noise realizations per exposure per solver
+        sweep_realizations = 80,       # noise realizations per (arm, exposure) of the protocol stages
+        sweep_realizations_given = false,  # set by --sweep-realizations (else the stage default: dev 2, test/diag 8)
+        sweep_exposures = copy(PROTOCOL_EXPOSURES),  # explicit per-bin exposure grid of the protocol
+        sweep_data = "both",           # protocol data arms: "mc" (arm M), "csda" (arm X) or "both"
+        truth_field = "dev",           # synthetic truth: "dev" (development field) or "test" (held-out field)
+        protocol_stage = "",           # gate | templates | dev | select | finalize | test | diag
+        protocol_phase = 1,            # development phase 1 (SART, MLEM), 2 (GN family), 3 (GD)
+        shard_index = 1,               # process share i of n (--shard i/n)
+        shard_count = 1,
+        selection_path = "",           # frozen selection.toml (default: <output-dir>/selection.toml)
     )
 
     i = 1
@@ -1566,7 +1589,23 @@ function parse_commandline()
         elseif arg == "--detection-contrast-sweep"
             args = merge(args, (detection_contrast_sweep = true,)); i += 1
         elseif arg == "--sweep-realizations"
-            args = merge(args, (sweep_realizations = parse(Int, ARGS[i + 1]),)); i += 2
+            args = merge(args, (sweep_realizations = parse(Int, ARGS[i + 1]), sweep_realizations_given = true)); i += 2
+        elseif arg == "--sweep-exposures"
+            args = merge(args, (sweep_exposures = parse_exposure_list(ARGS[i + 1]),)); i += 2
+        elseif arg == "--sweep-data"
+            args = merge(args, (sweep_data = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--truth-field"
+            args = merge(args, (truth_field = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--protocol-stage"
+            args = merge(args, (protocol_stage = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--protocol-phase"
+            args = merge(args, (protocol_phase = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--shard"
+            parts = split(ARGS[i + 1], '/')
+            length(parts) == 2 || error("--shard must be i/n")
+            args = merge(args, (shard_index = parse(Int, parts[1]), shard_count = parse(Int, parts[2]))); i += 2
+        elseif arg == "--selection"
+            args = merge(args, (selection_path = ARGS[i + 1],)); i += 2
         elseif arg == "--sweep-n"
             args = merge(args, (sweep_n = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-threads"
@@ -1603,6 +1642,13 @@ function parse_commandline()
     args.geometry in ("auto", "tetra", "grid") || error("--geometry must be auto, tetra, or grid")
     args.solver in ("all", "sart", "mlem", "gd", "gn") || error("--solver must be all, sart, mlem, gd, or gn")
     args.inverse_data in ("mc", "csda") || error("--inverse-data must be mc or csda")
+    args.sweep_data in ("mc", "csda", "both") || error("--sweep-data must be mc, csda or both")
+    args.truth_field in ("dev", "test") || error("--truth-field must be dev or test")
+    args.protocol_stage in ("", "gate", "templates", "dev", "select", "finalize", "test", "diag") ||
+        error("--protocol-stage must be gate, templates, dev, select, finalize, test or diag")
+    args.protocol_phase in (1, 2, 3) || error("--protocol-phase must be 1, 2 or 3")
+    1 <= args.shard_index <= args.shard_count || error("--shard i/n needs 1 <= i <= n")
+    args.sweep_realizations >= 1 || error("--sweep-realizations must be positive")
     args.papermatch_mask_ratio > 1 || error("--papermatch-mask-ratio must exceed 1 (Inf disables masking)")
     0 <= args.papermatch_calibration_water <= MAX_WATER_FRACTION || error("--papermatch-calibration-water must be in [0,0.9]")
     isfinite(args.papermatch_prior_cutoff) || error("--papermatch-prior-cutoff must be finite")
@@ -1884,10 +1930,11 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     Jv = base_J[valid_bins, :]
     f0 = base_flux[valid_bins]
 
-    # Observations use fixed-path stochastic energy-loss MC through the true
-    # field, then Poisson counting noise. Both models share prescribed geometry. The
-    # linear solvers invert `Jv`; only our Gauss-Newton fits the true nonlinear
-    # corrected-CSDA operator, which is its edge over MLEM.
+    # Observations are the fixed-path energy-loss MC flux (or the exact corrected
+    # CSDA flux) of the true field, turned into Poisson counts k ~ Poisson(tau * flux)
+    # with obs = k / tau. Both models share prescribed geometry. SART and MLEM invert
+    # the frozen `Jv`; GD and GN fit the nonlinear corrected-CSDA operator. No claim
+    # about their relative accuracy is made here; see the reconstruction protocol.
     if args.inverse_data == "mc"
         cache_path = joinpath(args.output_dir, "lvd_mc_observations.bin")
         obs_clean = mc_observations_for_field(physics, shallow_flags, matcfg, site, paths,
@@ -1897,17 +1944,19 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             w_true, energy_samples; n_cells = n_cells, threaded = args.threaded)
         obs_clean = ff[valid_bins]
     end
-    rng = MersenneTwister(args.seed + 777)
-    σ = sqrt.(max.(obs_clean, 0.0) ./ args.exposure)
-    @inbounds for i in eachindex(σ); σ[i] = max(σ[i], 1e-12 * maximum(obs_clean)); end
-    obs = [max(obs_clean[i], 0.0) + σ[i] * randn(rng) for i in eachindex(obs_clean)]
+    # Poisson counts; the weights come from the observed counts only (sigma^2 =
+    # max(k,1)/tau^2). Every solver updates only the cells crossed by a ray (free =
+    # nonzero column of the dry Jacobian); all other cells stay exactly 0.
+    counts = draw_poisson_counts(obs_clean, args.exposure, args.seed + 777)
+    obs = counts ./ args.exposure
     excess = obs .- f0                      # flux excess from the lighter water
+    free_cells = sensed_cells(Matrix(Jv))
+    println("  free (ray-crossed) cells: $(count(free_cells)) of $(length(free_cells))")
 
     # Regularisation weights auto-scaled to the operator curvature so they are
     # neither negligible nor overwhelming (or use --reg-weight to set explicitly).
-    Wvec = 1.0 ./ σ .^ 2
-    diagJtWJ = vec(sum(Wvec .* (Matrix(Jv) .^ 2); dims = 1))   # curvature per cell
-    gn_scale = (m = filter(>(0), diagJtWJ); isempty(m) ? 1.0 : median(m))
+    Wvec = protocol_weights(counts, args.exposure)
+    gn_scale = curvature_scale(Wvec, Matrix(Jv), free_cells)
     sens = vec(sum(max.(Jv, 0.0); dims = 1))
     sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
     # The edge Hessian λ·L has O(#neighbors) on its diagonal, so λ must be a small
@@ -1921,13 +1970,13 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     edge_prior = EdgePrior(neighbors, edge_w, args.edge_delta)
 
     # The true nonlinear corrected-CSDA operator, relinearised via the fast AD
-    # Jacobian — shared by BOTH our AAD solvers (GN and GD). SART/MLEM are the
+    # Jacobian — shared by BOTH differentiable solvers (GN and GD). SART/MLEM are the
     # frozen-operator baselines (single Jacobian Jv at w=0).
     csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths,
         energy_samples; n_cells = n_cells, valid_bins = valid_bins,
         threaded = args.threaded)
     csda_predict = flux_only_operator(physics,shallow_flags,matcfg,site,paths[valid_bins],energy_samples;threaded=args.threaded)
-    Wobs = 1.0 ./ σ .^ 2
+    Wobs = Wvec
     # Near-surface cells are crossed only by near-vertical rays and are essentially
     # unrecoverable, so we evaluate quality below a minimum depth (configurable). All
     # reported metrics and the resolution map use this evaluation mask.
@@ -1943,12 +1992,12 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
         t0 = time()
         if s == "sart"
             w_rec, hist = sart_reconstruct(Jv, excess; n_iter = args.reco_iters,
-                relaxation = 0.2, prior = sm_prior)
+                relaxation = 0.2, prior = sm_prior, free = free_cells)
         elseif s == "mlem"
             w_rec, hist = mlem_reconstruct(max.(Jv, 0.0), max.(excess, 0.0);
-                n_iter = args.reco_iters, prior = sm_prior)
+                n_iter = args.reco_iters, prior = sm_prior, free = free_cells)
         elseif s == "gd"
-            # Our AAD first-order solver: preconditioned projected gradient on the
+            # Differentiable first-order solver: preconditioned projected gradient on the
             # true nonlinear corrected-CSDA operator (relinearised each step via the
             # AD Jacobian), inverse-variance weighted, with the same edge-preserving
             # prior as GN. The Jacobi preconditioner keeps the background sparse
@@ -1960,15 +2009,15 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
                 w0 = zeros(n_cells), n_iter = args.gd_iters,
                 lr = args.gd_lr, optimizer = :pgd, prior = edge_prior,
                 weights = Wobs, relinearize = true,
-                box = (0.0, MAX_WATER_FRACTION))
+                box = (0.0, MAX_WATER_FRACTION), free = free_cells)
         elseif s == "gn"
-            # Our AAD second-order solver: box-constrained Gauss-Newton on the same
+            # Differentiable second-order solver: box-constrained Gauss-Newton on the same
             # nonlinear operator, inverse-variance weighted, edge-preserving prior.
             w_rec, hist = gauss_newton_reconstruct(csda_model, obs;
                 w0 = zeros(n_cells), n_iter = max(8, args.reco_iters ÷ 16),
                 solver_mode = args.solver_mode == "stable" ? :active_set : :legacy,
                 prior = edge_prior, weights = Wobs, relinearize = true,
-                box = (0.0, MAX_WATER_FRACTION), predict_only = csda_predict)
+                box = (0.0, MAX_WATER_FRACTION), predict_only = csda_predict, free = free_cells)
         else
             error("Unknown solver '$s' (use sart, mlem, gd, gn, or all)")
         end
@@ -2717,90 +2766,223 @@ function run_detection_benchmark(physics, shallow_flags, matcfg::MaterialConfig,
     return (psi = τ_psi, phi = τ_phi, sart = τ_sart)
 end
 
-# (b) Benchmark 1 as a sweep: reconstruction accuracy (RMSE, SSIM vs the true field) vs
-# detector exposure, all four solvers with the FULL NONLINEAR operator (GD/GN relinearize
-# each step, as in the headline result). Clean observations are the fixed-path energy-loss MC (computed once,
-# no inverse crime); only the counting noise scales with exposure. Use a reduced-but-
-# overdetermined angular grid so the nonlinear GN sweep is affordable.
-function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
-                                  volume, paths::Vector{DirectionalPath}, energy_samples, args;
-                                  output_path::String, plot_path::String)
+# --- Reconstruction protocol (pre-registered synthetic solver comparison) ------------------
+# One stage per invocation (`--reconstruction-sweep --protocol-stage STAGE`); see
+# src/Tomography_protocol.jl for the logic and examples/s7_protocol.sh for the order.
+#   gate      truth-only report (gate G1), crossed-cell list and coverage classification
+#   templates noise-free MC (arm M) and exact CSDA (arm X) templates of the chosen field
+#   dev       one development phase (1: SART+MLEM, 2: GN family, 3: GD) on field D
+#   select    selection / tie / edge rules after a phase (exit code 10: grids were extended, rerun the phase)
+#   finalize  freeze the three phase selections into selection.toml (+ hash)
+#   test      reconstruct the held-out field T with the frozen selection (refuses without it)
+#   diag      GN-0 with oracle (template) weights, arm M, tau = 1e4 and 1e8: a diagnostic, not a competitor
+
+function protocol_mc_template(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                              paths::Vector{DirectionalPath}, w_true::Vector{Float64},
+                              valid::Vector{Int}, args; histories::Int, seed::Int)
+    mc_samples = sample_energy_set(histories, args.energy_min, args.energy_max, seed + 40_000)
+    mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
+    println("  generating fixed-path energy-loss MC template: $(length(valid)) bins, $histories histories, seed $seed (straggling on, scattering off)...")
+    flush(stdout)
+    obs = Vector{Float64}(undef, length(valid)); sigma_mc = similar(obs)
+    Threads.@threads for k in eachindex(valid)
+        f, sigma = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
+            mc_samples, seed + 50_000 + k;
+            straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
+            scattering = false)
+        obs[k] = f; sigma_mc[k] = sigma
+    end
+    return obs, sigma_mc
+end
+
+function protocol_git_commit()
+    try
+        strip(read(`git -C $(@__DIR__) rev-parse HEAD`, String))
+    catch
+        "unknown"
+    end
+end
+
+protocol_template_path(dir, field, arm, histories, seed) =
+    joinpath(dir, "templates", "template_$(field)_$(arm)_h$(histories)_s$(seed).jls")
+
+function protocol_coverage(centroids, free, valid_zenith_max)
+    xs = sort(unique(round.(centroids[1, :]; digits = 3))); zs = sort(unique(round.(centroids[3, :]; digits = 3)))
+    hx = minimum(diff(xs)) / 2; hz = minimum(diff(zs)) / 2
+    cls = String[]
+    for j in 1:size(centroids, 2)
+        if free[j]
+            push!(cls, "crossed")
+        else
+            dx = max(abs(centroids[1, j]) - hx, 0.0); dy = max(abs(centroids[2, j]) - hx, 0.0)
+            zen_min = atand(hypot(dx, dy), centroids[3, j] + hz)
+            push!(cls, zen_min > valid_zenith_max ? "outside_cone" : "inside_cone_not_crossed")
+        end
+    end
+    return cls
+end
+
+# Selection steps need no physics: select (per phase) and finalize (freeze selection.toml).
+function run_protocol_selection_stage(args)
+    stage = args.protocol_stage
+    args.truth_field == "dev" || error("stage '$stage' works on the development stage output (--truth-field dev)")
+    arms = args.sweep_data == "mc" ? ["M"] : args.sweep_data == "csda" ? ["X"] : ["M", "X"]
+    exposures = collect(Float64, args.sweep_exposures)
+    nreps = args.sweep_realizations_given ? args.sweep_realizations : 2
+    devdir = joinpath(args.output_dir, "dev")
+    selpath = isempty(args.selection_path) ? joinpath(args.output_dir, "selection.toml") : args.selection_path
+    if stage == "finalize"
+        sha = dev_finalize!(devdir, selpath, Dict{String,Any}("field" => "dev", "arms" => arms, "exposures" => exposures,
+            "realizations" => nreps, "git_commit" => protocol_git_commit(), "inverse_mc_samples" => args.inverse_mc_samples,
+            "created_unix" => time()))
+        println("  wrote $selpath  sha256 $sha")
+        return 0
+    end
+    pending = dev_select!(devdir, args.protocol_phase, arms, exposures, nreps)
+    println("  phase $(args.protocol_phase) selection written; grid extensions made: $pending")
+    return pending > 0 ? 10 : 0
+end
+
+function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                                     volume, paths::Vector{DirectionalPath}, energy_samples, args)
+    stage = args.protocol_stage
+    isempty(stage) && error("--reconstruction-sweep needs --protocol-stage gate|templates|dev|select|finalize|test|diag")
+    stage in ("select", "finalize") && error("stage '$stage' is handled before the physics set-up")
+    field = Symbol(args.truth_field)
+    stage == "dev" && field !== :dev && error("stage '$stage' runs on the development field (--truth-field dev)")
+    stage in ("test", "diag") && field !== :test && error("stage '$stage' runs on the held-out field: pass --truth-field test")
+    arms = args.sweep_data == "mc" ? ["M"] : args.sweep_data == "csda" ? ["X"] : ["M", "X"]
+    exposures = collect(Float64, args.sweep_exposures)
+    nreps = args.sweep_realizations_given ? args.sweep_realizations : (stage == "dev" ? 2 : 8)
+    outdir = args.output_dir
+    stagedir = joinpath(outdir, stage)
+    selpath = isempty(args.selection_path) ? joinpath(outdir, "selection.toml") : args.selection_path
+    shard = (args.shard_index, args.shard_count)
+
+    # The test and diagnostic stages refuse to run before the selection is frozen.
+    selection = sha = meta = nothing
+    if stage in ("test", "diag")
+        selection, sha, meta = load_selection(selpath)
+        println("  frozen selection $(selpath): sha256 $sha")
+        meta["exposures"] == exposures || error("selection.toml was made for exposures $(meta["exposures"]), not $exposures")
+        for a in arms; a in meta["arms"] || error("selection.toml has no arm $a"); end
+    end
+    mkpath(stagedir)
+
     n_cells = num_cells(volume)
-    w_true = create_initial_water_field(volume, args)
-    if all(iszero, w_true)
-        for i in 1:n_cells
-            x, y, z = cell_centroid(volume, i)
-            (abs(z - 1118.6) <= 160.0 && abs(x) <= 600.0 && abs(y) <= 600.0) &&
-                (w_true[i] = clamp(args.lens_w, 0.0, MAX_WATER_FRACTION))
-        end
-    end
-    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site,
-        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    centroids = reduce(hcat, [collect(Float64, cell_centroid(volume, i)) for i in 1:n_cells])
+    t0 = time()
+    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site, paths,
+        zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
     valid_bins = findall(isfinite, base_flux)
-    Jv = base_J[valid_bins, :]; f0 = base_flux[valid_bins]
-    clean_obs = mc_observations_for_field(physics, shallow_flags, matcfg, site, paths, w_true, valid_bins, args;
-        cache_path = joinpath(args.output_dir, "lvd_recon_sweep_obs.bin"))
-    csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
+    J0 = Matrix(base_J[valid_bins, :]); f0 = base_flux[valid_bins]
+    free = sensed_cells(J0)
+    println("  operator: $(length(valid_bins)) bins, $n_cells cells, $(count(free)) free (ray-crossed) cells  [$(round(time() - t0; digits = 1)) s]")
+    w_true = create_initial_water_field(volume, args)          # honours --truth-field
+    geo = make_geometry(field, w_true, centroids, free; min_eval_depth = args.min_eval_depth)
+    _, smasks, _ = field_structures(field, centroids)
+    all((w_true .> 0) .== reduce(.|, smasks)) || error("truth field does not match the structure rules of field '$field'")
+
+    if stage == "gate"
+        reports = Dict{String,Any}()
+        failed = false
+        for f in (:dev, :test)
+            wf = f === :dev ? create_initial_water_field(volume, merge(args, (truth_field = "dev",))) : protocol_test_field(centroids)
+            r = gate_g1_report(make_geometry(f, wf, centroids, free; min_eval_depth = args.min_eval_depth))
+            reports[String(f)] = Dict{String,Any}("structures" => r.structures, "nonzero_per_structure_in_Ds" => r.per_structure,
+                "nonzero_per_structure_all_cells" => r.per_structure_all_cells, "nonzero_in_Ds" => r.nonzero_in_Ds,
+                "nonzero_total" => r.nonzero_total, "n_free" => r.n_free, "n_Ds" => r.n_Ds, "n_eval" => r.n_eval,
+                "zero_field_rmse_s" => r.zero_field_rmse_s, "passed" => r.passed)
+            println("  G1 field $f: nonzero cells in D_s per structure $(r.structures) = $(r.per_structure) (all cells $(r.per_structure_all_cells)), " *
+                    "total $(r.nonzero_in_Ds) of $(r.n_Ds) D_s cells, zero-field RMSE_s $(round(r.zero_field_rmse_s; digits = 4)), passed=$(r.passed)")
+            f === :test && !r.passed && (failed = true)
+        end
+        cls = protocol_coverage(centroids, free, maximum(p.zenith for p in paths[valid_bins]))
+        reports["coverage"] = Dict{String,Any}(c => count(==(c), cls) for c in unique(cls))
+        reports["free_cells"] = findall(free)
+        open(joinpath(stagedir, "g1.toml"), "w") do io; TOML.print(io, reports; sorted = true); end
+        wt = protocol_test_field(centroids)
+        wd = create_initial_water_field(volume, merge(args, (truth_field = "dev",)))
+        open(joinpath(stagedir, "cells.tsv"), "w") do io
+            println(io, "cell\tx\ty\tz\tclass\tcrossed\tw_dev\tw_test\tevaluated")
+            for j in 1:n_cells
+                println(io, join((j, centroids[1, j], centroids[2, j], centroids[3, j], cls[j], free[j] ? 1 : 0, wd[j], wt[j],
+                                  centroids[3, j] >= args.min_eval_depth ? 1 : 0), '\t'))
+            end
+        end
+        println("  coverage: ", reports["coverage"], "; crossed-cell list and classification in $(joinpath(stagedir, "cells.tsv"))")
+        return failed ? 3 : 0
+    end
+
+    mcseed = args.seed + (field === :test ? 1 : 0)         # D: 42, T: 43
+    if stage == "templates"
+        model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
+            n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
+        csda_t = model(w_true)[1]
+        for arm in arms
+            key = arm == "M" ? template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins) :
+                               template_key(field, "X", 0, 0, w_true, valid_bins)
+            path = protocol_template_path(outdir, field, arm, arm == "M" ? args.inverse_mc_samples : 0, arm == "M" ? mcseed : 0)
+            if isfile(path)
+                load_template(path, key)                      # errors on a mismatching key
+                println("  template $path exists with a matching key; kept")
+                continue
+            end
+            if arm == "M"
+                tmpl, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, w_true, valid_bins, args;
+                                                 histories = args.inverse_mc_samples, seed = mcseed)
+                save_template(path, key, tmpl, (sigma_mc = sig, median_rel_error = median(sig ./ tmpl),
+                    median_mc_over_csda = median(tmpl ./ csda_t)))
+                println("  arm M: median per-bin MC error $(round(100 * median(sig ./ tmpl); digits = 2)) %, median MC/CSDA $(round(median(tmpl ./ csda_t); digits = 4))")
+            else
+                save_template(path, key, csda_t)
+            end
+            println("  wrote $path")
+        end
+        return 0
+    end
+
+    # dev / select / test / diag need the nonlinear operator and the templates
+    model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
         n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
-    csda_predict = flux_only_operator(physics,shallow_flags,matcfg,site,paths[valid_bins],energy_samples;threaded=args.threaded)
-    eval_mask = volume.centroids[3, :] .>= args.min_eval_depth
-    neighbors = cell_neighbors(volume)
-    sens = vec(sum(max.(Jv, 0.0); dims = 1)); sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
-    sm_prior = SmoothnessPrior(neighbors, 0.05 * sm_scale)
-
-    exps = 10.0 .^ range(log10(args.sweep_exp_min), log10(args.sweep_exp_max); length = args.sweep_n)
-    solvers = ("sart", "mlem", "gd", "gn")
-    rmse = Dict(s => zeros(length(exps)) for s in solvers)
-    ssimv = Dict(s => zeros(length(exps)) for s in solvers)
-    M = max(3, args.sweep_realizations ÷ 10)
-    println("Reconstruction-accuracy sweep (NONLINEAR operator, fixed-path energy-loss MC obs): $(length(exps)) exposures × $M realizations...")
-    rng = MersenneTwister(args.seed + 9000)
-    for (ei, τ) in enumerate(exps)
-        σ = sqrt.(max.(clean_obs, 0.0) ./ τ); σ .= max.(σ, 1e-12 * maximum(clean_obs)); W = 1.0 ./ σ .^ 2
-        diagc = vec(sum(W .* (Matrix(Jv) .^ 2); dims = 1)); gn_scale = (m = filter(>(0), diagc); isempty(m) ? 1.0 : median(m))
-        edge_prior = EdgePrior(neighbors, 0.01 * gn_scale, args.edge_delta)
-        acc = Dict(s => (r = Float64[], s = Float64[]) for s in solvers)
-        for _ in 1:M
-            obs = clean_obs .+ σ .* randn(rng, length(σ)); excess = obs .- f0
-            recs = Dict(
-                "sart" => first(sart_reconstruct(Jv, excess; n_iter = args.reco_iters, relaxation = 0.2, prior = sm_prior)),
-                "mlem" => first(mlem_reconstruct(max.(Jv, 0.0), max.(excess, 0.0); n_iter = args.reco_iters, prior = sm_prior)),
-                "gd"   => first(gradient_descent_reconstruct(csda_model, obs; w0 = zeros(n_cells),
-                            n_iter = args.gd_iters, lr = args.gd_lr, optimizer = :pgd, prior = edge_prior,
-                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION))),
-                "gn"   => first(gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
-                            n_iter = max(8, args.reco_iters ÷ 16), prior = edge_prior,
-                            solver_mode = args.solver_mode == "stable" ? :active_set : :legacy,
-                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION),predict_only=csda_predict)))
-            for s in solvers
-                rep = reconstruction_report(recs[s], w_true; mask = eval_mask)
-                push!(acc[s].r, rep.rmse); push!(acc[s].s, rep.ssim)
-            end
-        end
-        for s in solvers; rmse[s][ei] = mean(acc[s].r); ssimv[s][ei] = mean(acc[s].s); end
-        println(@sprintf("  τ=%.2e  RMSE  SART=%.3f MLEM=%.3f GD=%.3f GN=%.3f", τ,
-                         rmse["sart"][ei], rmse["mlem"][ei], rmse["gd"][ei], rmse["gn"][ei]))
+    predict = flux_only_operator(physics, shallow_flags, matcfg, site, paths[valid_bins], energy_samples; threaded = args.threaded)
+    op = ProtocolOperator(J0, f0, model, predict, cell_neighbors(volume), free; delta = args.edge_delta)
+    templates = Dict{String,Vector{Float64}}()
+    for arm in arms
+        key = arm == "M" ? template_key(field, "M", args.inverse_mc_samples, mcseed, w_true, valid_bins) :
+                           template_key(field, "X", 0, 0, w_true, valid_bins)
+        path = protocol_template_path(outdir, field, arm, arm == "M" ? args.inverse_mc_samples : 0, arm == "M" ? mcseed : 0)
+        templates[arm] = load_template(path, key).template
     end
-
-    open(output_path, "w") do io
-        println(io, "Reconstruction accuracy vs exposure (nonlinear operator, fixed-path energy-loss MC obs; truth = multi-anomaly field)")
-        println(io, @sprintf("%d realizations/point; eval depth ≥ %.0f m", M, args.min_eval_depth))
-        for metric in ("RMSE", "SSIM")
-            d = metric == "RMSE" ? rmse : ssimv
-            println(io); println(io, "$metric:"); println(io, "  " * rpad("exposure", 12) * join([rpad(uppercase(s), 9) for s in solvers]))
-            for ei in eachindex(exps)
-                println(io, "  " * rpad(@sprintf("%.2e", exps[ei]), 12) * join([rpad(@sprintf("%.3f", d[s][ei]), 9) for s in solvers]))
-            end
-        end
+    open(joinpath(stagedir, "manifest_$(stage)_shard$(shard[1])of$(shard[2]).toml"), "w") do io
+        TOML.print(io, Dict{String,Any}("stage" => stage, "phase" => args.protocol_phase, "field" => String(field), "arms" => arms,
+            "exposures" => exposures, "realizations" => nreps, "shard" => collect(shard), "git_commit" => protocol_git_commit(),
+            "inverse_mc_samples" => args.inverse_mc_samples, "mc_seed" => mcseed, "noise_base_seed" => args.seed,
+            "julia_threads" => Threads.nthreads(), "selection_sha256" => something(sha, ""), "started_unix" => time()); sorted = true)
     end
-    colors = Dict("sart" => "rgb(200,120,40)", "mlem" => "rgb(60,160,90)", "gd" => "rgb(150,80,200)", "gn" => "rgb(40,110,220)")
-    traces = GenericTrace[scatter(x = collect(exps), y = rmse[s], mode = "lines+markers",
-                                  name = uppercase(s), line = attr(color = colors[s])) for s in solvers]
-    savefig(Plot(traces, Layout(title = "Reconstruction RMSE vs exposure (lower = better)",
-        xaxis = attr(title = "Detector exposure", type = "log"),
-        yaxis = attr(title = "RMSE (water fraction)"), width = 1000, height = 600)), plot_path)
-    println("  reconstruction-sweep outputs: $output_path , $plot_path")
-    return (exps = exps, rmse = rmse, ssim = ssimv)
+    ctx = ProtocolContext(op, geo, field, templates, exposures, nreps, args.seed, stagedir)
+    if stage == "dev"
+        phase = args.protocol_phase
+        grids = load_grids(stagedir, arms, length(exposures))
+        mlem_sel = phase >= 2 ? read_phase_selection(stagedir, 1) : nothing
+        gn_sel = phase == 3 ? read_phase_selection(stagedir, 2) : nothing
+        for s in (mlem_sel, gn_sel)
+            s === nothing || any(v -> get(v, "extensions_pending", false), values(s)) &&
+                error("an earlier phase still has pending grid extensions; rerun it and its selection first")
+        end
+        n = dev_phase!(ctx, phase, grids; mlem_selection = mlem_sel, gn_selection = gn_sel, shard = shard)
+        println("  development phase $phase: $n solver runs done on shard $(shard[1])/$(shard[2])")
+    elseif stage == "test"
+        n = test_stage!(ctx, selection, sha; shard = shard)
+        println("  test stage: $n solver runs done on shard $(shard[1])/$(shard[2])")
+    elseif stage == "diag"
+        idx = [i for (i, t) in enumerate(exposures) if t in (1.0e4, 1.0e8)]
+        isempty(idx) && error("the diagnostic needs exposures 1e4 and/or 1e8 in --sweep-exposures")
+        n = test_stage!(ctx, selection, sha; shard = shard, weights = :oracle, solvers = ("GN-0",),
+                        arms = ["M"], exp_indices = idx, stage = "diag")
+        println("  oracle-weight diagnostic (not a competitor): $n solver runs done on shard $(shard[1])/$(shard[2])")
+    end
+    return 0
 end
 
 # (a) Detection-efficiency gain of the Ψ matched filter vs SART as a function of anomaly
@@ -3627,6 +3809,9 @@ end
 
 function main()
     args = parse_commandline()
+    if args.reconstruction_sweep && args.protocol_stage in ("select", "finalize")
+        return run_protocol_selection_stage(args)
+    end
 
     println("=" ^ 68)
     println(" DiffPumas - LVD Tomography with Rock/Water Sensitivities")
@@ -3745,11 +3930,9 @@ function main()
 
     # (b) Reconstruction accuracy vs exposure (then exit).
     if args.reconstruction_sweep
-        run_reconstruction_sweep(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
-            output_path = joinpath(args.output_dir, "lvd_reconstruction_sweep.txt"),
-            plot_path = joinpath(args.output_dir, "lvd_reconstruction_sweep.html"))
-        println("\nReconstruction-sweep outputs written to $(args.output_dir)")
-        return 0
+        status = run_reconstruction_protocol(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args)
+        println("\nReconstruction-protocol stage '$(args.protocol_stage)' finished (outputs under $(args.output_dir))")
+        return status
     end
 
     # (a) Detection gain vs contrast (then exit).
@@ -3806,7 +3989,7 @@ function main()
     println()
 
     # Inverse problem: recover the per-cell rock/water field with SART, MLEM and
-    # our differentiable gradient-descent solver, then estimate spatial resolution.
+    # the differentiable gradient-descent solver, then estimate spatial resolution.
     inverse_txt = joinpath(args.output_dir, "lvd_tomography_inverse.txt")
     println("Solving the inverse problem (solver=$(args.solver))...")
     run_inverse_demo(physics, shallow_flags, matcfg, site, volume, paths, energy_samples,

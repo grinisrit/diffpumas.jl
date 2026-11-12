@@ -68,6 +68,15 @@ export sart_reconstruct, mlem_reconstruct, gradient_descent_reconstruct, gauss_n
 export make_csda_operator
 export laplace_posterior, null_model_tests, profile_inventory
 export mse, rmse, snr_metric, recon_snr, cnr, psnr, ssim_metric, reconstruction_report
+export PROTOCOL_EXPOSURES, PROTOCOL_ARMS, PROTOCOL_SOLVERS, PROTOCOL_PHASES, PROTOCOL_COLUMNS
+export parse_exposure_list, protocol_noise_seed, poisson_quantile, draw_poisson_counts
+export ProtocolUnit, make_unit, protocol_weights, oracle_weights, sensed_cells, curvature_scale
+export positive_sensitivity_scale, field_structures, protocol_test_field, ProtocolGeometry, make_geometry
+export gate_g1_report, protocol_metrics, protocol_fit_metrics, ProtocolOperator, SolveRun
+export run_sart, run_mlem, run_gn, run_gd, default_grids, group_key, append_rows, read_rows, rows_in
+export template_key, save_template, load_template, select_phase!, write_selection, load_selection
+export load_grids, save_grids, dev_select!, dev_finalize!, read_phase_selection
+export selected_setting, ProtocolContext, enumerate_units, draw_unit, dev_phase!, test_stage!
 export point_spread_recovery, resolution_vs_depth, resolution_map, radial_fwhm
 
 # --- CSDA stepping constants (kept identical to examples/lvd_tomography.jl) ---
@@ -1166,5 +1175,6 @@ end
 include("Tomography_material_calibration.jl")
 include("Tomography_rules.jl")
 include("Tomography_inverse.jl")
+include("Tomography_protocol.jl")
 
 end # module Tomography
