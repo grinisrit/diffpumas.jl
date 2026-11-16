@@ -1,0 +1,407 @@
+["MLEM|Mc|1"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.19944055240735722
+exp_index = 1
+extensions_pending = false
+iter = "n=25"
+param = 15.625
+solver = "MLEM"
+tau = 1000.0
+
+["MLEM|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.18489134849117445
+exp_index = 2
+extensions_pending = false
+iter = "n=400"
+param = 5.0
+solver = "MLEM"
+tau = 3160.0
+
+["MLEM|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.181604279147696
+exp_index = 3
+extensions_pending = false
+iter = "n=400"
+param = 5.0
+solver = "MLEM"
+tau = 10000.0
+
+["MLEM|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.16759405054617238
+exp_index = 4
+extensions_pending = false
+iter = "n=100"
+param = 1.6
+solver = "MLEM"
+tau = 31600.0
+
+["MLEM|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17181635452989566
+exp_index = 5
+extensions_pending = false
+iter = "n=100"
+param = 5.0
+solver = "MLEM"
+tau = 100000.0
+
+["MLEM|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17849366057670138
+exp_index = 6
+extensions_pending = false
+iter = "n=100"
+param = 5.0
+solver = "MLEM"
+tau = 1.0e6
+
+["MLEM|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17696479143678828
+exp_index = 7
+extensions_pending = false
+iter = "n=50"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e8
+
+["MLEM|M|3"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.1735591856531786
+exp_index = 3
+extensions_pending = false
+iter = "n=400"
+param = 1.6
+solver = "MLEM"
+tau = 10000.0
+
+["MLEM|M|5"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.15966682435201152
+exp_index = 5
+extensions_pending = false
+iter = "n=400"
+param = 1.6
+solver = "MLEM"
+tau = 100000.0
+
+["MLEM|M|7"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.16270189469778645
+exp_index = 7
+extensions_pending = false
+iter = "n=800"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e8
+
+["MLEM|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.20478723892964062
+exp_index = 1
+extensions_pending = false
+iter = "n=25"
+param = 1.6
+solver = "MLEM"
+tau = 1000.0
+
+["MLEM|X|2"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.18129288706702648
+exp_index = 2
+extensions_pending = false
+iter = "n=25"
+param = 5.0
+solver = "MLEM"
+tau = 3160.0
+
+["MLEM|X|3"]
+arm = "X"
+at_edge = "iter_hi"
+budget_note = ""
+dev_rmse_s_mean = 0.17382383143682342
+exp_index = 3
+extensions_pending = false
+iter = "n=1600"
+param = 1.6
+solver = "MLEM"
+tau = 10000.0
+
+["MLEM|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.1667804492459783
+exp_index = 4
+extensions_pending = false
+iter = "n=25"
+param = 1.6
+solver = "MLEM"
+tau = 31600.0
+
+["MLEM|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17633639913462135
+exp_index = 5
+extensions_pending = false
+iter = "n=100"
+param = 1.6
+solver = "MLEM"
+tau = 100000.0
+
+["MLEM|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.176984056009095
+exp_index = 6
+extensions_pending = false
+iter = "n=200"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e6
+
+["MLEM|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17798284765315375
+exp_index = 7
+extensions_pending = false
+iter = "n=200"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e8
+
+["SART|Mc|1"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22924327572453662
+exp_index = 1
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1000.0
+
+["SART|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.23365374244127132
+exp_index = 2
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 3160.0
+
+["SART|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22702589612171736
+exp_index = 3
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 10000.0
+
+["SART|Mc|4"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+dev_rmse_s_mean = 0.23662170310189912
+exp_index = 4
+extensions_pending = false
+iter = "n=50"
+param = 1.0
+solver = "SART"
+tau = 31600.0
+
+["SART|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.21903534753954515
+exp_index = 5
+extensions_pending = false
+iter = "n=400"
+param = 0.3
+solver = "SART"
+tau = 100000.0
+
+["SART|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22189855616475984
+exp_index = 6
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e6
+
+["SART|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22204512816361682
+exp_index = 7
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e8
+
+["SART|M|3"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.23157948093266262
+exp_index = 3
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 10000.0
+
+["SART|M|5"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.2149096063971419
+exp_index = 5
+extensions_pending = false
+iter = "n=200"
+param = 0.3
+solver = "SART"
+tau = 100000.0
+
+["SART|M|7"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22016998634014767
+exp_index = 7
+extensions_pending = false
+iter = "n=200"
+param = 0.3
+solver = "SART"
+tau = 1.0e8
+
+["SART|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.24017971021887186
+exp_index = 1
+extensions_pending = false
+iter = "n=100"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1000.0
+
+["SART|X|2"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+dev_rmse_s_mean = 0.2347751722179381
+exp_index = 2
+extensions_pending = false
+iter = "n=50"
+param = 1.0
+solver = "SART"
+tau = 3160.0
+
+["SART|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22035889176698964
+exp_index = 3
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 10000.0
+
+["SART|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22633503700181012
+exp_index = 4
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 31600.0
+
+["SART|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.2257332529555665
+exp_index = 5
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 100000.0
+
+["SART|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22176759220654085
+exp_index = 6
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e6
+
+["SART|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22191344564894083
+exp_index = 7
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e8

@@ -1,0 +1,4218 @@
+  cuts Int64[]: projected total 46.8 h (elapsed 29.5 + test 16.8 + diag 0.49 at 34 processes)
+  cuts [0]: projected total 43.5 h (elapsed 29.5 + test 13.6 + diag 0.49 at 34 processes)
+  cuts [0, 1]: projected total 38.2 h (elapsed 29.5 + test 8.2 + diag 0.49 at 34 processes)
+  cuts [0, 1, 2]: projected total 36.3 h (elapsed 29.5 + test 6.3 + diag 0.49 at 34 processes)
+  cuts [0, 1, 2, 3]: projected total 36.2 h (elapsed 29.5 + test 6.2 + diag 0.49 at 34 processes)
+  cuts [0, 1, 2, 3, 4]: projected total 36.1 h (elapsed 29.5 + test 6.1 + diag 0.49 at 34 processes)
+  36 h trigger: cuts applied = [0, 1, 2, 3, 4], limit met = false; wrote /mnt/big_data/agent-builds/diffpumas-s7-out/cuts.toml
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [79.2 s]
+  test M e3 r1 SART 0.0s
+  test M e3 r1 MLEM 0.3s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e3 r1 GN-lin 72.9s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [100.9 s]
+  test M e3 r2 SART 0.0s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e3 r2 MLEM 0.4s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [109.6 s]
+  test M e3 r3 SART 0.0s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e3 r3 MLEM 0.5s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [114.1 s]
+  test M e3 r4 SART 0.1s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [117.4 s]
+  test M e3 r5 SART 0.1s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e3 r4 MLEM 0.6s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e3 r5 MLEM 0.6s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [130.5 s]
+  test M e3 r6 SART 0.1s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [135.0 s]
+  test M e3 r7 SART 0.1s
+  test M e3 r6 MLEM 0.6s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e3 r7 MLEM 1.0s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [153.3 s]
+  test M e3 r8 SART 0.2s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e3 r8 MLEM 0.8s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [173.7 s]
+  test M e7 r1 SART 0.5s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [186.4 s]
+  test M e7 r2 SART 0.5s
+  test M e7 r1 MLEM 2.6s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e7 r2 MLEM 1.3s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [202.2 s]
+  test M e7 r3 SART 0.7s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [213.2 s]
+  test M e7 r4 SART 0.4s
+====================================================================
+ DiffPumas - LVD Tomography with Rock/Water Sensitivities
+====================================================================
+
+Configuration:
+  Geometry mode:     grid
+  Mesh half-width:   5.0 km
+  Surface step:      1.0 km
+  Tet max volume:    5.0e8 m^3
+  Grid NZ:           6
+  Angular grid:      theta < 60.0 by 2.0 deg, phi by 4.0 deg
+  CSDA nodes/bin:    32 (midpoint)
+  MC samples/case:   64
+  Energy range:      0.001 - 1.0e9 GeV
+  Threshold:         100.0 GeV
+  FD delta:          0.05
+  Validation cases:  5
+  Seed:              42
+  Porous top:        0.0 m
+  Ground truth:      multi-anomaly (slab w=0.3, lens w=0.9, dip w=0.5)
+  AAD GD iters/lr:   40 / 1.0
+  Output dir:        /mnt/big_data/agent-builds/diffpumas-s7-out
+
+  test M e7 r3 MLEM 2.5s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [227.5 s]
+  test M e7 r5 SART 0.5s
+  test M e7 r4 MLEM 1.3s
+  test M e3 r3 GN-lin 223.7s
+  test M e7 r5 MLEM 1.2s
+  test M e3 r4 GN-lin 226.3s
+  test M e3 r5 GN-lin 224.7s
+  test M e3 r6 GN-lin 223.4s
+  test M e3 r7 GN-lin 215.4s
+  test M e3 r2 GN-lin 207.5s
+  test M e3 r8 GN-lin 212.1s
+  test M e7 r3 GN-lin 174.7s
+  test M e7 r4 GN-lin 166.6s
+  test M e7 r5 GN-lin 154.7s
+  test M e7 r1 GN-lin 195.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [255.5 s]
+  test M e7 r6 SART 0.4s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [198.2 s]
+  test M e7 r7 SART 0.3s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [247.4 s]
+  test M e7 r8 SART 0.5s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [214.7 s]
+  test Mc e1 r1 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [257.1 s]
+  test Mc e1 r2 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [195.2 s]
+  test Mc e1 r3 SART 0.2s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [224.2 s]
+  test Mc e1 r4 SART 0.0s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [178.1 s]
+  test Mc e1 r5 SART 0.2s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [248.3 s]
+  test Mc e1 r6 SART 0.2s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [176.4 s]
+  test Mc e1 r7 SART 0.2s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [206.5 s]
+  test Mc e1 r8 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [239.4 s]
+  test Mc e3 r1 SART 0.3s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [235.2 s]
+  test Mc e3 r2 SART 0.2s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [247.9 s]
+  test Mc e3 r3 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [251.5 s]
+  test Mc e3 r4 SART 0.2s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [187.8 s]
+  test Mc e3 r5 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [220.6 s]
+  test Mc e3 r7 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [185.8 s]
+  test Mc e3 r6 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [242.5 s]
+  test Mc e3 r8 SART 0.3s
+  test M e7 r2 GN-lin 190.3s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [256.7 s]
+  test Mc e4 r1 SART 0.1s
+============================================================
+PUMAS Physics Summary
+============================================================
+
+Particle: Muon
+Mass: 0.10565839 GeV/c²
+Decay length: 658.654 m
+
+Settings:
+  Cutoff: 0.05
+  Elastic ratio: 0.05
+  Bremsstrahlung model: SSR
+  Pair production model: SSR
+  Photonuclear model: DRSS
+
+Materials: 5
+  [2] Water
+      Density: 1000.0 kg/m³
+      I: 79.7 eV
+      Z/A: 0.55509
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [4] WetRock
+      Density: 1452.0547945205478 kg/m³
+      I: 95.31440502342565 eV
+      Z/A: 0.5275006732892834
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [3] Air
+      Density: 1.2049999999999998 kg/m³
+      I: 85.66856721333481 eV
+      Z/A: 0.49918
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [1] StandardRock
+      Density: 2650.0 kg/m³
+      I: 136.40000000000012 eV
+      Z/A: 0.5
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+  [5] PorousWetRock
+      Density: 11.965124374343803 kg/m³
+      I: 97.64244289805124 eV
+      Z/A: 0.5219182437581982
+      Energy range: 0.001 - 1.0e9 GeV
+      Table entries: 193
+
+============================================================
+
+Building / loading LVD topography...
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+  Detector elevation: 963.0 m ASL
+  Primary altitude:   30000.0 m above detector
+
+Building structured-grid sensitivity volume...
+Constructed grid sensitivity volume with 600 cells
+
+Baseline water-fraction field:
+  Non-zero cells: 29 / 600
+  Aquifer box center: (0.0, 0.0, 700.0) m
+
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+
+Loaded frozen CSDA correction artifact: /mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml
+
+  frozen dry calibration /mnt/big_data/agent-builds/diffpumas-s7-out/dry_calibration.toml: s = 0.9021550057597469, sha256 07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca
+  frozen selection /mnt/big_data/agent-builds/diffpumas-s7-out/selection.toml: sha256 6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f
+  budget cuts of the plan step: [0, 1, 2, 3, 4]
+  operator: 2700 bins, 600 cells, 76 free (ray-crossed) cells  [174.2 s]
+  test Mc e4 r2 SART 0.3s
+  test Mc e1 r2 MLEM 0.1s
+  test Mc e1 r1 MLEM 0.8s
+  test Mc e1 r3 MLEM 0.0s
+  test M e7 r6 MLEM 2.4s
+  test M e7 r7 MLEM 2.3s
+  test M e7 r8 MLEM 2.5s
+  test Mc e1 r5 MLEM 0.0s
+  test Mc e1 r4 MLEM 0.1s
+  test Mc e1 r7 MLEM 0.0s
+  test Mc e1 r6 MLEM 0.1s
+  test Mc e1 r8 MLEM 0.1s
+  test Mc e3 r1 MLEM 1.4s
+  test Mc e3 r2 MLEM 0.7s
+  test Mc e3 r3 MLEM 0.9s
+  test Mc e3 r4 MLEM 0.8s
+  test Mc e3 r5 MLEM 1.3s
+  test Mc e3 r6 MLEM 0.7s
+  test Mc e3 r7 MLEM 0.6s
+  test Mc e4 r1 MLEM 0.4s
+  test Mc e3 r8 MLEM 1.4s
+  test Mc e4 r2 MLEM 0.9s
+  test M e3 r3 GN-0 402.4s
+  test M e3 r4 GN-0 396.2s
+  test M e3 r5 GN-0 398.3s
+  test M e3 r6 GN-0 409.7s
+  test M e3 r7 GN-0 403.3s
+  test M e7 r6 GN-lin 213.1s
+  test M e7 r7 GN-lin 213.4s
+  test M e7 r8 GN-lin 212.8s
+  test Mc e1 r5 GN-lin 212.2s
+  test Mc e1 r3 GN-lin 214.6s
+  test Mc e1 r4 GN-lin 215.3s
+  test Mc e1 r8 GN-lin 213.2s
+  test Mc e1 r6 GN-lin 214.0s
+  test Mc e1 r7 GN-lin 216.4s
+  test Mc e3 r3 GN-lin 213.0s
+  test Mc e3 r5 GN-lin 212.2s
+  test Mc e3 r4 GN-lin 214.0s
+  test Mc e3 r6 GN-lin 213.6s
+  test Mc e3 r7 GN-lin 213.0s
+  test Mc e3 r8 GN-lin 213.4s
+  test M e3 r8 GN-0 412.9s
+  test Mc e1 r1 GN-lin 213.2s
+  test Mc e1 r2 GN-lin 215.5s
+  test Mc e3 r2 GN-lin 212.3s
+  test Mc e3 r1 GN-lin 214.0s
+  test Mc e4 r1 GN-lin 213.1s
+  test Mc e4 r2 GN-lin 213.2s
+  test M e7 r3 GN-0 666.7s
+  test M e3 r3 MLEM->GN 468.9s
+  test M e7 r4 GN-0 687.7s
+  test M e3 r4 MLEM->GN 470.2s
+  test M e7 r5 GN-0 697.4s
+  test M e3 r5 MLEM->GN 475.3s
+  test M e3 r7 MLEM->GN 477.4s
+  test M e3 r6 MLEM->GN 483.2s
+  test Mc e1 r5 GN-0 505.0s
+  test M e3 r8 MLEM->GN 488.3s
+  test Mc e1 r8 GN-0 506.8s
+  test Mc e1 r3 GN-0 512.1s
+  test Mc e1 r4 GN-0 511.7s
+  test Mc e1 r6 GN-0 512.3s
+  test Mc e1 r7 GN-0 512.9s
+  test Mc e3 r5 GN-0 509.4s
+  test Mc e3 r3 GN-0 514.8s
+  test Mc e3 r4 GN-0 517.5s
+  test Mc e3 r7 GN-0 515.5s
+  test Mc e3 r6 GN-0 516.1s
+  test Mc e3 r8 GN-0 516.1s
+  test Mc e4 r3 SART 0.1s
+  test Mc e4 r4 SART 0.2s
+  test Mc e4 r5 SART 0.2s
+  test Mc e4 r6 SART 0.1s
+  test Mc e4 r7 SART 0.2s
+  test Mc e4 r8 SART 0.2s
+  test Mc e4 r3 MLEM 0.2s
+  test Mc e4 r4 MLEM 0.2s
+  test Mc e4 r5 MLEM 0.2s
+  test Mc e4 r6 MLEM 0.3s
+  test Mc e4 r7 MLEM 0.2s
+  test Mc e4 r8 MLEM 0.3s
+  test M e7 r8 GN-0 725.9s
+  test M e7 r7 GN-0 726.2s
+  test M e7 r6 GN-0 730.8s
+  test M e7 r3 MLEM->GN 482.6s
+  test M e7 r4 MLEM->GN 481.6s
+  test M e7 r5 MLEM->GN 478.3s
+  test Mc e5 r1 SART 0.9s
+  test Mc e5 r2 SART 0.8s
+  test Mc e5 r1 MLEM 0.2s
+  test Mc e5 r3 SART 0.7s
+  test Mc e5 r2 MLEM 0.2s
+  test Mc e4 r4 GN-lin 237.2s
+  test Mc e4 r3 GN-lin 239.6s
+  test Mc e4 r5 GN-lin 237.7s
+  test Mc e4 r6 GN-lin 238.5s
+  test Mc e5 r3 MLEM 0.2s
+  test Mc e4 r7 GN-lin 236.7s
+  test Mc e4 r8 GN-lin 237.9s
+  test Mc e1 r5 MLEM->GN 479.6s
+  test Mc e1 r8 MLEM->GN 480.9s
+  test Mc e1 r3 MLEM->GN 479.8s
+  test Mc e1 r4 MLEM->GN 482.7s
+  test Mc e1 r7 MLEM->GN 480.5s
+  test Mc e1 r6 MLEM->GN 482.8s
+  test Mc e3 r5 MLEM->GN 482.8s
+  test Mc e3 r3 MLEM->GN 483.6s
+  test Mc e3 r4 MLEM->GN 483.7s
+  test Mc e3 r7 MLEM->GN 484.4s
+  test Mc e3 r8 MLEM->GN 483.3s
+  test Mc e3 r6 MLEM->GN 486.2s
+  test Mc e5 r3 GN-lin 241.2s
+  test M e7 r8 MLEM->GN 496.7s
+  test M e7 r7 MLEM->GN 499.0s
+  test M e7 r6 MLEM->GN 497.8s
+  test Mc e5 r4 SART 0.9s
+  test Mc e5 r5 SART 0.8s
+  test Mc e5 r6 SART 0.8s
+  test Mc e5 r4 MLEM 0.1s
+  test Mc e5 r5 MLEM 0.2s
+  test Mc e5 r6 MLEM 0.2s
+  test Mc e5 r1 GN-lin 239.9s
+  test Mc e5 r2 GN-lin 243.4s
+  test Mc e1 r5 GD-0 471.8s
+  test Mc e4 r7 GN-0 498.9s
+  test Mc e1 r8 GD-0 468.5s
+  test Mc e1 r3 GD-0 471.4s
+  test Mc e1 r4 GD-0 470.2s
+  test Mc e4 r4 GN-0 527.3s
+  test Mc e1 r6 GD-0 468.4s
+  test Mc e1 r7 GD-0 469.8s
+  test Mc e4 r3 GN-0 527.9s
+  test Mc e4 r5 GN-0 528.2s
+  test Mc e4 r6 GN-0 527.6s
+  test Mc e4 r8 GN-0 530.1s
+  test Mc e5 r4 GN-lin 213.6s
+  test Mc e5 r5 GN-lin 211.4s
+  test Mc e5 r6 GN-lin 212.9s
+  test Mc e5 r7 SART 0.9s
+  test Mc e5 r8 SART 0.7s
+  test Mc e6 r1 SART 0.1s
+  test Mc e6 r2 SART 0.1s
+  test Mc e6 r3 SART 0.2s
+  test Mc e6 r4 SART 0.2s
+  test Mc e5 r7 MLEM 0.2s
+  test Mc e5 r8 MLEM 0.1s
+  test Mc e6 r1 MLEM 0.2s
+  test Mc e6 r2 MLEM 0.2s
+  test Mc e6 r3 MLEM 0.2s
+  test Mc e6 r4 MLEM 0.2s
+  test Mc e5 r3 GN-0 486.1s
+  test Mc e5 r8 GN-lin 241.1s
+  test Mc e5 r7 GN-lin 243.0s
+  test Mc e6 r3 GN-lin 247.5s
+  test Mc e6 r4 GN-lin 248.0s
+  test Mc e4 r7 MLEM->GN 462.4s
+  test Mc e4 r4 MLEM->GN 470.5s
+  test Mc e4 r3 MLEM->GN 470.0s
+  test Mc e4 r5 MLEM->GN 471.3s
+  test Mc e4 r6 MLEM->GN 474.9s
+  test Mc e4 r8 MLEM->GN 481.8s
+  test M e3 r1 GN-0 2743.2s
+  test Mc e6 r1 GN-lin 242.5s
+  test Mc e6 r2 GN-lin 246.6s
+  test Mc e5 r4 GN-0 510.1s
+  test Mc e5 r5 GN-0 511.6s
+  test Mc e5 r6 GN-0 515.8s
+  test Mc e6 r5 SART 0.1s
+  test Mc e6 r6 SART 0.1s
+  test Mc e6 r7 SART 0.1s
+  test Mc e6 r8 SART 0.1s
+  test Mc e7 r1 SART 0.2s
+  test Mc e7 r2 SART 0.1s
+  test Mc e6 r5 MLEM 0.3s
+  test Mc e6 r6 MLEM 0.2s
+  test Mc e6 r7 MLEM 0.2s
+  test Mc e6 r8 MLEM 0.2s
+  test Mc e7 r1 MLEM 0.1s
+  test Mc e7 r2 MLEM 0.1s
+  test Mc e5 r3 MLEM->GN 487.7s
+  test Mc e1 r1 GN-0 2063.4s
+  test Mc e1 r2 GN-0 2121.3s
+  test Mc e6 r6 GN-lin 235.5s
+  test Mc e6 r5 GN-lin 237.8s
+  test Mc e6 r7 GN-lin 235.7s
+  test Mc e6 r8 GN-lin 234.9s
+  test Mc e5 r8 GN-0 513.2s
+  test Mc e5 r7 GN-0 513.4s
+  test M e3 r2 GN-0 2855.5s
+  test Mc e7 r1 GN-lin 235.0s
+  test Mc e7 r2 GN-lin 237.5s
+  test Mc e5 r4 MLEM->GN 487.0s
+  test Mc e5 r5 MLEM->GN 487.8s
+  test Mc e5 r6 MLEM->GN 487.9s
+  test Mc e6 r4 GN-0 748.5s
+  test Mc e6 r3 GN-0 753.0s
+  test Mc e5 r8 MLEM->GN 491.6s
+  test Mc e5 r7 MLEM->GN 493.8s
+  test Mc e3 r1 GN-0 2780.2s
+  test Mc e3 r2 GN-0 2802.7s
+  test Mc e6 r6 GN-0 752.4s
+  test Mc e6 r5 GN-0 759.1s
+  test Mc e6 r7 GN-0 755.6s
+  test Mc e6 r8 GN-0 750.7s
+  test Mc e4 r2 GN-0 3113.3s
+  test Mc e6 r4 MLEM->GN 727.0s
+  test Mc e6 r3 MLEM->GN 727.0s
+  test Mc e3 r5 GD-0 2707.9s
+  test Mc e7 r3 SART 0.1s
+  test Mc e7 r3 MLEM 0.1s
+  test Mc e6 r6 MLEM->GN 692.3s
+  test Mc e6 r8 MLEM->GN 685.2s
+  test Mc e6 r7 MLEM->GN 691.2s
+  test Mc e6 r5 MLEM->GN 693.1s
+  test Mc e1 r1 MLEM->GN 1476.5s
+  test M e7 r1 GN-0 4181.1s
+  test Mc e7 r3 GN-lin 222.1s
+  test M e3 r1 MLEM->GN 2255.3s
+  test Mc e7 r4 SART 0.1s
+  test Mc e1 r2 MLEM->GN 2050.8s
+  test Mc e7 r4 MLEM 0.1s
+  test M e3 r2 MLEM->GN 1966.0s
+  test Mc e7 r5 SART 0.0s
+  test Mc e7 r5 MLEM 0.2s
+  test Mc e7 r3 GN-0 699.7s
+  test Mc e7 r4 GN-lin 216.4s
+  test Mc e3 r2 MLEM->GN 1677.2s
+  test Mc e7 r5 GN-lin 222.5s
+  test Mc e5 r1 GN-0 3844.0s
+  test Mc e3 r1 MLEM->GN 2187.5s
+  test Mc e5 r2 GN-0 3874.4s
+  test Mc e7 r3 MLEM->GN 703.1s
+  test Mc e7 r4 GN-0 703.7s
+  test Mc e7 r5 GN-0 696.8s
+  test Mc e4 r2 MLEM->GN 2269.3s
+  test Mc e4 r1 GN-0 5573.1s
+  test Mc e7 r6 SART 0.2s
+  test Mc e7 r6 MLEM 0.1s
+  test Mc e7 r6 GN-lin 216.6s
+  test Mc e6 r1 GN-0 4026.2s
+  test Mc e7 r4 MLEM->GN 678.1s
+  test Mc e3 r8 GD-0 5311.2s
+  test Mc e3 r6 GD-0 5310.2s
+  test Mc e7 r7 SART 0.1s
+  test Mc e7 r8 SART 0.1s
+  test Mc e7 r7 MLEM 0.2s
+  test Mc e7 r8 MLEM 0.1s
+  test Mc e7 r5 MLEM->GN 678.8s
+  test Mc e7 r8 GN-lin 211.6s
+  test Mc e7 r7 GN-lin 212.8s
+  test M e7 r2 GN-0 6990.1s
+  test Mc e7 r6 GN-0 674.0s
+  test Mc e7 r7 GN-0 651.6s
+  test Mc e7 r8 GN-0 657.8s
+  test Mc e7 r6 MLEM->GN 656.0s
+  test Mc e7 r1 GN-0 4869.5s
+  test Mc e1 r1 GD-0 3810.5s
+  test X e1 r1 SART 0.3s
+  test X e1 r1 MLEM 0.1s
+  test Mc e6 r2 GN-0 5767.2s
+  test Mc e4 r1 MLEM->GN 2126.2s
+  test Mc e5 r2 MLEM->GN 2565.7s
+  test Mc e7 r7 MLEM->GN 685.2s
+  test Mc e7 r8 MLEM->GN 687.1s
+  test X e1 r2 SART 0.2s
+  test X e1 r2 MLEM 0.1s
+  test X e1 r1 GN-lin 201.7s
+  test X e1 r2 GN-lin 209.9s
+  test Mc e5 r1 MLEM->GN 4020.7s
+  test Mc e3 r7 GD-0 8844.4s
+  test Mc e3 r3 GD-0 8853.3s
+  test Mc e3 r4 GD-0 8866.7s
+  test X e1 r3 SART 0.3s
+  test X e1 r4 SART 0.3s
+  test X e1 r5 SART 0.2s
+  test X e1 r3 MLEM 0.1s
+  test X e1 r4 MLEM 0.1s
+  test X e1 r5 MLEM 0.1s
+  test Mc e7 r2 GN-0 7303.2s
+  test X e1 r1 GN-0 1653.8s
+  test X e1 r3 GN-lin 207.3s
+  test X e1 r4 GN-lin 209.4s
+  test X e1 r5 GN-lin 208.6s
+  test X e1 r2 GN-0 1635.7s
+  test Mc e5 r3 GD-0 8635.9s
+  test X e1 r4 GN-0 686.1s
+  test X e1 r3 GN-0 689.1s
+  test X e1 r5 GN-0 693.9s
+  test X e1 r6 SART 0.2s
+  test X e1 r6 MLEM 0.1s
+  test X e1 r6 GN-lin 207.6s
+  test Mc e5 r4 GD-0 8627.6s
+  test Mc e5 r6 GD-0 8643.4s
+  test X e1 r7 SART 0.2s
+  test Mc e5 r5 GD-0 8677.0s
+  test X e1 r7 MLEM 0.1s
+  test X e1 r8 SART 0.2s
+  test X e1 r8 MLEM 0.1s
+  test X e3 r1 SART 0.1s
+  test X e1 r4 MLEM->GN 433.7s
+  test X e1 r3 MLEM->GN 435.6s
+  test X e3 r1 MLEM 2.5s
+  test X e1 r5 MLEM->GN 436.1s
+  test X e1 r7 GN-lin 196.7s
+  test X e1 r8 GN-lin 197.2s
+  test Mc e5 r7 GD-0 8593.7s
+  test X e1 r2 MLEM->GN 1114.4s
+  test Mc e5 r8 GD-0 8613.0s
+  test X e3 r2 SART 0.1s
+  test X e3 r3 SART 0.2s
+  test X e3 r2 MLEM 3.0s
+  test X e3 r3 MLEM 3.0s
+  test M e7 r1 MLEM->GN 7648.2s
+  test X e3 r1 GN-lin 199.9s
+  test X e3 r4 SART 0.1s
+  test X e3 r4 MLEM 3.0s
+  test X e3 r3 GN-lin 218.6s
+  test X e1 r6 GN-0 716.4s
+  test X e3 r4 GN-lin 219.0s
+  test X e3 r2 GN-lin 221.0s
+  test Mc e6 r4 GD-0 8628.1s
+  test Mc e6 r3 GD-0 8638.8s
+  test X e1 r1 MLEM->GN 1911.6s
+  test X e3 r5 SART 0.2s
+  test X e3 r6 SART 0.2s
+  test X e3 r5 MLEM 2.5s
+  test X e3 r6 MLEM 3.1s
+  test X e1 r7 GN-0 710.7s
+  test X e1 r8 GN-0 706.4s
+  test X e1 r6 MLEM->GN 429.3s
+  test X e3 r3 GN-0 463.8s
+  test Mc e3 r1 GD-0 7052.9s
+  test X e3 r5 GN-lin 204.8s
+  test Mc e6 r8 GD-0 8520.3s
+  test X e3 r6 GN-lin 204.6s
+  test X e3 r7 SART 0.2s
+  test X e3 r8 SART 0.2s
+  test X e3 r7 MLEM 2.5s
+  test X e3 r4 GN-0 456.9s
+  test Mc e6 r6 GD-0 8589.0s
+  test X e3 r8 MLEM 2.5s
+  test Mc e6 r7 GD-0 8598.8s
+  test X e4 r1 SART 0.1s
+  test Mc e6 r5 GD-0 8629.3s
+  test X e4 r2 SART 0.2s
+  test X e4 r1 MLEM 0.1s
+  test X e4 r2 MLEM 0.1s
+  test X e4 r3 SART 0.1s
+  test X e4 r3 MLEM 0.1s
+  test X e1 r7 MLEM->GN 421.0s
+  test X e1 r8 MLEM->GN 421.9s
+  test X e3 r7 GN-lin 203.8s
+  test X e3 r8 GN-lin 203.6s
+  test X e3 r3 MLEM->GN 419.6s
+  test X e4 r3 GN-lin 198.5s
+  test X e3 r5 GN-0 452.6s
+  test X e3 r6 GN-0 454.4s
+  test X e4 r1 GN-lin 202.6s
+  test X e3 r4 MLEM->GN 423.8s
+  test X e4 r2 GN-lin 203.7s
+  test Mc e1 r2 GD-0 8531.5s
+  test X e4 r4 SART 0.2s
+  test X e4 r4 MLEM 0.1s
+  test X e3 r8 GN-0 422.1s
+  test X e3 r7 GN-0 445.8s
+  test X e4 r3 GN-0 445.4s
+  test X e3 r5 MLEM->GN 413.4s
+  test X e3 r6 MLEM->GN 412.3s
+  test Mc e3 r2 GD-0 8507.5s
+  test X e4 r4 GN-lin 190.9s
+  test X e4 r5 SART 0.2s
+  test X e4 r5 MLEM 0.0s
+  test X e3 r8 MLEM->GN 407.1s
+  test X e3 r7 MLEM->GN 413.1s
+  test X e4 r5 GN-lin 212.1s
+  test X e4 r3 MLEM->GN 433.7s
+  test X e4 r4 GN-0 474.2s
+  test X e4 r6 SART 0.1s
+  test X e4 r6 MLEM 0.1s
+  test Mc e7 r3 GD-0 8460.9s
+  test X e4 r7 SART 0.2s
+  test X e4 r7 MLEM 0.0s
+  test X e4 r5 GN-0 469.1s
+  test X e4 r6 GN-lin 209.5s
+  test X e4 r7 GN-lin 205.1s
+  test X e4 r4 MLEM->GN 430.8s
+  test X e4 r8 SART 0.1s
+  test X e4 r8 MLEM 0.0s
+  test X e4 r5 MLEM->GN 438.3s
+  test X e3 r2 GN-0 2491.3s
+  test X e5 r1 SART 0.1s
+  test X e4 r6 GN-0 470.7s
+  test Mc e7 r4 GD-0 8414.0s
+  test X e5 r1 MLEM 0.1s
+  test X e3 r1 GN-0 2889.0s
+  test X e4 r8 GN-lin 205.4s
+  test X e5 r2 SART 0.1s
+  test X e5 r2 MLEM 0.2s
+  test X e4 r7 GN-0 463.1s
+  test M e7 r2 MLEM->GN 8024.0s
+  test Mc e7 r5 GD-0 8468.3s
+  test X e5 r3 SART 0.2s
+  test X e5 r3 MLEM 0.2s
+  test X e5 r4 SART 0.2s
+  test X e5 r4 MLEM 0.2s
+  test X e1 r6 GD-0 2643.4s
+  test X e5 r1 GN-lin 214.5s
+  test X e5 r5 SART 0.1s
+  test X e5 r2 GN-lin 218.2s
+  test X e4 r6 MLEM->GN 448.6s
+  test X e5 r5 MLEM 0.2s
+  test X e5 r3 GN-lin 214.1s
+  test X e5 r4 GN-lin 211.6s
+  test X e5 r6 SART 0.1s
+  test X e4 r8 GN-0 451.4s
+  test X e5 r6 MLEM 0.2s
+  test X e4 r7 MLEM->GN 446.4s
+  test X e5 r5 GN-lin 221.2s
+  test X e5 r7 SART 0.1s
+  test X e5 r7 MLEM 0.2s
+  test X e5 r6 GN-lin 220.6s
+  test Mc e6 r1 MLEM->GN 9339.8s
+  test X e5 r3 GN-0 489.2s
+  test X e4 r8 MLEM->GN 458.3s
+  test X e1 r1 GD-0 3493.7s
+  test X e5 r7 GN-lin 218.9s
+  test X e5 r4 GN-0 488.0s
+  test X e5 r8 SART 0.1s
+  test X e6 r1 SART 0.1s
+  test X e5 r8 MLEM 0.2s
+  test X e6 r1 MLEM 0.3s
+  test X e1 r7 GD-0 3092.7s
+  test X e5 r5 GN-0 488.4s
+  test X e6 r2 SART 0.2s
+  test X e6 r2 MLEM 0.3s
+  test X e5 r6 GN-0 494.4s
+  test X e5 r8 GN-lin 222.1s
+  test Mc e7 r6 GD-0 8542.6s
+  test X e6 r3 SART 0.2s
+  test X e6 r3 MLEM 0.3s
+  test X e5 r3 MLEM->GN 450.1s
+  test X e6 r1 GN-lin 222.2s
+  test Mc e7 r1 MLEM->GN 8554.7s
+  test X e5 r4 MLEM->GN 451.2s
+  test X e5 r7 GN-0 475.4s
+  test X e6 r2 GN-lin 205.9s
+  test X e6 r3 GN-lin 206.0s
+  test X e5 r5 MLEM->GN 426.0s
+  test X e5 r6 MLEM->GN 435.2s
+  test X e5 r8 GN-0 456.8s
+  test Mc e5 r2 GD-0 8450.9s
+  test X e6 r4 SART 0.2s
+  test Mc e7 r7 GD-0 8504.5s
+  test X e6 r4 MLEM 0.4s
+  test Mc e7 r8 GD-0 8541.3s
+  test X e6 r5 SART 0.1s
+  test X e6 r5 MLEM 0.4s
+  test X e5 r7 MLEM->GN 436.3s
+  test X e6 r6 SART 0.2s
+  test X e6 r6 MLEM 0.3s
+  test X e6 r4 GN-lin 213.6s
+  test X e6 r5 GN-lin 208.0s
+  test X e6 r6 GN-lin 210.0s
+  test X e5 r8 MLEM->GN 443.0s
+  test X e3 r7 GD-0 3362.6s
+  test X e6 r7 SART 0.2s
+  test X e6 r7 MLEM 0.4s
+  test Mc e7 r2 MLEM->GN 7241.8s
+  test X e6 r3 GN-0 902.5s
+  test X e6 r7 GN-lin 204.6s
+  test X e1 r2 GD-0 5767.9s
+  test X e6 r8 SART 0.1s
+  test X e6 r8 MLEM 0.3s
+  test Mc e6 r2 MLEM->GN 9512.8s
+  test X e1 r3 GD-0 6194.1s
+  test X e7 r1 SART 0.1s
+  test X e7 r1 MLEM 0.4s
+  test X e6 r8 GN-lin 196.6s
+  test X e6 r4 GN-0 863.6s
+  test X e6 r5 GN-0 891.4s
+  test Mc e5 r1 GD-0 8393.4s
+  test X e6 r6 GN-0 868.9s
+  test X e7 r2 SART 0.2s
+  test X e7 r2 MLEM 0.3s
+  test X e3 r2 MLEM->GN 3121.2s
+  test X e7 r1 GN-lin 204.1s
+  test X e3 r1 MLEM->GN 3229.0s
+  test X e6 r3 MLEM->GN 877.0s
+  test X e6 r7 GN-0 877.0s
+  test X e7 r2 GN-lin 205.2s
+  test X e1 r4 GD-0 7004.0s
+  test X e7 r3 SART 0.2s
+  test X e7 r3 MLEM 0.4s
+  test X e1 r8 GD-0 5735.1s
+  test X e7 r4 SART 0.1s
+  test X e7 r4 MLEM 0.3s
+  test X e6 r8 GN-0 886.0s
+  test X e5 r1 GN-0 3373.7s
+  test X e7 r3 GN-lin 211.4s
+  test X e6 r4 MLEM->GN 894.3s
+  test X e7 r4 GN-lin 206.1s
+  test X e6 r5 MLEM->GN 893.1s
+  test X e6 r6 MLEM->GN 894.4s
+  test X e4 r2 GN-0 5902.9s
+  test X e1 r5 GD-0 7868.4s
+  test X e6 r7 MLEM->GN 905.6s
+  test X e4 r1 GN-0 6304.1s
+  test X e7 r5 SART 0.2s
+  test X e7 r5 MLEM 0.3s
+  test X e6 r8 MLEM->GN 897.1s
+  test X e7 r5 GN-lin 206.5s
+  test X e6 r2 GN-0 3526.0s
+  test X e4 r2 MLEM->GN 1364.9s
+  test X e7 r6 SART 0.1s
+  test X e7 r6 MLEM 0.4s
+  test X e7 r6 GN-lin 198.8s
+  test X e5 r2 GN-0 5527.1s
+  test X e3 r3 GD-0 8439.5s
+  test X e7 r7 SART 0.1s
+  test X e7 r7 MLEM 0.3s
+  test X e3 r4 GD-0 8431.9s
+  test X e7 r8 SART 0.1s
+  test X e7 r8 MLEM 0.6s
+  test X e6 r1 GN-0 5339.6s
+  test X e7 r7 GN-lin 220.9s
+  test X e7 r8 GN-lin 219.7s
+  test X e3 r5 GD-0 8524.7s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e3 r6 GD-0 8527.6s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e3 r8 GD-0 8437.3s
+  test stage: 22 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e4 r1 MLEM->GN 2930.7s
+  test stage: 21 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e5 r1 MLEM->GN 3771.8s
+  test X e7 r4 GN-0 3709.6s
+  test X e7 r2 GN-0 4747.2s
+  test X e7 r5 GN-0 3453.1s
+  test X e6 r2 MLEM->GN 3567.5s
+  test Mc e6 r1 GD-0 8217.0s
+  test stage: 12 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r1 GN-0 5898.4s
+  test X e7 r3 GN-0 5304.9s
+  test X e5 r3 GD-0 7929.3s
+  test stage: 11 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test Mc e7 r1 GD-0 8084.2s
+  test stage: 16 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e5 r4 GD-0 8103.2s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e5 r5 GD-0 7991.0s
+  test stage: 23 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e5 r6 GD-0 8026.1s
+  test stage: 32 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e5 r7 GD-0 7906.0s
+  test stage: 23 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e5 r8 GD-0 7802.4s
+  test stage: 22 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e5 r2 MLEM->GN 3995.4s
+  test Mc e7 r2 GD-0 7675.8s
+  test stage: 16 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r7 GN-0 3305.5s
+  test Mc e6 r2 GD-0 7559.8s
+  test stage: 12 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r8 GN-0 3385.1s
+  test X e3 r2 GD-0 7371.9s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e3 r1 GD-0 7300.6s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e6 r3 GD-0 7240.7s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r6 GN-0 4716.1s
+  test X e6 r4 GD-0 6949.4s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r4 MLEM->GN 2948.2s
+  test X e6 r1 MLEM->GN 3998.2s
+  test X e6 r5 GD-0 6919.8s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e6 r6 GD-0 6913.8s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r2 MLEM->GN 2655.0s
+  test X e6 r7 GD-0 6620.2s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e6 r8 GD-0 6429.6s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r5 MLEM->GN 3436.6s
+  test X e7 r8 MLEM->GN 1484.6s
+  test X e5 r1 GD-0 4559.8s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r3 MLEM->GN 2968.8s
+  test X e7 r7 MLEM->GN 2202.1s
+  test X e7 r1 MLEM->GN 3231.4s
+  test X e6 r2 GD-0 3843.6s
+  test stage: 23 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r6 MLEM->GN 1922.1s
+  test X e5 r2 GD-0 3269.0s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r4 GD-0 3014.0s
+  test stage: 23 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e6 r1 GD-0 3024.8s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r2 GD-0 2992.3s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r5 GD-0 2977.3s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r8 GD-0 2974.3s
+  test stage: 17 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r3 GD-0 2925.4s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r7 GD-0 2901.6s
+  test stage: 24 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r1 GD-0 2906.9s
+  test stage: 18 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+  test X e7 r6 GD-0 2894.8s
+  test stage: 27 solver runs done on shard 1/1
+
+Reconstruction-protocol stage 'test' finished (outputs under /mnt/big_data/agent-builds/diffpumas-s7-out)
+[orch 2026-11-14T12:01:30Z] stage test complete: 112/112 units

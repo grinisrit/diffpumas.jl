@@ -1,0 +1,39 @@
+git_commit = "21b8670bfe312b0c22dfa09a9394f9be5712dc4f"
+histories = 8192
+mc_stream = "per_bin"
+seeds = [441, 442]
+
+[checks]
+check1 = "true"
+check2 = true
+check3 = true
+csda_zenith0_equal = true
+expected_standard_error_s = 0.00046823975103144825
+n_zenith0 = 90
+passed = true
+q = 0.9772823515726223
+s = 0.9021550057597469
+s_a = 0.9034400270837245
+s_b = 0.9020578747753263
+shared_sample_s = 0.87309
+split_difference = 0.0013821523083982212
+
+[pooled]
+band_counts = [450, 450, 450, 450, 450, 450]
+band_edges_deg = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+band_median_r = [0.9034473008839392, 0.902482474033649, 0.8976846498792737, 0.8992448678632434, 0.9020988026322402, 0.9288577593968432]
+mean_r = 0.9130621139006588
+median_rel_sigma_mc = 0.0215185973570435
+median_sigma_mc = 1.7544369417726293e-6
+n_bins = 2700
+q25 = 0.8870541759824451
+q50 = 0.9021550057597469
+q75 = 0.919226711250188
+ratio_of_sums = 0.8989027659842298
+s = 0.9021550057597469
+
+[timing]
+cpu_hours_per_16384_template = 0.0
+thread_hours_per_16384_template = 32.36146430015564
+threads = 24
+wall_s_total = 4854.219645023346

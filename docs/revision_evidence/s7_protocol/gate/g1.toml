@@ -1,0 +1,30 @@
+free_cells = [45, 46, 55, 56, 135, 136, 144, 145, 146, 147, 154, 155, 156, 157, 165, 166, 234, 235, 236, 244, 245, 246, 247, 254, 255, 256, 257, 264, 265, 266, 325, 326, 334, 335, 336, 344, 345, 346, 347, 353, 354, 355, 356, 357, 364, 365, 366, 375, 376, 424, 425, 426, 434, 435, 436, 444, 445, 446, 453, 454, 455, 456, 464, 465, 466, 474, 475, 476, 524, 525, 534, 535, 564, 565, 574, 575]
+
+[coverage]
+crossed = 76
+inside_cone_not_crossed = 56
+outside_cone = 468
+
+[dev]
+n_Ds = 72
+n_eval = 500
+n_free = 76
+nonzero_in_Ds = 26
+nonzero_per_structure_all_cells = [16, 28, 4]
+nonzero_per_structure_in_Ds = [12, 16, 4]
+nonzero_total = 42
+passed = true
+structures = ["slab", "sheet", "lens"]
+zero_field_rmse_s = 0.32188679859713276
+
+[test]
+n_Ds = 72
+n_eval = 500
+n_free = 76
+nonzero_in_Ds = 23
+nonzero_per_structure_all_cells = [12, 14, 4]
+nonzero_per_structure_in_Ds = [9, 11, 4]
+nonzero_total = 29
+passed = true
+structures = ["a", "b", "c"]
+zero_field_rmse_s = 0.32914029430219166

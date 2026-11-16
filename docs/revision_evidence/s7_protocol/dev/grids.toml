@@ -1,0 +1,1721 @@
+["GD-0|Mc|1"]
+cap = 40
+iter = [1, 2, 5, 10, 20]
+param = []
+
+    ["GD-0|Mc|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 2
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|Mc|2"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|Mc|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|Mc|3"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|Mc|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|Mc|4"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|Mc|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|Mc|5"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|Mc|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|Mc|6"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|Mc|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|Mc|7"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|Mc|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|M|1"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|M|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|M|2"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|M|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|M|3"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|M|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|M|4"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|M|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|M|5"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|M|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|M|6"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|M|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|M|7"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|M|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|X|1"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|X|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|X|2"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|X|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|X|3"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|X|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|X|4"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|X|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|X|5"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|X|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|X|6"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|X|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GD-0|X|7"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["GD-0|X|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|Mc|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-0|Mc|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-0|Mc|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-0|Mc|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-0|Mc|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-0|Mc|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-0|Mc|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-0|Mc|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-0|Mc|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-0|Mc|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-0|Mc|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|Mc|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|Mc|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|Mc|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|M|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|M|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|M|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|M|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|M|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-0|M|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-0|M|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|M|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|M|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-0|M|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-0|M|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|M|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|M|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|M|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|X|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-0|X|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-0|X|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-0|X|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-0|X|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-0|X|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-0|X|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-0|X|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-0|X|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-0|X|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-0|X|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|X|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-0|X|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.0001, 0.001, 0.01, 0.1, 1.0]
+
+    ["GN-0|X|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 1
+
+["GN-lin|Mc|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-lin|Mc|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-lin|Mc|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-lin|Mc|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-lin|Mc|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-lin|Mc|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-lin|Mc|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|Mc|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|Mc|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|Mc|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|Mc|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|Mc|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|Mc|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|Mc|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|M|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-lin|M|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-lin|M|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-lin|M|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-lin|M|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-lin|M|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-lin|M|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-lin|M|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-lin|M|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|M|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|M|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["GN-lin|M|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["GN-lin|M|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|M|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|X|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-lin|X|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-lin|X|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-lin|X|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-lin|X|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["GN-lin|X|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["GN-lin|X|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|X|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|X|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|X|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|X|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|X|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["GN-lin|X|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["GN-lin|X|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM->GD|Mc|1"]
+cap = 40
+iter = [1, 2, 5, 10, 20]
+param = []
+
+    ["MLEM->GD|Mc|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 2
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|Mc|2"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|Mc|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|Mc|3"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|Mc|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|Mc|4"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|Mc|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|Mc|5"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|Mc|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|Mc|6"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|Mc|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|Mc|7"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|Mc|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|M|1"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|M|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|M|2"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|M|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|M|3"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|M|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|M|4"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|M|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|M|5"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|M|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|M|6"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|M|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|M|7"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|M|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|X|1"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|X|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|X|2"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|X|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|X|3"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|X|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|X|4"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|X|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|X|5"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|X|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|X|6"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|X|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GD|X|7"]
+cap = 40
+iter = [5, 10, 20]
+param = []
+
+    ["MLEM->GD|X|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|Mc|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|Mc|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|Mc|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|Mc|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|Mc|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|Mc|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|Mc|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|Mc|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|Mc|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["MLEM->GN|Mc|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM->GN|Mc|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|Mc|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|Mc|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|Mc|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|M|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|M|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|M|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|M|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|M|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|M|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|M|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|M|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|M|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["MLEM->GN|M|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM->GN|M|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|M|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|M|7"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|M|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|X|1"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|X|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|X|2"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|X|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|X|3"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["MLEM->GN|X|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM->GN|X|4"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+
+    ["MLEM->GN|X|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM->GN|X|5"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0, 10.0]
+
+    ["MLEM->GN|X|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM->GN|X|6"]
+cap = 20
+iter = [1, 2, 3, 5, 8, 13]
+param = [0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|X|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM->GN|X|7"]
+cap = 32
+iter = [1, 2, 3, 5, 8, 13, 20]
+param = [0.0001, 0.001, 0.01, 0.1, 1.0]
+
+    ["MLEM->GN|X|7".ext]
+    cap = 1
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 1
+
+["MLEM|Mc|1"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0, 15.625, 48.828125]
+
+    ["MLEM|Mc|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["MLEM|Mc|2"]
+iter = [10, 25, 50, 100, 200, 400, 800]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0, 15.625]
+
+    ["MLEM|Mc|2".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM|Mc|3"]
+iter = [10, 25, 50, 100, 200, 400, 800]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0, 15.625]
+
+    ["MLEM|Mc|3".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM|Mc|4"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|Mc|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|Mc|5"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0, 15.625]
+
+    ["MLEM|Mc|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM|Mc|6"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0, 15.625]
+
+    ["MLEM|Mc|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM|Mc|7"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|Mc|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|M|1"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|M|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|M|2"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|M|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|M|3"]
+iter = [10, 25, 50, 100, 200, 400, 800]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|M|3".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|M|4"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|M|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|M|5"]
+iter = [10, 25, 50, 100, 200, 400, 800]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|M|5".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|M|6"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|M|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|M|7"]
+iter = [10, 25, 50, 100, 200, 400, 800, 1600]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|M|7".ext]
+    cap = 0
+    iter_hi = 2
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|X|1"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|X|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|X|2"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0, 15.625]
+
+    ["MLEM|X|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["MLEM|X|3"]
+iter = [10, 25, 50, 100, 200, 400, 800, 1600]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|X|3".ext]
+    cap = 0
+    iter_hi = 2
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|X|4"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|X|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|X|5"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|X|5".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|X|6"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|X|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["MLEM|X|7"]
+iter = [10, 25, 50, 100, 200, 400]
+param = [0.0, 0.05, 0.16, 0.5, 1.6, 5.0]
+
+    ["MLEM|X|7".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["SART|Mc|1"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|Mc|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|Mc|2"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|Mc|2".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|Mc|3"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|Mc|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|Mc|4"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|Mc|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|Mc|5"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400, 800]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998]
+
+    ["SART|Mc|5".ext]
+    cap = 0
+    iter_hi = 2
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["SART|Mc|6"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|Mc|6".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|Mc|7"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|Mc|7".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|M|1"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3]
+
+    ["SART|M|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["SART|M|2"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3]
+
+    ["SART|M|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["SART|M|3"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|M|3".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|M|4"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3]
+
+    ["SART|M|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["SART|M|5"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998]
+
+    ["SART|M|5".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["SART|M|6"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3]
+
+    ["SART|M|6".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 0
+    param_lo = 0
+
+["SART|M|7"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998]
+
+    ["SART|M|7".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 1
+    param_lo = 0
+
+["SART|X|1"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|X|1".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|X|2"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|X|2".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|X|3"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|X|3".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|X|4"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|X|4".ext]
+    cap = 0
+    iter_hi = 0
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|X|5"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|X|5".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|X|6"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|X|6".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0
+
+["SART|X|7"]
+iter = [1, 2, 5, 10, 25, 50, 100, 200, 400]
+param = [0.0, 0.03, 0.1, 0.3, 0.8999999999999998, 1.0]
+
+    ["SART|X|7".ext]
+    cap = 0
+    iter_hi = 1
+    iter_lo = 0
+    param_hi = 2
+    param_lo = 0

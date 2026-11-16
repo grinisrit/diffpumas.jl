@@ -1,0 +1,18 @@
+[calibration]
+correction_artifact = "/mnt/big_data/agent-builds/diffpumas-s7-wt/docs/revision_evidence/surrogate_v2/production/frozen_corrections.toml"
+created_unix = 1.794519492955872e9
+field = "dry"
+git_commit = "21b8670bfe312b0c22dfa09a9394f9be5712dc4f"
+git_dirty = false
+histories = 8192
+mc_stream = "per_bin"
+n_bins = 2700
+q = 0.9772823515726223
+s = 0.9021550057597469
+s_a = 0.9034400270837245
+s_b = 0.9020578747753263
+seeds = [441, 442]
+supersedes = "shared sample, seed 44, s = 0.87309"
+
+[meta]
+content_sha256 = "07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca"

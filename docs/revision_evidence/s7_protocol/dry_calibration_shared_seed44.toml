@@ -1,0 +1,7 @@
+[calibration]
+mc_stream = "shared"
+note = "report only; shared energy sample, seed 44, 16384 histories; never read by a driver"
+s = 0.87309
+
+[meta]
+content_sha256 = "09bfa173d770c1e932e57455c630c170b34327973f61c904a52ef7e2388a3f7f"

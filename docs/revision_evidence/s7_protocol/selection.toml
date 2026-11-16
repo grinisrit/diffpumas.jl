@@ -1,0 +1,1448 @@
+[meta]
+arms = ["M", "Mc", "X"]
+content_sha256 = "6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f"
+created_unix = 1.794625619802195e9
+dry_calibration_sha256 = "07abc55413466efe181f9f1cab6b020c0d0fd59598dfe63412d9f012acb651ca"
+dry_scale = 0.9021550057597469
+exposures = [1000.0, 3160.0, 10000.0, 31600.0, 100000.0, 1.0e6, 1.0e8]
+field = "dev"
+git_commit = "21b8670bfe312b0c22dfa09a9394f9be5712dc4f"
+inverse_mc_samples = 16384
+mc_stream = "per_bin"
+realizations = 2
+template_mode = "replicates"
+
+[selection."GD-0|Mc|1"]
+arm = "Mc"
+at_edge = "iter_lo"
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.2266939020215005
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "GD-0"
+tau = 1000.0
+
+[selection."GD-0|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21474198878340506
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "GD-0"
+tau = 3160.0
+
+[selection."GD-0|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.19317032098275877
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 10.0
+solver = "GD-0"
+tau = 10000.0
+
+[selection."GD-0|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.18601997044278137
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 31600.0
+
+[selection."GD-0|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16528156643454306
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 100000.0
+
+[selection."GD-0|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.17030466767455602
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "GD-0"
+tau = 1.0e6
+
+[selection."GD-0|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.1587478130564881
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "GD-0"
+tau = 1.0e8
+
+[selection."GD-0|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21916088083233637
+exp_index = 1
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "GD-0"
+tau = 1000.0
+
+[selection."GD-0|X|2"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.21929816991662418
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "GD-0"
+tau = 3160.0
+
+[selection."GD-0|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.19458591394376545
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 10000.0
+
+[selection."GD-0|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.19739046292300705
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 31600.0
+
+[selection."GD-0|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16358877047981507
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 100000.0
+
+[selection."GD-0|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.17164008817070983
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "GD-0"
+tau = 1.0e6
+
+[selection."GD-0|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.18884939479094887
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.001
+solver = "GD-0"
+tau = 1.0e8
+
+[selection."GN-0|Mc|1"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.22608367695963622
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "GN-0"
+tau = 1000.0
+
+[selection."GN-0|Mc|2"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.19311103732870216
+exp_index = 2
+extensions_pending = false
+iter = "K=2"
+param = 100.0
+solver = "GN-0"
+tau = 3160.0
+
+[selection."GN-0|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.177970238627283
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 10.0
+solver = "GN-0"
+tau = 10000.0
+
+[selection."GN-0|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1372666322169951
+exp_index = 4
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-0"
+tau = 31600.0
+
+[selection."GN-0|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.13097804757645962
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-0"
+tau = 100000.0
+
+[selection."GN-0|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12728832200959778
+exp_index = 6
+extensions_pending = false
+iter = "K=2"
+param = 0.1
+solver = "GN-0"
+tau = 1.0e6
+
+[selection."GN-0|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12234700768358377
+exp_index = 7
+extensions_pending = false
+iter = "K=2"
+param = 0.1
+solver = "GN-0"
+tau = 1.0e8
+
+[selection."GN-0|M|3"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1548082323971708
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 10.0
+solver = "GN-0"
+tau = 10000.0
+
+[selection."GN-0|M|5"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12345993383812744
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-0"
+tau = 100000.0
+
+[selection."GN-0|M|7"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12380922288404647
+exp_index = 7
+extensions_pending = false
+iter = "K=2"
+param = 0.1
+solver = "GN-0"
+tau = 1.0e8
+
+[selection."GN-0|X|1"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.20869651796858918
+exp_index = 1
+extensions_pending = false
+iter = "K=2"
+param = 100.0
+solver = "GN-0"
+tau = 1000.0
+
+[selection."GN-0|X|2"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.18659285385172875
+exp_index = 2
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "GN-0"
+tau = 3160.0
+
+[selection."GN-0|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1616767364145541
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-0"
+tau = 10000.0
+
+[selection."GN-0|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.13556667846239773
+exp_index = 4
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-0"
+tau = 31600.0
+
+[selection."GN-0|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1341035675069191
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-0"
+tau = 100000.0
+
+[selection."GN-0|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.11007925082302006
+exp_index = 6
+extensions_pending = false
+iter = "K=3"
+param = 0.1
+solver = "GN-0"
+tau = 1.0e6
+
+[selection."GN-0|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.07835572558512899
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.001
+solver = "GN-0"
+tau = 1.0e8
+
+[selection."GN-lin|Mc|1"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.20692968991559607
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "GN-lin"
+tau = 1000.0
+
+[selection."GN-lin|Mc|2"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.17807479459518594
+exp_index = 2
+extensions_pending = false
+iter = "K=2"
+param = 100.0
+solver = "GN-lin"
+tau = 3160.0
+
+[selection."GN-lin|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1553769299263561
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 10.0
+solver = "GN-lin"
+tau = 10000.0
+
+[selection."GN-lin|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1372666322169951
+exp_index = 4
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 31600.0
+
+[selection."GN-lin|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.13097804757645962
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 100000.0
+
+[selection."GN-lin|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1404076427097513
+exp_index = 6
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 1.0e6
+
+[selection."GN-lin|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.13921240079330527
+exp_index = 7
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 1.0e8
+
+[selection."GN-lin|M|3"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1548082323971708
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 10.0
+solver = "GN-lin"
+tau = 10000.0
+
+[selection."GN-lin|M|5"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12345993383812744
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 100000.0
+
+[selection."GN-lin|M|7"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12653622696065245
+exp_index = 7
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 1.0e8
+
+[selection."GN-lin|X|1"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.18855323036423383
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "GN-lin"
+tau = 1000.0
+
+[selection."GN-lin|X|2"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.18080337350694517
+exp_index = 2
+extensions_pending = false
+iter = "K=2"
+param = 100.0
+solver = "GN-lin"
+tau = 3160.0
+
+[selection."GN-lin|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1407661983405222
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 10.0
+solver = "GN-lin"
+tau = 10000.0
+
+[selection."GN-lin|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.13556667846239773
+exp_index = 4
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 31600.0
+
+[selection."GN-lin|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1341035675069191
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 100000.0
+
+[selection."GN-lin|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.14503307710496344
+exp_index = 6
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 1.0e6
+
+[selection."GN-lin|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.14566492202616896
+exp_index = 7
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "GN-lin"
+tau = 1.0e8
+
+[selection."MLEM->GD|Mc|1"]
+arm = "Mc"
+at_edge = "iter_lo"
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21837171702158706
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GD"
+tau = 1000.0
+
+[selection."MLEM->GD|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.20733949022781958
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "MLEM->GD"
+tau = 3160.0
+
+[selection."MLEM->GD|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.1883907813643814
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "MLEM->GD"
+tau = 10000.0
+
+[selection."MLEM->GD|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.1634919203332894
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 10.0
+solver = "MLEM->GD"
+tau = 31600.0
+
+[selection."MLEM->GD|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15652141891949817
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "MLEM->GD"
+tau = 100000.0
+
+[selection."MLEM->GD|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15797097579771022
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "MLEM->GD"
+tau = 1.0e6
+
+[selection."MLEM->GD|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.14274819246549628
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.01
+solver = "MLEM->GD"
+tau = 1.0e8
+
+[selection."MLEM->GD|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21399718188713152
+exp_index = 1
+extensions_pending = false
+iter = "K=20"
+param = 100.0
+solver = "MLEM->GD"
+tau = 1000.0
+
+[selection."MLEM->GD|X|2"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.21435520198629332
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "MLEM->GD"
+tau = 3160.0
+
+[selection."MLEM->GD|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.18519336011146798
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "MLEM->GD"
+tau = 10000.0
+
+[selection."MLEM->GD|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16461667980550776
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 10.0
+solver = "MLEM->GD"
+tau = 31600.0
+
+[selection."MLEM->GD|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15286008660378433
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "MLEM->GD"
+tau = 100000.0
+
+[selection."MLEM->GD|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15655030605620573
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "MLEM->GD"
+tau = 1.0e6
+
+[selection."MLEM->GD|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16630263583363702
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.001
+solver = "MLEM->GD"
+tau = 1.0e8
+
+[selection."MLEM->GN|Mc|1"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.212020393354822
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GN"
+tau = 1000.0
+
+[selection."MLEM->GN|Mc|2"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.18360712440808125
+exp_index = 2
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GN"
+tau = 3160.0
+
+[selection."MLEM->GN|Mc|3"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1684463521957807
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GN"
+tau = 10000.0
+
+[selection."MLEM->GN|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1444552452380457
+exp_index = 4
+extensions_pending = false
+iter = "K=1"
+param = 10.0
+solver = "MLEM->GN"
+tau = 31600.0
+
+[selection."MLEM->GN|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.14404636068631882
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "MLEM->GN"
+tau = 100000.0
+
+[selection."MLEM->GN|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12994248654903123
+exp_index = 6
+extensions_pending = false
+iter = "K=2"
+param = 0.1
+solver = "MLEM->GN"
+tau = 1.0e6
+
+[selection."MLEM->GN|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12410449154533677
+exp_index = 7
+extensions_pending = false
+iter = "K=2"
+param = 0.01
+solver = "MLEM->GN"
+tau = 1.0e8
+
+[selection."MLEM->GN|M|3"]
+arm = "M"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.16632476849147793
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GN"
+tau = 10000.0
+
+[selection."MLEM->GN|M|5"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.13864151071009584
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "MLEM->GN"
+tau = 100000.0
+
+[selection."MLEM->GN|M|7"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12529023244961615
+exp_index = 7
+extensions_pending = false
+iter = "K=1"
+param = 0.01
+solver = "MLEM->GN"
+tau = 1.0e8
+
+[selection."MLEM->GN|X|1"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.19539234407611156
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GN"
+tau = 1000.0
+
+[selection."MLEM->GN|X|2"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1847668985150424
+exp_index = 2
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GN"
+tau = 3160.0
+
+[selection."MLEM->GN|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.15667949292803773
+exp_index = 3
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "MLEM->GN"
+tau = 10000.0
+
+[selection."MLEM->GN|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.14792697333179855
+exp_index = 4
+extensions_pending = false
+iter = "K=1"
+param = 10.0
+solver = "MLEM->GN"
+tau = 31600.0
+
+[selection."MLEM->GN|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.1424470371492209
+exp_index = 5
+extensions_pending = false
+iter = "K=1"
+param = 1.0
+solver = "MLEM->GN"
+tau = 100000.0
+
+[selection."MLEM->GN|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 20
+dev_rmse_s_mean = 0.12576479451717976
+exp_index = 6
+extensions_pending = false
+iter = "K=3"
+param = 0.1
+solver = "MLEM->GN"
+tau = 1.0e6
+
+[selection."MLEM->GN|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = "not converged at 32 updates"
+cap = 32
+dev_rmse_s_mean = 0.08870318327650337
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.001
+solver = "MLEM->GN"
+tau = 1.0e8
+
+[selection."MLEM|Mc|1"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.19944055240735722
+exp_index = 1
+extensions_pending = false
+iter = "n=25"
+param = 15.625
+solver = "MLEM"
+tau = 1000.0
+
+[selection."MLEM|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.18489134849117445
+exp_index = 2
+extensions_pending = false
+iter = "n=400"
+param = 5.0
+solver = "MLEM"
+tau = 3160.0
+
+[selection."MLEM|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.181604279147696
+exp_index = 3
+extensions_pending = false
+iter = "n=400"
+param = 5.0
+solver = "MLEM"
+tau = 10000.0
+
+[selection."MLEM|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.16759405054617238
+exp_index = 4
+extensions_pending = false
+iter = "n=100"
+param = 1.6
+solver = "MLEM"
+tau = 31600.0
+
+[selection."MLEM|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17181635452989566
+exp_index = 5
+extensions_pending = false
+iter = "n=100"
+param = 5.0
+solver = "MLEM"
+tau = 100000.0
+
+[selection."MLEM|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17849366057670138
+exp_index = 6
+extensions_pending = false
+iter = "n=100"
+param = 5.0
+solver = "MLEM"
+tau = 1.0e6
+
+[selection."MLEM|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17696479143678828
+exp_index = 7
+extensions_pending = false
+iter = "n=50"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e8
+
+[selection."MLEM|M|3"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.1735591856531786
+exp_index = 3
+extensions_pending = false
+iter = "n=400"
+param = 1.6
+solver = "MLEM"
+tau = 10000.0
+
+[selection."MLEM|M|5"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.15966682435201152
+exp_index = 5
+extensions_pending = false
+iter = "n=400"
+param = 1.6
+solver = "MLEM"
+tau = 100000.0
+
+[selection."MLEM|M|7"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.16270189469778645
+exp_index = 7
+extensions_pending = false
+iter = "n=800"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e8
+
+[selection."MLEM|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.20478723892964062
+exp_index = 1
+extensions_pending = false
+iter = "n=25"
+param = 1.6
+solver = "MLEM"
+tau = 1000.0
+
+[selection."MLEM|X|2"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.18129288706702648
+exp_index = 2
+extensions_pending = false
+iter = "n=25"
+param = 5.0
+solver = "MLEM"
+tau = 3160.0
+
+[selection."MLEM|X|3"]
+arm = "X"
+at_edge = "iter_hi"
+budget_note = ""
+dev_rmse_s_mean = 0.17382383143682342
+exp_index = 3
+extensions_pending = false
+iter = "n=1600"
+param = 1.6
+solver = "MLEM"
+tau = 10000.0
+
+[selection."MLEM|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.1667804492459783
+exp_index = 4
+extensions_pending = false
+iter = "n=25"
+param = 1.6
+solver = "MLEM"
+tau = 31600.0
+
+[selection."MLEM|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17633639913462135
+exp_index = 5
+extensions_pending = false
+iter = "n=100"
+param = 1.6
+solver = "MLEM"
+tau = 100000.0
+
+[selection."MLEM|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.176984056009095
+exp_index = 6
+extensions_pending = false
+iter = "n=200"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e6
+
+[selection."MLEM|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.17798284765315375
+exp_index = 7
+extensions_pending = false
+iter = "n=200"
+param = 1.6
+solver = "MLEM"
+tau = 1.0e8
+
+[selection."SART|Mc|1"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22924327572453662
+exp_index = 1
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1000.0
+
+[selection."SART|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.23365374244127132
+exp_index = 2
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 3160.0
+
+[selection."SART|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22702589612171736
+exp_index = 3
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 10000.0
+
+[selection."SART|Mc|4"]
+arm = "Mc"
+at_edge = "param_hi"
+budget_note = ""
+dev_rmse_s_mean = 0.23662170310189912
+exp_index = 4
+extensions_pending = false
+iter = "n=50"
+param = 1.0
+solver = "SART"
+tau = 31600.0
+
+[selection."SART|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.21903534753954515
+exp_index = 5
+extensions_pending = false
+iter = "n=400"
+param = 0.3
+solver = "SART"
+tau = 100000.0
+
+[selection."SART|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22189855616475984
+exp_index = 6
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e6
+
+[selection."SART|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22204512816361682
+exp_index = 7
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e8
+
+[selection."SART|M|3"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.23157948093266262
+exp_index = 3
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 10000.0
+
+[selection."SART|M|5"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.2149096063971419
+exp_index = 5
+extensions_pending = false
+iter = "n=200"
+param = 0.3
+solver = "SART"
+tau = 100000.0
+
+[selection."SART|M|7"]
+arm = "M"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22016998634014767
+exp_index = 7
+extensions_pending = false
+iter = "n=200"
+param = 0.3
+solver = "SART"
+tau = 1.0e8
+
+[selection."SART|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.24017971021887186
+exp_index = 1
+extensions_pending = false
+iter = "n=100"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1000.0
+
+[selection."SART|X|2"]
+arm = "X"
+at_edge = "param_hi"
+budget_note = ""
+dev_rmse_s_mean = 0.2347751722179381
+exp_index = 2
+extensions_pending = false
+iter = "n=50"
+param = 1.0
+solver = "SART"
+tau = 3160.0
+
+[selection."SART|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22035889176698964
+exp_index = 3
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 10000.0
+
+[selection."SART|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22633503700181012
+exp_index = 4
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 31600.0
+
+[selection."SART|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.2257332529555665
+exp_index = 5
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 100000.0
+
+[selection."SART|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22176759220654085
+exp_index = 6
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e6
+
+[selection."SART|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+dev_rmse_s_mean = 0.22191344564894083
+exp_index = 7
+extensions_pending = false
+iter = "n=50"
+param = 0.8999999999999998
+solver = "SART"
+tau = 1.0e8

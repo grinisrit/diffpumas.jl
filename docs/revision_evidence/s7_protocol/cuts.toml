@@ -1,0 +1,43 @@
+created_unix = 1.794625667910638e9
+cuts = [0, 1, 2, 3, 4]
+limit_h = 36.0
+limit_met = false
+ref_processes = 34
+selection_sha256 = "6fc0a9485b49502f14de304a3d9605374c7ec20604c91e5606b6562f4481720f"
+
+[[history]]
+cuts = []
+diag_h = 0.4933900173271404
+elapsed_h = 29.475
+test_h = 16.841567709110922
+total_h = 46.80995772643807
+[[history]]
+cuts = [0]
+diag_h = 0.4933900173271404
+elapsed_h = 29.475
+test_h = 13.57964228706923
+total_h = 43.54803230439637
+[[history]]
+cuts = [0, 1]
+diag_h = 0.4933900173271404
+elapsed_h = 29.475
+test_h = 8.213404567441948
+total_h = 38.181794584769094
+[[history]]
+cuts = [0, 1, 2]
+diag_h = 0.4933900173271404
+elapsed_h = 29.475
+test_h = 6.3063774972468805
+total_h = 36.27476751457402
+[[history]]
+cuts = [0, 1, 2, 3]
+diag_h = 0.4933900173271404
+elapsed_h = 29.475
+test_h = 6.22341979896345
+total_h = 36.191809816290586
+[[history]]
+cuts = [0, 1, 2, 3, 4]
+diag_h = 0.4933900173271404
+elapsed_h = 29.475
+test_h = 6.134069148906343
+total_h = 36.10245916623349

@@ -1,0 +1,13 @@
+histories = 16384
+max_csda_rel_diff = 0.0
+max_material_factor_effect_on_dry_csda = 0.0
+max_mc_diff_in_combined_se = 1.4705548608201313
+median_ratio_sweep = 0.901239473005504
+median_ratio_validation = 0.9119367142073462
+n_rays = 12
+passed = true
+readme_dry_heldout_rays_n = 3
+rock_path_all_sweep_bins_m = [1188.135686844341, 3522.3406505852627]
+rock_path_g0c_rays_m = [1209.6094267434976, 2549.3475302539605]
+rock_path_readme_dry_heldout_rays_m = [3577.29046951559, 2161.4352389343344, 4752.067752990385]
+validation_driver_sha256 = "02e6f8302501571963bbf223d3b46ffdc04cbf96d04746984961aa9f7f37713a"

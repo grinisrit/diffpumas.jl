@@ -1,0 +1,363 @@
+["GD-0|Mc|1"]
+arm = "Mc"
+at_edge = "iter_lo"
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.2266939020215005
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "GD-0"
+tau = 1000.0
+
+["GD-0|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21474198878340506
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "GD-0"
+tau = 3160.0
+
+["GD-0|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.19317032098275877
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 10.0
+solver = "GD-0"
+tau = 10000.0
+
+["GD-0|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.18601997044278137
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 31600.0
+
+["GD-0|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16528156643454306
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 100000.0
+
+["GD-0|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.17030466767455602
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "GD-0"
+tau = 1.0e6
+
+["GD-0|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.1587478130564881
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "GD-0"
+tau = 1.0e8
+
+["GD-0|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21916088083233637
+exp_index = 1
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "GD-0"
+tau = 1000.0
+
+["GD-0|X|2"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.21929816991662418
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "GD-0"
+tau = 3160.0
+
+["GD-0|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.19458591394376545
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 10000.0
+
+["GD-0|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.19739046292300705
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 31600.0
+
+["GD-0|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16358877047981507
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "GD-0"
+tau = 100000.0
+
+["GD-0|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.17164008817070983
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "GD-0"
+tau = 1.0e6
+
+["GD-0|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.18884939479094887
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.001
+solver = "GD-0"
+tau = 1.0e8
+
+["MLEM->GD|Mc|1"]
+arm = "Mc"
+at_edge = "iter_lo"
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21837171702158706
+exp_index = 1
+extensions_pending = false
+iter = "K=1"
+param = 100.0
+solver = "MLEM->GD"
+tau = 1000.0
+
+["MLEM->GD|Mc|2"]
+arm = "Mc"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.20733949022781958
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "MLEM->GD"
+tau = 3160.0
+
+["MLEM->GD|Mc|3"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.1883907813643814
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "MLEM->GD"
+tau = 10000.0
+
+["MLEM->GD|Mc|4"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.1634919203332894
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 10.0
+solver = "MLEM->GD"
+tau = 31600.0
+
+["MLEM->GD|Mc|5"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15652141891949817
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "MLEM->GD"
+tau = 100000.0
+
+["MLEM->GD|Mc|6"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15797097579771022
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "MLEM->GD"
+tau = 1.0e6
+
+["MLEM->GD|Mc|7"]
+arm = "Mc"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.14274819246549628
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.01
+solver = "MLEM->GD"
+tau = 1.0e8
+
+["MLEM->GD|X|1"]
+arm = "X"
+at_edge = ""
+budget_note = ""
+cap = 40
+dev_rmse_s_mean = 0.21399718188713152
+exp_index = 1
+extensions_pending = false
+iter = "K=20"
+param = 100.0
+solver = "MLEM->GD"
+tau = 1000.0
+
+["MLEM->GD|X|2"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.21435520198629332
+exp_index = 2
+extensions_pending = false
+iter = "final"
+param = 100.0
+solver = "MLEM->GD"
+tau = 3160.0
+
+["MLEM->GD|X|3"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.18519336011146798
+exp_index = 3
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "MLEM->GD"
+tau = 10000.0
+
+["MLEM->GD|X|4"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16461667980550776
+exp_index = 4
+extensions_pending = false
+iter = "final"
+param = 10.0
+solver = "MLEM->GD"
+tau = 31600.0
+
+["MLEM->GD|X|5"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15286008660378433
+exp_index = 5
+extensions_pending = false
+iter = "final"
+param = 1.0
+solver = "MLEM->GD"
+tau = 100000.0
+
+["MLEM->GD|X|6"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.15655030605620573
+exp_index = 6
+extensions_pending = false
+iter = "final"
+param = 0.1
+solver = "MLEM->GD"
+tau = 1.0e6
+
+["MLEM->GD|X|7"]
+arm = "X"
+at_edge = ""
+budget_note = "fixed budget of 40 iterations"
+cap = 40
+dev_rmse_s_mean = 0.16630263583363702
+exp_index = 7
+extensions_pending = false
+iter = "final"
+param = 0.001
+solver = "MLEM->GD"
+tau = 1.0e8

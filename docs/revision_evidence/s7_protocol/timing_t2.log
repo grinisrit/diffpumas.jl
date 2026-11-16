@@ -1,0 +1,27 @@
+  Loaded nm_c.inc rock-thickness map (48×91)
+  Loaded 8 cross-sections from geometry YAML
+  Using 5 explicit elevation anchors for terrain lift
+  Terrain grid extent: ±26.0 km, step 0.20 km
+Building structured-grid sensitivity volume...
+Tracing straight-line geometry on the grid volume...
+  [1/2700] theta=0.0 deg phi=0.0 deg R=1390.6 m
+  [500/2700] theta=10.0 deg phi=196.0 deg R=1321.9 m
+  [1000/2700] theta=22.0 deg phi=36.0 deg R=1205.4 m
+  [1500/2700] theta=32.0 deg phi=236.0 deg R=1724.0 m
+  [2000/2700] theta=44.0 deg phi=76.0 deg R=1485.9 m
+  [2500/2700] theta=54.0 deg phi=276.0 deg R=2196.0 m
+  [2700/2700] theta=58.0 deg phi=356.0 deg R=2766.3 m
+setup (physics+geometry) 21.3 s
+dry assemble 81.7 s
+one forward+Jacobian 46.35 s
+one flux-only forward 6.36 s
+SART(200)    secs=0.17 fwd=0 jac=0 updates=200 stop=n_iter rmse_s=0.3121
+MLEM(400)    secs=0.3 fwd=0 jac=0 updates=400 stop=n_iter rmse_s=0.1589
+GN-lin       secs=44.7 fwd=0 jac=1 updates=6 stop=objective_decrease rmse_s=0.3379
+GN-0         secs=1491.94 fwd=99 jac=21 updates=20 stop=max_updates rmse_s=0.3091
+MLEM->GN     secs=964.52 fwd=61 jac=14 updates=13 stop=objective_decrease rmse_s=0.3143
+GD-0         secs=1776.38 fwd=0 jac=41 updates=40 stop=max_iter rmse_s=0.2855
+MLEM->GD     secs=1780.77 fwd=0 jac=41 updates=40 stop=max_iter rmse_s=0.2882
+metric row (relres) 5.73 s
+total 6471.5 s; threads 2
+finished
