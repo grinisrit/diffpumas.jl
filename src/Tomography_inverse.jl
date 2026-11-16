@@ -90,15 +90,27 @@ Solve `A w ≈ b` with the SART update
 `w ← clamp(w + relaxation · D_col · Aᵀ · D_row · (b − A w), box)`,
 where `D_row = 1/Σ_j|A_ij|` and `D_col = 1/Σ_i|A_ij|`. With `prior`, a Laplacian
 smoothing sweep is applied each iteration (Tikhonov-style regularisation).
+A Boolean `free` mask restricts the solver to the free cells: the other cells are
+reset to exactly 0 after every update and smoothing sweep (smoothing acts on free
+cells only, fixed neighbours count as 0). `snapshots` (a `Dict`) receives a copy of
+`w` after each iteration listed in `snapshot_iters`.
 """
 function sart_reconstruct(A::AbstractMatrix, b::AbstractVector;
                           w0::Union{Nothing,AbstractVector} = nothing,
                           n_iter::Int = 50, relaxation::Float64 = 0.2,
                           box::Tuple{Float64,Float64} = (0.0, MAX_WATER_FRACTION),
                           prior::Union{Nothing,SmoothnessPrior} = nothing,
-                          smooth_strength::Float64 = 0.1)
+                          smooth_strength::Float64 = 0.1,
+                          free::Union{Nothing,AbstractVector{Bool}} = nothing,
+                          snapshots::Union{Nothing,AbstractDict} = nothing,
+                          snapshot_iters = ())
     n = size(A, 2)
     w = w0 === nothing ? fill(0.0, n) : collect(Float64, w0)
+    if free !== nothing
+        length(free) == n || throw(DimensionMismatch("free mask must match the columns of A"))
+        A = A .* transpose(free)              # non-free cells are not data-informed
+        w[.!free] .= 0.0
+    end
     Aabs = abs.(A)
     rowsum = vec(sum(Aabs, dims = 2))
     colsum = vec(sum(Aabs, dims = 1))
@@ -112,7 +124,9 @@ function sart_reconstruct(A::AbstractMatrix, b::AbstractVector;
         if prior !== nothing
             w = clamp.(apply_laplacian_smoothing(prior, w, smooth_strength), box[1], box[2])
         end
+        free === nothing || (w[.!free] .= 0.0)   # fixed cells stay exactly 0
         push!(history, norm(b .- A * w))
+        snapshots !== nothing && length(history) in snapshot_iters && (snapshots[length(history)] = copy(w))
     end
     return w, history
 end
@@ -132,17 +146,28 @@ heuristic, not exact MAP optimization. The water-replacement examples use
 `b = max(flux-baseline,0)` and `A = max(J,0)` because water raises transmission.
 These clipped flux excesses are not actual Poisson event counts, so this use
 is an algebraic comparison rather than a validated Poisson-likelihood fit.
+A Boolean `free` mask restricts the solver to the free cells: the other cells are
+exactly 0 on output (and inside the prior gradient). `snapshots` (a `Dict`) receives
+a copy of `w` after each iteration listed in `snapshot_iters`.
 """
 function mlem_reconstruct(A::AbstractMatrix, b::AbstractVector;
                           w0::Union{Nothing,AbstractVector} = nothing,
                           n_iter::Int = 100,
                           box::Tuple{Float64,Float64} = (0.0, MAX_WATER_FRACTION),
                           prior::Union{Nothing,SmoothnessPrior} = nothing,
-                          eps::Float64 = 1e-12)
+                          eps::Float64 = 1e-12,
+                          free::Union{Nothing,AbstractVector{Bool}} = nothing,
+                          snapshots::Union{Nothing,AbstractDict} = nothing,
+                          snapshot_iters = ())
     n = size(A, 2)
     w = w0 === nothing ? fill(max(box[1], 1e-3), n) : collect(Float64, w0)
     # ensure strictly positive start (multiplicative updates cannot leave 0)
     @inbounds for i in eachindex(w); w[i] = max(w[i], 1e-6); end
+    if free !== nothing
+        length(free) == n || throw(DimensionMismatch("free mask must match the columns of A"))
+        A = A .* transpose(free)
+        w[.!free] .= 0.0
+    end
     sens = vec(sum(A, dims = 1))
     @inbounds for j in eachindex(sens); sens[j] <= 0 && (sens[j] = 1.0); end
     history = Float64[]
@@ -155,7 +180,9 @@ function mlem_reconstruct(A::AbstractMatrix, b::AbstractVector;
             denom = denom .+ max.(laplacian_gradient(prior, w), 0.0)
         end
         w = clamp.(w .* ratio ./ denom, box[1], box[2])
+        free === nothing || (w[.!free] .= 0.0)   # fixed cells stay exactly 0
         push!(history, norm(b .- A * w))
+        snapshots !== nothing && length(history) in snapshot_iters && (snapshots[length(history)] = copy(w))
     end
     return w, history
 end
@@ -267,7 +294,7 @@ end
 export prior_value
 
 # --------------------------------------------------------------------------
-# Gradient descent on the nonlinear misfit using the AD Jacobian (our method)
+# Gradient descent on the nonlinear misfit using the AD Jacobian
 # --------------------------------------------------------------------------
 
 """
@@ -288,6 +315,9 @@ destroys the reconstruction. For `:pgd`, `lr` is the step-length cap (use `1.0`)
 `prior` may be a quadratic [`SmoothnessPrior`] or an
 edge-preserving [`EdgePrior`] (same regulariser as Gauss-Newton), and `weights`
 is an optional per-bin `1/σ²` for inverse-variance parity with `gauss_newton_reconstruct`.
+A Boolean `free` mask (`:pgd` only) restricts the updates to the free cells; the others
+keep their `w0` values. `snapshots` (a `Dict`) receives a copy of `w` after every
+update `t` (the last key is the iterate at which the solver stopped).
 This is a DiffPumas-native solver: the same differentiable CSDA forward model used
 for sensitivities drives the inversion (with `relinearize=true`).
 """
@@ -298,8 +328,12 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
                                       prior::Union{Nothing,SmoothnessPrior,EdgePrior} = nothing,
                                       optimizer::Symbol = :adam,
                                       relinearize::Bool = true,
-                                      weights::Union{Nothing,AbstractVector} = nothing)
+                                      weights::Union{Nothing,AbstractVector} = nothing,
+                                      free::Union{Nothing,AbstractVector{Bool}} = nothing,
+                                      snapshots::Union{Nothing,AbstractDict} = nothing)
     w = clamp.(collect(Float64,w0),box[1],box[2])
+    free === nothing || length(free)==length(w) || throw(DimensionMismatch("free mask must match w0"))
+    free === nothing || optimizer === :pgd || throw(ArgumentError("free requires optimizer=:pgd"))
     history = Float64[]
     n_iter<=0 && return w,history
     W = weights===nothing ? nothing : collect(Float64,weights)
@@ -328,6 +362,7 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
             end
             dmax = maximum(dvec); dmax = dmax > 0 ? dmax : 1.0
             p = g ./ max.(dvec, 1e-9 * dmax)                 # preconditioned descent dir
+            free === nothing || (p[.!free] .= 0.0)           # fixed cells do not move
             Jp = J * p
             denom = W === nothing ? dot(Jp, Jp) : dot(Jp, W .* Jp)
             Hr === nothing || (denom += dot(p, Hr * p))      # curvature along p
@@ -355,6 +390,7 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
         next_residual=pred.-obs
         objective=data_cost(next_residual)+prior_value(prior,w)
         push!(history,norm(next_residual))
+        snapshots === nothing || (snapshots[t] = copy(w))   # iterate after update t
         if optimizer===:pgd && abs(objective-previous_objective)<=1e-5*max(abs(previous_objective),eps())
             break
         end
@@ -364,7 +400,7 @@ function gradient_descent_reconstruct(model, obs::AbstractVector;
 end
 
 # --------------------------------------------------------------------------
-# Gauss-Newton / Levenberg-Marquardt on the AD Jacobian (our method)
+# Gauss-Newton / Levenberg-Marquardt on the AD Jacobian
 # --------------------------------------------------------------------------
 
 """
@@ -391,6 +427,12 @@ complete data-plus-prior objective. `solver_mode=:active_set` freezes outward
 bound coordinates and uses projected Armijo acceptance. `diagnostics`, if supplied,
 receives objective and infinity-norm projected-gradient records including the final
 state; `diagnostic_callback(row)` receives the same immutable records live.
+Optional protocol outputs: `iterates` (a vector) receives a copy of `w0` and of the
+iterate after every accepted update; `update_log` receives one record per outer update
+(objective before/after, projected gradient, LM damping, number of tries, accepted);
+`stop` (a `Ref{Symbol}`) receives the stop reason (`:max_updates`, `:projected_gradient`,
+`:no_step`, `:objective_decrease`, `:no_free_cells`); `rel_objective_tol>0` stops after
+an accepted update whose relative objective decrease is below it.
 After exhausted LM searches, active-set mode tries a bounded diagonally scaled
 projected-gradient direction with up to 40 Armijo halvings. Only a projected gradient below `projected_gradient_tol` establishes KKT
 convergence; exhausting iterations or a line-search failure does not. Optional
@@ -418,7 +460,11 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
                                   projected_gradient_tol::Float64 = 1e-6,
                                   objective_tol::Float64 = 0.0,
                                   diagnostics = nothing,
-                                  diagnostic_callback = nothing)
+                                  diagnostic_callback = nothing,
+                                  rel_objective_tol::Float64 = 0.0,
+                                  iterates = nothing,
+                                  update_log = nothing,
+                                  stop = nothing)
     record_diagnostic(row) = begin
         diagnostics === nothing || push!(diagnostics,row)
         diagnostic_callback === nothing || diagnostic_callback(row)
@@ -435,9 +481,11 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
     linear_origin=copy(w);linear_pred=copy(pred);linear_J=J
     r=pred.-obs;f_cur=objective(pred,w);mu=lm_damping
     push!(history,norm(r))
-    isempty(active) && return w,history
+    iterates === nothing || push!(iterates,copy(w))     # iterates[k+1] = state after k updates
+    stop === nothing || (stop[]=:max_updates)
+    isempty(active) && (stop === nothing || (stop[]=:no_free_cells); return w,history)
 
-    for _ in 1:n_iter
+    for _update in 1:n_iter
         Ja=J[:,active]
         Jt=transpose(Ja)
         if W===nothing
@@ -454,14 +502,19 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
         pg = w[active] .- clamp.(w[active] .- grad, box[1], box[2])
         pg_norm = norm(pg, Inf)
         record_diagnostic((iteration=length(history)-1, objective=f_cur, projected_gradient=pg_norm))
-        solver_mode === :active_set && pg_norm <= projected_gradient_tol && break
+        if solver_mode === :active_set && pg_norm <= projected_gradient_tol
+            stop === nothing || (stop[]=:projected_gradient)
+            break
+        end
         movable = solver_mode === :legacy ? trues(length(active)) :
             .!(((w[active] .<= box[1]) .& (grad .> 0)) .|
                ((w[active] .>= box[2]) .& (grad .< 0)))
         d=diag(normal);dmax=maximum(d);dmax=dmax>0 ? dmax : 1.0
         accepted=false
         f_before=f_cur
+        mu_before=mu;n_tries=0
         for _try in 1:(solver_mode === :active_set ? 7 : 6)
+            n_tries+=1
             A=normal+Diagonal(mu.*max.(d,1e-12*dmax))
             # If LM directions exhaust their searches, a bounded diagonally
             # scaled projected gradient supplies an independent descent safeguard.
@@ -524,7 +577,17 @@ function gauss_newton_reconstruct(model, obs::AbstractVector;
             end
         end
         push!(history,norm(r))
-        accepted || break
+        update_log === nothing || push!(update_log,(update=_update,objective_before=f_before,
+            objective_after=f_cur,projected_gradient=pg_norm,damping=mu_before,tries=n_tries,accepted=accepted))
+        if !accepted
+            stop === nothing || (stop[]=:no_step)
+            break
+        end
+        iterates === nothing || push!(iterates,copy(w))
+        if rel_objective_tol > 0 && f_before-f_cur < rel_objective_tol*abs(f_before)
+            stop === nothing || (stop[]=:objective_decrease)
+            break
+        end
         # Objective stagnation is recorded, but never called KKT convergence.
         solver_mode === :active_set && objective_tol > 0 && abs(f_before-f_cur) <= objective_tol*max(1.0,abs(f_before)) && break
     end

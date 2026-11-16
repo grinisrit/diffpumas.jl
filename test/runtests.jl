@@ -408,6 +408,7 @@ using Random
     include("test_mixture_cache.jl")
     include("test_geometry_ad.jl")
     include("test_tomography.jl")
+    include("test_s7_protocol.jl")
     include("test_shallow_mixture.jl")
     include("test_segment_tangents.jl")
     include("test_tomography_material.jl")

@@ -93,6 +93,24 @@ Options:
     --papermatch-paper-samples INT  MC samples for the Fig.8 energy spectrum (default: 2000)
     --max-plot-cells INT          Maximum cells rendered in the 3D sensitivity plot (default: 150)
     --no-straggling               Disable stochastic energy-loss fluctuations for MC validation
+    --reconstruction-sweep        Run one stage of the reconstruction protocol (needs --protocol-stage)
+    --protocol-stage STR          gate | g0c | dry | templates | merge | dev | select | finalize | plan | test | diag | summary
+    --worker INT                  Worker id of a claim-based stage (names its output files)
+    --claim-dir DIR               Claim units by atomic mkdir in DIR (workers can be added or paused at any time)
+    --pause-file PATH             Workers wait before claiming a new unit while this file exists
+    --cuts PATH                   cuts.toml of the 36 h trigger (default: <output-dir>/cuts.toml)
+    --elapsed-hours FLOAT         Run time already spent (stage plan)
+    --ref-processes INT           Process count of the 36 h projection (default: 16)
+    --template-mode STR           replicates (one MC template per realisation, default) | single (fallback: one per field)
+    --protocol-phase INT          Development phase: 1 SART+MLEM, 2 GN family, 3 GD (default: 1)
+    --shard I/N                   Process share I of N of the (arm, exposure, realisation) units
+    --sweep-exposures LIST        Comma-separated per-bin exposures (default: 1e3,3.16e3,1e4,3.16e4,1e5,1e6,1e8)
+    --sweep-realizations INT      Realisations per (arm, exposure) (default: dev 2, test and diag 8)
+    --sweep-data STR              Data arm: mc (M, operator as published), mc-cal (Mc, dry-normalised operator),
+                                  csda (X) or all (default: all)
+    --truth-field STR             dev (development field) or test (held-out field) (default: dev)
+    --selection PATH              Frozen selection.toml (default: <output-dir>/selection.toml)
+    --dry-calibration PATH        Frozen dry_calibration.toml of arm Mc (default: <output-dir>/dry_calibration.toml)
 """
 
 const lvd_tomography = nothing
@@ -761,6 +779,11 @@ end
 function create_initial_water_field(volume::AbstractSensitivityVolume, args)
     fractions = zeros(Float64, num_cells(volume))
 
+    # Held-out test field of the reconstruction protocol (defined before any run).
+    if args.truth_field == "test"
+        return protocol_test_field(reduce(hcat, [collect(Float64, cell_centroid(volume, i)) for i in 1:num_cells(volume)]))
+    end
+
     if !args.rich_field
         # Legacy single aquifer box (off unless --aquifer-water-fraction > 0).
         args.aquifer_water_fraction <= 0.0 && return fractions
@@ -1413,7 +1436,24 @@ function parse_commandline()
         sweep_exp_min = 1.0e5,         # exposure sweep range (detector exposure units)
         sweep_exp_max = 1.0e9,
         sweep_n = 13,                  # number of exposure points (log-spaced)
-        sweep_realizations = 80,       # noise realizations per exposure per solver
+        sweep_realizations = 80,       # noise realizations per (arm, exposure) of the protocol stages
+        sweep_realizations_given = false,  # set by --sweep-realizations (else the stage default: dev 2, test/diag 8)
+        sweep_exposures = copy(PROTOCOL_EXPOSURES),  # explicit per-bin exposure grid of the protocol
+        sweep_data = "all",            # protocol data arms: "mc" (M), "mc-cal" (Mc), "csda" (X) or "all"
+        truth_field = "dev",           # synthetic truth: "dev" (development field) or "test" (held-out field)
+        protocol_stage = "",           # gate | g0c | dry | templates | dev | select | finalize | test | diag | summary
+        protocol_phase = 1,            # development phase 1 (SART, MLEM), 2 (GN family), 3 (GD)
+        shard_index = 1,               # process share i of n (--shard i/n)
+        shard_count = 1,
+        selection_path = "",           # frozen selection.toml (default: <output-dir>/selection.toml)
+        dry_calibration_path = "",     # frozen dry_calibration.toml (default: <output-dir>/dry_calibration.toml)
+        worker_id = 0,                 # worker id of a claim-based stage (0: use the shard index)
+        claim_dir = "",                # claim units by atomic mkdir (dynamic work sharing)
+        pause_file = "",               # workers wait before claiming a unit while this file exists
+        cuts_path = "",                # cuts.toml of the 36 h trigger (default: <output-dir>/cuts.toml)
+        elapsed_hours = 0.0,           # run time already spent (stage plan)
+        ref_processes = 16,            # process count of the 36 h projection
+        template_mode = "replicates",  # "replicates": one MC template per realisation; "single": one per field (fallback)
     )
 
     i = 1
@@ -1566,7 +1606,39 @@ function parse_commandline()
         elseif arg == "--detection-contrast-sweep"
             args = merge(args, (detection_contrast_sweep = true,)); i += 1
         elseif arg == "--sweep-realizations"
-            args = merge(args, (sweep_realizations = parse(Int, ARGS[i + 1]),)); i += 2
+            args = merge(args, (sweep_realizations = parse(Int, ARGS[i + 1]), sweep_realizations_given = true)); i += 2
+        elseif arg == "--sweep-exposures"
+            args = merge(args, (sweep_exposures = parse_exposure_list(ARGS[i + 1]),)); i += 2
+        elseif arg == "--sweep-data"
+            args = merge(args, (sweep_data = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--truth-field"
+            args = merge(args, (truth_field = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--protocol-stage"
+            args = merge(args, (protocol_stage = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--protocol-phase"
+            args = merge(args, (protocol_phase = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--shard"
+            parts = split(ARGS[i + 1], '/')
+            length(parts) == 2 || error("--shard must be i/n")
+            args = merge(args, (shard_index = parse(Int, parts[1]), shard_count = parse(Int, parts[2]))); i += 2
+        elseif arg == "--selection"
+            args = merge(args, (selection_path = ARGS[i + 1],)); i += 2
+        elseif arg == "--template-mode"
+            args = merge(args, (template_mode = lowercase(ARGS[i + 1]),)); i += 2
+        elseif arg == "--worker"
+            args = merge(args, (worker_id = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--claim-dir"
+            args = merge(args, (claim_dir = ARGS[i + 1],)); i += 2
+        elseif arg == "--pause-file"
+            args = merge(args, (pause_file = ARGS[i + 1],)); i += 2
+        elseif arg == "--cuts"
+            args = merge(args, (cuts_path = ARGS[i + 1],)); i += 2
+        elseif arg == "--elapsed-hours"
+            args = merge(args, (elapsed_hours = parse(Float64, ARGS[i + 1]),)); i += 2
+        elseif arg == "--ref-processes"
+            args = merge(args, (ref_processes = parse(Int, ARGS[i + 1]),)); i += 2
+        elseif arg == "--dry-calibration"
+            args = merge(args, (dry_calibration_path = ARGS[i + 1],)); i += 2
         elseif arg == "--sweep-n"
             args = merge(args, (sweep_n = parse(Int, ARGS[i + 1]),)); i += 2
         elseif arg == "--no-threads"
@@ -1603,6 +1675,15 @@ function parse_commandline()
     args.geometry in ("auto", "tetra", "grid") || error("--geometry must be auto, tetra, or grid")
     args.solver in ("all", "sart", "mlem", "gd", "gn") || error("--solver must be all, sart, mlem, gd, or gn")
     args.inverse_data in ("mc", "csda") || error("--inverse-data must be mc or csda")
+    args.sweep_data in ("mc", "mc-cal", "csda", "all", "both") || error("--sweep-data must be mc, mc-cal, csda or all")
+    args.truth_field in ("dev", "test") || error("--truth-field must be dev or test")
+    args.protocol_stage in ("", "gate", "g0c", "dry", "templates", "merge", "dev", "select", "finalize", "plan", "test", "diag", "summary") ||
+        error("--protocol-stage must be gate, g0c, dry, templates, merge, dev, select, finalize, plan, test, diag or summary")
+    args.protocol_phase in (1, 2, 3) || error("--protocol-phase must be 1, 2 or 3")
+    args.template_mode in ("replicates", "single") || error("--template-mode must be replicates or single")
+    1 <= args.shard_index <= args.shard_count || error("--shard i/n needs 1 <= i <= n")
+    args.shard_count <= PROTOCOL_MAX_PROCESSES || error("--shard i/n: at most $PROTOCOL_MAX_PROCESSES worker processes")
+    args.sweep_realizations >= 1 || error("--sweep-realizations must be positive")
     args.papermatch_mask_ratio > 1 || error("--papermatch-mask-ratio must exceed 1 (Inf disables masking)")
     0 <= args.papermatch_calibration_water <= MAX_WATER_FRACTION || error("--papermatch-calibration-water must be in [0,0.9]")
     isfinite(args.papermatch_prior_cutoff) || error("--papermatch-prior-cutoff must be finite")
@@ -1759,7 +1840,8 @@ function inverse_mc_cache_identity(physics,shallow_flags,matcfg,site,paths,w_tru
     isfile(args.dump_path) || error("MC cache identity requires an existing physics dump: $(args.dump_path)")
     sources=[(path=abspath(path),sha256=bytes2hex(sha256(read(path)))) for path in source_paths]
     metadata=physics isa DiffPumas.Physics.PhysicsTables ? DiffPumas.Physics.material_metadata(physics) : nothing
-    serialized_content_sha256((schema=3,transport=:fixed_path_energy_loss_no_scattering,
+    serialized_content_sha256((schema=3,transport=:fixed_path_energy_loss_no_scattering,mc_stream=PROTOCOL_MC_STREAM,
+        mc_base_seed=PROTOCOL_SINGLE_RUN_MC_BASE,
         julia_version=string(VERSION),machine=Sys.MACHINE,threads=Threads.nthreads(),
         dump_path=abspath(args.dump_path),dump_sha256=bytes2hex(sha256(read(args.dump_path))),
         source_sha256=sources,physics=physics,material_metadata=metadata,
@@ -1825,14 +1907,15 @@ function mc_observations_for_field(physics, shallow_flags, matcfg::MaterialConfi
         export_inverse_mc_diagnostics(cache_path,identity,paths,valid,cached.obs,cached.sigma_mc,args;cache_hit=true)
         return cached.obs
     end
-    mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, args.seed + 40_000)
     mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
-    println("  generating fixed-path energy-loss MC observations for $(length(valid)) bins (energy-loss straggling; scattering disabled, $(args.inverse_mc_samples) samples)...")
+    println("  generating fixed-path energy-loss MC observations for $(length(valid)) bins (energy-loss straggling; scattering disabled, $(args.inverse_mc_samples) samples per bin, mc_stream=$(PROTOCOL_MC_STREAM), base seed $(PROTOCOL_SINGLE_RUN_MC_BASE))...")
     obs = Vector{Float64}(undef, length(valid))
     sigma_mc = similar(obs)
     Threads.@threads for k in eachindex(valid)
+        eseed, sseed = mc_bin_seeds(PROTOCOL_SINGLE_RUN_MC_BASE, k)          # independent sample set per bin
+        mc_samples = sample_energy_set(args.inverse_mc_samples, args.energy_min, args.energy_max, eseed)
         f, sigma = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
-            mc_samples, args.seed + 50_000 + k;
+            mc_samples, sseed;
             straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
             scattering = false)
         obs[k] = f
@@ -1884,10 +1967,11 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     Jv = base_J[valid_bins, :]
     f0 = base_flux[valid_bins]
 
-    # Observations use fixed-path stochastic energy-loss MC through the true
-    # field, then Poisson counting noise. Both models share prescribed geometry. The
-    # linear solvers invert `Jv`; only our Gauss-Newton fits the true nonlinear
-    # corrected-CSDA operator, which is its edge over MLEM.
+    # Observations are the fixed-path energy-loss MC flux (or the exact corrected
+    # CSDA flux) of the true field, turned into Poisson counts k ~ Poisson(tau * flux)
+    # with obs = k / tau. Both models share prescribed geometry. SART and MLEM invert
+    # the frozen `Jv`; GD and GN fit the nonlinear corrected-CSDA operator. No claim
+    # about their relative accuracy is made here; see the reconstruction protocol.
     if args.inverse_data == "mc"
         cache_path = joinpath(args.output_dir, "lvd_mc_observations.bin")
         obs_clean = mc_observations_for_field(physics, shallow_flags, matcfg, site, paths,
@@ -1897,17 +1981,19 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
             w_true, energy_samples; n_cells = n_cells, threaded = args.threaded)
         obs_clean = ff[valid_bins]
     end
-    rng = MersenneTwister(args.seed + 777)
-    σ = sqrt.(max.(obs_clean, 0.0) ./ args.exposure)
-    @inbounds for i in eachindex(σ); σ[i] = max(σ[i], 1e-12 * maximum(obs_clean)); end
-    obs = [max(obs_clean[i], 0.0) + σ[i] * randn(rng) for i in eachindex(obs_clean)]
+    # Poisson counts; the weights come from the observed counts only (sigma^2 =
+    # max(k,1)/tau^2). Every solver updates only the cells crossed by a ray (free =
+    # nonzero column of the dry Jacobian); all other cells stay exactly 0.
+    counts = draw_poisson_counts(obs_clean, args.exposure, args.seed + 777)
+    obs = counts ./ args.exposure
     excess = obs .- f0                      # flux excess from the lighter water
+    free_cells = sensed_cells(Matrix(Jv))
+    println("  free (ray-crossed) cells: $(count(free_cells)) of $(length(free_cells))")
 
     # Regularisation weights auto-scaled to the operator curvature so they are
     # neither negligible nor overwhelming (or use --reg-weight to set explicitly).
-    Wvec = 1.0 ./ σ .^ 2
-    diagJtWJ = vec(sum(Wvec .* (Matrix(Jv) .^ 2); dims = 1))   # curvature per cell
-    gn_scale = (m = filter(>(0), diagJtWJ); isempty(m) ? 1.0 : median(m))
+    Wvec = protocol_weights(counts, args.exposure)
+    gn_scale = curvature_scale(Wvec, Matrix(Jv), free_cells)
     sens = vec(sum(max.(Jv, 0.0); dims = 1))
     sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
     # The edge Hessian λ·L has O(#neighbors) on its diagonal, so λ must be a small
@@ -1921,13 +2007,13 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     edge_prior = EdgePrior(neighbors, edge_w, args.edge_delta)
 
     # The true nonlinear corrected-CSDA operator, relinearised via the fast AD
-    # Jacobian — shared by BOTH our AAD solvers (GN and GD). SART/MLEM are the
+    # Jacobian — shared by BOTH differentiable solvers (GN and GD). SART/MLEM are the
     # frozen-operator baselines (single Jacobian Jv at w=0).
     csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths,
         energy_samples; n_cells = n_cells, valid_bins = valid_bins,
         threaded = args.threaded)
     csda_predict = flux_only_operator(physics,shallow_flags,matcfg,site,paths[valid_bins],energy_samples;threaded=args.threaded)
-    Wobs = 1.0 ./ σ .^ 2
+    Wobs = Wvec
     # Near-surface cells are crossed only by near-vertical rays and are essentially
     # unrecoverable, so we evaluate quality below a minimum depth (configurable). All
     # reported metrics and the resolution map use this evaluation mask.
@@ -1943,12 +2029,12 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
         t0 = time()
         if s == "sart"
             w_rec, hist = sart_reconstruct(Jv, excess; n_iter = args.reco_iters,
-                relaxation = 0.2, prior = sm_prior)
+                relaxation = 0.2, prior = sm_prior, free = free_cells)
         elseif s == "mlem"
             w_rec, hist = mlem_reconstruct(max.(Jv, 0.0), max.(excess, 0.0);
-                n_iter = args.reco_iters, prior = sm_prior)
+                n_iter = args.reco_iters, prior = sm_prior, free = free_cells)
         elseif s == "gd"
-            # Our AAD first-order solver: preconditioned projected gradient on the
+            # Differentiable first-order solver: preconditioned projected gradient on the
             # true nonlinear corrected-CSDA operator (relinearised each step via the
             # AD Jacobian), inverse-variance weighted, with the same edge-preserving
             # prior as GN. The Jacobi preconditioner keeps the background sparse
@@ -1960,15 +2046,15 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
                 w0 = zeros(n_cells), n_iter = args.gd_iters,
                 lr = args.gd_lr, optimizer = :pgd, prior = edge_prior,
                 weights = Wobs, relinearize = true,
-                box = (0.0, MAX_WATER_FRACTION))
+                box = (0.0, MAX_WATER_FRACTION), free = free_cells)
         elseif s == "gn"
-            # Our AAD second-order solver: box-constrained Gauss-Newton on the same
+            # Differentiable second-order solver: box-constrained Gauss-Newton on the same
             # nonlinear operator, inverse-variance weighted, edge-preserving prior.
             w_rec, hist = gauss_newton_reconstruct(csda_model, obs;
                 w0 = zeros(n_cells), n_iter = max(8, args.reco_iters ÷ 16),
                 solver_mode = args.solver_mode == "stable" ? :active_set : :legacy,
                 prior = edge_prior, weights = Wobs, relinearize = true,
-                box = (0.0, MAX_WATER_FRACTION), predict_only = csda_predict)
+                box = (0.0, MAX_WATER_FRACTION), predict_only = csda_predict, free = free_cells)
         else
             error("Unknown solver '$s' (use sart, mlem, gd, gn, or all)")
         end
@@ -2717,90 +2803,468 @@ function run_detection_benchmark(physics, shallow_flags, matcfg::MaterialConfig,
     return (psi = τ_psi, phi = τ_phi, sart = τ_sart)
 end
 
-# (b) Benchmark 1 as a sweep: reconstruction accuracy (RMSE, SSIM vs the true field) vs
-# detector exposure, all four solvers with the FULL NONLINEAR operator (GD/GN relinearize
-# each step, as in the headline result). Clean observations are the fixed-path energy-loss MC (computed once,
-# no inverse crime); only the counting noise scales with exposure. Use a reduced-but-
-# overdetermined angular grid so the nonlinear GN sweep is affordable.
-function run_reconstruction_sweep(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
-                                  volume, paths::Vector{DirectionalPath}, energy_samples, args;
-                                  output_path::String, plot_path::String)
+# --- Reconstruction protocol (pre-registered synthetic solver comparison) ------------------
+# One stage per invocation (`--reconstruction-sweep --protocol-stage STAGE`); see
+# src/Tomography_protocol.jl for the logic and examples/s7_protocol.sh for the order.
+#   gate      truth-only report (gate G1), crossed-cell list and coverage classification
+#   templates noise-free MC (arm M) and exact CSDA (arm X) templates of the chosen field
+#   dev       one development phase (1: SART+MLEM, 2: GN family, 3: GD) on field D
+#   select    selection / tie / edge rules after a phase (exit code 10: grids were extended, rerun the phase)
+#   finalize  freeze the three phase selections into selection.toml (+ hash)
+#   test      reconstruct the held-out field T with the frozen selection (refuses without it)
+#   diag      GN-0 with oracle (template) weights, arm M, tau = 1e4 and 1e8: a diagnostic, not a competitor
+
+function protocol_mc_template(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                              paths::Vector{DirectionalPath}, w_true::Vector{Float64},
+                              valid::Vector{Int}, args; histories::Int, seed::Int, ks = eachindex(valid))
+    mats, dens = build_cell_properties_for_mc(shallow_flags, w_true, matcfg)
+    println("  generating fixed-path energy-loss MC template: $(length(ks)) of $(length(valid)) bins, $histories histories per bin, base seed $seed, mc_stream=$(PROTOCOL_MC_STREAM) (straggling on, scattering off)...")
+    flush(stdout)
+    kv = collect(ks)
+    obs = Vector{Float64}(undef, length(kv)); sigma_mc = similar(obs)
+    # per-bin streams: every bin draws its own energy sample and its own straggling draws, seeded from the
+    # base seed and the global bin position only, so any split into chunks gives the same template
+    Threads.@threads for j in eachindex(kv)
+        k = kv[j]
+        eseed, sseed = mc_bin_seeds(seed, k)
+        mc_samples = sample_energy_set(histories, args.energy_min, args.energy_max, eseed)
+        f, sigma = compute_directional_flux_mc(physics, matcfg, site, paths[valid[k]], mats, dens,
+            mc_samples, sseed;
+            straggling = args.straggling, energy_threshold_low = args.energy_threshold_low,
+            scattering = false)
+        obs[j] = f; sigma_mc[j] = sigma
+    end
+    return obs, sigma_mc
+end
+
+const PROTOCOL_MC_CHUNK = 25          # bins per claimed chunk of an MC template
+
+function protocol_git_commit()
+    try
+        strip(read(`git -C $(@__DIR__) rev-parse HEAD`, String))
+    catch
+        "unknown"
+    end
+end
+
+# CPU seconds used by this process so far (user + system, from /proc; 0 where unavailable)
+function protocol_cpu_seconds()
+    try
+        f = split(read("/proc/self/stat", String), ") ")[end]            # fields after the command name
+        v = split(f)
+        return (parse(Float64, v[12]) + parse(Float64, v[13])) / 100      # utime, stime in clock ticks (100 Hz)
+    catch
+        return 0.0
+    end
+end
+
+function protocol_git_dirty()
+    try
+        !isempty(strip(read(`git -C $(@__DIR__) status --porcelain --untracked-files=no`, String)))
+    catch
+        true
+    end
+end
+
+# Rock path length of a ray: in-volume segments (rock when dry) plus the remaining rock to the surface.
+protocol_rock_path(p::DirectionalPath) = sum(seg.distance for seg in p.segments; init = 0.0) + p.remaining_rock_distance
+
+protocol_template_path(dir, field, arm, histories, seed) =
+    joinpath(dir, "templates", "template_$(field)_$(arm)_h$(histories)_s$(seed).jls")
+
+function protocol_coverage(centroids, free, valid_zenith_max)
+    xs = sort(unique(round.(centroids[1, :]; digits = 3))); zs = sort(unique(round.(centroids[3, :]; digits = 3)))
+    hx = minimum(diff(xs)) / 2; hz = minimum(diff(zs)) / 2
+    cls = String[]
+    for j in 1:size(centroids, 2)
+        if free[j]
+            push!(cls, "crossed")
+        else
+            dx = max(abs(centroids[1, j]) - hx, 0.0); dy = max(abs(centroids[2, j]) - hx, 0.0)
+            zen_min = atand(hypot(dx, dy), centroids[3, j] + hz)
+            push!(cls, zen_min > valid_zenith_max ? "outside_cone" : "inside_cone_not_crossed")
+        end
+    end
+    return cls
+end
+
+# Data arms of `--sweep-data`: M (MC data, operator as published), Mc (same MC data, dry-normalised operator), X (exact).
+protocol_arms(args) = args.sweep_data == "mc" ? ["M"] : args.sweep_data == "mc-cal" ? ["Mc"] :
+                      args.sweep_data == "csda" ? ["X"] : ["M", "Mc", "X"]
+
+protocol_dry_path(args) = isempty(args.dry_calibration_path) ? joinpath(args.output_dir, "dry_calibration.toml") : args.dry_calibration_path
+
+# Selection steps need no physics: select (per phase), finalize (freeze selection.toml) and summary.
+function run_protocol_selection_stage(args)
+    stage = args.protocol_stage
+    arms = protocol_arms(args)
+    exposures = collect(Float64, args.sweep_exposures)
+    if stage == "summary"
+        testdir = joinpath(args.output_dir, "test")
+        rows = read_rows(rows_in(testdir, "rows_"))
+        isempty(rows) && error("no test-stage rows under $testdir")
+        path = write_test_summary(joinpath(args.output_dir, "test_summary.tsv"), test_summary(rows))
+        println("  wrote $path")
+        return 0
+    end
+    if stage == "plan"      # 36 h trigger: project the test stage from the measured development solve times
+        selpath = isempty(args.selection_path) ? joinpath(args.output_dir, "selection.toml") : args.selection_path
+        selection, sel_sha, _ = load_selection(selpath)
+        devrows = read_rows(rows_in(joinpath(args.output_dir, "dev"), "rows_phase"))
+        isempty(devrows) && error("no development rows under $(joinpath(args.output_dir, "dev"))")
+        plan = plan_cuts(devrows, selection, exposures, args.sweep_realizations_given ? args.sweep_realizations : 8;
+                         elapsed_h = args.elapsed_hours, ref_processes = args.ref_processes)
+        cpath = isempty(args.cuts_path) ? joinpath(args.output_dir, "cuts.toml") : args.cuts_path
+        write_cuts(cpath, plan, sel_sha)
+        for h in plan.history
+            println("  cuts $(h.cuts): projected total $(round(h.total_h; digits = 1)) h (elapsed $(round(h.elapsed_h; digits = 1)) + test $(round(h.test_h; digits = 1)) + diag $(round(h.diag_h; digits = 2)) at $(plan.ref_processes) processes)")
+        end
+        println("  36 h trigger: cuts applied = $(plan.cuts), limit met = $(plan.met); wrote $cpath")
+        return 0
+    end
+    args.truth_field == "dev" || error("stage '$stage' works on the development stage output (--truth-field dev)")
+    nreps = args.sweep_realizations_given ? args.sweep_realizations : 2
+    devdir = joinpath(args.output_dir, "dev")
+    selpath = isempty(args.selection_path) ? joinpath(args.output_dir, "selection.toml") : args.selection_path
+    if stage == "finalize"
+        meta = Dict{String,Any}("field" => "dev", "arms" => arms, "exposures" => exposures,
+            "realizations" => nreps, "git_commit" => protocol_git_commit(), "inverse_mc_samples" => args.inverse_mc_samples,
+            "mc_stream" => PROTOCOL_MC_STREAM, "template_mode" => args.template_mode, "created_unix" => time())
+        if "Mc" in arms          # the selection records the hash of the frozen dry calibration it was made with
+            s_dry, dry_sha, _ = load_dry_calibration(protocol_dry_path(args))
+            meta["dry_calibration_sha256"] = dry_sha; meta["dry_scale"] = s_dry
+        end
+        sha = dev_finalize!(devdir, selpath, meta)
+        println("  wrote $selpath  sha256 $sha")
+        return 0
+    end
+    pending = dev_select!(devdir, args.protocol_phase, arms, exposures, nreps)
+    println("  phase $(args.protocol_phase) selection written; grid extensions made: $pending")
+    return pending > 0 ? 10 : 0
+end
+
+function run_reconstruction_protocol(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                                     volume, paths::Vector{DirectionalPath}, energy_samples, args)
+    stage = args.protocol_stage
+    isempty(stage) && error("--reconstruction-sweep needs --protocol-stage gate|g0c|dry|templates|dev|select|finalize|test|diag|summary")
+    stage in ("select", "finalize", "plan", "summary") && error("stage '$stage' is handled before the physics set-up")
+    field = Symbol(args.truth_field)
+    stage == "dev" && field !== :dev && error("stage '$stage' runs on the development field (--truth-field dev)")
+    stage in ("test", "diag") && field !== :test && error("stage '$stage' runs on the held-out field: pass --truth-field test")
+    arms = protocol_arms(args)
+    exposures = collect(Float64, args.sweep_exposures)
+    nreps = args.sweep_realizations_given ? args.sweep_realizations : (stage == "dev" ? 2 : 8)
+    dry_path = protocol_dry_path(args)
+    # Arm Mc refuses to run without a valid frozen dry_calibration.toml.
+    s_dry = dry_sha = nothing
+    if stage in ("dev", "test", "diag") && ("Mc" in arms || stage == "diag")
+        s_dry, dry_sha, _ = load_dry_calibration(dry_path)
+        println("  frozen dry calibration $(dry_path): s = $s_dry, sha256 $dry_sha")
+    end
+    outdir = args.output_dir
+    stagedir = joinpath(outdir, stage)
+    selpath = isempty(args.selection_path) ? joinpath(outdir, "selection.toml") : args.selection_path
+    shard = (args.shard_index, args.shard_count)
+
+    claim = isempty(args.claim_dir) ? nothing : args.claim_dir
+    pause = isempty(args.pause_file) ? nothing : args.pause_file
+    worker = args.worker_id > 0 ? args.worker_id : shard[1]
+    claim === nothing || shard == (1, 1) || error("--claim-dir replaces --shard: use one of them")
+    # The test and diagnostic stages refuse to run before the selection is frozen.
+    selection = sha = meta = nothing
+    cuts = Set{Int}()
+    if stage in ("test", "diag")
+        selection, sha, meta = load_selection(selpath)
+        println("  frozen selection $(selpath): sha256 $sha")
+        if stage == "test"       # the 36 h trigger was planned for this selection; the test stage applies its cuts
+            cuts = load_cuts(isempty(args.cuts_path) ? joinpath(outdir, "cuts.toml") : args.cuts_path, sha)
+            println("  budget cuts of the plan step: $(sort(collect(cuts)))")
+        end
+        get(meta, "template_mode", "") == args.template_mode ||
+            error("selection.toml was made with template mode $(get(meta, "template_mode", "?")), not $(args.template_mode)")
+        meta["exposures"] == exposures || error("selection.toml was made for exposures $(meta["exposures"]), not $exposures")
+        for a in arms; a in meta["arms"] || error("selection.toml has no arm $a"); end
+        if "Mc" in arms
+            get(meta, "dry_calibration_sha256", "") == dry_sha ||
+                error("selection.toml was made with another dry calibration ($(get(meta, "dry_calibration_sha256", "none"))), not $dry_sha")
+        end
+    end
+    mkpath(stagedir)
+
     n_cells = num_cells(volume)
-    w_true = create_initial_water_field(volume, args)
-    if all(iszero, w_true)
-        for i in 1:n_cells
-            x, y, z = cell_centroid(volume, i)
-            (abs(z - 1118.6) <= 160.0 && abs(x) <= 600.0 && abs(y) <= 600.0) &&
-                (w_true[i] = clamp(args.lens_w, 0.0, MAX_WATER_FRACTION))
-        end
-    end
-    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site,
-        paths, zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
+    centroids = reduce(hcat, [collect(Float64, cell_centroid(volume, i)) for i in 1:n_cells])
+    t0 = time()
+    base_flux, base_J = assemble_forward_and_jacobian(physics, shallow_flags, matcfg, site, paths,
+        zeros(n_cells), energy_samples; n_cells = n_cells, threaded = args.threaded)
     valid_bins = findall(isfinite, base_flux)
-    Jv = base_J[valid_bins, :]; f0 = base_flux[valid_bins]
-    clean_obs = mc_observations_for_field(physics, shallow_flags, matcfg, site, paths, w_true, valid_bins, args;
-        cache_path = joinpath(args.output_dir, "lvd_recon_sweep_obs.bin"))
-    csda_model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
+    J0 = Matrix(base_J[valid_bins, :]); f0 = base_flux[valid_bins]
+    free = sensed_cells(J0)
+    println("  operator: $(length(valid_bins)) bins, $n_cells cells, $(count(free)) free (ray-crossed) cells  [$(round(time() - t0; digits = 1)) s]")
+    w_true = create_initial_water_field(volume, args)          # honours --truth-field
+    geo = make_geometry(field, w_true, centroids, free; min_eval_depth = args.min_eval_depth)
+    _, smasks, _ = field_structures(field, centroids)
+    all((w_true .> 0) .== reduce(.|, smasks)) || error("truth field does not match the structure rules of field '$field'")
+
+    if stage == "gate"
+        reports = Dict{String,Any}()
+        failed = false
+        for f in (:dev, :test)
+            wf = f === :dev ? create_initial_water_field(volume, merge(args, (truth_field = "dev",))) : protocol_test_field(centroids)
+            r = gate_g1_report(make_geometry(f, wf, centroids, free; min_eval_depth = args.min_eval_depth))
+            reports[String(f)] = Dict{String,Any}("structures" => r.structures, "nonzero_per_structure_in_Ds" => r.per_structure,
+                "nonzero_per_structure_all_cells" => r.per_structure_all_cells, "nonzero_in_Ds" => r.nonzero_in_Ds,
+                "nonzero_total" => r.nonzero_total, "n_free" => r.n_free, "n_Ds" => r.n_Ds, "n_eval" => r.n_eval,
+                "zero_field_rmse_s" => r.zero_field_rmse_s, "passed" => r.passed)
+            println("  G1 field $f: nonzero cells in D_s per structure $(r.structures) = $(r.per_structure) (all cells $(r.per_structure_all_cells)), " *
+                    "total $(r.nonzero_in_Ds) of $(r.n_Ds) D_s cells, zero-field RMSE_s $(round(r.zero_field_rmse_s; digits = 4)), passed=$(r.passed)")
+            f === :test && !r.passed && (failed = true)
+        end
+        cls = protocol_coverage(centroids, free, maximum(p.zenith for p in paths[valid_bins]))
+        reports["coverage"] = Dict{String,Any}(c => count(==(c), cls) for c in unique(cls))
+        reports["free_cells"] = findall(free)
+        open(joinpath(stagedir, "g1.toml"), "w") do io; TOML.print(io, reports; sorted = true); end
+        wt = protocol_test_field(centroids)
+        wd = create_initial_water_field(volume, merge(args, (truth_field = "dev",)))
+        open(joinpath(stagedir, "cells.tsv"), "w") do io
+            println(io, "cell\tx\ty\tz\tclass\tcrossed\tw_dev\tw_test\tevaluated")
+            for j in 1:n_cells
+                println(io, join((j, centroids[1, j], centroids[2, j], centroids[3, j], cls[j], free[j] ? 1 : 0, wd[j], wt[j],
+                                  centroids[3, j] >= args.min_eval_depth ? 1 : 0), '\t'))
+            end
+        end
+        println("  coverage: ", reports["coverage"], "; crossed-cell list and classification in $(joinpath(stagedir, "cells.tsv"))")
+        return failed ? 3 : 0
+    end
+
+    # Gate G0b (replaced by the G0b ruling): dry calibration from two independent 8192-history runs
+    # (base seeds 441 and 442, per-bin MC streams), pooled flux, three checks, then s.
+    if stage == "dry"
+        zero_w = zeros(n_cells)
+        zen = Float64[paths[b].zenith for b in valid_bins]
+        runs = Any[]
+        for dseed in PROTOCOL_DRY_BASES
+            key = template_key(:dry, "M", PROTOCOL_DRY_HISTORIES, dseed, zero_w, valid_bins)
+            path = protocol_template_path(outdir, "dry", "M", PROTOCOL_DRY_HISTORIES, dseed)
+            if isfile(path)
+                c = load_template(path, key)                   # errors on a mismatching key
+                println("  dry template $path exists with a matching key; kept")
+                push!(runs, (flux = c.template, sigma = c.extra.sigma_mc, wall = get(c.extra, :wall_s, NaN), cpu = get(c.extra, :cpu_s, 0.0), threads = get(c.extra, :threads, 0)))
+            else
+                t0 = time(); c0 = protocol_cpu_seconds()
+                tmpl, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, zero_w, valid_bins, args;
+                                                 histories = PROTOCOL_DRY_HISTORIES, seed = dseed)
+                wall = time() - t0; cpu = protocol_cpu_seconds() - c0
+                save_template(path, key, tmpl, (sigma_mc = sig, wall_s = wall, cpu_s = cpu, threads = Threads.nthreads()))
+                println("  wrote $path  [$(round(wall; digits = 0)) s wall, $(round(cpu; digits = 0)) s CPU on $(Threads.nthreads()) threads]")
+                push!(runs, (flux = tmpl, sigma = sig, wall = wall, cpu = cpu, threads = Threads.nthreads()))
+            end
+        end
+        chk = dry_checks(runs[1].flux, runs[2].flux, runs[1].sigma, runs[2].sigma, f0, zen)
+        pooled = (runs[1].flux .+ runs[2].flux) ./ 2
+        sig_pooled = sqrt.(runs[1].sigma .^ 2 .+ runs[2].sigma .^ 2) ./ 2
+        rep = dry_report(pooled, f0, sig_pooled, zen)
+        thread_hours = sum(r.wall * r.threads for r in runs) / 3600       # thread-hours (upper bound) of the pooled 2 x 8192 = one 16384-history template
+        cpu_hours = sum(r.cpu for r in runs) / 3600                       # measured CPU-hours of the same (0 if not recorded)
+        report = Dict{String,Any}("pooled" => rep, "seeds" => PROTOCOL_DRY_BASES, "histories" => PROTOCOL_DRY_HISTORIES,
+            "mc_stream" => PROTOCOL_MC_STREAM, "git_commit" => protocol_git_commit(),
+            "checks" => Dict{String,Any}("s" => chk.s, "s_a" => chk.s_a, "s_b" => chk.s_b, "q" => chk.q, "n_zenith0" => chk.n_zenith0,
+                "csda_zenith0_equal" => chk.csda_zenith0_equal, "check1" => chk.check1 === nothing ? "skipped" : string(chk.check1),
+                "check2" => chk.check2, "check3" => chk.check3, "passed" => chk.passed,
+                "split_difference" => abs(chk.s_a - chk.s_b), "shared_sample_s" => PROTOCOL_DRY_SHARED_S,
+                "expected_standard_error_s" => 1.2533 * rep["median_rel_sigma_mc"] * chk.s / sqrt(rep["n_bins"])),
+            "timing" => Dict{String,Any}("thread_hours_per_16384_template" => thread_hours, "cpu_hours_per_16384_template" => cpu_hours,
+                "wall_s_total" => sum(r.wall for r in runs), "threads" => runs[1].threads))
+        open(joinpath(stagedir, "dry_report.toml"), "w") do io; TOML.print(io, report; sorted = true); end
+        println("  dry calibration (2 x $(PROTOCOL_DRY_HISTORIES) histories, per-bin streams, seeds $(PROTOCOL_DRY_BASES)): s = $(round(chk.s; digits = 5)) over $(rep["n_bins"]) bins; " *
+                "s_A = $(round(chk.s_a; digits = 5)), s_B = $(round(chk.s_b; digits = 5)), |s_A - s_B| = $(round(abs(chk.s_a - chk.s_b); digits = 5))")
+        println("    mean r = $(round(rep["mean_r"]; digits = 5)), ratio of sums = $(round(rep["ratio_of_sums"]; digits = 5)), quartiles $(round(rep["q25"]; digits = 4)) / $(round(rep["q75"]; digits = 4)); " *
+                "median r per 10-degree zenith band: $(round.(rep["band_median_r"]; digits = 4)); median per-bin MC standard error of the pool $(round(100 * rep["median_rel_sigma_mc"]; digits = 2)) %")
+        println("    check 1 (error model, $(chk.n_zenith0) zenith-0 bins): q = $(round(chk.q; digits = 4)) -> $(chk.check1 === nothing ? "skipped (dry CSDA not equal in the zenith-0 bins)" : chk.check1); " *
+                "check 2 (half split <= $(PROTOCOL_DRY_SPLIT_TOL)): $(chk.check2); check 3 (|s - $(PROTOCOL_DRY_SHARED_S)| <= $(PROTOCOL_DRY_SHARED_TOL)): $(chk.check3)")
+        println("    template cost: $(round(thread_hours; digits = 1)) thread-hours per 16384-history template")
+        if !chk.passed
+            println("  dry calibration FAILED a check: dry_calibration.toml is not written; return s, s_A, s_B and q (report $(joinpath(stagedir, "dry_report.toml")))")
+            return 4
+        end
+        # the shared-sample value is archived for the record and never read by a driver
+        write_dry_calibration(joinpath(outdir, "dry_calibration_shared_seed44.toml"), PROTOCOL_DRY_SHARED_S,
+            Dict{String,Any}("note" => "report only; shared energy sample, seed 44, 16384 histories; never read by a driver", "mc_stream" => "shared"))
+        sha = write_dry_calibration(dry_path, chk.s, Dict{String,Any}("n_bins" => rep["n_bins"], "seeds" => PROTOCOL_DRY_BASES,
+            "histories" => PROTOCOL_DRY_HISTORIES, "mc_stream" => PROTOCOL_MC_STREAM, "s_a" => chk.s_a, "s_b" => chk.s_b, "q" => chk.q,
+            "field" => "dry", "supersedes" => "shared sample, seed 44, s = 0.87309",
+            "git_commit" => protocol_git_commit(), "git_dirty" => protocol_git_dirty(),
+            "correction_artifact" => args.correction_artifact, "created_unix" => time()))
+        println("  wrote $dry_path  sha256 $sha")
+        return 0
+    end
+
+    # Gate G0c: the same dry rays through the sweep code path (here) and the correction-validation driver
+    # (dev/g0c_validation_path.jl, which reads the rays written below).
+    if stage == "g0c"
+        args.inverse_mc_samples == 16384 || error("gate G0c is defined at 16384 histories (--inverse-mc-samples 16384)")
+        bins = Int[]
+        for z in (10.0, 30.0, 50.0), a in (8.0, 96.0, 184.0, 272.0)
+            k = findfirst(b -> paths[b].valid && isapprox(paths[b].zenith, z; atol = 1e-9) && isapprox(paths[b].azimuth, a; atol = 1e-9), valid_bins)
+            k === nothing && error("sweep grid has no valid bin at zenith $z, azimuth $a")
+            push!(bins, valid_bins[k])
+        end
+        zero_w = zeros(n_cells)
+        sub = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
+            n_cells = n_cells, valid_bins = bins, threaded = false)
+        csda_sweep = sub(zero_w)[1]
+        mc_sweep, sig_sweep = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, zero_w, bins, args;
+                                                   histories = 16384, seed = args.seed + 3)
+        f0_bins = f0[[findfirst(==(b), valid_bins) for b in bins]]
+        println("  sweep path on $(length(bins)) dry rays: max |CSDA(sub-operator) - CSDA(full operator)| / CSDA = $(maximum(abs.(csda_sweep .- f0_bins) ./ f0_bins))")
+        rocks_all = [protocol_rock_path(paths[b]) for b in valid_bins]
+        open(joinpath(stagedir, "sweep_values.tsv"), "w") do io
+            println(io, "bin\tzenith\tazimuth\trock_path_m\tcsda\tmc\tmc_sigma")
+            for (j, b) in enumerate(bins)
+                println(io, join((b, paths[b].zenith, paths[b].azimuth, protocol_rock_path(paths[b]), csda_sweep[j], mc_sweep[j], sig_sweep[j]), '\t'))
+            end
+        end
+        Serialization.serialize(joinpath(stagedir, "sweep_rays.jls"), (paths = paths[bins], bins = bins, n_cells = n_cells,
+            histories = 16384, seed = args.seed + 3, correction_artifact = args.correction_artifact))
+        open(joinpath(stagedir, "sweep_rock.toml"), "w") do io
+            TOML.print(io, Dict{String,Any}("all_valid_bins" => Dict{String,Any}("n" => length(rocks_all), "min_m" => minimum(rocks_all),
+                    "max_m" => maximum(rocks_all), "median_m" => median(rocks_all)),
+                "g0c_bins" => Dict{String,Any}("n" => length(bins), "min_m" => minimum(protocol_rock_path(paths[b]) for b in bins),
+                    "max_m" => maximum(protocol_rock_path(paths[b]) for b in bins))); sorted = true)
+        end
+        println("  wrote the sweep-path values and rays under $stagedir; next: dev/g0c_validation_path.jl $stagedir <dump>")
+        return 0
+    end
+
+    # MC template base seeds (G0b ruling): one template per realisation. Field D: 421, 422; field T: 431 to 438.
+    # Fallback (--template-mode single, only if the projected template stage exceeds 6 h): one per field.
+    bases(f) = args.template_mode == "single" ? PROTOCOL_TEMPLATE_BASES[f][1:1] : PROTOCOL_TEMPLATE_BASES[f]
+    if stage in ("templates", "merge")
+        # Both truth fields in one stage. Exact (CSDA) templates are single units; each MC template is split
+        # into chunks of PROTOCOL_MC_CHUNK bins that workers claim; `merge` joins the chunks (one process).
+        model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
+            n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
+        fields = Symbol[:dev, :test]
+        truth(f) = f === :dev ? create_initial_water_field(volume, merge(args, (truth_field = "dev",))) : protocol_test_field(centroids)
+        tkey(f, arm, b) = arm == "M" ? template_key(f, "M", args.inverse_mc_samples, b, truth(f), valid_bins) :
+                                       template_key(f, "X", 0, 0, truth(f), valid_bins)
+        tpath(f, arm, b) = protocol_template_path(outdir, f, arm, arm == "M" ? args.inverse_mc_samples : 0, arm == "M" ? b : 0)
+        nbin = length(valid_bins)
+        chunks = [(first = c, last = min(c + PROTOCOL_MC_CHUNK - 1, nbin)) for c in 1:PROTOCOL_MC_CHUNK:nbin]
+        chunkdir(f, b) = joinpath(outdir, "templates", "parts_$(f)_h$(args.inverse_mc_samples)_b$(b)")
+        chunkfile(f, b, c) = joinpath(chunkdir(f, b), "chunk_$(lpad(c.first, 5, '0')).jls")
+        mcunits = [(f, b) for f in fields for b in bases(f)]
+        if stage == "merge"
+            for (f, b) in mcunits
+                missing_chunks = [c for c in chunks if !isfile(chunkfile(f, b, c))]
+                isempty(missing_chunks) || error("MC template of field $f, base seed $b is incomplete: $(length(missing_chunks)) chunks missing")
+                path = tpath(f, "M", b)
+                tmpl = Vector{Float64}(undef, nbin); sig = similar(tmpl)
+                for c in chunks
+                    part = Serialization.deserialize(chunkfile(f, b, c))
+                    part.ks == collect(c.first:c.last) && part.seed == b && part.histories == args.inverse_mc_samples &&
+                        get(part, :mc_stream, "") == PROTOCOL_MC_STREAM ||
+                        error("chunk $(chunkfile(f, b, c)) does not match the requested key")
+                    tmpl[c.first:c.last] .= part.values; sig[c.first:c.last] .= part.sigma
+                end
+                csda_f = load_template(tpath(f, "X", 0), tkey(f, "X", 0)).template
+                save_template(path, tkey(f, "M", b), tmpl, (sigma_mc = sig, median_rel_error = median(sig ./ tmpl),
+                    median_mc_over_csda = median(tmpl ./ csda_f), chunks = length(chunks)))
+                println("  merged $(length(chunks)) chunks into $path: median per-bin MC error $(round(100 * median(sig ./ tmpl); digits = 2)) %, median MC/CSDA $(round(median(tmpl ./ csda_f); digits = 4))")
+            end
+            return 0
+        end
+        claim = isempty(args.claim_dir) ? nothing : args.claim_dir
+        pause = isempty(args.pause_file) ? nothing : args.pause_file
+        units = [("csda", f, 0, 0) for f in fields]
+        append!(units, [("mc", f, b, c.first) for (f, b) in mcunits for c in chunks])
+        claim === nothing || announce_units!(claim, length(units))
+        for (kind, f, b, first) in units
+            uname = "$(kind)_$(f)_b$(b)_$(first)"
+            if claim !== nothing
+                wait_unpaused(pause)
+                claim_unit!(claim, uname) || continue
+            end
+            if kind == "csda"
+                key = tkey(f, "X", 0); path = tpath(f, "X", 0)
+                if isfile(path)
+                    load_template(path, key); println("  template $path exists with a matching key; kept")
+                else
+                    save_template(path, key, model(truth(f))[1]); println("  wrote $path")
+                end
+            else
+                c = only(c for c in chunks if c.first == first)
+                if isfile(tpath(f, "M", b)) || isfile(chunkfile(f, b, c))
+                    println("  chunk $uname exists; kept")
+                else
+                    ks = c.first:c.last
+                    vals, sig = protocol_mc_template(physics, shallow_flags, matcfg, site, paths, truth(f), valid_bins, args;
+                                                     histories = args.inverse_mc_samples, seed = b, ks = ks)
+                    mkpath(chunkdir(f, b))
+                    tmp = chunkfile(f, b, c) * ".tmp$(getpid())"
+                    Serialization.serialize(tmp, (ks = collect(ks), values = vals, sigma = sig, seed = b, histories = args.inverse_mc_samples,
+                                                  mc_stream = PROTOCOL_MC_STREAM))
+                    mv(tmp, chunkfile(f, b, c); force = true)
+                    println("  wrote chunk $uname")
+                end
+            end
+            claim === nothing || mark_unit_done!(claim, uname)
+        end
+        return 0
+    end
+
+    # dev / select / test / diag need the nonlinear operator and the templates
+    model = make_csda_operator(physics, shallow_flags, matcfg, site, paths, energy_samples;
         n_cells = n_cells, valid_bins = valid_bins, threaded = args.threaded)
-    csda_predict = flux_only_operator(physics,shallow_flags,matcfg,site,paths[valid_bins],energy_samples;threaded=args.threaded)
-    eval_mask = volume.centroids[3, :] .>= args.min_eval_depth
-    neighbors = cell_neighbors(volume)
-    sens = vec(sum(max.(Jv, 0.0); dims = 1)); sm_scale = (m = filter(>(0), sens); isempty(m) ? 1.0 : median(m))
-    sm_prior = SmoothnessPrior(neighbors, 0.05 * sm_scale)
-
-    exps = 10.0 .^ range(log10(args.sweep_exp_min), log10(args.sweep_exp_max); length = args.sweep_n)
-    solvers = ("sart", "mlem", "gd", "gn")
-    rmse = Dict(s => zeros(length(exps)) for s in solvers)
-    ssimv = Dict(s => zeros(length(exps)) for s in solvers)
-    M = max(3, args.sweep_realizations ÷ 10)
-    println("Reconstruction-accuracy sweep (NONLINEAR operator, fixed-path energy-loss MC obs): $(length(exps)) exposures × $M realizations...")
-    rng = MersenneTwister(args.seed + 9000)
-    for (ei, τ) in enumerate(exps)
-        σ = sqrt.(max.(clean_obs, 0.0) ./ τ); σ .= max.(σ, 1e-12 * maximum(clean_obs)); W = 1.0 ./ σ .^ 2
-        diagc = vec(sum(W .* (Matrix(Jv) .^ 2); dims = 1)); gn_scale = (m = filter(>(0), diagc); isempty(m) ? 1.0 : median(m))
-        edge_prior = EdgePrior(neighbors, 0.01 * gn_scale, args.edge_delta)
-        acc = Dict(s => (r = Float64[], s = Float64[]) for s in solvers)
-        for _ in 1:M
-            obs = clean_obs .+ σ .* randn(rng, length(σ)); excess = obs .- f0
-            recs = Dict(
-                "sart" => first(sart_reconstruct(Jv, excess; n_iter = args.reco_iters, relaxation = 0.2, prior = sm_prior)),
-                "mlem" => first(mlem_reconstruct(max.(Jv, 0.0), max.(excess, 0.0); n_iter = args.reco_iters, prior = sm_prior)),
-                "gd"   => first(gradient_descent_reconstruct(csda_model, obs; w0 = zeros(n_cells),
-                            n_iter = args.gd_iters, lr = args.gd_lr, optimizer = :pgd, prior = edge_prior,
-                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION))),
-                "gn"   => first(gauss_newton_reconstruct(csda_model, obs; w0 = zeros(n_cells),
-                            n_iter = max(8, args.reco_iters ÷ 16), prior = edge_prior,
-                            solver_mode = args.solver_mode == "stable" ? :active_set : :legacy,
-                            weights = W, relinearize = true, box = (0.0, MAX_WATER_FRACTION),predict_only=csda_predict)))
-            for s in solvers
-                rep = reconstruction_report(recs[s], w_true; mask = eval_mask)
-                push!(acc[s].r, rep.rmse); push!(acc[s].s, rep.ssim)
-            end
-        end
-        for s in solvers; rmse[s][ei] = mean(acc[s].r); ssimv[s][ei] = mean(acc[s].s); end
-        println(@sprintf("  τ=%.2e  RMSE  SART=%.3f MLEM=%.3f GD=%.3f GN=%.3f", τ,
-                         rmse["sart"][ei], rmse["mlem"][ei], rmse["gd"][ei], rmse["gn"][ei]))
+    predict = flux_only_operator(physics, shallow_flags, matcfg, site, paths[valid_bins], energy_samples; threaded = args.threaded)
+    op = ProtocolOperator(J0, f0, model, predict, cell_neighbors(volume), free; delta = args.edge_delta)
+    templates = Dict{String,Any}()
+    tkey_x = template_key(field, "X", 0, 0, w_true, valid_bins)
+    tpath_x = protocol_template_path(outdir, field, "X", 0, 0)
+    function mc_templates()          # one MC template per realisation (replicate r serves realisation r in arms M and Mc)
+        bs = bases(field)
+        args.template_mode == "single" || length(bs) >= nreps || error("field $field has $(length(bs)) MC templates for $nreps realisations")
+        reps = [load_template(protocol_template_path(outdir, field, "M", args.inverse_mc_samples, b),
+                              template_key(field, "M", args.inverse_mc_samples, b, w_true, valid_bins)).template for b in (args.template_mode == "single" ? bs : bs[1:nreps])]
+        return args.template_mode == "single" ? reps[1] : reps
     end
-
-    open(output_path, "w") do io
-        println(io, "Reconstruction accuracy vs exposure (nonlinear operator, fixed-path energy-loss MC obs; truth = multi-anomaly field)")
-        println(io, @sprintf("%d realizations/point; eval depth ≥ %.0f m", M, args.min_eval_depth))
-        for metric in ("RMSE", "SSIM")
-            d = metric == "RMSE" ? rmse : ssimv
-            println(io); println(io, "$metric:"); println(io, "  " * rpad("exposure", 12) * join([rpad(uppercase(s), 9) for s in solvers]))
-            for ei in eachindex(exps)
-                println(io, "  " * rpad(@sprintf("%.2e", exps[ei]), 12) * join([rpad(@sprintf("%.3f", d[s][ei]), 9) for s in solvers]))
-            end
-        end
+    for arm in arms
+        templates[arm] = template_arm(arm) == "M" ? mc_templates() : load_template(tpath_x, tkey_x).template
     end
-    colors = Dict("sart" => "rgb(200,120,40)", "mlem" => "rgb(60,160,90)", "gd" => "rgb(150,80,200)", "gn" => "rgb(40,110,220)")
-    traces = GenericTrace[scatter(x = collect(exps), y = rmse[s], mode = "lines+markers",
-                                  name = uppercase(s), line = attr(color = colors[s])) for s in solvers]
-    savefig(Plot(traces, Layout(title = "Reconstruction RMSE vs exposure (lower = better)",
-        xaxis = attr(title = "Detector exposure", type = "log"),
-        yaxis = attr(title = "RMSE (water fraction)"), width = 1000, height = 600)), plot_path)
-    println("  reconstruction-sweep outputs: $output_path , $plot_path")
-    return (exps = exps, rmse = rmse, ssim = ssimv)
+    diag_arms = ["Mc"]                                            # oracle-weight diagnostic: on arm Mc
+    stage == "diag" && !haskey(templates, "Mc") && (templates["Mc"] = mc_templates())
+    op_cal = s_dry === nothing ? nothing : scale_operator(op, s_dry)   # dry-normalised operator, only from a valid dry_calibration.toml
+    open(joinpath(stagedir, "manifest_$(stage)$(stage == "dev" ? "_p$(args.protocol_phase)" : "")_w$(worker)of$(shard[2]).toml"), "w") do io
+        TOML.print(io, Dict{String,Any}("stage" => stage, "phase" => args.protocol_phase, "field" => String(field), "arms" => arms,
+            "exposures" => exposures, "realizations" => nreps, "shard" => collect(shard), "git_commit" => protocol_git_commit(),
+            "inverse_mc_samples" => args.inverse_mc_samples, "mc_stream" => PROTOCOL_MC_STREAM, "template_mode" => args.template_mode,
+            "template_bases" => bases(field), "timing_flag" => "loaded, $(get(ENV, "S7_NPROC", "?")) concurrent", "noise_base_seed" => args.seed,
+            "julia_threads" => Threads.nthreads(), "selection_sha256" => something(sha, ""), "worker" => worker, "cuts" => sort(collect(cuts)),
+            "dry_calibration_sha256" => something(dry_sha, ""), "dry_scale" => something(s_dry, 0.0), "started_unix" => time()); sorted = true)
+    end
+    ctx = ProtocolContext(op, geo, field, templates, exposures, nreps, args.seed, stagedir, op_cal)
+    if stage == "dev"
+        phase = args.protocol_phase
+        grids = load_grids(stagedir, arms, length(exposures))
+        mlem_sel = phase >= 2 ? read_phase_selection(stagedir, 1) : nothing
+        gn_sel = phase == 3 ? read_phase_selection(stagedir, 2) : nothing
+        for s in (mlem_sel, gn_sel)
+            s === nothing || any(v -> get(v, "extensions_pending", false), values(s)) &&
+                error("an earlier phase still has pending grid extensions; rerun it and its selection first")
+        end
+        n = dev_phase!(ctx, phase, grids; mlem_selection = mlem_sel, gn_selection = gn_sel, shard = shard,
+                       claim_dir = claim, pause_file = pause, worker = worker)
+        println("  development phase $phase: $n solver runs done on shard $(shard[1])/$(shard[2])")
+    elseif stage == "test"
+        n = test_stage!(ctx, selection, sha; shard = shard, cuts = cuts, claim_dir = claim, pause_file = pause, worker = worker)
+        println("  test stage: $n solver runs done on shard $(shard[1])/$(shard[2])")
+    elseif stage == "diag"
+        idx = [i for (i, t) in enumerate(exposures) if t in (1.0e4, 1.0e8)]
+        isempty(idx) && error("the diagnostic needs exposures 1e4 and/or 1e8 in --sweep-exposures")
+        n = test_stage!(ctx, selection, sha; shard = shard, weights = :oracle, solvers = ("GN-0",),
+                        arms = diag_arms, exp_indices = idx, stage = "diag", claim_dir = claim, pause_file = pause, worker = worker)
+        println("  oracle-weight diagnostic (not a competitor): $n solver runs done on shard $(shard[1])/$(shard[2])")
+    end
+    return 0
 end
 
 # (a) Detection-efficiency gain of the Ψ matched filter vs SART as a function of anomaly
@@ -3627,6 +4091,9 @@ end
 
 function main()
     args = parse_commandline()
+    if args.reconstruction_sweep && args.protocol_stage in ("select", "finalize", "plan", "summary")
+        return run_protocol_selection_stage(args)
+    end
 
     println("=" ^ 68)
     println(" DiffPumas - LVD Tomography with Rock/Water Sensitivities")
@@ -3745,11 +4212,9 @@ function main()
 
     # (b) Reconstruction accuracy vs exposure (then exit).
     if args.reconstruction_sweep
-        run_reconstruction_sweep(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
-            output_path = joinpath(args.output_dir, "lvd_reconstruction_sweep.txt"),
-            plot_path = joinpath(args.output_dir, "lvd_reconstruction_sweep.html"))
-        println("\nReconstruction-sweep outputs written to $(args.output_dir)")
-        return 0
+        status = run_reconstruction_protocol(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args)
+        println("\nReconstruction-protocol stage '$(args.protocol_stage)' finished (outputs under $(args.output_dir))")
+        return status
     end
 
     # (a) Detection gain vs contrast (then exit).
@@ -3806,7 +4271,7 @@ function main()
     println()
 
     # Inverse problem: recover the per-cell rock/water field with SART, MLEM and
-    # our differentiable gradient-descent solver, then estimate spatial resolution.
+    # the differentiable gradient-descent solver, then estimate spatial resolution.
     inverse_txt = joinpath(args.output_dir, "lvd_tomography_inverse.txt")
     println("Solving the inverse problem (solver=$(args.solver))...")
     run_inverse_demo(physics, shallow_flags, matcfg, site, volume, paths, energy_samples,
