@@ -1,0 +1,14 @@
+{
+ "sectors_total": 40,
+ "sectors_finite": 34,
+ "sectors_at_floor": 13,
+ "sectors_no_psf": 6,
+ "finite_cell_estimates": 72,
+ "fwhm_min": 320.0,
+ "fwhm_max": 3620.0,
+ "fwhm_median_over_finite_sectors": 639.0,
+ "floor_m": [
+  320.0
+ ],
+ "sectors_with_fwhm_above_floor": 18
+}
