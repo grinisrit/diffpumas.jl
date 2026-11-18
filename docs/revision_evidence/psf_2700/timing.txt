@@ -1,0 +1,4 @@
+  resolution-only operator: 2700 valid bins of 2700 rays, 600 cells (92.6 s)
+	User time (seconds): 176.93
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:02.80
+	Maximum resident set size (kbytes): 1373956

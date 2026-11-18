@@ -73,6 +73,8 @@ Options:
                                   2650 kg/m^3), at which the paper-match pins the overburden rock
     --papermatch                  Run the final section: GN material-mixture match to the measured
                                   LVD flux + Fig.7 angular-distribution reproduction, with MC+syst error
+    --resolution-only             Run ONLY the linearised point-spread resolution map (SART, dry operator,
+                                  all cells below --min-eval-depth); writes lvd_tomography_inverse.txt
     --papermatch-only             Run ONLY geometry+calibration+paper-match (skip the inverse demo) —
                                   fast iteration on the reconstruction figures
     --match-data PATH             Measured 2D single-muon intensity map
@@ -1393,6 +1395,7 @@ function parse_commandline()
         rock_density = 0.0,            # base rock density (kg/m^3); 0 = use the physics-table value
                                        # (StandardRock, 2650 kg/m^3), at which the paper-match pins it.
         papermatch = false,            # run the final paper-matching section
+        resolution_only = false,       # run ONLY the linearised resolution map (operator at w=0)
         papermatch_only = false,       # run ONLY geometry+calibration+paper-match (skip inverse demo)
         match_data = DEFAULT_MATCH_DATA,      # measured 2D single-muon intensity map
         papermatch_zenith_step = 2.0,  # coarse grid for the NMapFluxResult (nmap resolution)
@@ -1549,6 +1552,8 @@ function parse_commandline()
             args = merge(args, (rock_density = parse(Float64, ARGS[i + 1]),)); i += 2
         elseif arg == "--papermatch"
             args = merge(args, (papermatch = true,)); i += 1
+        elseif arg == "--resolution-only"
+            args = merge(args, (resolution_only = true,)); i += 1
         elseif arg == "--papermatch-only"
             args = merge(args, (papermatch = true, papermatch_only = true,)); i += 1
         elseif arg == "--match-data"
@@ -1937,6 +1942,121 @@ end
 
 # --- inverse reconstruction: SART / MLEM / GN + metrics -------------------
 
+# Linearised point-spread / resolution map of the fixed dry-reference operator `Jv`
+# (Jacobian at w = 0): SART (120 iterations, relaxation 0.2) applied to the noiseless
+# response of a single-cell impulse of size `args.contrast`, for every cell at or below
+# `args.min_eval_depth`; FWHM from cell-centroid distances, binned by z-layer and 8
+# azimuth sectors. Shared by the inverse demo and `--resolution-only`.
+function compute_resolution_map(Jv, volume, args)
+    n_cells = num_cells(volume)
+    centroids = volume.centroids
+    recon_lin = wt -> first(sart_reconstruct(Jv, Jv * wt; n_iter = 120, relaxation = 0.2))
+    zmin, zmax = extrema(centroids[3, :])
+    # one depth bin per grid z-layer at/above the minimum evaluation depth
+    zlayers = filter(z -> z >= args.min_eval_depth - 1e-6,
+                     sort(unique(round.(centroids[3, :]; digits = 1))))
+    layer_edges = length(zlayers) >= 2 ?
+        vcat(zlayers[1] - 1.0,
+             [0.5 * (zlayers[k] + zlayers[k + 1]) for k in 1:length(zlayers) - 1],
+             zlayers[end] + 1.0) :
+        Float64[args.min_eval_depth - 1.0, zmax + 1.0]
+    azimuth_edges = collect(range(0.0, 360.0; length = 9))   # 8 directional sectors
+    res_cells = findall(z -> z >= args.min_eval_depth - 1e-6, vec(centroids[3, :]))
+    resmap = resolution_map(recon_lin, centroids, zeros(n_cells), res_cells;
+        depth_edges = layer_edges, azimuth_edges = azimuth_edges, contrast = args.contrast,
+        zenith_step_deg = args.zenith_step_deg, cell_size_m = estimate_cell_size(volume))
+    # depth-only summary (median over directions) for the console + return value.
+    # The empirical FWHM is clipped at the per-depth geometric floor: a recovered
+    # point-spread confined to the impulse cell is "at the grid limit", not 0 m.
+    rvd = NamedTuple[]
+    for k in eachindex(resmap.depths)
+        finite = filter(isfinite, resmap.fwhm[k, :])
+        isempty(finite) && continue
+        push!(rvd, (depth_m = resmap.depths[k],
+                    fwhm_m = max(median(finite), resmap.floor[k]),
+                    floor_m = resmap.floor[k], n_cells = sum(resmap.counts[k, :])))
+    end
+    return resmap, rvd
+end
+
+# Text sections of the resolution diagnostics (parsed by make_figures.py of the paper).
+function write_resolution_sections(io, rvd, resmap, args)
+    println(io, "Resolution (linearised point-spread FWHM vs depth):")
+    println(io, @sprintf("  %-12s %-12s %-12s %-8s", "depth[m]", "FWHM[m]", "floor[m]", "n_cells"))
+    for e in rvd
+        println(io, @sprintf("  %-12.1f %-12.1f %-12.1f %-8d", e.depth_m, e.fwhm_m, e.floor_m, e.n_cells))
+    end
+    if isempty(rvd)
+        println(io, "  (no depth bins populated)")
+    end
+    println(io)
+
+    # Full resolution map: recovered FWHM[m] for all depths × all directions.
+    # Entries below the per-depth geometric floor (cell size / angular sampling)
+    # are grid-limited and reported as "<=floor"; "-" marks sectors with no cells.
+    println(io, "Resolution FWHM[m] map — all depths (rows) × azimuth directions (cols, deg):")
+    azhdr = "  " * rpad("depth[m]", 9) *
+            join([rpad(@sprintf("%.0f", a), 7) for a in resmap.azimuths]) * rpad("floor", 7)
+    println(io, azhdr)
+    for k in eachindex(resmap.depths)
+        row = "  " * rpad(@sprintf("%.0f", resmap.depths[k]), 9)
+        for a in eachindex(resmap.azimuths)
+            v = resmap.fwhm[k, a]
+            entry = !isfinite(v) ? "-" :
+                    (v < resmap.floor[k] ? @sprintf("<=%.0f", resmap.floor[k]) :
+                                           @sprintf("%.0f", v))
+            row *= rpad(entry, 7)
+        end
+        row *= rpad(@sprintf("%.0f", resmap.floor[k]), 7)
+        println(io, row)
+    end
+    println(io, @sprintf("  (azimuth sectors of %.0f deg; cells evaluated below %.0f m)",
+                         360.0 / length(resmap.azimuths), args.min_eval_depth))
+    println(io)
+
+    # Companion cell-count map so unsampled sectors are explicit in the figure.
+    println(io, "Resolution cell-count map — all depths (rows) × azimuth directions (cols, deg):")
+    println(io, azhdr)
+    for k in eachindex(resmap.depths)
+        row = "  " * rpad(@sprintf("%.0f", resmap.depths[k]), 9)
+        for a in eachindex(resmap.azimuths)
+            row *= rpad(string(resmap.counts[k, a]), 7)
+        end
+        row *= rpad(@sprintf("%.0f", resmap.floor[k]), 7)
+        println(io, row)
+    end
+    println(io, @sprintf("  (azimuth sectors of %.0f deg; cells evaluated below %.0f m)",
+                         360.0 / length(resmap.azimuths), args.min_eval_depth))
+end
+
+# `--resolution-only`: operator at w = 0 + the resolution map, nothing else (no synthetic
+# truth, no solvers). Writes the header and the resolution sections of
+# lvd_tomography_inverse.txt in the format of the full inverse demo.
+function run_resolution_only(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
+                             volume, paths::Vector{DirectionalPath}, energy_samples, args;
+                             output_path::String)
+    n_cells = num_cells(volume)
+    t0 = time()
+    base_flux, base_J = assemble_forward_and_jacobian(
+        physics, shallow_flags, matcfg, site, paths, zeros(n_cells), energy_samples;
+        n_cells = n_cells, threaded = args.threaded)
+    valid_bins = findall(isfinite, base_flux)
+    isempty(valid_bins) && error("No valid bins; cannot build the resolution map.")
+    Jv = base_J[valid_bins, :]
+    println(@sprintf("  resolution-only operator: %d valid bins of %d rays, %d cells (%.1f s)",
+                     length(valid_bins), length(paths), n_cells, time() - t0))
+    resmap, rvd = compute_resolution_map(Jv, volume, args)
+    open(output_path, "w") do io
+        println(io, "LVD tomography inverse reconstruction summary (resolution map only)")
+        println(io, "geometry = $(geometry_name(volume)), n_cells = $n_cells, valid_bins = $(length(valid_bins))")
+        println(io, "ray grid: theta < $(args.zenith_max_deg) by $(args.zenith_step_deg) deg, phi by $(args.azimuth_step_deg) deg ($(length(paths)) rays), impulse contrast = $(args.contrast)")
+        println(io)
+        write_resolution_sections(io, rvd, resmap, args)
+    end
+    println("  resolution map written to $output_path")
+    return resmap, rvd
+end
+
 function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::SiteConfig,
                           volume::AbstractSensitivityVolume, paths::Vector{DirectionalPath},
                           energy_samples::Vector{EnergySample},
@@ -2089,32 +2209,8 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
     # point-spread, and bin the FWHM by depth layer and azimuthal direction so the
     # map covers all directions and all (resolvable) depths.
     centroids = volume.centroids
-    recon_lin = wt -> first(sart_reconstruct(Jv, Jv * wt; n_iter = 120, relaxation = 0.2))
+    resmap, rvd = compute_resolution_map(Jv, volume, args)
     zmin, zmax = extrema(centroids[3, :])
-    # one depth bin per grid z-layer at/above the minimum evaluation depth
-    zlayers = filter(z -> z >= args.min_eval_depth - 1e-6,
-                     sort(unique(round.(centroids[3, :]; digits = 1))))
-    layer_edges = length(zlayers) >= 2 ?
-        vcat(zlayers[1] - 1.0,
-             [0.5 * (zlayers[k] + zlayers[k + 1]) for k in 1:length(zlayers) - 1],
-             zlayers[end] + 1.0) :
-        Float64[args.min_eval_depth - 1.0, zmax + 1.0]
-    azimuth_edges = collect(range(0.0, 360.0; length = 9))   # 8 directional sectors
-    res_cells = findall(z -> z >= args.min_eval_depth - 1e-6, vec(centroids[3, :]))
-    resmap = resolution_map(recon_lin, centroids, zeros(n_cells), res_cells;
-        depth_edges = layer_edges, azimuth_edges = azimuth_edges, contrast = args.contrast,
-        zenith_step_deg = args.zenith_step_deg, cell_size_m = estimate_cell_size(volume))
-    # depth-only summary (median over directions) for the console + return value.
-    # The empirical FWHM is clipped at the per-depth geometric floor: a recovered
-    # point-spread confined to the impulse cell is "at the grid limit", not 0 m.
-    rvd = NamedTuple[]
-    for k in eachindex(resmap.depths)
-        finite = filter(isfinite, resmap.fwhm[k, :])
-        isempty(finite) && continue
-        push!(rvd, (depth_m = resmap.depths[k],
-                    fwhm_m = max(median(finite), resmap.floor[k]),
-                    floor_m = resmap.floor[k], n_cells = sum(resmap.counts[k, :])))
-    end
 
     # by-depth reconstruction bands also start at the minimum evaluation depth
     depth_edges = collect(range(max(args.min_eval_depth, zmin), zmax; length = 5))
@@ -2207,52 +2303,7 @@ function run_inverse_demo(physics, shallow_flags, matcfg::MaterialConfig, site::
         end
         println(io)
 
-        println(io, "Resolution (linearised point-spread FWHM vs depth):")
-        println(io, @sprintf("  %-12s %-12s %-12s %-8s", "depth[m]", "FWHM[m]", "floor[m]", "n_cells"))
-        for e in rvd
-            println(io, @sprintf("  %-12.1f %-12.1f %-12.1f %-8d", e.depth_m, e.fwhm_m, e.floor_m, e.n_cells))
-        end
-        if isempty(rvd)
-            println(io, "  (no depth bins populated)")
-        end
-        println(io)
-
-        # Full resolution map: recovered FWHM[m] for all depths × all directions.
-        # Entries below the per-depth geometric floor (cell size / angular sampling)
-        # are grid-limited and reported as "<=floor"; "-" marks sectors with no cells.
-        println(io, "Resolution FWHM[m] map — all depths (rows) × azimuth directions (cols, deg):")
-        azhdr = "  " * rpad("depth[m]", 9) *
-                join([rpad(@sprintf("%.0f", a), 7) for a in resmap.azimuths]) * rpad("floor", 7)
-        println(io, azhdr)
-        for k in eachindex(resmap.depths)
-            row = "  " * rpad(@sprintf("%.0f", resmap.depths[k]), 9)
-            for a in eachindex(resmap.azimuths)
-                v = resmap.fwhm[k, a]
-                entry = !isfinite(v) ? "-" :
-                        (v < resmap.floor[k] ? @sprintf("<=%.0f", resmap.floor[k]) :
-                                               @sprintf("%.0f", v))
-                row *= rpad(entry, 7)
-            end
-            row *= rpad(@sprintf("%.0f", resmap.floor[k]), 7)
-            println(io, row)
-        end
-        println(io, @sprintf("  (azimuth sectors of %.0f deg; cells evaluated below %.0f m)",
-                             360.0 / length(resmap.azimuths), args.min_eval_depth))
-        println(io)
-
-        # Companion cell-count map so unsampled sectors are explicit in the figure.
-        println(io, "Resolution cell-count map — all depths (rows) × azimuth directions (cols, deg):")
-        println(io, azhdr)
-        for k in eachindex(resmap.depths)
-            row = "  " * rpad(@sprintf("%.0f", resmap.depths[k]), 9)
-            for a in eachindex(resmap.azimuths)
-                row *= rpad(string(resmap.counts[k, a]), 7)
-            end
-            row *= rpad(@sprintf("%.0f", resmap.floor[k]), 7)
-            println(io, row)
-        end
-        println(io, @sprintf("  (azimuth sectors of %.0f deg; cells evaluated below %.0f m)",
-                             360.0 / length(resmap.azimuths), args.min_eval_depth))
+        write_resolution_sections(io, rvd, resmap, args)
     end
 
     println("Reconstruction RMSE by depth band (lower = better):")
@@ -4215,6 +4266,14 @@ function main()
         status = run_reconstruction_protocol(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args)
         println("\nReconstruction-protocol stage '$(args.protocol_stage)' finished (outputs under $(args.output_dir))")
         return status
+    end
+
+    # Resolution map only (then exit): operator at w = 0 and the point-spread map.
+    if args.resolution_only
+        run_resolution_only(physics, shallow_flags, matcfg, site, volume, paths, energy_samples, args;
+            output_path = joinpath(args.output_dir, "lvd_tomography_inverse.txt"))
+        println("\nResolution-only output written to $(args.output_dir)")
+        return 0
     end
 
     # (a) Detection gain vs contrast (then exit).

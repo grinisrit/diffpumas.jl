@@ -1,0 +1,29 @@
+LVD tomography inverse reconstruction summary (resolution map only)
+geometry = grid, n_cells = 600, valid_bins = 2700
+ray grid: theta < 60.0 by 2.0 deg, phi by 4.0 deg (2700 rays), impulse contrast = 0.5
+
+Resolution (linearised point-spread FWHM vs depth):
+  depth[m]     FWHM[m]      floor[m]     n_cells 
+  558.8        2168.2       319.6        12      
+  799.0        799.0        319.6        14      
+  1118.6       479.4        319.6        19      
+  1438.2       319.6        319.6        19      
+  1678.4       319.6        319.6        8       
+
+Resolution FWHM[m] map — all depths (rows) × azimuth directions (cols, deg):
+  depth[m] 22     68     112    158    202    248    292    338    floor  
+  559      <=320  2237   2374   2100   <=320  3620   2374   1050   320    
+  799      639    639    2374   1278   639    2374   639    959    320    
+  1119     <=320  2000   1187   320    <=320  639    639    320    320    
+  1438     -      <=320  <=320  <=320  <=320  <=320  320    <=320  320    
+  1678     -      -      <=320  <=320  -      <=320  -      -      320    
+  (azimuth sectors of 45 deg; cells evaluated below 350 m)
+
+Resolution cell-count map — all depths (rows) × azimuth directions (cols, deg):
+  depth[m] 22     68     112    158    202    248    292    338    floor  
+  559      1      2      1      2      1      2      1      2      320    
+  799      1      2      1      3      1      3      1      2      320    
+  1119     1      3      2      4      1      4      2      2      320    
+  1438     0      3      3      4      1      5      2      1      320    
+  1678     0      0      3      1      0      4      0      0      320    
+  (azimuth sectors of 45 deg; cells evaluated below 350 m)
